@@ -7,6 +7,7 @@ import { FeedCard, type CardCtx } from './feed-cards'
 import { AgentDrawer } from './agent-drawer'
 import { JING_MOVES, PLANETS, ASP_SYM } from './constants'
 import { compatibility, isActivated } from './agent-adapter'
+import { spriteTierLabel } from '@/lib/agents/agent-type-model'
 import { SEED_FEED_EVENTS } from './seed-data'
 import type {
   ChartOfMoment,
@@ -929,6 +930,16 @@ function RosterColumn({
           {ranked.map(({ agent, activation, userResonance, dormant }) => {
             const isSel = !!selected && selected.id === agent.id
             const activationBars = Math.max(1, Math.min(7, Math.round(activation / 14)))
+            // Sky sprites don't level — show their dignity/phase tier instead of Lv.
+            const tier =
+              agent.kind === 'planetary' || agent.kind === 'lunar'
+                ? (spriteTierLabel(agent.id) ??
+                  (agent.dignity
+                    ? agent.dignity.charAt(0).toUpperCase() + agent.dignity.slice(1)
+                    : agent.kind === 'lunar'
+                      ? 'Lunar'
+                      : 'Sprite'))
+                : null
             return (
               <div
                 key={agent.id}
@@ -942,8 +953,9 @@ function RosterColumn({
                     style={{ fontSize: 14, fontFamily: 'var(--ff-display)', lineHeight: 1.1 }}
                   >
                     {agent.name}
-                    {typeof levels[agent.id] === 'number' && (
+                    {tier ? (
                       <span
+                        title="Sky sprite — dignity/phase tier (sprites don't level)"
                         style={{
                           marginLeft: 6,
                           fontSize: 9,
@@ -951,14 +963,33 @@ function RosterColumn({
                           padding: '1px 5px',
                           borderRadius: 999,
                           background:
-                            'linear-gradient(90deg, rgba(250,204,21,.18), rgba(217,70,239,.18))',
-                          border: '1px solid rgba(217,70,239,.45)',
-                          color: '#f0abfc',
+                            'linear-gradient(90deg, rgba(56,189,248,.16), rgba(99,102,241,.16))',
+                          border: '1px solid rgba(56,189,248,.45)',
+                          color: '#7dd3fc',
                           verticalAlign: 'middle',
                         }}
                       >
-                        Lv.{levels[agent.id]}
+                        {tier}
                       </span>
+                    ) : (
+                      typeof levels[agent.id] === 'number' && (
+                        <span
+                          style={{
+                            marginLeft: 6,
+                            fontSize: 9,
+                            fontFamily: 'var(--ff-mono)',
+                            padding: '1px 5px',
+                            borderRadius: 999,
+                            background:
+                              'linear-gradient(90deg, rgba(250,204,21,.18), rgba(217,70,239,.18))',
+                            border: '1px solid rgba(217,70,239,.45)',
+                            color: '#f0abfc',
+                            verticalAlign: 'middle',
+                          }}
+                        >
+                          Lv.{levels[agent.id]}
+                        </span>
+                      )
                     )}
                   </div>
                   <div

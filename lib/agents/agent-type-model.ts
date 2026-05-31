@@ -130,6 +130,39 @@ export function isSkySprite(agentId: string): boolean {
   return classifyAgent(agentId).isSprite
 }
 
+/**
+ * Short tier label a sky sprite shows INSTEAD of a level number (sprites don't
+ * level — the Set-4 decision repurposes their "level" surface as a tier):
+ *   - degree sprite → essential-dignity tier (Exalted/Domicile/Peregrine/…)
+ *   - lunar sprite  → moon phase (from a `moon-phase-<slug>-<degree>` id) or 'Lunar'
+ * Returns null for wallets / monica (they keep their numeric level).
+ */
+export function spriteTierLabel(agentId: string): string | null {
+  const c = classifyAgent(agentId)
+  if (!c.isSprite) return null
+  if (c.lunar) {
+    const m = (agentId || '').toLowerCase().match(/^moon[-_]phase[-_]([a-z-]+?)[-_]\d+$/)
+    if (m) {
+      return m[1]
+        .split('-')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+    }
+    return 'Lunar'
+  }
+  if (c.planet && c.sign) {
+    const labels: Record<DignityTier, string> = {
+      exaltation: 'Exalted',
+      domicile: 'Domicile',
+      peregrine: 'Peregrine',
+      detriment: 'Detriment',
+      fall: 'Fall',
+    }
+    return labels[dignityOf(c.planet, c.sign)]
+  }
+  return 'Sprite'
+}
+
 // ── Essential dignity (5-tier) ───────────────────────────────────────────────
 const DOMICILE: Record<Planet, Sign[]> = {
   sun: ['leo'],
