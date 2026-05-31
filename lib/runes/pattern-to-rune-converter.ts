@@ -58,13 +58,14 @@ export class PatternToRuneConverter {
         prompt += `interlocking squares with ${styleParams.texture} texture`
         break
 
-      case 'yod':
+      case 'yod': {
         const apex = pattern.planets[0] // Apex planet is typically first
         prompt += `Finger of God pattern pointing to ${apex}, `
         prompt += `destiny activation sigil with ${pattern.strength}% fate energy, `
         prompt += `two quincunx lines converging on apex with sextile base, `
         prompt += `mystical arrow of purpose in ${styleParams.lineStyle} style`
         break
+      }
 
       case 'stellium':
         prompt += `Concentrated stellar cluster of ${pattern.planets.length} planetary energies, `

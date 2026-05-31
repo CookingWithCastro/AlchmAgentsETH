@@ -499,7 +499,7 @@ export function sortAgents(
         aValue = a.stats.resonanceScore
         bValue = b.stats.resonanceScore
         break
-      case 'lastActive':
+      case 'lastActive': {
         // Safe date handling for sorting
         const aDate =
           a.stats.lastActive instanceof Date ? a.stats.lastActive : new Date(a.stats.lastActive)
@@ -509,16 +509,18 @@ export function sortAgents(
         aValue = isNaN(aDate.getTime()) ? 0 : aDate.getTime()
         bValue = isNaN(bDate.getTime()) ? 0 : bDate.getTime()
         break
-      case 'evolutionTrajectory':
+      }
+      case 'evolutionTrajectory': {
         const trajectoryOrder = { transcending: 4, ascending: 3, stable: 2, fluctuating: 1 }
         aValue = trajectoryOrder[a.stats.kineticEvolution.evolutionTrajectory] || 0
         bValue = trajectoryOrder[b.stats.kineticEvolution.evolutionTrajectory] || 0
         break
+      }
       case 'name':
         aValue = a.name.toLowerCase()
         bValue = b.name.toLowerCase()
         break
-      case 'relevanceScore':
+      case 'relevanceScore': {
         // Calculate the same relevance score as getTopRelevantAgents
         const now = new Date()
         const currentHour = now.getHours()
@@ -563,6 +565,7 @@ export function sortAgents(
         aValue = calcRelevance(a)
         bValue = calcRelevance(b)
         break
+      }
       default:
         return 0
     }

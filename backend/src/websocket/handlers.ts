@@ -225,13 +225,14 @@ class WebSocketManager {
           data = await planetaryHoursService.getCurrentPlanetaryHour(new Date(), client.location)
           break
 
-        case 'token-rates':
+        case 'token-rates': {
           const tokens = { Spirit: 1.0, Essence: 0.8, Matter: 0.6, Substance: 0.4 }
           data = await tokenCalculatorService.calculateTokens({
             tokens,
             location: client.location,
           })
           break
+        }
 
         case 'thermodynamics':
           data = { message: 'Thermodynamics data requires specific elemental values' }

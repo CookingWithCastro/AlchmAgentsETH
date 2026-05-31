@@ -458,7 +458,7 @@ export default function ModernPhilosophersStone() {
           </Card>
         )
 
-      case 4:
+      case 4: {
         const avgStat = calculateAverage(agentData.stats)
 
         return (
@@ -523,6 +523,7 @@ export default function ModernPhilosophersStone() {
             </CardContent>
           </Card>
         )
+      }
 
       case 5:
         return (

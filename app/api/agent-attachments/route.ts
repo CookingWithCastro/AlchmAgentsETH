@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     let attachment
 
     switch (type) {
-      case 'birth_chart':
+      case 'birth_chart': {
         const { birthDate, birthTime, birthLocation } = body
         if (!birthDate || !birthLocation) {
           return NextResponse.json(
@@ -91,8 +91,9 @@ export async function POST(req: Request) {
           description
         )
         break
+      }
 
-      case 'moment_chart':
+      case 'moment_chart': {
         const { momentDate, momentTime, momentLocation, momentName } = body
         if (!momentDate || !momentLocation || !momentName) {
           return NextResponse.json(
@@ -115,8 +116,9 @@ export async function POST(req: Request) {
           description
         )
         break
+      }
 
-      case 'rune':
+      case 'rune': {
         const { runeType, runePower, runeEffects, runeCost } = body
         if (!runeType || !runePower || !runeEffects) {
           return NextResponse.json(
@@ -139,6 +141,7 @@ export async function POST(req: Request) {
           description
         )
         break
+      }
 
       default:
         return NextResponse.json(

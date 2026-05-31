@@ -178,7 +178,7 @@ export const consciousnessAnalysisTool = new DynamicStructuredTool({
             }
             break
 
-          case 'compatibility':
+          case 'compatibility': {
             const similar = await findSimilarAgents(agentId, 3)
             analysis.compatibleAgents = similar.map(s => {
               const similarAgent = DEMO_AGENTS.find(a => a.id === s.agentId)
@@ -189,6 +189,7 @@ export const consciousnessAnalysisTool = new DynamicStructuredTool({
               }
             })
             break
+          }
 
           case 'synergy':
           default:

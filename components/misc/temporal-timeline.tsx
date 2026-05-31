@@ -182,7 +182,7 @@ export default function TemporalTimeline({
           agentId: event.agentId,
         }))
 
-      case 'heatmap':
+      case 'heatmap': {
         // Create heatmap data with degree vs time bins
         const heatmapData: any[] = []
         const degreeStep = 30 // 30-degree bins
@@ -213,6 +213,7 @@ export default function TemporalTimeline({
           }
         }
         return heatmapData
+      }
 
       default:
         return processedData
