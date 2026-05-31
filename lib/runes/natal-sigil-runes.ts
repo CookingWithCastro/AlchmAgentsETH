@@ -328,7 +328,7 @@ export function generateSigilEffects(geometry: RuneGeometry, sigilType: SigilTyp
         description: `Harmonizes your energy with your natal aspect patterns for ${Math.ceil(power / 20)} days`,
       })
       break
-    case 'pattern-based':
+    case 'pattern-based': {
       const pattern = geometry.sacredPatterns[0]
       if (pattern) {
         effects.push({
@@ -339,6 +339,7 @@ export function generateSigilEffects(geometry: RuneGeometry, sigilType: SigilTyp
         })
       }
       break
+    }
     case 'planetary-focused':
       effects.push({
         type: 'manifestation',

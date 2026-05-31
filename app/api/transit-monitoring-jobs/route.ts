@@ -219,7 +219,7 @@ export async function PUT(request: NextRequest) {
     }
 
     switch (action) {
-      case 'start':
+      case 'start': {
         if (globalScheduler && globalScheduler.isActive()) {
           return NextResponse.json({
             success: true,
@@ -256,6 +256,7 @@ export async function PUT(request: NextRequest) {
             { status: 500 }
           )
         }
+      }
 
       case 'stop':
         if (!globalScheduler || !globalScheduler.isActive()) {

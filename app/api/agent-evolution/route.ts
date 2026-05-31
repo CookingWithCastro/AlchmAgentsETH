@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     switch (action) {
-      case 'metrics':
+      case 'metrics': {
         // Get from database
         const evolutionState = await consciousnessPersistence.loadEvolutionState(userId, agentId)
         if (!evolutionState) {
@@ -65,8 +65,9 @@ export async function GET(request: NextRequest) {
           },
           agentId,
         })
+      }
 
-      case 'memory':
+      case 'memory': {
         // Get interaction history from database
         const history = await consciousnessPersistence.getInteractionHistory(userId, agentId)
         return NextResponse.json({
@@ -77,23 +78,26 @@ export async function GET(request: NextRequest) {
           },
           agentId,
         })
+      }
 
-      case 'timing':
+      case 'timing': {
         const timing = await ConsciousnessMemorySystem.getOptimalInteractionTiming(agentId, {
           lat,
           lon,
         })
         return NextResponse.json({ timing, agentId })
+      }
 
-      case 'kinetics':
+      case 'kinetics': {
         // Use existing router for kinetic analysis
         const kineticResult = await routeTask({
           kind: 'kinetics',
           payload: { agentId, location: { lat, lon } },
         })
         return NextResponse.json({ kinetics: kineticResult.output, agentId })
+      }
 
-      case 'compatibility':
+      case 'compatibility': {
         const compareWith = searchParams.get('compareWith')
         if (!compareWith) {
           return NextResponse.json(
@@ -107,6 +111,7 @@ export async function GET(request: NextRequest) {
           payload: { agent1Id: agentId, agent2Id: compareWith, location: { lat, lon } },
         })
         return NextResponse.json({ compatibility: compatibilityResult.output })
+      }
 
       default:
         return NextResponse.json(
@@ -143,7 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     switch (action) {
-      case 'record':
+      case 'record': {
         // Record new interaction for consciousness evolution
         if (!userMessage || !agentResponse) {
           return NextResponse.json(
@@ -217,8 +222,9 @@ export async function POST(request: NextRequest) {
           },
           message: 'Consciousness interaction recorded successfully',
         })
+      }
 
-      case 'evolution_rate':
+      case 'evolution_rate': {
         // Calculate evolution rate for agent
         const interactions =
           (await ConsciousnessMemorySystem.getAgentMemory(agentId)?.totalInteractions) || 0
@@ -231,8 +237,9 @@ export async function POST(request: NextRequest) {
           evolution: evolutionResult.output,
           agentId,
         })
+      }
 
-      case 'consciousness_velocity':
+      case 'consciousness_velocity': {
         // Get consciousness velocity for multiple agents
         const { agentIds } = body
         if (!agentIds || !Array.isArray(agentIds)) {
@@ -250,6 +257,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
           consciousnessVelocity: velocityResult.output,
         })
+      }
 
       default:
         return NextResponse.json(
@@ -318,7 +326,7 @@ export async function PUT(request: NextRequest) {
           )
         }
 
-      case 'update_profile':
+      case 'update_profile': {
         // Update agent's kinetic profile (admin functionality)
         const profile = agentKineticProfiles[agentId]
         if (!profile) {
@@ -331,8 +339,9 @@ export async function PUT(request: NextRequest) {
           agentId,
           currentProfile: profile,
         })
+      }
 
-      case 'batch_update':
+      case 'batch_update': {
         // Batch update multiple agents (for system-wide consciousness updates)
         const { agentIds, updateData } = data
         if (!agentIds || !Array.isArray(agentIds)) {
@@ -357,6 +366,7 @@ export async function PUT(request: NextRequest) {
           message: `Batch update processed for ${agentIds.length} agents`,
           results,
         })
+      }
 
       default:
         return NextResponse.json(

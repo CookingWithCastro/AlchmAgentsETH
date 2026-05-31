@@ -27,18 +27,21 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
     const timestamp = new Date().toISOString()
 
     switch (action) {
-      case 'list':
+      case 'list': {
         const listData = await backend.agents.list(parameters)
         return NextResponse.json({ success: true, data: listData, timestamp })
+      }
 
-      case 'get':
+      case 'get': {
         if (!parameters.agentId) throw new Error('Missing agentId')
         const getData = await backend.agents.get(parameters.agentId)
         return NextResponse.json({ success: true, data: getData, timestamp })
+      }
 
-      case 'create':
+      case 'create': {
         const createData = await backend.agents.create(parameters)
         return NextResponse.json({ success: true, data: createData, timestamp })
+      }
 
       case 'interact':
       case 'chat': {
@@ -220,9 +223,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<UnifiedAge
 
   try {
     switch (action) {
-      case 'list':
+      case 'list': {
         const listData = await backend.agents.list(Object.fromEntries(searchParams))
         return NextResponse.json({ success: true, data: listData, timestamp })
+      }
 
       case 'health':
         return NextResponse.json({

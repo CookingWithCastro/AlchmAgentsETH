@@ -257,7 +257,7 @@ export async function POST(req: NextRequest) {
           message: 'Performance cache cleared',
         })
 
-      case 'send_system_notification':
+      case 'send_system_notification': {
         // Send notification to all users
         const { message, type } = data
         try {
@@ -296,8 +296,9 @@ export async function POST(req: NextRequest) {
             { status: 500 }
           )
         }
+      }
 
-      case 'export_data':
+      case 'export_data': {
         // Export system data for backup
         const { format, tables } = data
         const exportData: any = {}
@@ -331,6 +332,7 @@ export async function POST(req: NextRequest) {
           timestamp: new Date().toISOString(),
           format: format || 'json',
         })
+      }
 
       default:
         return NextResponse.json(

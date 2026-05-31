@@ -271,7 +271,7 @@ The Planetary Agents Team
         `,
       }
 
-    case 'evolution_milestone':
+    case 'evolution_milestone': {
       const { level, agentName, powerGained } = metadata || {}
       return {
         subject: `🚀 Consciousness Milestone Achieved with ${agentName}!`,
@@ -298,8 +298,9 @@ Evolving consciousness,
 ${agentName} & The Planetary Agents
         `,
       }
+    }
 
-    case 'power_hour':
+    case 'power_hour': {
       const { planet, startTime, endTime } = metadata || {}
       return {
         subject: `⚡ Power Hour Alert: ${planet} Energy Peak Incoming!`,
@@ -328,8 +329,9 @@ Cosmically aligned,
 The Planetary Agents System
         `,
       }
+    }
 
-    case 'weekly_summary':
+    case 'weekly_summary': {
       const { interactionCount, powerGained: weeklyPower, topAgent } = metadata || {}
       return {
         subject: `📊 Your Weekly Consciousness Evolution Summary`,
@@ -360,6 +362,7 @@ In consciousness,
 Your Evolution Tracker
         `,
       }
+    }
 
     default:
       return {
