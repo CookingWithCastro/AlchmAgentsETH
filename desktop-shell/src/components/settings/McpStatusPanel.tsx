@@ -22,7 +22,7 @@
  *     ReactDOM.createRoot(...).render(<McpStatusPanel sidecars={[...]}/>).
  *
  * Until then this file just typechecks under the root tsconfig (which
- * already covers **​/*.tsx) and lives as documentation-by-code.
+ * already covers every .tsx file) and lives as documentation-by-code.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react'

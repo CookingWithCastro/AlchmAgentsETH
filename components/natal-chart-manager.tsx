@@ -150,47 +150,39 @@ export function NatalChartManager({ userId }: NatalChartManagerProps) {
 
   // Create chart
   const handleCreateChart = async (chartData: any) => {
-    try {
-      const response = await fetch('/api/user-natal-charts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          ...chartData,
-        }),
-      })
+    const response = await fetch('/api/user-natal-charts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId,
+        ...chartData,
+      }),
+    })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to create chart')
-      }
-
-      await loadCharts()
-      setShowCreateDialog(false)
-    } catch (err) {
-      throw err // Let NatalChartInput handle the error display
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to create chart')
     }
+
+    await loadCharts()
+    setShowCreateDialog(false)
   }
 
   // Update chart
   const handleUpdateChart = async (chartId: string, updates: any) => {
-    try {
-      const response = await fetch(`/api/user-natal-charts/${chartId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      })
+    const response = await fetch(`/api/user-natal-charts/${chartId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    })
 
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update chart')
-      }
-
-      await loadCharts()
-      setEditingChart(null)
-    } catch (err) {
-      throw err
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Failed to update chart')
     }
+
+    await loadCharts()
+    setEditingChart(null)
   }
 
   // Delete chart

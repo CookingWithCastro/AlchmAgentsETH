@@ -21,7 +21,7 @@ import {
   TrendingUp,
   Calendar,
   Compass,
-  Infinity,
+  Infinity as InfinityIcon,
 } from 'lucide-react'
 import { InteractiveChartTeacher } from '@/components/charts/interactive-chart-teacher'
 import { RelationalAstrologyTrainer } from '@/components/misc/relational-astrology-trainer'
@@ -319,7 +319,7 @@ export function UniverseConnectionDashboard({
 
             <Card>
               <CardContent className="p-4 text-center">
-                <Infinity className="h-8 w-8 mx-auto mb-2 text-violet-500" />
+                <InfinityIcon className="h-8 w-8 mx-auto mb-2 text-violet-500" />
                 <div className="text-2xl font-bold">{universeConnectionLevel}</div>
                 <div className="text-xs text-muted-foreground">Universe Connection</div>
               </CardContent>

@@ -157,27 +157,23 @@ const PERSONALITY_PRESETS = {
   },
 }
 
-export function AdvancedPersonalityTuner({
+export function AdvancedPersonalityTuner(props: PersonalityTunerProps) {
+  const isMobile = useIsMobile()
+  // Mobile and desktop are separate components, so each owns its hooks — no hook
+  // ever runs after a conditional return (react-hooks/rules-of-hooks).
+  if (isMobile) {
+    return <MobilePersonalityTuner {...props} />
+  }
+  return <DesktopPersonalityTuner {...props} />
+}
+
+function DesktopPersonalityTuner({
   initialParameters,
   monicaConstant,
   alchemicalValues,
   onParametersChange,
   className = '',
 }: PersonalityTunerProps) {
-  const isMobile = useIsMobile()
-
-  // Render mobile version on mobile devices
-  if (isMobile) {
-    return (
-      <MobilePersonalityTuner
-        initialParameters={initialParameters}
-        monicaConstant={monicaConstant}
-        alchemicalValues={alchemicalValues}
-        onParametersChange={onParametersChange}
-        className={className}
-      />
-    )
-  }
   const [parameters, setParameters] = useState<PersonalityParameters>({
     ...DEFAULT_PARAMETERS,
     ...initialParameters,

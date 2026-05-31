@@ -23,7 +23,7 @@ import {
   Sun,
   Moon,
   Atom,
-  Infinity,
+  Infinity as InfinityIcon,
   CheckCircle,
   Smartphone,
   Vibrate,
@@ -216,7 +216,7 @@ const MEDITATION_STYLES: Record<SigilStyle, StyleMeditation> = {
         visualization: 'Consciousness filling universe, sigil at center',
         breathingPattern: 'Expansive breathing - expanding awareness',
         focusPoint: 'Infinite space, boundless awareness',
-        icon: <Infinity className="w-4 h-4" />,
+        icon: <InfinityIcon className="w-4 h-4" />,
       },
     ],
     completionRitual:

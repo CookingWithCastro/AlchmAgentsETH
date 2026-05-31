@@ -182,15 +182,10 @@ export async function getJobStatistics(userId: string): Promise<JobStatistics> {
 /**
  * Get currently active jobs for a user
  */
-export async function getActiveJobs(userId: string): Promise<ActiveJob[]> {
-  try {
-    // For now, return empty array since we don't have real-time job tracking
-    // In a production system, this would check for jobs that are currently running
-    return []
-  } catch (error) {
-    console.error('Error fetching active jobs:', error)
-    throw new Error('Failed to fetch active jobs')
-  }
+export async function getActiveJobs(_userId: string): Promise<ActiveJob[]> {
+  // For now, return empty array since we don't have real-time job tracking.
+  // In a production system, this would check for jobs that are currently running.
+  return []
 }
 
 /**
