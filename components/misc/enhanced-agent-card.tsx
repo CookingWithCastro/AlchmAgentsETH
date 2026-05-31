@@ -45,6 +45,7 @@ import Link from 'next/link'
 import type { CraftedAgent } from '@/lib/agent-types'
 import { useToast } from '@/hooks/use-toast'
 import { AgentLevelPanel } from '@/components/misc/agent-level-panel'
+import { spriteTierLabel } from '@/lib/agents/agent-type-model'
 import SignVectorGraphic, {
   calculateSignVectorFromChart,
   SignVectorRune,
@@ -483,12 +484,24 @@ export function EnhancedAgentCard({
             <span className="text-[10px] font-mono font-semibold py-0.5 px-2 bg-violet-500/10 border border-violet-500/25 text-violet-300 rounded-full tracking-wide">
               MC: {agent.consciousness.monicaConstant.toFixed(2)}
             </span>
-            {/* Cosmic Level */}
-            {typeof agent.level === 'number' && (
-              <span className="text-[10px] font-semibold py-0.5 px-2 bg-fuchsia-500/15 border border-fuchsia-500/30 text-fuchsia-200 rounded-full tracking-wide">
-                Lv. {agent.level}
-              </span>
-            )}
+            {/* Cosmic Level — sky sprites show their dignity/phase tier (they don't level) */}
+            {(() => {
+              const tier = spriteTierLabel(agent.id)
+              if (tier) {
+                return (
+                  <span className="text-[10px] font-semibold py-0.5 px-2 bg-sky-500/15 border border-sky-500/30 text-sky-200 rounded-full tracking-wide">
+                    {tier}
+                  </span>
+                )
+              }
+              return (
+                typeof agent.level === 'number' && (
+                  <span className="text-[10px] font-semibold py-0.5 px-2 bg-fuchsia-500/15 border border-fuchsia-500/30 text-fuchsia-200 rounded-full tracking-wide">
+                    Lv. {agent.level}
+                  </span>
+                )
+              )
+            })()}
             {/* Evolution Stage */}
             <span className="text-[10px] font-semibold py-0.5 px-2 bg-amber-500/10 border border-amber-500/25 text-amber-300 rounded-full tracking-wide">
               Stage {agent.personality?.evolutionStage ?? 0}
