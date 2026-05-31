@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Download, Monitor } from 'lucide-react'
 import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
 import { resolveAnyAgent } from '@/lib/agents/resolve-any-agent'
+import { classifyAgent } from '@/lib/agents/agent-type-model'
+import { getSpriteView } from '@/lib/agents/sprite-view'
+import { SkySpriteProfile } from '@/components/agent-profile/SkySpriteProfile'
 import {
   getAgentActions,
   getAgentInteractions,
@@ -64,6 +67,15 @@ function formatBirth(agent: CraftedAgent): string {
 
 export default async function AgentProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+
+  // Sky sprites (planetary degree / moon) render a lightweight celestial view —
+  // not the full historical profile (no economy/leveling sections). This also
+  // resolves /agent/<degree> instead of 404ing through resolveAnyAgent.
+  if (classifyAgent(id).isSprite) {
+    const spriteView = await getSpriteView(id)
+    if (spriteView) return <SkySpriteProfile view={spriteView} />
+  }
+
   const agent = await resolveAnyAgent(id)
   if (!agent) notFound()
 
