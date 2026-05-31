@@ -24,7 +24,7 @@ import {
   Sun,
   Moon,
   Atom,
-  Infinity,
+  Infinity as InfinityIcon,
   CheckCircle,
 } from 'lucide-react'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -232,7 +232,7 @@ const MEDITATION_STYLES: Record<SigilStyle, StyleMeditation> = {
           'Your consciousness expanding to fill the universe, your sigil at the center',
         breathingPattern: 'Expansive breathing - each breath expanding your awareness',
         focusPoint: 'Infinite space, boundless awareness',
-        icon: <Infinity className="w-5 h-5" />,
+        icon: <InfinityIcon className="w-5 h-5" />,
       },
     ],
     completionRitual:
@@ -246,25 +246,22 @@ const MEDITATION_STYLES: Record<SigilStyle, StyleMeditation> = {
   },
 }
 
-export function MeditationGuidance({
+export function MeditationGuidance(props: MeditationGuidanceProps) {
+  const isMobile = useIsMobile()
+  // Mobile and desktop are separate components, so each owns its hooks — no hook
+  // ever runs after a conditional return (react-hooks/rules-of-hooks).
+  if (isMobile) {
+    return <MobileMeditationGuidance {...props} />
+  }
+  return <DesktopMeditationGuidance {...props} />
+}
+
+function DesktopMeditationGuidance({
   sigil,
   isVisible,
   onComplete,
   className = '',
 }: MeditationGuidanceProps) {
-  const isMobile = useIsMobile()
-
-  // Render mobile version on mobile devices
-  if (isMobile) {
-    return (
-      <MobileMeditationGuidance
-        sigil={sigil}
-        isVisible={isVisible}
-        onComplete={onComplete}
-        className={className}
-      />
-    )
-  }
   const [currentPhase, setCurrentPhase] = useState(0)
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [isActive, setIsActive] = useState(false)

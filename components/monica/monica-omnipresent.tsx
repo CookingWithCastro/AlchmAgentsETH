@@ -814,16 +814,11 @@ export function MonicaOmnipresent() {
     }
   }
 
-  // Only hide on the main Monica settings page to avoid conflicts
-  if (pathname === '/monica') {
-    return null
-  }
-
-  if (!isVisible) return null
-
   // Consciousness particle animation effect (throttled & raf-based to avoid update depth issues)
   useEffect(() => {
-    if (!particleAnimation) return
+    // No-op when the widget isn't shown; the render guards now live below all
+    // hooks, so this effect must run unconditionally (react-hooks/rules-of-hooks).
+    if (!particleAnimation || pathname === '/monica' || !isVisible) return
 
     let rafId: number | null = null
     let lastTick = 0
@@ -866,6 +861,13 @@ export function MonicaOmnipresent() {
       if (rafId) cancelAnimationFrame(rafId)
     }
   }, [particleAnimation])
+
+  // Render guards — AFTER all hooks (react-hooks/rules-of-hooks).
+  // Only hide on the main Monica settings page to avoid conflicts.
+  if (pathname === '/monica') {
+    return null
+  }
+  if (!isVisible) return null
 
   return (
     <div className={`fixed ${getPositionClass()} z-50 transition-all duration-300`}>

@@ -215,14 +215,6 @@ function PlanetaryAgentsContent({ initialPositions }: PlanetaryAgentsClientProps
     })
   }, [positions])
 
-  if (agentId) {
-    return (
-      <div className="container py-8 text-center">
-        <p>Redirecting to agent chat...</p>
-      </div>
-    )
-  }
-
   const handlePresetSelect = (preset: PlanetaryCouncilPreset) => {
     setSelectedPreset(preset)
     setSelectedPlanets(preset.planetaryAgentIds)
@@ -238,6 +230,16 @@ function PlanetaryAgentsContent({ initialPositions }: PlanetaryAgentsClientProps
   const activePlanetaryConfigs = useMemo(() => {
     return planetaryConfigs.filter(config => activePlanetIds.includes(config.planet))
   }, [planetaryConfigs, activePlanetIds])
+
+  // Early-return AFTER all hooks (rules-of-hooks). The useMemos above are pure,
+  // so computing them before this redirect guard is harmless.
+  if (agentId) {
+    return (
+      <div className="container py-8 text-center">
+        <p>Redirecting to agent chat...</p>
+      </div>
+    )
+  }
 
   return (
     <>
