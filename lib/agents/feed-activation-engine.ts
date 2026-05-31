@@ -4,6 +4,7 @@ import { HistoricalAgentsService, type EnhancedHistoricalAgent } from '../histor
 import { generateVoicedText } from './persona/voiced-generation'
 import { PlanetaryHourCalculator } from '../planetary-hour'
 import { convertSignDegreesToLongitude, angularSeparation } from '../aspects-dynamics'
+import { prisma } from '../db'
 
 export type WTENEventType =
   | 'recipe_generation'
@@ -32,6 +33,12 @@ export interface FeedActionPayload {
     recipeName?: string
     recipeId?: string
     recipe_id?: string
+    /** 'agent' marks an original recipe authored by the agent (vs a featured catalog dish). */
+    source?: string
+    /** Inline authored-recipe payload — the profile renders this without the catalog proxy. */
+    recipePayload?: Record<string, unknown>
+    /** The user_custom_recipes id WTEN returns for an authored recipe. */
+    authoredRecipeId?: string
     review?: string
     madeIt?: boolean
     // For 'commensal_request'
@@ -172,20 +179,25 @@ export class FeedActivationEngine {
       // 4. Determine action type, then resolve a real recipe for recipe events.
       let eventType = this.determineEventType(agent, currentMoment, trigger)
       let recipeCtx: { id: string; name: string } | undefined
+      let authoredRecipe: { id: string; name: string; payload: Record<string, unknown> } | undefined
 
       if (eventType === 'recipe_generation') {
         if (recipeCount >= FeedActivationEngine.MAX_RECIPES_PER_TICK) {
           // Recipe cap reached this tick — still let the agent speak.
           eventType = 'insight'
         } else {
-          // Invariant: a recipe_generation event ALWAYS carries a resolvable
-          // catalog recipeId so the profile "Created by this agent" card can
-          // expand. If the catalog is unreachable, downgrade to insight rather
-          // than emit a broken artifact.
-          const recipe = await this.fetchCatalogRecipe(agent.dominantElement)
-          if (recipe) {
-            recipeCtx = recipe
+          // A recipe_generation event needs a resolvable artifact. Fetch a real
+          // catalog dish as the base, then try to AUTHOR an original recipe
+          // attributed to the agent's WTEN user (persisted in user_custom_recipes).
+          // If the agent isn't WTEN-linked yet (alchmKitchenUserId null) or
+          // authoring fails, fall back to FEATURING the catalog base — both are
+          // resolvable; only the label + render path differ. If even the catalog
+          // is unreachable, downgrade to insight rather than emit a broken card.
+          const base = await this.fetchCatalogRecipe(agent.dominantElement)
+          if (base) {
             recipeCount++
+            authoredRecipe = (await this.tryAuthorRecipe(agent, base, currentMoment)) ?? undefined
+            recipeCtx = authoredRecipe ? { id: authoredRecipe.id, name: authoredRecipe.name } : base
           } else {
             eventType = 'insight'
           }
@@ -199,7 +211,8 @@ export class FeedActivationEngine {
         eventType,
         velocity,
         momentum,
-        recipeCtx
+        recipeCtx,
+        authoredRecipe
       )
 
       actions.push({
@@ -333,6 +346,127 @@ export class FeedActivationEngine {
     }
   }
 
+  /**
+   * Author an ORIGINAL recipe attributed to the agent's WTEN user, persisted in
+   * alchm.kitchen's `user_custom_recipes` via the secret-gated
+   * POST /api/internal/agent-recipes (WTEN #477). Riffs on a catalog `base` dish.
+   *
+   * Returns null (→ caller falls back to FEATURING the catalog base) when:
+   *  - the agent isn't WTEN-linked yet (alchmKitchenUserId null — pre-backfill),
+   *  - INTERNAL_API_SECRET isn't configured, or
+   *  - the voiced call / POST fails.
+   * Best-effort: never throws, so a failure never breaks the tick.
+   */
+  private async tryAuthorRecipe(
+    agent: EnhancedHistoricalAgent,
+    base: { id: string; name: string },
+    moment: CelestialMoment
+  ): Promise<{ id: string; name: string; payload: Record<string, unknown> } | null> {
+    const secret = process.env.INTERNAL_API_SECRET
+    if (!secret) return null
+
+    try {
+      // 1. Resolve the agent's WTEN user id (set by agent-sync). No link → null.
+      const user = await prisma.users.findFirst({
+        where: { email: `${agent.agentId}@agentic.alchm.kitchen` },
+        select: { alchmKitchenUserId: true },
+      })
+      const wtenUserId = user?.alchmKitchenUserId
+      if (!wtenUserId) return null
+
+      // 2. Voiced name + description in one free-tier call (kept to one LLM call
+      //    per recipe — same budget as the featured path's review).
+      const element = agent.dominantElement || 'Fire'
+      const planet = moment.planetary.dominantPlanet
+      const raw = await generateVoicedText(
+        agent.agentId,
+        `Compose an original short recipe inspired by "${base.name}", a ${element} dish, under ` +
+          `${planet}'s influence. Reply with exactly two lines and nothing else:\n` +
+          `Name: <a short evocative dish name>\n` +
+          `Description: <1-2 sentences in your own voice>`,
+        {
+          fallback: `Name: ${base.name} — ${element} Variation\nDescription: A ${element} dish attuned to ${planet}.`,
+          maxTokens: 180,
+        }
+      )
+      const { name, description } = this.parseAuthoredRecipe(raw, base.name, element, planet)
+
+      // 3. Durable payload — rendered inline on the profile (the user_custom_recipes
+      //    id does NOT resolve through the catalog /api/recipes/[id] proxy).
+      const payload: Record<string, unknown> = {
+        name,
+        description,
+        element,
+        dominantElement: element,
+        dominantPlanet: planet,
+        source: 'agent',
+        sourceRecipeId: base.id,
+        sourceRecipeName: base.name,
+        authoredBy: { agentId: agent.agentId, name: agent.name },
+        elementalTags: { [element.toLowerCase()]: 0.8 },
+        planetaryContext: { ruler: planet },
+      }
+
+      // 4. Persist via WTEN. Non-2xx / network error → null (caller features base).
+      const baseUrl =
+        process.env.ALCHM_KITCHEN_PUBLIC_URL ||
+        process.env.ALCHM_KITCHEN_SYNC_URL ||
+        process.env.ALCHM_KITCHEN_BASE_URL ||
+        'https://alchm.kitchen'
+      const res = await fetch(`${baseUrl.replace(/\/$/, '')}/api/internal/agent-recipes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${secret}` },
+        body: JSON.stringify({
+          userId: wtenUserId,
+          name,
+          cuisine: (agent as any).culture || undefined,
+          source: 'agent',
+          sourceRecipeId: base.id,
+          payload,
+          notes: `Authored autonomously under ${planet}.`,
+        }),
+        signal: AbortSignal.timeout(8000),
+      })
+      if (!res.ok) {
+        console.warn(
+          `[FeedActivationEngine] authorRecipe non-OK ${res.status} for ${agent.agentId}`
+        )
+        return null
+      }
+      const data: any = await res.json().catch(() => null)
+      const id = data?.id ? String(data.id) : ''
+      if (!id) return null
+      return { id, name, payload }
+    } catch (error) {
+      console.warn('[FeedActivationEngine] tryAuthorRecipe failed:', error)
+      return null
+    }
+  }
+
+  /** Parse the two-line voiced recipe; tolerant of format drift. */
+  private parseAuthoredRecipe(
+    raw: string,
+    baseName: string,
+    element: string,
+    planet: string
+  ): { name: string; description: string } {
+    const text = (raw || '').trim()
+    const nameMatch = text.match(/name\s*:\s*(.+)/i)
+    const descMatch = text.match(/description\s*:\s*([\s\S]+)/i)
+    let name = (nameMatch?.[1] || '').trim().replace(/^["']|["']$/g, '')
+    let description = (descMatch?.[1] || '').trim()
+    if (!name) {
+      const firstLine = text.split('\n')[0]?.trim() || ''
+      name = firstLine && firstLine.length <= 80 ? firstLine : `${baseName} — ${element} Variation`
+    }
+    if (!description) {
+      // No "Description:" label — use leftover text (minus a name-only first line).
+      description = (nameMatch ? text.replace(nameMatch[0], '').trim() : text).trim()
+      if (!description) description = `A ${element} dish attuned to ${planet}.`
+    }
+    return { name: name.slice(0, 120), description: description.slice(0, 600) }
+  }
+
   private evaluateTransitToNatalAspects(
     agent: EnhancedHistoricalAgent,
     moment: CelestialMoment
@@ -449,7 +583,8 @@ export class FeedActivationEngine {
     eventType: WTENEventType,
     velocity: number,
     momentum: number,
-    recipeCtx?: { id: string; name: string }
+    recipeCtx?: { id: string; name: string },
+    authored?: { id: string; name: string; payload: Record<string, unknown> }
   ): Promise<FeedActionPayload['metadataPayload']> {
     const baseMetadata = {
       internalConfidence: Math.min(1.0, (velocity + momentum) / 2),
@@ -543,8 +678,28 @@ export class FeedActivationEngine {
         }
       }
       case 'recipe_generation': {
-        // recipeCtx is guaranteed by evaluateActivations (it downgrades to
-        // 'insight' when no catalog recipe resolves), but guard regardless.
+        // Authored path: an original recipe persisted to the agent's WTEN user.
+        // Reuse its description as the feed note (no extra LLM call) and carry the
+        // payload inline so the profile renders it without the catalog proxy.
+        if (authored) {
+          const description =
+            (typeof authored.payload.description === 'string' && authored.payload.description) ||
+            `Composed "${authored.name}" — a ${agent.dominantElement} dish attuned to ${moment.planetary.dominantPlanet}.`
+          return {
+            ...baseMetadata,
+            recipeName: authored.name,
+            source: 'agent',
+            authoredRecipeId: authored.id,
+            recipePayload: authored.payload,
+            review: description,
+            madeIt: true,
+            rating: 5,
+          }
+        }
+        // Featured path: a real catalog dish the agent highlights (resolvable via
+        // the /api/recipes/[id] proxy). recipeCtx is guaranteed by
+        // evaluateActivations (it downgrades to 'insight' when no catalog recipe
+        // resolves), but guard regardless.
         const recipeName = recipeCtx?.name || `${agent.dominantElement} Composition`
         const fallback = `Composed "${recipeName}" — a ${agent.dominantElement} dish attuned to ${moment.planetary.dominantPlanet}.`
         const review = await generateVoicedText(

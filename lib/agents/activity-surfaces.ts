@@ -63,6 +63,10 @@ export interface AgentArtifact {
   createdAt: string
   summary: string
   alchmKitchenPath?: string
+  /** True for an agent-authored recipe (persisted in WTEN user_custom_recipes). */
+  authored?: boolean
+  /** Inline recipe payload for authored recipes (not resolvable via the catalog proxy). */
+  recipe?: JsonRecord
 }
 
 interface CursorPayload {
@@ -284,13 +288,24 @@ function artifactFromAction(row: {
       'review'
     ) || ''
 
+  // Authored recipes live in WTEN user_custom_recipes, which the catalog proxy
+  // /api/recipes/[id] does NOT resolve — so render them inline from the stored
+  // payload instead of attaching an alchmKitchenPath (which would 404).
+  const authored = firstString(metadata, 'source') === 'agent'
+  const recipePayload = authored ? asRecord(metadata.recipePayload) : null
+  const hasInlineRecipe = !!recipePayload && Object.keys(recipePayload).length > 0
+
   return {
     id: row.id,
     kind,
     title,
     createdAt: row.createdAt.toISOString(),
     summary: truncate(summary, 220),
-    ...(recipeId ? { alchmKitchenPath: alchmKitchenPath(recipeId) } : {}),
+    ...(authored && hasInlineRecipe
+      ? { authored: true, recipe: recipePayload as JsonRecord }
+      : recipeId
+        ? { alchmKitchenPath: alchmKitchenPath(recipeId) }
+        : {}),
   }
 }
 

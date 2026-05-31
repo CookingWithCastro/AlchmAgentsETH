@@ -28,6 +28,9 @@ export interface ActivityArtifact {
   createdAt: string
   summary: string
   alchmKitchenPath?: string
+  /** True for an agent-authored recipe; render `recipe` inline (no catalog proxy). */
+  authored?: boolean
+  recipe?: Record<string, unknown>
 }
 export interface ActivityAction {
   id: string
@@ -83,12 +86,15 @@ function recipeIdFromPath(path?: string): string | null {
   return seg || null
 }
 
-function RecipeCard({ artifact }: { artifact: ActivityArtifact }) {
+function RecipeCard({ artifact, agentName }: { artifact: ActivityArtifact; agentName: string }) {
   const [open, setOpen] = useState(false)
-  const [recipe, setRecipe] = useState<any>(null)
+  // Authored recipes ship their payload inline; featured ones lazy-load from the catalog proxy.
+  const inlineRecipe = artifact.authored ? ((artifact.recipe as any) ?? null) : null
+  const [recipe, setRecipe] = useState<any>(inlineRecipe)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const recipeId = recipeIdFromPath(artifact.alchmKitchenPath)
+  const expandable = artifact.authored ? !!inlineRecipe : !!recipeId
 
   async function toggle() {
     if (open) {
@@ -96,6 +102,7 @@ function RecipeCard({ artifact }: { artifact: ActivityArtifact }) {
       return
     }
     setOpen(true)
+    if (artifact.authored) return // inline payload already loaded
     if (recipe || !recipeId) return
     setLoading(true)
     setError(null)
@@ -119,11 +126,20 @@ function RecipeCard({ artifact }: { artifact: ActivityArtifact }) {
           <div className="mt-1 text-xs text-white/40">{fmtDate(artifact.createdAt)}</div>
         </div>
         <span className="rounded-full border border-white/15 px-2 py-0.5 text-[10px] uppercase tracking-wider text-white/60">
-          {artifact.kind}
+          {artifact.kind === 'recipe'
+            ? artifact.authored
+              ? 'Created'
+              : 'Featured'
+            : artifact.kind}
         </span>
       </div>
+      {artifact.authored && (
+        <div className="mt-1 text-[11px] font-medium text-fuchsia-300/80">
+          Created by {agentName}
+        </div>
+      )}
       {artifact.summary && <p className="mt-2 text-sm text-white/60">{artifact.summary}</p>}
-      {recipeId && (
+      {expandable && (
         <button
           onClick={toggle}
           className="mt-3 text-xs font-medium text-fuchsia-300 transition hover:text-fuchsia-200"
@@ -189,9 +205,9 @@ export function AgentActivity({ agentName, balances, interactions, artifacts, ac
         </div>
       </section>
 
-      {/* Created by this agent */}
+      {/* Creations by this agent — authored recipes ("Created") + featured catalog dishes + lab entries */}
       <section className="glass-card-premium rounded-3xl border-white/8 p-6 md:p-8">
-        <SectionLabel>Featured by {agentName}</SectionLabel>
+        <SectionLabel>Creations by {agentName}</SectionLabel>
         {artifacts.length === 0 ? (
           <p className="text-sm text-white/40">
             No recipes or lab entries yet — they appear here as {agentName} acts on their transits.
@@ -199,7 +215,7 @@ export function AgentActivity({ agentName, balances, interactions, artifacts, ac
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {artifacts.map(a => (
-              <RecipeCard key={a.id} artifact={a} />
+              <RecipeCard key={a.id} artifact={a} agentName={agentName} />
             ))}
           </div>
         )}
