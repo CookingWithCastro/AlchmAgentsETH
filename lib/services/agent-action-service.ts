@@ -32,6 +32,7 @@ import { syncDebitToAlchm } from '@/lib/alchm-debit-sync'
 import { syncCreditToAlchm } from '@/lib/alchm-credit-sync'
 import { syncEventToAlchm } from '@/lib/alchm-event-sync'
 import { feedPusherService } from '@/lib/agents/feed-pusher'
+import { isEconomyWallet } from '@/lib/agents/agent-type-model'
 import { WTENEventType } from '@/lib/agents/feed-activation-engine'
 import { PlanetaryHourCalculator } from '@/lib/planetary-hour'
 import { getCurrentPlanetaryPositions } from '@/lib/calculate-transits'
@@ -231,7 +232,12 @@ export class AgentActionService {
    * `lastDailyClaimAt` check inside the transaction).
    */
   async runDailyYieldForAgents(): Promise<DailyYieldSummary> {
-    const agenticUsers = await this.getActiveAgenticUsers()
+    // Only historical "wallet" agents accrue daily yield. Sky sprites
+    // (planetary degree / moon) hold a dignity/phase-derived reservoir they
+    // RADIATE — it isn't earned via daily claims — so they're excluded here.
+    const agenticUsers = (await this.getActiveAgenticUsers()).filter(a =>
+      isEconomyWallet(String((a as { email?: string }).email || '').split('@')[0])
+    )
     const summary: DailyYieldSummary = {
       processedCount: agenticUsers.length,
       claimedCount: 0,

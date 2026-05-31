@@ -24,6 +24,10 @@
     {
       "path": "/api/cron/push-feed",
       "schedule": "*/30 * * * *"
+    },
+    {
+      "path": "/api/cron/agents/refresh-reservoirs",
+      "schedule": "0 0 * * *"
     }
   ],
   "headers": [

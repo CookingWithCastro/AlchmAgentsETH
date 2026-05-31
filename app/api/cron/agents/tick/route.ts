@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { agentActionService } from '@/lib/services/agent-action-service'
+import { runTransitAttunements } from '@/lib/agents/transit-attunement'
 
 /**
  * POST /api/cron/agents/tick
@@ -43,9 +44,20 @@ async function handleTick(request: Request) {
 
     const summary = await agentActionService.runTick()
 
+    // Transit auto-attunement: degree sprites bestow ESMS + planetary-12 buffs to
+    // historical agents whose natal points the live sky is conjuncting. Best-effort
+    // — never fails the tick.
+    let attunements: unknown = null
+    try {
+      attunements = await runTransitAttunements()
+    } catch (err) {
+      console.error('[cron/agents/tick] transit attunement failed:', err)
+    }
+
     return NextResponse.json({
       success: summary.errors.length === 0,
       ...summary,
+      attunements,
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
