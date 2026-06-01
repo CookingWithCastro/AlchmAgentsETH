@@ -5,6 +5,7 @@ import {
   getMoonAgentByPhaseAndSign,
 } from '@/lib/moon-phase-system'
 import { anthropic } from '@/lib/anthropic-client'
+import { CLAUDE } from '@/lib/models/registry'
 
 export async function GET(request: NextRequest) {
   try {
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     try {
       const aiResponse = await anthropic.messages.create({
-        model: 'claude-3-5-haiku-20241022',
+        model: CLAUDE.HAIKU,
         max_tokens: 1000,
         temperature: 0.8,
         system: moonAgent.systemPrompt,
