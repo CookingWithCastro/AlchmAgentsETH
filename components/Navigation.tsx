@@ -40,6 +40,11 @@ const navigationGroups = [
         label: 'Chart Interpreter',
         description: 'Interpret your charts.',
       },
+      {
+        href: '/context-card',
+        label: 'Context Card',
+        description: 'Export your whole chart + alchm profile as one file any LLM can read.',
+      },
       { href: '/elemental-chart', label: 'Elemental Chart', description: 'Balance of elements.' },
     ],
   },
