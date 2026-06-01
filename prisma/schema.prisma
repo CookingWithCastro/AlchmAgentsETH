@@ -1473,3 +1473,25 @@ model mcp_invocations {
   @@index([calledAt(sort: Desc)])
   @@map("mcp_invocations")
 }
+
+// Transit-driven group chats. alchm.kitchen resolves a clicked transit to its two
+// transiting degree-agent IDs and POSTs them to POST /api/internal/group-chat, which
+// persists a session here and returns a /gallery/group/<id> URL. The group page
+// hydrates the session and pre-populates the council. `userId` is best-effort
+// cross-app attribution (an alchm.kitchen user that may not exist in this DB), so it
+// is intentionally a bare String with no FK to `users`.
+model group_chat_sessions {
+  id         String   @id @default(cuid())
+  agentIds   Json     @map("agent_ids")
+  agents     Json?
+  transit    Json?
+  transitKey String?  @map("transit_key")
+  origin     String?
+  source     String?
+  userId     String?  @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([transitKey, userId])
+  @@index([createdAt(sort: Desc)])
+  @@map("group_chat_sessions")
+}
