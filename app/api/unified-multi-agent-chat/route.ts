@@ -36,6 +36,7 @@ import { authOptions } from '@/lib/auth-options'
 import { EconomyService } from '@/lib/services/economyService'
 import { getHistoricalAgent, getHistoricalAgentByName } from '@/lib/agents/historical'
 import { unifiedAgentFactory } from '@/lib/unified-agent-factory'
+import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -43,6 +44,12 @@ export const revalidate = 0
 // Credit management: set MOCK_LLM=true in .env.local for zero-cost UI testing
 const MOCK_LLM = process.env.MOCK_LLM === 'true'
 const DEV_MAX_AGENTS = parseInt(process.env.DEV_MAX_AGENTS || '2', 10)
+
+// Per-IP cap on this unauthenticated, unmetered LLM endpoint. Generous for a human
+// typing in a council (one request = one multi-agent turn), restrictive for scripts.
+// Set UNIFIED_CHAT_RATE_LIMIT=0 to disable. See lib/security/rate-limit.ts for caveats.
+const RATE_LIMIT = parseInt(process.env.UNIFIED_CHAT_RATE_LIMIT || '20', 10)
+const RATE_WINDOW_MS = parseInt(process.env.UNIFIED_CHAT_RATE_WINDOW_MS || '60000', 10)
 
 interface UnifiedChatRequest {
   agents: UnifiedAgent[]
@@ -122,6 +129,25 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now()
 
   try {
+    // Per-IP rate limit before any LLM work. This endpoint runs backend chat calls for
+    // anonymous transit/gallery councils with no auth and no ESMS debit, so cap abusive
+    // rapid-fire here; the legitimate once-per-session auto-seed is a single call, and
+    // logged-in users are additionally metered by the ESMS debit below. Inert under
+    // NODE_ENV==='test' so suites that fire many requests stay deterministic (the
+    // limiter itself is covered by test/chat-system/unit/rate-limit.test.ts).
+    if (!MOCK_LLM && RATE_LIMIT > 0 && process.env.NODE_ENV !== 'test') {
+      const rl = rateLimit(`unified-chat:${getClientIp(request.headers)}`, {
+        limit: RATE_LIMIT,
+        windowMs: RATE_WINDOW_MS,
+      })
+      if (!rl.ok) {
+        return NextResponse.json(
+          { error: 'Too many requests — the council needs a moment. Please slow down.' },
+          { status: 429, headers: { 'Retry-After': String(Math.ceil(rl.resetMs / 1000)) } }
+        )
+      }
+    }
+
     const body: UnifiedChatRequest = await request.json()
     const { agents: requestedAgents, message, context } = body
 

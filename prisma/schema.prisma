@@ -1481,15 +1481,23 @@ model mcp_invocations {
 // cross-app attribution (an alchm.kitchen user that may not exist in this DB), so it
 // is intentionally a bare String with no FK to `users`.
 model group_chat_sessions {
-  id         String   @id @default(cuid())
-  agentIds   Json     @map("agent_ids")
+  id         String    @id @default(cuid())
+  agentIds   Json      @map("agent_ids")
   agents     Json?
   transit    Json?
-  transitKey String?  @map("transit_key")
+  transitKey String?   @map("transit_key")
+  // Deterministic "(transit, user, ~6h bucket)" key. A concurrent double-create
+  // collides on this unique index instead of inserting two sessions; the loser reads
+  // back the winner. NULL for keyless sessions (Postgres allows many NULLs here).
+  dedupeKey  String?   @unique @map("dedupe_key")
   origin     String?
   source     String?
-  userId     String?  @map("user_id")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  userId     String?   @map("user_id")
+  // Server-side one-time gate for the auto-convened council opener. Claimed atomically
+  // (UPDATE ... WHERE seeded_at IS NULL) so the opener fires once per session even
+  // across fresh browsers / incognito / cleared localStorage.
+  seededAt   DateTime? @map("seeded_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
 
   @@index([transitKey, userId])
   @@index([createdAt(sort: Desc)])
