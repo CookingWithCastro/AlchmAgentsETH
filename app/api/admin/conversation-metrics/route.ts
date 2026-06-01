@@ -96,15 +96,21 @@ export async function GET(_request: NextRequest) {
       timestamp: new Date().toISOString(),
     })
   } catch (error) {
+    // Surface DB failures as a fault, not a clean zero. Returning
+    // `success: true` with zeroed metrics made a DB outage render as
+    // "0 conversations, all healthy" on the admin board.
     console.error('[Conversation Metrics API] Error:', error)
 
-    // Return empty metrics on error
-    return NextResponse.json({
-      success: true,
-      dailyMetrics: [],
-      agentMetrics: [],
-      totalConversations: 0,
-      timestamp: new Date().toISOString(),
-    })
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'metrics_unavailable',
+        dailyMetrics: [],
+        agentMetrics: [],
+        totalConversations: 0,
+        timestamp: new Date().toISOString(),
+      },
+      { status: 500 }
+    )
   }
 }

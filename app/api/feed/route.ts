@@ -43,7 +43,15 @@ export async function GET(req: Request) {
       take: PAGE_SIZE + 1, // fetch one extra to detect hasMore
     })
   } catch (err) {
+    // A DB failure here must surface as a hard error, not an empty feed.
+    // An empty 200 is indistinguishable from "no activity yet" and masked a
+    // total Prisma outage in June 2026 — return 503 so the SSE catch-up loop
+    // and monitoring see the fault instead of a silently-empty timeline.
     console.error('[feed/GET] failed to query agent_action_events:', err)
+    return NextResponse.json(
+      { error: 'feed_unavailable', events: [], cursor: null, hasMore: false },
+      { status: 503 }
+    )
   }
 
   const hasMore = dbEvents.length > PAGE_SIZE

@@ -164,10 +164,13 @@ export async function GET(req: NextRequest) {
     })
     return NextResponse.json({ ok: true, duels }, { headers: CORS_HEADERS })
   } catch (error) {
+    // A read failure is a real error — return 500, not an empty 200 list
+    // (an empty 200 hides a DB outage as "no duels yet"). The POST above is
+    // deliberately fire-and-forget telemetry; this GET is not.
     console.error('Failed to list Jing duels:', error)
     return NextResponse.json(
       { ok: false, duels: [], error: error instanceof Error ? error.message : 'list-failed' },
-      { status: 200, headers: CORS_HEADERS }
+      { status: 500, headers: CORS_HEADERS }
     )
   }
 }
