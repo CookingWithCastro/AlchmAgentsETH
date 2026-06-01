@@ -28,6 +28,13 @@ export async function syncCreditToAlchm(params: {
       birthTime?: string | null
       birthLocation?: string
     }
+    // Sky-economy transit-attunement context, forwarded verbatim to alchm.kitchen
+    // so it can render the "🌠 Sky Drop" feed event + bell notification.
+    planet?: string
+    sign?: string
+    degree?: number
+    totalTokens?: number
+    degreeAgentId?: string
   }
 }): Promise<{ ok: boolean; error?: string; balances?: any }> {
   const alchmConfig = (() => {
