@@ -975,7 +975,7 @@ Return only the number, no explanation.`
     const lowerSubmission = submission.toLowerCase()
 
     switch (metric.name) {
-      case 'authenticity':
+      case 'authenticity': {
         const authenticityMarkers = [
           'i feel',
           'my experience',
@@ -986,14 +986,16 @@ Return only the number, no explanation.`
         const authenticityScore =
           authenticityMarkers.filter(m => lowerSubmission.includes(m)).length / 3
         return Math.min(authenticityScore, 1) || 0.5
+      }
 
-      case 'creativity':
+      case 'creativity': {
         const creativityMarkers = ['imagine', 'dream', 'create', 'innovative', 'unique', 'original']
         const creativityScore =
           creativityMarkers.filter(m => lowerSubmission.includes(m)).length / 3
         return Math.min(creativityScore, 1) || 0.6
+      }
 
-      case 'emotional_depth':
+      case 'emotional_depth': {
         const emotionWords = [
           'feel',
           'emotion',
@@ -1007,11 +1009,13 @@ Return only the number, no explanation.`
         ]
         const emotionCount = emotionWords.filter(word => lowerSubmission.includes(word)).length
         return Math.min(emotionCount / 4, 1) || 0.5
+      }
 
-      default:
+      default: {
         // Default heuristic based on length and complexity
         const wordCount = submission.split(/\s+/).length
         return Math.min(wordCount / 100, 1) || 0.7
+      }
     }
   }
 }

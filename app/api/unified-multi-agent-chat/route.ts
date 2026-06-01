@@ -162,7 +162,19 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions)
     const userId = (session?.user as any)?.id
 
-    if (userId) {
+    // Free-rotation waiver: skip the agent fee when EVERY agent in the room is in
+    // this week's free set (featured guides + active-aspect degree sprites).
+    let allAgentsFreeThisWeek = false
+    try {
+      const { resolveWeeklyFeature } = await import('@/lib/agents/weekly-feature-rotation')
+      const freeSet = new Set((await resolveWeeklyFeature()).freeAgentIds.map(s => s.toLowerCase()))
+      allAgentsFreeThisWeek =
+        activeAgents.length > 0 && activeAgents.every(a => freeSet.has(String(a.id).toLowerCase()))
+    } catch {
+      /* fall through to normal billing if the rotation can't be computed */
+    }
+
+    if (userId && !allAgentsFreeThisWeek) {
       const currentAlchemy = await getAlchemicalQuantitiesLegacy()
       const alchemyEffects = (currentAlchemy as any)['Alchemy Effects'] || {}
 

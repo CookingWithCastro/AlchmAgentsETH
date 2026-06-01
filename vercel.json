@@ -28,6 +28,10 @@
     {
       "path": "/api/cron/agents/refresh-reservoirs",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/agents/announce-weekly-feature",
+      "schedule": "0 0 * * 1"
     }
   ],
   "headers": [

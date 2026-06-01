@@ -13,6 +13,8 @@ export type TransactionSourceType =
   | 'agents_daily_yield'
   | 'kitchen_daily_yield'
   | 'agents_operation'
+  | 'transit_attunement'
+  | 'group_chat_quest'
 
 function isSameUtcDay(iso: string | null | undefined): boolean {
   if (!iso) return false

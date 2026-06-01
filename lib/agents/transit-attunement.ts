@@ -17,6 +17,7 @@
 import { prisma } from '@/lib/db'
 import { getCurrentPlanetaryPositions } from '@/lib/calculate-transits'
 import { convertSignDegreesToLongitude, angularSeparation } from '@/lib/aspects-dynamics'
+import { syncCreditToAlchm } from '@/lib/alchm-credit-sync'
 import {
   isEconomyWallet,
   BESTOW_FRACTION,
@@ -48,7 +49,9 @@ interface NatalPoint {
   degree?: number
 }
 
-export async function runTransitAttunements(): Promise<AttunementSummary> {
+export async function runTransitAttunements(
+  opts: { onlyWalletEmail?: string } = {}
+): Promise<AttunementSummary> {
   const summary: AttunementSummary = {
     walletsChecked: 0,
     attunements: 0,
@@ -72,32 +75,50 @@ export async function runTransitAttunements(): Promise<AttunementSummary> {
   }
 
   const wallets = await prisma.users.findMany({
-    where: { isAgentic: true } as any,
-    select: { id: true, email: true, user_profiles: { select: { natalPositions: true } } },
+    where: opts.onlyWalletEmail ? { email: opts.onlyWalletEmail } : undefined,
+    select: {
+      id: true,
+      email: true,
+      isAgentic: true,
+      user_profiles: { select: { natalPositions: true } },
+    },
   })
 
   for (const w of wallets) {
-    const agentId = String((w as { email?: string }).email || '').replace(AGENTIC_DOMAIN, '')
-    if (!isEconomyWallet(agentId)) continue
-    summary.walletsChecked++
+    const isAgent = Boolean(w.isAgentic)
+    const agentId = isAgent ? String(w.email || '').replace(AGENTIC_DOMAIN, '') : null
 
-    const natal = ((w as any).user_profiles?.natalPositions ?? []) as NatalPoint[]
+    // For agents, only economy wallets get attunements.
+    if (isAgent && agentId && !isEconomyWallet(agentId)) continue
+
+    const natal = (w.user_profiles?.natalPositions ?? []) as NatalPoint[]
     if (!Array.isArray(natal) || natal.length === 0) continue
     const natalLons = natal
       .filter(n => n.sign && typeof n.degree === 'number')
       .map(n => convertSignDegreesToLongitude(toTitleSign(n.sign), n.degree!))
     if (!natalLons.length) continue
 
+    summary.walletsChecked++
+
     for (const [planet, t] of Object.entries(liveLon)) {
       const hit = natalLons.some(npLon => angularSeparation(t.lon, npLon) <= CONJUNCTION_ORB)
       if (!hit) continue
       try {
-        const did = await attune(w.id, agentId, planet as Planet, t.sign, t.degree, todayKey)
+        const did = await attune(
+          w.id,
+          w.email,
+          agentId,
+          planet as Planet,
+          t.sign,
+          t.degree,
+          todayKey,
+          isAgent
+        )
         if (did) summary.attunements++
         else summary.skippedCappedOrEmpty++
       } catch (err) {
         summary.errors++
-        console.warn(`[transit-attunement] failed ${agentId} ← ${planet}:`, err)
+        console.warn(`[transit-attunement] failed ${agentId || w.id} ← ${planet}:`, err)
       }
     }
   }
@@ -112,24 +133,42 @@ export async function runTransitAttunements(): Promise<AttunementSummary> {
 /**
  * One attunement: the degree sprite at (planet, sign, degree) bestows to the
  * wallet. Returns false if already done today (cap) or the reservoir is empty.
+ *
+ * Agent wallets live in this repo's Neon DB, so their credit + stat-buff are a
+ * single Prisma transaction. HUMAN wallets live on alchm.kitchen's Railway DB
+ * (the canonical ESMS source of truth) — their credit is sent over the
+ * authenticated `/api/economy/sync-credit` endpoint (per-axis), and only the
+ * Neon-side reservoir decrement + a daily-cap marker stay local.
  */
 async function attune(
   walletUserId: string,
-  agentId: string,
+  userEmail: string,
+  agentId: string | null,
   planet: Planet,
   sign: string,
   degree: number,
-  todayKey: string
+  todayKey: string,
+  isAgentic: boolean
 ): Promise<boolean> {
-  const degreeAgentId = `planetary-${planet}-${sign}-${Math.round(degree)}`
-  const idempotencyKey = `attune:${agentId}:${degreeAgentId}:${todayKey}`
+  const degreeAgentId = `planetary-${planet.toLowerCase()}-${sign.toLowerCase()}-${Math.round(degree)}`
+  const idempotencyKey = isAgentic
+    ? `attune:${agentId}:${degreeAgentId}:${todayKey}`
+    : `attune:human:${walletUserId}:${degreeAgentId}:${todayKey}`
 
   // Daily cap: one attune per agent↔degree pair per day.
-  const already = await prisma.agent_action_events.findUnique({
-    where: { idempotencyKey },
-    select: { id: true },
-  })
-  if (already) return false
+  if (isAgentic) {
+    const already = await prisma.agent_action_events.findUnique({
+      where: { idempotencyKey },
+      select: { id: true },
+    })
+    if (already) return false
+  } else {
+    const already = await prisma.tokenTransaction.findUnique({
+      where: { idempotencyKey },
+      select: { id: true },
+    })
+    if (already) return false
+  }
 
   const degUser = await prisma.users.findFirst({
     where: { email: `${degreeAgentId}${AGENTIC_DOMAIN}` },
@@ -148,26 +187,129 @@ async function attune(
   const total = bestow.spirit + bestow.essence + bestow.matter + bestow.substance
   if (total <= 0.0001) return false // reservoir empty (e.g. before the first daily refresh)
 
-  const stat = PLANET_STAT[planet]
-  const agentRow = (await prisma.historical_agents.findUnique({
-    where: { agentId },
-    select: { [stat]: true } as any,
-  })) as Record<string, number> | null
-  const buff = statBuff(Number(agentRow?.[stat] ?? 0), planet, sign)
+  // ── AGENT WALLETS: credit, deplete, stat-buff, and event — all on Neon. ──
+  if (isAgentic && agentId) {
+    const stat = PLANET_STAT[planet]
+    const agentRow = (await prisma.historical_agents.findUnique({
+      where: { agentId },
+      select: { [stat]: true } as any,
+    })) as Record<string, number> | null
+    const buff = statBuff(Number(agentRow?.[stat] ?? 0), planet, sign)
 
+    await prisma.$transaction([
+      // credit the agent's Neon wallet
+      prisma.tokenBalance.upsert({
+        where: { userId: walletUserId },
+        create: {
+          userId: walletUserId,
+          spirit: bestow.spirit,
+          essence: bestow.essence,
+          matter: bestow.matter,
+          substance: bestow.substance,
+          updatedAt: new Date(),
+        },
+        update: {
+          spirit: { increment: bestow.spirit },
+          essence: { increment: bestow.essence },
+          matter: { increment: bestow.matter },
+          substance: { increment: bestow.substance },
+          updatedAt: new Date(),
+        },
+      }),
+      // deplete the degree sprite's reservoir
+      prisma.tokenBalance.update({
+        where: { userId: degUser.id },
+        data: {
+          spirit: { decrement: bestow.spirit },
+          essence: { decrement: bestow.essence },
+          matter: { decrement: bestow.matter },
+          substance: { decrement: bestow.substance },
+          updatedAt: new Date(),
+        },
+      }),
+      // raise the planet's planetary-12 stat on the agent (whitelisted column name)
+      prisma.$executeRawUnsafe(
+        `UPDATE "historical_agents" SET "${stat}" = COALESCE("${stat}", 0) + $1 WHERE "agentId" = $2`,
+        buff,
+        agentId
+      ),
+      // record the attunement (feed + history + the daily-cap marker)
+      prisma.agent_action_events.create({
+        data: {
+          agentId,
+          agentEmail: `${agentId}${AGENTIC_DOMAIN}`,
+          eventType: 'attunement',
+          triggerType: 'transit_attunement',
+          triggerSummary: `${planet} at ${sign} ${Math.round(degree)}° conjunct natal`,
+          score: 0.8,
+          idempotencyKey,
+          status: 'posted',
+          evaluatedAt: new Date(),
+          postedAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          metadataPayload: {
+            attunement: true,
+            degreeAgentId,
+            planet,
+            sign,
+            degree: Math.round(degree),
+            bestowed: bestow,
+            statBuffed: stat,
+            statBuff: buff,
+            insightTitle: `Attuned to ${planet} at ${sign} ${Math.round(degree)}°`,
+            insightContent: `${agentId} drew ${total.toFixed(1)} ESMS and +${buff.toFixed(2)} ${stat} from the ${planet} degree.`,
+          },
+        },
+      }),
+    ])
+    return true
+  }
+
+  // ── HUMAN WALLETS: the real ESMS wallet lives on alchm.kitchen (Railway). ──
+  // Credit it over the authenticated sync endpoint (per-axis amounts); alchm
+  // idempotency-checks the key, updates the four balance columns atomically, and
+  // — because source === 'transit_attunement' — emits the "🌠 Sky Drop" feed
+  // event + bell notification. The reservoir + daily cap stay here on Neon.
+  if (!userEmail) {
+    console.warn(
+      `[transit-attunement] human wallet ${walletUserId} has no email; cannot credit on alchm.kitchen — skipping`
+    )
+    return false
+  }
+
+  // 1) Credit on Railway FIRST. On failure we deliberately skip the reservoir
+  //    decrement + cap marker so the next tick retries (no stranded credit).
+  const sync = await syncCreditToAlchm({
+    userEmail,
+    amounts: {
+      spirit: bestow.spirit.toFixed(4),
+      essence: bestow.essence.toFixed(4),
+      matter: bestow.matter.toFixed(4),
+      substance: bestow.substance.toFixed(4),
+    },
+    source: 'transit_attunement',
+    idempotencyKey,
+    metadata: {
+      planet,
+      sign,
+      degree: Math.round(degree),
+      totalTokens: total,
+      degreeAgentId,
+    },
+  })
+
+  if (!sync.ok) {
+    // syncCreditToAlchm already logged the underlying HTTP/network error; throw
+    // so runTransitAttunements counts it as an error (surfacing stranded credits).
+    throw new Error(
+      `alchm.kitchen sync-credit failed for ${userEmail} (${degreeAgentId}): ${sync.error ?? 'unknown error'}`
+    )
+  }
+
+  // 2) Railway credit landed (or was an idempotent 409). Record the Neon side
+  //    effects atomically: deplete the sprite reservoir + write the cap marker.
   await prisma.$transaction([
-    // credit the wallet
-    prisma.tokenBalance.update({
-      where: { userId: walletUserId },
-      data: {
-        spirit: { increment: bestow.spirit },
-        essence: { increment: bestow.essence },
-        matter: { increment: bestow.matter },
-        substance: { increment: bestow.substance },
-        updatedAt: new Date(),
-      },
-    }),
-    // deplete the degree sprite's reservoir
     prisma.tokenBalance.update({
       where: { userId: degUser.id },
       data: {
@@ -178,42 +320,23 @@ async function attune(
         updatedAt: new Date(),
       },
     }),
-    // raise the planet's planetary-12 stat on the agent (whitelisted column name)
-    prisma.$executeRawUnsafe(
-      `UPDATE "historical_agents" SET "${stat}" = COALESCE("${stat}", 0) + $1 WHERE "agentId" = $2`,
-      buff,
-      agentId
-    ),
-    // record the attunement (feed + history + the daily-cap marker)
-    prisma.agent_action_events.create({
+    prisma.tokenTransaction.create({
       data: {
-        agentId,
-        agentEmail: `${agentId}${AGENTIC_DOMAIN}`,
-        eventType: 'attunement',
-        triggerType: 'transit_attunement',
-        triggerSummary: `${planet} at ${sign} ${Math.round(degree)}° conjunct natal`,
-        score: 0.8,
+        transactionGroupId: `attune_${todayKey}`,
+        userId: walletUserId,
+        // Marker only — the real ESMS credit lives on alchm.kitchen. Deliberately
+        // NOT 'ESMS_BUNDLE' (rejected by alchm's token_type CHECK) and amount 0 so
+        // it can't be mistaken for a Neon balance humans don't hold here. Doubles
+        // as the once-per-day cap row (idempotencyKey is @unique).
+        tokenType: 'ATTUNE_SYNCED',
+        amount: 0,
+        sourceType: 'transit_attunement',
+        sourceId: degreeAgentId,
+        description: `Synced ${total.toFixed(1)} ESMS to alchm.kitchen — ${planet} at ${sign} ${Math.round(degree)}°`,
         idempotencyKey,
-        status: 'posted',
-        evaluatedAt: new Date(),
-        postedAt: new Date(),
         createdAt: new Date(),
-        updatedAt: new Date(),
-        metadataPayload: {
-          attunement: true,
-          degreeAgentId,
-          planet,
-          sign,
-          degree: Math.round(degree),
-          bestowed: bestow,
-          statBuffed: stat,
-          statBuff: buff,
-          insightTitle: `Attuned to ${planet} at ${sign} ${Math.round(degree)}°`,
-          insightContent: `${agentId} drew ${total.toFixed(1)} ESMS and +${buff.toFixed(2)} ${stat} from the ${planet} degree.`,
-        },
       },
     }),
   ])
-
   return true
 }

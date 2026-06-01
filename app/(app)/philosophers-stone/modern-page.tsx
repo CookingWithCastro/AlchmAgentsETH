@@ -289,7 +289,7 @@ export default function ModernPhilosophersStone() {
           </Card>
         )
 
-      case 3:
+      case 3: {
         const personalityTraits = [
           'Analytical',
           'Empathetic',
@@ -352,6 +352,7 @@ export default function ModernPhilosophersStone() {
             </CardContent>
           </Card>
         )
+      }
 
       case 4:
         return (
