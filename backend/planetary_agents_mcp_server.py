@@ -121,6 +121,33 @@ TOOLS: List[Dict[str, Any]] = [
             "required": ["casterName", "targetName"],
         },
     },
+    {
+        "name": "plan_weekly_menu",
+        "description": "Plan an agentic weekly menu attuned to the agent's planetary/culinary style.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "agentName": {
+                    "type": "string",
+                    "description": "Agent name or slug, e.g. hildegard-of-bingen, Socrates, carl-jung.",
+                },
+                "weekStartDate": {
+                    "type": "string",
+                    "description": "Optional ISO string representing Sunday start date (e.g. 2026-05-31T00:00:00.000Z).",
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["draft", "completed"],
+                    "description": "Save as draft or complete it immediately to share to the feed.",
+                },
+                "shareToFeed": {
+                    "type": "boolean",
+                    "description": "Explicitly share to feed when status is completed.",
+                },
+            },
+            "required": ["agentName"],
+        },
+    },
 ]
 
 
@@ -584,12 +611,81 @@ async def synthesize_culinary_debate(arguments: Dict[str, Any]) -> Dict[str, Any
     )
 
 
+async def plan_weekly_menu(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    agent_name = str(arguments.get("agentName") or "").strip()
+    if not agent_name:
+        return _text_result({"error": "agentName is required"}, is_error=True)
+    
+    agent_id = _agent_id(agent_name)
+    week_start_date = arguments.get("weekStartDate")
+    status = arguments.get("status") or "completed"
+    share_to_feed = arguments.get("shareToFeed")
+    if share_to_feed is None:
+        share_to_feed = (status == "completed")
+        
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            # 1. Generate menu (saves as draft)
+            gen_resp = await client.post(
+                f"{FRONTEND_URL.rstrip('/')}/api/menu-planner/generate",
+                json={
+                    "agentId": agent_id,
+                    "weekStartDate": week_start_date,
+                    "regenerate": True
+                }
+            )
+            gen_resp.raise_for_status()
+            gen_data = gen_resp.json()
+            
+            if not gen_data.get("success") or not gen_data.get("menu"):
+                raise ValueError(gen_data.get("error") or "Failed to generate menu")
+                
+            menu = gen_data["menu"]
+            
+            # 2. If status is completed, post to weekly proxy to complete and share to feed
+            if status == "completed":
+                menu["status"] = "completed"
+                menu["shareToFeed"] = share_to_feed
+                
+                post_resp = await client.post(
+                    f"{FRONTEND_URL.rstrip('/')}/api/menu-planner/weekly",
+                    json=menu
+                )
+                post_resp.raise_for_status()
+                post_data = post_resp.json()
+                
+                return _text_result({
+                    "success": True,
+                    "message": f"Successfully planned and shared weekly menu '{menu.get('title')}' for {agent_name}!",
+                    "menu": post_data.get("menu") or menu,
+                    "feedShared": post_data.get("feedShared", False)
+                })
+                
+            return _text_result({
+                "success": True,
+                "message": f"Successfully planned draft weekly menu '{menu.get('title')}' for {agent_name}!",
+                "menu": menu
+            })
+            
+    except Exception as exc:
+        return _text_result(
+            {
+                "error": "plan_weekly_menu failed",
+                "message": str(exc),
+                "frontendUrl": FRONTEND_URL
+            },
+            is_error=True
+        )
+
+
 TOOL_HANDLERS = {
     "chat_with_planetary_agent": chat_with_planetary_agent,
     "get_agent_feed_discussion": get_agent_feed_discussion,
     "synthesize_culinary_debate": synthesize_culinary_debate,
     "trigger_chart_specific_jing_duel": trigger_chart_specific_jing_duel,
+    "plan_weekly_menu": plan_weekly_menu,
 }
+
 
 
 async def handle_request(message: Dict[str, Any]) -> Optional[Dict[str, Any]]:

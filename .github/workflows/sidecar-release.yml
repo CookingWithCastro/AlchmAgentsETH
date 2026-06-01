@@ -31,9 +31,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest   # GitHub's macos-latest is Apple Silicon (arm64)
+          - os: macos-latest # GitHub's macos-latest is Apple Silicon (arm64)
             triple: aarch64-apple-darwin
-          - os: macos-13        # last x86_64 (Intel) macOS runner
+          - os: macos-13 # last x86_64 (Intel) macOS runner
             triple: x86_64-apple-darwin
           - os: windows-latest
             triple: x86_64-pc-windows-msvc
