@@ -134,17 +134,19 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
   }
   L.push('')
 
-  L.push('## ANGLES & POINTS')
-  L.push('| Point | Sign | Degree | House |')
-  L.push('|-------|------|--------|-------|')
-  points.forEach(p => L.push(`| ${p.body} | ${p.sign} | ${fmtDegree(p.deg)} | ${p.house} |`))
-  if (opts.annotated) {
+  if (points.length) {
+    L.push('## ANGLES & POINTS')
+    L.push('| Point | Sign | Degree | House |')
+    L.push('|-------|------|--------|-------|')
+    points.forEach(p => L.push(`| ${p.body} | ${p.sign} | ${fmtDegree(p.deg)} | ${p.house} |`))
+    if (opts.annotated) {
+      L.push('')
+      points.forEach(p => L.push(`- ${p.body}: ${gloss(p)}.`))
+    }
     L.push('')
-    points.forEach(p => L.push(`- ${p.body}: ${gloss(p)}.`))
   }
-  L.push('')
 
-  if (opts.houses) {
+  if (opts.houses && data.houses.length) {
     L.push(`## HOUSE CUSPS (${data.birth.houseSystem})`)
     L.push('| House | Cusp | Ruler |')
     L.push('|-------|------|-------|')
@@ -152,8 +154,9 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
     L.push('')
   }
 
-  if (opts.aspects) {
-    const list = aspectsFor(data, opts)
+  const mdAspectList = aspectsFor(data, opts)
+  if (opts.aspects && mdAspectList.length) {
+    const list = mdAspectList
     const major = list.filter(a => a.klass === 'major')
     const minor = list.filter(a => a.klass === 'minor')
     L.push('## ASPECTS')
@@ -224,18 +227,22 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
     L.push(
       `Heat ${t.heat} · Entropy ${t.entropy} · Reactivity ${t.reactivity} · Energy ${t.energy} · A# ${t.aNumber}`
     )
-    L.push('### Sacred 7')
-    L.push(
-      Object.entries(data.alchm.sacred7)
-        .map(([k, v]) => `${cap(k)} ${v}`)
-        .join(' · ')
-    )
-    L.push('### Planetary 12')
-    L.push(
-      Object.entries(data.alchm.planetary12)
-        .map(([k, v]) => `${spaced(k)} ${v}`)
-        .join(' · ')
-    )
+    if (Object.keys(data.alchm.sacred7).length) {
+      L.push('### Sacred 7')
+      L.push(
+        Object.entries(data.alchm.sacred7)
+          .map(([k, v]) => `${cap(k)} ${v}`)
+          .join(' · ')
+      )
+    }
+    if (Object.keys(data.alchm.planetary12).length) {
+      L.push('### Planetary 12')
+      L.push(
+        Object.entries(data.alchm.planetary12)
+          .map(([k, v]) => `${spaced(k)} ${v}`)
+          .join(' · ')
+      )
+    }
     if (opts.annotated) {
       L.push('')
       L.push(`> ${data.alchm.note}`)
@@ -315,15 +322,17 @@ function buildText(data: ContextCardData, opts: ExportOptions): string {
   }
   L.push('')
 
-  L.push('ANGLES & POINTS')
-  L.push(rule('-'))
-  L.push(`${pad('POINT', 18)}${pad('SIGN', 13)}${pad('DEGREE', 9)}HOUSE`)
-  points.forEach(p =>
-    L.push(`${pad(p.body, 18)}${pad(p.sign, 13)}${pad(fmtDegree(p.deg), 9)}${p.house}`)
-  )
-  L.push('')
+  if (points.length) {
+    L.push('ANGLES & POINTS')
+    L.push(rule('-'))
+    L.push(`${pad('POINT', 18)}${pad('SIGN', 13)}${pad('DEGREE', 9)}HOUSE`)
+    points.forEach(p =>
+      L.push(`${pad(p.body, 18)}${pad(p.sign, 13)}${pad(fmtDegree(p.deg), 9)}${p.house}`)
+    )
+    L.push('')
+  }
 
-  if (opts.houses) {
+  if (opts.houses && data.houses.length) {
     L.push(`HOUSE CUSPS (${data.birth.houseSystem})`)
     L.push(rule('-'))
     data.houses.forEach(h =>
@@ -334,8 +343,9 @@ function buildText(data: ContextCardData, opts: ExportOptions): string {
     L.push('')
   }
 
-  if (opts.aspects) {
-    const list = aspectsFor(data, opts)
+  const txtAspectList = aspectsFor(data, opts)
+  if (opts.aspects && txtAspectList.length) {
+    const list = txtAspectList
     L.push('ASPECTS')
     L.push(rule('-'))
     list.forEach(a => {
@@ -396,16 +406,20 @@ function buildText(data: ContextCardData, opts: ExportOptions): string {
     L.push(
       `Thermo    : Heat ${t.heat}, Entropy ${t.entropy}, Reactivity ${t.reactivity}, Energy ${t.energy}, A# ${t.aNumber}`
     )
-    L.push(
-      `Sacred 7  : ${Object.entries(data.alchm.sacred7)
-        .map(([k, v]) => cap(k) + ' ' + v)
-        .join(', ')}`
-    )
-    L.push(
-      `Planet 12 : ${Object.entries(data.alchm.planetary12)
-        .map(([k, v]) => spaced(k) + ' ' + v)
-        .join(', ')}`
-    )
+    if (Object.keys(data.alchm.sacred7).length) {
+      L.push(
+        `Sacred 7  : ${Object.entries(data.alchm.sacred7)
+          .map(([k, v]) => cap(k) + ' ' + v)
+          .join(', ')}`
+      )
+    }
+    if (Object.keys(data.alchm.planetary12).length) {
+      L.push(
+        `Planet 12 : ${Object.entries(data.alchm.planetary12)
+          .map(([k, v]) => spaced(k) + ' ' + v)
+          .join(', ')}`
+      )
+    }
     if (opts.annotated) {
       L.push('')
       L.push(data.alchm.note)
@@ -455,14 +469,6 @@ function buildJSON(data: ContextCardData, opts: ExportOptions): string {
       dignity: p.dignity,
       ...(opts.annotated ? { note: gloss(p) } : {}),
     })),
-    points: points.map(p => ({
-      point: p.body,
-      sign: p.sign,
-      degree: fmtDegree(p.deg),
-      decimal: p.deg,
-      house: p.house,
-      ...(opts.annotated ? { note: gloss(p) } : {}),
-    })),
     synthesis: {
       dominant_element: data.synthesis.dominantElement,
       secondary_element: data.synthesis.secondaryElement,
@@ -477,9 +483,19 @@ function buildJSON(data: ContextCardData, opts: ExportOptions): string {
     },
   }
 
+  if (points.length) {
+    obj.points = points.map(p => ({
+      point: p.body,
+      sign: p.sign,
+      degree: fmtDegree(p.deg),
+      decimal: p.deg,
+      house: p.house,
+      ...(opts.annotated ? { note: gloss(p) } : {}),
+    }))
+  }
   if (opts.synopsis && data.synopsis.length) obj.synopsis = data.synopsis
   if (opts.promptHeader) obj.how_to_use = PROMPT_HEADER
-  if (opts.houses) {
+  if (opts.houses && data.houses.length) {
     obj.house_cusps = data.houses.map(h => ({
       house: h.house,
       sign: h.sign,
@@ -488,8 +504,9 @@ function buildJSON(data: ContextCardData, opts: ExportOptions): string {
       ruler: h.ruler,
     }))
   }
-  if (opts.aspects) {
-    obj.aspects = aspectsFor(data, opts).map(a => ({
+  const jsonAspectList = aspectsFor(data, opts)
+  if (opts.aspects && jsonAspectList.length) {
+    obj.aspects = jsonAspectList.map(a => ({
       a: a.a,
       b: a.b,
       type: a.type,
@@ -524,8 +541,10 @@ function buildJSON(data: ContextCardData, opts: ExportOptions): string {
       kalchm: data.alchm.kalchm,
       monica: data.alchm.monica,
       thermodynamics: data.alchm.thermodynamics,
-      sacred7: data.alchm.sacred7,
-      planetary12: data.alchm.planetary12,
+      ...(Object.keys(data.alchm.sacred7).length ? { sacred7: data.alchm.sacred7 } : {}),
+      ...(Object.keys(data.alchm.planetary12).length
+        ? { planetary12: data.alchm.planetary12 }
+        : {}),
       ...(opts.annotated ? { note: data.alchm.note } : {}),
     }
   }

@@ -73,13 +73,15 @@ export function CardDoc({ data, opts, sky }: Props) {
         setOverlay={setOverlay}
         natalForWheel={natalForWheel}
       />
-      {opts.synopsis ? <SynopsisBlock paragraphs={data.synopsis} /> : null}
-      <Placements planets={planets} />
-      <PointsBlock points={points} />
-      {opts.houses ? <HousesBlock data={data} /> : null}
-      {opts.aspects ? <AspectsBlock aspects={data.aspects} minor={opts.minorAspects} /> : null}
+      {opts.synopsis && data.synopsis.length ? <SynopsisBlock paragraphs={data.synopsis} /> : null}
+      {planets.length ? <Placements planets={planets} /> : null}
+      {points.length ? <PointsBlock points={points} /> : null}
+      {opts.houses && data.houses.length ? <HousesBlock data={data} /> : null}
+      {opts.aspects && data.aspects.some(a => a.klass === 'major' || opts.minorAspects) ? (
+        <AspectsBlock aspects={data.aspects} minor={opts.minorAspects} />
+      ) : null}
       <Synthesis data={data} />
-      {opts.transits ? <TransitsBlock data={data} /> : null}
+      {opts.transits && data.transits ? <TransitsBlock data={data} /> : null}
       {opts.alchm ? <AlchmBlock data={data} /> : null}
     </div>
   )
@@ -473,31 +475,35 @@ function AlchmBlock({ data }: { data: ContextCardData }) {
           </span>
         </div>
 
-        <div className="stat-rows">
-          {Object.entries(a.sacred7).map(([k, v]) => (
-            <div className="srow" key={k}>
-              <span className="lab">{cap(k)}</span>
-              <span className="bar">
-                <i style={{ width: v + '%' }} />
-              </span>
-              <span className="v">{v}</span>
-            </div>
-          ))}
-        </div>
+        {Object.keys(a.sacred7).length ? (
+          <div className="stat-rows">
+            {Object.entries(a.sacred7).map(([k, v]) => (
+              <div className="srow" key={k}>
+                <span className="lab">{cap(k)}</span>
+                <span className="bar">
+                  <i style={{ width: v + '%' }} />
+                </span>
+                <span className="v">{v}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
 
-        <div className="stat-rows" style={{ marginTop: '8px' }}>
-          {Object.entries(a.planetary12).map(([k, v]) => (
-            <div className="srow" key={k}>
-              <span className="lab" title={spaced(k)}>
-                {spaced(k)}
-              </span>
-              <span className="bar">
-                <i style={{ width: v + '%', background: 'var(--gold)' }} />
-              </span>
-              <span className="v">{v}</span>
-            </div>
-          ))}
-        </div>
+        {Object.keys(a.planetary12).length ? (
+          <div className="stat-rows" style={{ marginTop: '8px' }}>
+            {Object.entries(a.planetary12).map(([k, v]) => (
+              <div className="srow" key={k}>
+                <span className="lab" title={spaced(k)}>
+                  {spaced(k)}
+                </span>
+                <span className="bar">
+                  <i style={{ width: v + '%', background: 'var(--gold)' }} />
+                </span>
+                <span className="v">{v}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   )

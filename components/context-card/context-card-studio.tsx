@@ -46,19 +46,52 @@ export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
     annotated: false,
   })
 
+  // 'real' once we've confirmed a live wallet; 'demo' falls back to localStorage.
+  const [mode, setMode] = useState<'demo' | 'real'>('demo')
   const [unlocked, setUnlocked] = useState(false)
+  const [unlocking, setUnlocking] = useState(false)
   const [balance, setBalance] = useState(START_BALANCE)
   const [hydrated, setHydrated] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
   const [toastShow, setToastShow] = useState(false)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // hydrate persisted unlock state on the client
+  const sumEsms = (b: Record<string, unknown> | null | undefined) =>
+    Math.round(
+      (Number(b?.spirit) || 0) +
+        (Number(b?.essence) || 0) +
+        (Number(b?.matter) || 0) +
+        (Number(b?.substance) || 0)
+    )
+
+  // Hydrate unlock UI state + resolve the wallet. If the live balance endpoint
+  // answers we're in 'real' mode (total ESMS = sum of the four token types);
+  // otherwise (signed out / economy unreachable) we fall back to the localStorage demo.
   useEffect(() => {
-    setUnlocked(localStorage.getItem(STORE.unlocked) === '1')
-    const v = parseInt(localStorage.getItem(STORE.balance) || '', 10)
-    if (Number.isFinite(v)) setBalance(v)
-    setHydrated(true)
+    let cancelled = false
+    if (localStorage.getItem(STORE.unlocked) === '1') setUnlocked(true)
+    ;(async () => {
+      try {
+        const res = await fetch('/api/economy/balances', { cache: 'no-store' })
+        if (!res.ok) throw new Error('balances unavailable')
+        const b = await res.json()
+        if (!cancelled) {
+          setMode('real')
+          setBalance(sumEsms(b))
+        }
+      } catch {
+        const v = parseInt(localStorage.getItem(STORE.balance) || '', 10)
+        if (!cancelled) {
+          setMode('demo')
+          if (Number.isFinite(v)) setBalance(v)
+        }
+      } finally {
+        if (!cancelled) setHydrated(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // apply accent → scoped CSS vars (no global bleed)
@@ -80,32 +113,69 @@ export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
 
   const toggleOpt = (key: keyof ExportOptions) => setOpts(o => ({ ...o, [key]: !o[key] }))
 
-  const onUnlock = () => {
-    if (unlocked) return
-    if (balance < PRICE) {
-      toast('Not enough ESMS — top up to unlock')
+  const onUnlock = async () => {
+    if (unlocked || unlocking) return
+
+    if (mode === 'demo') {
+      if (balance < PRICE) {
+        toast('Not enough ESMS — top up to unlock')
+        return
+      }
+      const next = balance - PRICE
+      setBalance(next)
+      setUnlocked(true)
+      localStorage.setItem(STORE.balance, String(next))
+      localStorage.setItem(STORE.unlocked, '1')
+      toast(PRICE + ' ESMS spent · card unlocked')
       return
     }
-    const next = balance - PRICE
-    setBalance(next)
-    setUnlocked(true)
-    localStorage.setItem(STORE.balance, String(next))
-    localStorage.setItem(STORE.unlocked, '1')
-    toast(PRICE + ' ESMS spent · card unlocked')
+
+    // real spend
+    setUnlocking(true)
+    try {
+      const res = await fetch('/api/context-card/unlock', { method: 'POST' })
+      const body = await res.json().catch(() => ({}))
+      if (res.ok && body.ok) {
+        setUnlocked(true)
+        localStorage.setItem(STORE.unlocked, '1')
+        if (body.balances) setBalance(sumEsms(body.balances))
+        toast(body.skipped ? 'Card unlocked' : PRICE + ' ESMS spent · card unlocked')
+      } else if (res.status === 402) {
+        if (body.balances) setBalance(sumEsms(body.balances))
+        toast('Not enough ESMS — top up to unlock')
+      } else if (res.status === 401) {
+        toast('Sign in to unlock your card')
+      } else {
+        toast('Unlock failed — please try again')
+      }
+    } catch {
+      toast('Unlock failed — please try again')
+    } finally {
+      setUnlocking(false)
+    }
   }
 
   const resetUnlock = () => {
     localStorage.removeItem(STORE.unlocked)
-    localStorage.setItem(STORE.balance, String(START_BALANCE))
     setUnlocked(false)
-    setBalance(START_BALANCE)
     setSettingsOpen(false)
-    toast('Unlock reset · balance restored')
+    if (mode === 'demo') {
+      localStorage.setItem(STORE.balance, String(START_BALANCE))
+      setBalance(START_BALANCE)
+      toast('Unlock reset · balance restored')
+    } else {
+      toast('Card relocked')
+    }
   }
 
   const output = useMemo(() => buildOutput(data, format, opts), [data, format, opts])
 
+  const planetCount = data.points.filter(p => p.kind === 'planet').length
+  const pointCount = data.points.filter(p => p.kind === 'point').length
+  const houseCount = data.houses.length
   const aspectCount = data.aspects.length
+  const hasSacredStats =
+    Object.keys(data.alchm.sacred7).length > 0 || Object.keys(data.alchm.planetary12).length > 0
 
   return (
     <div className="acc-root" ref={rootRef}>
@@ -164,7 +234,7 @@ export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
             </div>
           </div>
           <button className="back-link" style={{ justifyContent: 'center' }} onClick={resetUnlock}>
-            Reset unlock &amp; refund
+            {mode === 'demo' ? 'Reset unlock & refund' : 'Relock card'}
           </button>
         </div>
       ) : null}
@@ -181,18 +251,30 @@ export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
         </p>
         <div className="badges">
           <span className="ibadge">
-            <b>10</b> planets + <b>8</b> points
+            <b>{planetCount}</b> planets
+            {pointCount ? (
+              <>
+                {' '}
+                + <b>{pointCount}</b> points
+              </>
+            ) : null}
           </span>
-          <span className="ibadge">
-            <b>12</b> house cusps
-          </span>
-          <span className="ibadge">
-            <b>{aspectCount}</b> aspects
-          </span>
+          {houseCount ? (
+            <span className="ibadge">
+              <b>{houseCount}</b> house cusps
+            </span>
+          ) : null}
+          {aspectCount ? (
+            <span className="ibadge">
+              <b>{aspectCount}</b> aspects
+            </span>
+          ) : null}
           <span className="ibadge">
             <b>ESMS</b> · Kalchm · Monica
           </span>
-          <span className="ibadge">Sacred&nbsp;7 + Planetary&nbsp;12</span>
+          {hasSacredStats ? (
+            <span className="ibadge">Sacred&nbsp;7 + Planetary&nbsp;12</span>
+          ) : null}
         </div>
       </section>
 

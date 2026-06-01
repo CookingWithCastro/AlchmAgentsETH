@@ -116,6 +116,21 @@ export interface ExportOptions {
 
 export type ExportFormat = 'md' | 'txt' | 'json'
 
+export const SIGN_ORDER = [
+  'Aries',
+  'Taurus',
+  'Gemini',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagittarius',
+  'Capricorn',
+  'Aquarius',
+  'Pisces',
+]
+
 export const SIGN_ELEMENTS: Record<string, string> = {
   Aries: 'Fire',
   Taurus: 'Earth',
