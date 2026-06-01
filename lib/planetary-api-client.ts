@@ -69,7 +69,7 @@ export class PlanetaryAPIClient {
     planets?: string[]
   ): Promise<PlanetaryPositions> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/planets/positions`, {
+      const response = await fetch(`${this.baseUrl}/api/planetary/positions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

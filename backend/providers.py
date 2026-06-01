@@ -84,12 +84,15 @@ FREE_CHAIN: List[ProviderConfig] = [
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
     ),
     ProviderConfig(
-        # Avoid meta-llama/llama-3.3-70b-instruct:free — heavily oversubscribed
-        # on the free tier, returns 429 from rate-limit pressure most of the
-        # time. DeepSeek V4 Flash is a different family (less contention) and
-        # has a 1M-token context.
+        # Avoid meta-llama/llama-3.3-70b-instruct:free — heavily oversubscribed on
+        # the free tier (429s). The prior pick deepseek/deepseek-v4-flash:free was
+        # retired by OpenRouter (404 "No endpoints found", caught live via
+        # /api/providers/health on 2026-06-01). Kimi K2.6 is a different family
+        # (less contention), has a 262K-token context, and live-served a 1-token
+        # ping cleanly. This is the 4th free fallback (Groq → Cerebras → Gemini →
+        # here), so it's rarely reached and an occasional free-tier 429 is tolerable.
         name="openrouter",
-        model="deepseek/deepseek-v4-flash:free",
+        model="moonshotai/kimi-k2.6:free",
         api_key_env="OPENROUTER_API_KEY",
         base_url="https://openrouter.ai/api/v1",
     ),
