@@ -44,6 +44,7 @@ import {
 import { ALCHM_DESKTOP_DOWNLOAD_LABEL, openDesktopAppDownload } from '@/lib/desktop-download'
 import { buildKitchenSignInUrl } from '@/lib/kitchen-signin'
 import TopAgentsOfTheMoment from '@/components/landing/top-agents-of-the-moment'
+import FreeAgentsOfTheWeek from '@/components/landing/free-agents-of-the-week'
 
 // ============================================================================
 // CONSCIOUSNESS PARAMETER DEFINITIONS
@@ -503,6 +504,11 @@ export default function LandingPage() {
           </div>
         )}
       </section>
+
+      {/* ================================================================ */}
+      {/* FREE AGENTS OF THE WEEK */}
+      {/* ================================================================ */}
+      <FreeAgentsOfTheWeek />
 
       {/* ================================================================ */}
       {/* THE SACRED SEVEN */}

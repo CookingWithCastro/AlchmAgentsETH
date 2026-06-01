@@ -11,6 +11,7 @@ import { ArrowLeft, MessageCircle, Sparkles, TrendingUp } from 'lucide-react'
 import { RAGToggle, SourceCitations, RAGFeedbackWidget, type RAGSource } from '@/components/rag'
 import { ragAnalytics } from '@/lib/rag/rag-analytics'
 import { detectAmbiguousQuery } from '@/lib/rag/rag-quality'
+import WeeklyMenuPlanner from '@/components/misc/weekly-menu-planner'
 
 type Message = {
   role: 'user' | 'agent'
@@ -50,6 +51,7 @@ export default function HistoricalAgentChatPage() {
   const [momentSynergy, setMomentSynergy] = useState<MomentSynergy | null>(null)
   const [ragEnabled, setRagEnabled] = useState(true) // RAG enabled by default
   const [level, setLevel] = useState<number | null>(null)
+  const [showMenuPlanner, setShowMenuPlanner] = useState(false)
 
   // Static agent mapping to avoid server-side imports
   useEffect(() => {
@@ -436,6 +438,17 @@ export default function HistoricalAgentChatPage() {
         {/* RAG Toggle */}
         <RAGToggle enabled={ragEnabled} onToggle={setRagEnabled} size="sm" showStatus />
 
+        {/* Weekly Menu Planner Trigger */}
+        <Button
+          onClick={() => setShowMenuPlanner(true)}
+          variant="outline"
+          size="sm"
+          className="border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-300 hover:bg-fuchsia-500/20"
+        >
+          <Sparkles className="h-4 w-4 mr-2 text-fuchsia-400" />
+          Weekly Menu
+        </Button>
+
         {/* Moment Synergy Display */}
         {momentSynergy && (
           <div className="flex flex-col items-end gap-1">
@@ -621,6 +634,25 @@ export default function HistoricalAgentChatPage() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Weekly Menu Planner Modal Overlay */}
+      {showMenuPlanner && agent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl bg-[#08080c] shadow-2xl border border-white/10">
+            <button
+              onClick={() => setShowMenuPlanner(false)}
+              className="absolute top-4 right-6 text-white/50 hover:text-white/80 text-3xl font-normal z-10 transition-colors"
+            >
+              ×
+            </button>
+            <WeeklyMenuPlanner
+              agentId={agent.id}
+              agentName={agent.name}
+              onClose={() => setShowMenuPlanner(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

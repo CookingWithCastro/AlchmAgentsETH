@@ -49,19 +49,23 @@ export async function GET() {
     const ranked = rankPlanetsByDignity()
     const byPlanet = new Map(ranked.map(r => [r.planet, r]))
 
-    // Resolve featured guide names from the canonical roster.
-    const guideNames = new Map<string, string>()
+    // Resolve featured guide name/title/element from the canonical roster.
+    const guideMeta = new Map<string, { name: string; title?: string; element?: string }>()
     try {
       const mod: any = await import('@/lib/agents/historical')
-      for (const a of (mod.HISTORICAL_AGENTS ?? []) as any[]) guideNames.set(a.id, a.name)
+      for (const a of (mod.HISTORICAL_AGENTS ?? []) as any[])
+        guideMeta.set(a.id, {
+          name: a.name,
+          title: a.title,
+          element: a.consciousness?.dominantElement,
+        })
     } catch {
       /* names are best-effort */
     }
-    const guides = feature.featuredGuideIds.map(id => ({
-      id,
-      name: guideNames.get(id) ?? id,
-      free: true,
-    }))
+    const guides = feature.featuredGuideIds.map(id => {
+      const m = guideMeta.get(id)
+      return { id, name: m?.name ?? id, title: m?.title, element: m?.element, free: true }
+    })
 
     // Council = the unique planets in this week's active aspects, as the
     // `{ planet, sign, degree }` AgentConfig shape /api/multi-agent expects (≤5).

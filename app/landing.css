@@ -1324,3 +1324,83 @@
 .landing-moment-cta:hover {
   color: #c084fc;
 }
+
+/* ── Free Agents of the Week (landing, under the hero) ─────────────────── */
+.landing-free-grid {
+  display: grid;
+  gap: 1.25rem;
+  margin-top: 2rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 760px) {
+  .landing-free-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.landing-free-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.4rem;
+  text-decoration: none;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.landing-free-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+
+.landing-free-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.33);
+  margin-bottom: 1rem;
+}
+
+.landing-free-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.landing-free-title {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 0.3rem;
+  flex: 1;
+}
+
+.landing-free-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+.landing-free-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(168, 85, 247, 0.9);
+  transition: color 0.2s ease;
+}
+
+.landing-free-card:hover .landing-free-chat {
+  color: #c084fc;
+}
