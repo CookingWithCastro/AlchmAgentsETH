@@ -2,12 +2,24 @@ import { NextRequest, NextResponse } from 'next/server'
 import { adminErrorResponse, requireAdmin } from '@/lib/admin-auth'
 import { prisma } from '@/lib/db'
 
+// Simple 5-second process-local memoization cache
+let cachedDashboardData: any = null
+let lastCacheTime = 0
+const CACHE_TTL_MS = 5000 // 5 seconds cache
+
 export async function GET(_req: NextRequest) {
   try {
     const admin = await requireAdmin()
     if (!admin.ok) return adminErrorResponse(admin)
 
     const now = new Date()
+    const nowMs = now.getTime()
+
+    // Serve from cache if valid
+    if (cachedDashboardData && nowMs - lastCacheTime < CACHE_TTL_MS) {
+      return NextResponse.json(cachedDashboardData)
+    }
+
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
     // ── Users ────────────────────────────────────────────────────────────────
@@ -45,6 +57,36 @@ export async function GET(_req: NextRequest) {
       totalConversations = convAgg._sum?.conversations ?? 0
     } catch {
       // leave as 0
+    }
+
+    // ── Cosmic Harmony Scores (Roster Averages) ──────────────────────────────
+    let avgSpirit = 0.5
+    let avgEssence = 0.5
+    let avgMatter = 0.5
+    let avgSubstance = 0.5
+    try {
+      const avgScores = await prisma.historical_agents.aggregate({
+        _avg: {
+          spiritScore: true,
+          essenceScore: true,
+          matterScore: true,
+          substanceScore: true,
+        },
+      })
+      avgSpirit = avgScores._avg.spiritScore
+        ? Math.round(avgScores._avg.spiritScore * 100) / 100
+        : 0.5
+      avgEssence = avgScores._avg.essenceScore
+        ? Math.round(avgScores._avg.essenceScore * 100) / 100
+        : 0.5
+      avgMatter = avgScores._avg.matterScore
+        ? Math.round(avgScores._avg.matterScore * 100) / 100
+        : 0.5
+      avgSubstance = avgScores._avg.substanceScore
+        ? Math.round(avgScores._avg.substanceScore * 100) / 100
+        : 0.5
+    } catch {
+      // Graceful fallback
     }
 
     // ── System health ────────────────────────────────────────────────────────
@@ -186,9 +228,6 @@ export async function GET(_req: NextRequest) {
     }
 
     // ── Jing Arena telemetry ─────────────────────────────────────────────────
-    // Each cast writes a row to AgentJingDuel. The personalized
-    // recommendation pipeline consumes the same table; here we surface a
-    // recent feed + aggregates for the admin console.
     type RecentJingDuel = {
       id: string
       sessionId: string
@@ -312,8 +351,7 @@ export async function GET(_req: NextRequest) {
         boostElementHistogram[key] = row._count._all
       }
 
-      // For top pairs we need the agent names too. The groupBy result
-      // only has ids — pull names from historical_agents in one shot.
+      // For top pairs we need the agent names too.
       const pairAgentIds = Array.from(new Set(pairGroups.flatMap(p => [p.casterId, p.targetId])))
       const agentNameRows = await prisma.historical_agents.findMany({
         where: { agentId: { in: pairAgentIds } },
@@ -342,7 +380,109 @@ export async function GET(_req: NextRequest) {
       console.error('Failed to query Jing duel telemetry:', err)
     }
 
-    return NextResponse.json({
+    // ── MCP Invocations Telemetry ────────────────────────────────────────────
+    let mcpTotalCount = 0
+    let mcpPast24hCount = 0
+    let mcpSuccessCount = 0
+    let mcpAvgLatencyMs = 0
+    let mcpRecent: any[] = []
+    let mcpTopTools: { toolName: string; count: number }[] = []
+
+    try {
+      const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
+      const [total, last24h, success24h, latencyAgg, toolGroups, recentRows] = await Promise.all([
+        prisma.mcp_invocations.count(),
+        prisma.mcp_invocations.count({ where: { calledAt: { gte: since24h } } }),
+        prisma.mcp_invocations.count({ where: { calledAt: { gte: since24h }, success: true } }),
+        prisma.mcp_invocations.aggregate({
+          where: { calledAt: { gte: since24h }, success: true },
+          _avg: { latencyMs: true },
+        }),
+        prisma.mcp_invocations.groupBy({
+          by: ['toolName'],
+          _count: { _all: true },
+          orderBy: { _count: { toolName: 'desc' } },
+          take: 5,
+        }),
+        prisma.mcp_invocations.findMany({
+          take: 15,
+          orderBy: { calledAt: 'desc' },
+          select: {
+            toolName: true,
+            calledAt: true,
+            completedAt: true,
+            latencyMs: true,
+            success: true,
+            caller: true,
+            arguments: true,
+            errorMessage: true,
+            agentId: true,
+          },
+        }),
+      ])
+
+      mcpTotalCount = total
+      mcpPast24hCount = last24h
+      mcpSuccessCount = success24h
+      mcpAvgLatencyMs = latencyAgg._avg.latencyMs ? Math.round(latencyAgg._avg.latencyMs) : 0
+      mcpRecent = recentRows.map(row => ({
+        ...row,
+        calledAt: row.calledAt.toISOString(),
+        completedAt: row.completedAt ? row.completedAt.toISOString() : null,
+      }))
+      mcpTopTools = toolGroups.map(g => ({
+        toolName: g.toolName,
+        count: g._count._all,
+      }))
+    } catch (err) {
+      console.error('Failed to query MCP invocations for dashboard:', err)
+    }
+
+    // ── Group Chat Sessions Telemetry ────────────────────────────────────────
+    let groupChatsTotal = 0
+    let groupChatsPast24h = 0
+    let groupChatsRecent: any[] = []
+    let groupChatsOriginHistogram: Record<string, number> = {}
+
+    try {
+      const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+      const [total, last24h, originGroups, recentRows] = await Promise.all([
+        prisma.group_chat_sessions.count(),
+        prisma.group_chat_sessions.count({ where: { createdAt: { gte: since24h } } }),
+        prisma.group_chat_sessions.groupBy({
+          by: ['origin'],
+          _count: { _all: true },
+        }),
+        prisma.group_chat_sessions.findMany({
+          take: 10,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            agentIds: true,
+            transitKey: true,
+            userId: true,
+            origin: true,
+            createdAt: true,
+          },
+        }),
+      ])
+
+      groupChatsTotal = total
+      groupChatsPast24h = last24h
+      groupChatsRecent = recentRows.map(row => ({
+        ...row,
+        createdAt: row.createdAt.toISOString(),
+      }))
+      for (const g of originGroups) {
+        const key = g.origin || 'unknown'
+        groupChatsOriginHistogram[key] = g._count._all
+      }
+    } catch (err) {
+      console.error('Failed to query group chat sessions for dashboard:', err)
+    }
+
+    const payload = {
       users: {
         total: userTotal,
         newToday: userNewToday,
@@ -354,6 +494,12 @@ export async function GET(_req: NextRequest) {
         planetary: planetaryCount,
         created: createdCount,
         totalConversations,
+        cosmicHarmony: {
+          spirit: avgSpirit,
+          essence: avgEssence,
+          matter: avgMatter,
+          substance: avgSubstance,
+        },
       },
       system: {
         database: dbStatus,
@@ -366,7 +512,28 @@ export async function GET(_req: NextRequest) {
       recentChats,
       recentJingDuels,
       jingAggregates,
-    })
+      mcp: {
+        total: mcpTotalCount,
+        last24h: mcpPast24hCount,
+        successRate:
+          mcpPast24hCount > 0 ? Math.round((mcpSuccessCount / mcpPast24hCount) * 100) : 100,
+        avgLatencyMs: mcpAvgLatencyMs,
+        topTools: mcpTopTools,
+        recent: mcpRecent,
+      },
+      groupChats: {
+        total: groupChatsTotal,
+        last24h: groupChatsPast24h,
+        recent: groupChatsRecent,
+        originHistogram: groupChatsOriginHistogram,
+      },
+    }
+
+    // Cache the payload
+    cachedDashboardData = payload
+    lastCacheTime = nowMs
+
+    return NextResponse.json(payload)
   } catch (error) {
     console.error('Admin dashboard error:', error)
     return NextResponse.json({ error: 'Failed to load dashboard data' }, { status: 500 })
