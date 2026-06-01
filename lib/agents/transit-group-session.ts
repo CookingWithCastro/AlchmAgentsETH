@@ -41,6 +41,26 @@ export interface CreateTransitGroupSessionInput {
 // hours, so this collapses accidental double-clicks without pinning stale councils forever.
 const IDEMPOTENCY_WINDOW_MS = 6 * 60 * 60 * 1000
 
+/**
+ * Deterministic dedupe key for the create race. Two near-simultaneous POSTs for the
+ * same transit + user fall in the same ~6h wall-clock bucket → identical key → they
+ * collide on the unique index (one inserts, the other reads back the winner). The
+ * `findRecentTransitSession` range query still handles ordinary within-6h reuse first,
+ * so this key only ever fires for the true concurrent race (or replica-lag misses) —
+ * and a fresh bucket after the window yields a new session, preserving current
+ * semantics. Keyless sessions get a NULL key (the unique index permits many NULLs), so
+ * they behave exactly as before (always create).
+ */
+function computeDedupeKey(transitKey: string | null, userId: string | null): string | null {
+  if (!transitKey) return null
+  const bucket = Math.floor(Date.now() / IDEMPOTENCY_WINDOW_MS)
+  return `${transitKey}::${userId ?? 'anon'}::${bucket}`
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === 'P2002'
+}
+
 function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return []
   return value.map(v => String(v)).filter(Boolean)
@@ -79,18 +99,53 @@ export async function findRecentTransitSession(
 export async function createTransitGroupSession(
   input: CreateTransitGroupSessionInput
 ): Promise<TransitGroupSession> {
-  const row = await prisma.group_chat_sessions.create({
-    data: {
-      agentIds: input.agentIds,
-      agents: input.agents as unknown as object,
-      transit: (input.transit ?? undefined) as unknown as object | undefined,
-      transitKey: input.transit?.key ?? null,
-      origin: input.origin,
-      source: input.source,
-      userId: input.userId,
-    },
-  })
-  return rowToSession(row)
+  const dedupeKey = computeDedupeKey(input.transit?.key ?? null, input.userId)
+  try {
+    const row = await prisma.group_chat_sessions.create({
+      data: {
+        agentIds: input.agentIds,
+        agents: input.agents as unknown as object,
+        transit: (input.transit ?? undefined) as unknown as object | undefined,
+        transitKey: input.transit?.key ?? null,
+        dedupeKey,
+        origin: input.origin,
+        source: input.source,
+        userId: input.userId,
+      },
+    })
+    return rowToSession(row)
+  } catch (error) {
+    // A concurrent create for the same (transit, user, ~6h bucket) lost the race on
+    // the dedupe_key unique index. The DB constraint is the source of truth — read
+    // back the winner and treat it as a reuse rather than surfacing the conflict.
+    if (dedupeKey && isUniqueViolation(error)) {
+      const winner = await prisma.group_chat_sessions.findUnique({ where: { dedupeKey } })
+      if (winner) return rowToSession(winner)
+    }
+    throw error
+  }
+}
+
+/**
+ * Atomically claim the one-time council opener for a session. Returns true only for
+ * the single caller that flips `seeded_at` from NULL → now(); every later or concurrent
+ * caller (including fresh browsers / incognito / cleared storage) gets false. This is
+ * the server-side gate that makes the auto-seed unrepeatable, replacing the old
+ * localStorage-only guard. Fails closed (false) on error so a DB hiccup can never grant
+ * a duplicate opener.
+ */
+export async function claimGroupChatSeed(sessionId: string): Promise<boolean> {
+  if (!sessionId) return false
+  try {
+    const result = await prisma.group_chat_sessions.updateMany({
+      where: { id: sessionId, seededAt: null },
+      data: { seededAt: new Date() },
+    })
+    return result.count === 1
+  } catch (error) {
+    console.error('[transit-group-session] seed claim failed:', error)
+    return false
+  }
 }
 
 export async function getTransitGroupSession(id: string): Promise<TransitGroupSession | null> {

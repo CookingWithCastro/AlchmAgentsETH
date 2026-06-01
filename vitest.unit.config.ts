@@ -25,7 +25,9 @@ export default defineConfig({
         'test',
         '**/*.d.ts',
         '**/*.config.{js,ts}',
-        'app/api/**',
+        // app/api/** is intentionally NOT excluded: route handlers (incl. the
+        // security-sensitive transit group-chat paths) should count toward coverage so
+        // gaps stay visible rather than silently uncovered.
         'components/ui/**',
       ],
     },

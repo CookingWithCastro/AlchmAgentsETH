@@ -218,27 +218,38 @@ export default function TransitGroupChatClient({ sessionId, agents, transit }: P
   )
 
   // Auto-seed the conversation once with a transit-framed opener so the council
-  // immediately speaks to the aspect that summoned it. Guarded by a per-session
-  // localStorage flag: the server returns a stable sessionId for repeat transit
-  // clicks, so this auto-convenes on first arrival but never re-charges the user on
-  // reloads or revisits.
+  // immediately speaks to the aspect that summoned it. The gate is server-side: we POST
+  // the sessionId to /api/group-chat/seed, which atomically claims the seed
+  // (seeded_at NULL → now()) and reports whether THIS arrival won the claim. Only the
+  // winner streams the opener, so the unauthenticated, unmetered council opener fires
+  // exactly once per session — fresh browsers, incognito, and cleared storage can no
+  // longer re-trigger N LLM calls. seededRef only suppresses a duplicate claim within
+  // this same mount (e.g. React StrictMode's double-invoke); the server claim is the
+  // real, durable guard.
   useEffect(() => {
     if (seededRef.current || unifiedAgents.length === 0) return
-    const seedKey = `transit-council-seeded:${sessionId}`
-    try {
-      if (localStorage.getItem(seedKey)) {
-        seededRef.current = true
-        return
-      }
-      localStorage.setItem(seedKey, '1')
-    } catch {
-      /* localStorage unavailable — still seed once for this mount via seededRef */
-    }
     seededRef.current = true
-    const opener = transit?.label
-      ? `The ${transit.label} aspect is active in the sky right now. Speak to one another about what this transit stirs between you — and offer one piece of guidance for working with this energy today.`
-      : 'Introduce yourselves to one another and share what each of you brings to this moment in the sky.'
-    void sendMessage(opener)
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch('/api/group-chat/seed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId }),
+        })
+        const data = (await res.json().catch(() => ({}))) as { claimed?: boolean }
+        if (cancelled || !data.claimed) return
+        const opener = transit?.label
+          ? `The ${transit.label} aspect is active in the sky right now. Speak to one another about what this transit stirs between you — and offer one piece of guidance for working with this energy today.`
+          : 'Introduce yourselves to one another and share what each of you brings to this moment in the sky.'
+        void sendMessage(opener)
+      } catch {
+        /* network/claim error — skip the auto-opener; the user can still send a message */
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
     // Intentionally run once on mount.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
