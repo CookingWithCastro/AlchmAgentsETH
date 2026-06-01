@@ -45,7 +45,7 @@ cd backend && ruff check .             # Lint
 
 ```bash
 bunx prisma studio                        # Prisma DB browser
-bun run prisma:generate                   # Generate Prisma client without engine
+bun run prisma:generate                   # Generate Prisma client (with query engine — frontend talks to Neon directly)
 bunx prisma migrate dev                   # Run migrations locally
 bun run scripts/seed-historical-agents.ts # Seed agent data
 bun run sync:all                          # Sync DB + ChromaDB
