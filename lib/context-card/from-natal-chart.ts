@@ -2,6 +2,8 @@ import 'server-only'
 import { getLegacyPlanetaryPositions } from '@/lib/backend'
 import { getAlchemicalQuantitiesAction } from '@/lib/actions/backend-actions'
 import { getPlanetaryDignity, getRulingPlanet } from '@/lib/astrological-data'
+import { deriveStatsFromChart } from '@/lib/sacred-7-stats'
+import { computeExtendedPoints, lonToSignDeg } from './extended-points'
 import {
   SIGN_ORDER,
   SIGN_ELEMENTS,
@@ -11,6 +13,30 @@ import {
   type ContextCardHouse,
   type ContextCardPlacement,
 } from './types'
+
+const SACRED7_KEYS = [
+  'power',
+  'resonance',
+  'wisdom',
+  'charisma',
+  'intuition',
+  'adaptability',
+  'vitality',
+] as const
+const PLANETARY12_KEYS = [
+  'solarAgency',
+  'lunarReceptivity',
+  'mercurialVelocity',
+  'venusianCoherence',
+  'martialImpetus',
+  'jovianExpansion',
+  'saturnianStructure',
+  'chironicAdaptation',
+  'uranianSurprisal',
+  'neptunianResonance',
+  'plutonicIntegration',
+  'kineticAlignment',
+] as const
 
 /** Loose view of the stored chart — JSON fields are `any` in the DB. */
 interface StoredChart {
@@ -174,6 +200,29 @@ export async function buildContextCardDataFromChart(chart: StoredChart): Promise
     }
   }
 
+  // ── extended points (computed; the storage pipeline never stores these) ──
+  const risingDeg = houses.find(h => h.house === 1)?.deg ?? 0
+  const ascendantLon = risingSign ? absLon(risingSign, risingDeg) : null
+  const extPlacements: ContextCardPlacement[] = []
+  try {
+    const ext = computeExtendedPoints({
+      date: birthMoment(chart),
+      observerLon: lon,
+      ascendantLon,
+      sunLon: absByBody.Sun ?? null,
+      moonLon: absByBody.Moon ?? null,
+    })
+    const riseIdx = risingSign ? signIdx(risingSign) : -1
+    for (const e of ext) {
+      const { sign, deg } = lonToSignDeg(e.lon)
+      const house =
+        e.body === 'Ascendant' ? 1 : riseIdx >= 0 ? ((signIdx(sign) - riseIdx + 12) % 12) + 1 : 0
+      extPlacements.push({ body: e.body, kind: 'point', sign, deg, house, retro: e.retro })
+    }
+  } catch {
+    /* extended points are best-effort */
+  }
+
   // ── natal aspects from recomputed longitudes ──
   const aspects: ContextCardAspect[] = []
   if (placements.length && Object.keys(absByBody).length >= placements.length) {
@@ -208,6 +257,25 @@ export async function buildContextCardDataFromChart(chart: StoredChart): Promise
     sun: signOf('Sun') || '—',
     moon: signOf('Moon') || '—',
     rising: risingSign || '—',
+  }
+
+  // ── per-user Sacred 7 / Planetary 12 derived from the chart ──
+  let sacred7: Record<string, number> = {}
+  let planetary12: Record<string, number> = {}
+  try {
+    const stats = deriveStatsFromChart({
+      monicaConstant: Number(chart.monicaConstant) || 0,
+      sunLongitude: absByBody.Sun ?? 0,
+      moonLongitude: absByBody.Moon ?? 0,
+      mercuryLongitude: absByBody.Mercury ?? 0,
+      venusLongitude: absByBody.Venus ?? 0,
+      marsLongitude: absByBody.Mars ?? 0,
+      ascendantLongitude: ascendantLon ?? 0,
+    }) as unknown as Record<string, number>
+    sacred7 = Object.fromEntries(SACRED7_KEYS.map(k => [k, Math.round(stats[k] ?? 0)]))
+    planetary12 = Object.fromEntries(PLANETARY12_KEYS.map(k => [k, Math.round(stats[k] ?? 0)]))
+  } catch {
+    /* leave empty — the alchm block degrades to no stat bars */
   }
 
   // ── element / modality tallies across the planets ──
@@ -320,7 +388,7 @@ export async function buildContextCardDataFromChart(chart: StoredChart): Promise
 
   return {
     birth,
-    points: placements, // only the 10 planets; extended points aren't stored
+    points: [...placements, ...extPlacements], // 10 planets + computed extended points
     houses,
     aspects,
     synthesis: {
@@ -343,8 +411,8 @@ export async function buildContextCardDataFromChart(chart: StoredChart): Promise
       kalchm,
       monica,
       thermodynamics,
-      sacred7: {}, // not computed per-user
-      planetary12: {}, // not computed per-user
+      sacred7,
+      planetary12,
       note:
         'alchm.kitchen derives the ESMS quad, Kalchm and Monica constants from your natal chart. ' +
         'ESMS = Spirit/Essence/Matter/Substance. Thermodynamics: Energy = Heat − Reactivity×Entropy; A# = total alchemical power.',

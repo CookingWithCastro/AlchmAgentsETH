@@ -25,9 +25,11 @@ const START_BALANCE = 208
 interface Props {
   data: ContextCardData
   sky?: SkySource
+  /** server-side entitlement: true when the signed-in user has already unlocked */
+  initialUnlocked?: boolean
 }
 
-export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
+export function ContextCardStudio({ data, sky = DEMO_SKY, initialUnlocked = false }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
 
   const [accent, setAccent] = useState('Solar gold')
@@ -48,10 +50,11 @@ export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
 
   // 'real' once we've confirmed a live wallet; 'demo' falls back to localStorage.
   const [mode, setMode] = useState<'demo' | 'real'>('demo')
-  const [unlocked, setUnlocked] = useState(false)
+  // Seeded from the server-side entitlement so an already-unlocked user sees the
+  // card unlocked on first paint (no flash); the effect ORs in any local demo unlock.
+  const [unlocked, setUnlocked] = useState(initialUnlocked)
   const [unlocking, setUnlocking] = useState(false)
   const [balance, setBalance] = useState(START_BALANCE)
-  const [hydrated, setHydrated] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
   const [toastShow, setToastShow] = useState(false)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -85,8 +88,6 @@ export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
           setMode('demo')
           if (Number.isFinite(v)) setBalance(v)
         }
-      } finally {
-        if (!cancelled) setHydrated(true)
       }
     })()
     return () => {
@@ -295,7 +296,7 @@ export function ContextCardStudio({ data, sky = DEMO_SKY }: Props) {
           opts={opts}
           toggleOpt={toggleOpt}
           output={output}
-          unlocked={hydrated ? unlocked : false}
+          unlocked={unlocked}
           price={PRICE}
           balance={balance}
           onUnlock={onUnlock}

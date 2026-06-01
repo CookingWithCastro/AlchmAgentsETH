@@ -2,19 +2,69 @@ import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-options'
 import { syncDebitToAlchm } from '@/lib/alchm-debit-sync'
+import { markCardUnlocked } from '@/lib/context-card/entitlement'
 
 export const dynamic = 'force-dynamic'
 
-// 12 ESMS, split evenly across the four token types.
-const UNLOCK_COST = { spirit: '3.0000', essence: '3.0000', matter: '3.0000', substance: '3.0000' }
+const TOTAL_COST = 12
+const TOKEN_TYPES = ['spirit', 'essence', 'matter', 'substance'] as const
+type TokenType = (typeof TOKEN_TYPES)[number]
 
 /**
- * Spends ESMS to unlock the user's exportable context card. Hits the real
- * alchm.kitchen wallet via syncDebitToAlchm; the idempotencyKey makes repeat
- * unlocks free (returns `already_applied`, treated as success). Degrades to a
- * no-charge unlock when economy sync isn't configured for this environment.
+ * Distributes `total` ESMS across the four token types proportional to the
+ * user's current balance — more from abundant tokens, little/none from scarce
+ * ones — using largest-remainder rounding so the parts sum to `total`.
+ * Falls back to an even split when balances are unknown.
  */
-export async function POST() {
+function weightedAmounts(
+  balances: Partial<Record<TokenType, unknown>> | null,
+  total = TOTAL_COST
+): Record<TokenType, number> {
+  const bals = TOKEN_TYPES.map(t => Math.max(0, Number(balances?.[t]) || 0))
+  const sum = bals.reduce((a, b) => a + b, 0)
+  if (sum <= 0) {
+    const even = total / 4
+    return { spirit: even, essence: even, matter: even, substance: even }
+  }
+  const raw = bals.map(b => (total * b) / sum)
+  const result = raw.map(Math.floor)
+  let remainder = total - result.reduce((a, b) => a + b, 0)
+  const byFrac = raw.map((r, i) => ({ i, frac: r - Math.floor(r) })).sort((a, b) => b.frac - a.frac)
+  for (let k = 0; k < byFrac.length && remainder > 0; k++) {
+    result[byFrac[k].i] += 1
+    remainder -= 1
+  }
+  return { spirit: result[0], essence: result[1], matter: result[2], substance: result[3] }
+}
+
+async function fetchBalances(cookie: string): Promise<Record<TokenType, number> | null> {
+  try {
+    const baseUrl = process.env.ALCHM_KITCHEN_SYNC_URL || 'https://alchm.kitchen'
+    const res = await fetch(`${baseUrl}/api/economy/balance?site=agents`, {
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+    })
+    if (!res.ok) return null
+    const data = await res.json()
+    const b = data?.balances ?? data
+    return {
+      spirit: Number(b?.spirit) || 0,
+      essence: Number(b?.essence) || 0,
+      matter: Number(b?.matter) || 0,
+      substance: Number(b?.substance) || 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Spends ESMS to unlock the user's exportable context card. The 12-ESMS cost is
+ * weighted across the four token types by the user's current balance, debited
+ * against the real alchm.kitchen wallet via syncDebitToAlchm (idempotency key
+ * makes repeat unlocks free), and the entitlement is persisted server-side.
+ * Degrades to a no-charge unlock when economy sync isn't configured.
+ */
+export async function POST(request: Request) {
   const session = await getServerSession(authOptions)
   const userId = (session?.user as { id?: string } | undefined)?.id
   const email = (session?.user as { email?: string } | undefined)?.email
@@ -23,13 +73,21 @@ export async function POST() {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
   if (!email) {
-    // No email to bill against — allow the unlock without charging.
+    await markCardUnlocked(userId)
     return NextResponse.json({ ok: true, skipped: true, balances: null })
   }
 
+  const balances = await fetchBalances(request.headers.get('cookie') || '')
+  const cost = weightedAmounts(balances)
+
   const result = await syncDebitToAlchm({
     userEmail: email,
-    amounts: UNLOCK_COST,
+    amounts: {
+      spirit: cost.spirit.toFixed(4),
+      essence: cost.essence.toFixed(4),
+      matter: cost.matter.toFixed(4),
+      substance: cost.substance.toFixed(4),
+    },
     operationType: 'card_export_unlock',
     source: 'context_card',
     idempotencyKey: `context_card:${userId}`,
@@ -42,10 +100,12 @@ export async function POST() {
   })
 
   if (result.ok) {
+    await markCardUnlocked(userId)
     return NextResponse.json({ ok: true, balances: result.balances ?? null })
   }
   if (result.skipped) {
     // Economy sync env not configured here — let the user proceed.
+    await markCardUnlocked(userId)
     return NextResponse.json({ ok: true, skipped: true, balances: null })
   }
   if (result.reason === 'insufficient_funds') {
