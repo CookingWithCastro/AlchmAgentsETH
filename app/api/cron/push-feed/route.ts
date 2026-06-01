@@ -35,12 +35,16 @@ async function handlePushFeed(request: Request) {
 
     const result = await feedPusherService.evaluateAndPush()
 
-    return NextResponse.json({
-      success: result.success,
-      pushedCount: result.pushedCount,
-      errors: result.errors,
-      timestamp: new Date().toISOString(),
-    })
+    // 207 on partial failure so a degraded push is visible in Vercel cron logs.
+    return NextResponse.json(
+      {
+        success: result.success,
+        pushedCount: result.pushedCount,
+        errors: result.errors,
+        timestamp: new Date().toISOString(),
+      },
+      { status: result.success ? 200 : 207 }
+    )
   } catch (error) {
     console.error('Error executing cron push-feed:', error)
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })
