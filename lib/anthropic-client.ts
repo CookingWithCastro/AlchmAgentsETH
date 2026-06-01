@@ -1,6 +1,6 @@
 import { Anthropic } from '@anthropic-ai/sdk'
 import * as dotenv from 'dotenv'
-import { CLAUDE, MODEL_TIERS, resolveClaudeModel } from './models/registry'
+import { CLAUDE } from './models/registry'
 import { isGatewayEnabled, GATEWAY_BASE_URL } from './models/gateway'
 
 // Load environment variables
@@ -62,11 +62,13 @@ export const CLAUDE_MODELS = {
 
 // Get model from environment or use defaults
 export function getClaudeModel(type: 'default' | 'fast' | 'powerful' = 'default'): string {
-  // Map tier to actual string model IDs (not LanguageModel objects)
+  // Map tier to actual string model IDs (not LanguageModel objects).
+  // Source IDs from the central registry — never hardcode model strings
+  // (CLAUDE.md). The CLAUDE_DEFAULT_MODEL override mirrors resolveClaudeModel.
   const tierMap = {
-    default: process.env.CLAUDE_DEFAULT_MODEL || 'claude-3-5-sonnet-20241022',
-    fast: 'claude-3-5-haiku-20241022',
-    powerful: 'claude-3-opus-20240229',
+    default: process.env.CLAUDE_DEFAULT_MODEL || CLAUDE.SONNET,
+    fast: CLAUDE.HAIKU,
+    powerful: CLAUDE.OPUS,
   }
   return tierMap[type] || tierMap.default
 }
