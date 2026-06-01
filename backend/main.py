@@ -1198,6 +1198,7 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
 
     # 3. RAG — labeled reference material, augments persona without dominating.
     rag_block = ""
+    rag_error: Optional[str] = None
     try:
         rag_results = rag.vector_store.query(
             collection_name="historical-agents",
@@ -1209,7 +1210,11 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
             distances = (rag_results.get("distances") or [[]])[0]
             rag_block = _format_rag_block(rag_results["documents"][0], distances)
     except Exception as e:
-        print(f"RAG Error: {e}")
+        # Structured, greppable signal — distinguishes "RAG errored" (e.g. a bad
+        # embedding key -> 401) from "RAG returned nothing". Without it, rag_used
+        # is false in both cases and a broken embedder stays invisible.
+        rag_error = str(e)
+        print(f"rag_error agentId={request.agentId} error={e}", flush=True)
 
     # 4. Alchm MCP — live sky, ingredient scans, and deterministic recipe candidates.
     mcp_block, mcp_metadata = await _build_alchm_mcp_context(request)
@@ -1297,6 +1302,7 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
         "metadata": {
             "timestamp": datetime.utcnow().isoformat(),
             "rag_used": bool(rag_block),
+            "rag_error": rag_error,
             "tier": tier,
             "provider": used_provider,
             "model": used_model,
@@ -1358,7 +1364,17 @@ async def generate_cosmic_recipe(request: schemas.CosmicRecipeRequest):
 # --- RAG Management ---
 
 @app.post("/api/rag/ingest")
-async def ingest_knowledge(agent_id: str, documents: List[str]):
+async def ingest_knowledge(
+    agent_id: str,
+    documents: List[str],
+    x_internal_secret: Optional[str] = Header(None, alias="X-Internal-Secret"),
+):
+    # Internal-only: writing into the shared 'historical-agents' collection is a
+    # privileged op (an open endpoint let anyone inject arbitrary documents).
+    # Gated by X-Internal-Secret matching INTERNAL_API_SECRET, like the DELETE /
+    # rebuild RAG routes. No in-repo caller hits this endpoint today.
+    if x_internal_secret != INTERNAL_API_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
     ids = [f"{agent_id}-{i}-{datetime.utcnow().timestamp()}" for i, _ in enumerate(documents)]
     metadatas = [{"agentId": agent_id} for _ in documents]
     rag.vector_store.add_documents(
