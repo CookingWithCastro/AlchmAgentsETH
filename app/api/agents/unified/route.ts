@@ -55,21 +55,33 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
           )
         }
 
-        // ESMS Token Economy: Spend resources for agent operation
+        // ESMS Token Economy: Spend resources for agent operation —
+        // UNLESS this agent is in the current week's free rotation (waive cost).
         const { EconomyService } = await import('@/lib/services/economyService')
         const { AGENT_OPERATION_COSTS } = await import('@/lib/economy-config')
+        const { isAgentFreeThisWeek } = await import('@/lib/agents/weekly-feature-rotation')
 
-        const debitResult = await EconomyService.debitOperation(userId, 'unified_chat')
-        if (!debitResult.ok) {
-          return NextResponse.json(
-            {
-              success: false,
-              error: 'Insufficient tokens',
-              data: { required: AGENT_OPERATION_COSTS.unified_chat },
-              timestamp,
-            },
-            { status: 402 }
-          )
+        const freeThisWeek = parameters.agentId
+          ? await isAgentFreeThisWeek(parameters.agentId).catch(() => false)
+          : false
+
+        let balances
+        if (freeThisWeek) {
+          balances = await EconomyService.getBalances(userId)
+        } else {
+          const debitResult = await EconomyService.debitOperation(userId, 'unified_chat')
+          if (!debitResult.ok) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: 'Insufficient tokens',
+                data: { required: AGENT_OPERATION_COSTS.unified_chat },
+                timestamp,
+              },
+              { status: 402 }
+            )
+          }
+          balances = debitResult.balances
         }
 
         const personaCtx = parameters.agentId ? buildAgentContext(parameters.agentId) : null
@@ -129,7 +141,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
         return NextResponse.json({
           success: true,
           data: chatData,
-          balances: debitResult.balances,
+          balances,
+          free: freeThisWeek,
           timestamp,
         })
       }

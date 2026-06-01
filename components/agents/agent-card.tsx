@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { useToast } from '@/hooks/use-toast'
+import { useFreeAgents } from '@/hooks/use-free-agents'
 import type { CraftedAgent, AgentCardVariant, Coordinates } from '@/lib/agent-types'
 import {
   ALCHM_DESKTOP_AGENT_DOWNLOAD_LABEL,
@@ -96,6 +97,7 @@ export function AgentCard({
 }: AgentCardProps) {
   const [showDetails, setShowDetails] = useState(false)
   const { toast } = useToast()
+  const { isFree } = useFreeAgents()
   const [isInstalling, setIsInstalling] = useState(false)
 
   const handleDownloadToAlchmDesktop = async (e: React.MouseEvent) => {
@@ -299,6 +301,11 @@ export function AgentCard({
                 {agent.name}
                 {agent.consciousness.monicaConstant > 5.0 && (
                   <Crown className="w-4 h-4 text-yellow-500" />
+                )}
+                {isFree(agent.id) && (
+                  <Badge className="border border-emerald-400/40 bg-emerald-500/20 text-emerald-300">
+                    🎁 Free this week
+                  </Badge>
                 )}
               </CardTitle>
               <p className="text-sm text-muted-foreground">{agent.title}</p>

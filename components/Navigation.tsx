@@ -68,6 +68,11 @@ const navigationGroups = [
         description: 'Agents based on astrological archetypes.',
       },
       { href: '/gallery', label: 'Gallery', description: 'Browse all available AI agents.' },
+      {
+        href: '/attunement-circle',
+        label: 'Attunement Circle',
+        description: "This week's free best-dignity agents — attune to earn ESMS.",
+      },
     ],
   },
   {
