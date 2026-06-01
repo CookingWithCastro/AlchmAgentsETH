@@ -54,12 +54,16 @@ async function handleTick(request: Request) {
       console.error('[cron/agents/tick] transit attunement failed:', err)
     }
 
-    return NextResponse.json({
-      success: summary.errors.length === 0,
-      ...summary,
-      attunements,
-      timestamp: new Date().toISOString(),
-    })
+    // 207 on partial failure so a degraded tick is visible in Vercel cron logs.
+    return NextResponse.json(
+      {
+        success: summary.errors.length === 0,
+        ...summary,
+        attunements,
+        timestamp: new Date().toISOString(),
+      },
+      { status: summary.errors.length === 0 ? 200 : 207 }
+    )
   } catch (error) {
     console.error('[cron/agents/tick] Fatal error:', error)
     return NextResponse.json({ success: false, error: 'Internal Server Error' }, { status: 500 })

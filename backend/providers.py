@@ -58,10 +58,13 @@ class ProviderConfig:
 
 # Free providers walked when tier=="free" or when paid Anthropic returns quota.
 # Order = preferred-first. Cerebras is fastest; OpenRouter is the catch-all proxy.
+# Each model id is overridable via a <PROVIDER>_FREE_MODEL env var (e.g.
+# OPENROUTER_FREE_MODEL) so a retired free model can be rotated by env alone —
+# no code change or redeploy. Falls back to the pinned default when unset.
 FREE_CHAIN: List[ProviderConfig] = [
     ProviderConfig(
         name="groq",
-        model="llama-3.3-70b-versatile",
+        model=os.getenv("GROQ_FREE_MODEL", "llama-3.3-70b-versatile"),
         api_key_env="GROQ_API_KEY",
         base_url="https://api.groq.com/openai/v1",
     ),
@@ -70,7 +73,7 @@ FREE_CHAIN: List[ProviderConfig] = [
         # qwen-3-235b (instruct-heavy), llama3.1-8b (tiny), zai-glm-4.7.
         # gpt-oss-120b is the strongest general-purpose pick.
         name="cerebras",
-        model="gpt-oss-120b",
+        model=os.getenv("CEREBRAS_FREE_MODEL", "gpt-oss-120b"),
         api_key_env="CEREBRAS_API_KEY",
         base_url="https://api.cerebras.ai/v1",
     ),
@@ -79,7 +82,7 @@ FREE_CHAIN: List[ProviderConfig] = [
         # we do not get pinned to a versioned name (e.g. `-exp`, `-001`) that
         # Google later retires. As of 2026-05 it resolves to gemini-2.5-flash.
         name="gemini",
-        model="gemini-flash-latest",
+        model=os.getenv("GEMINI_FREE_MODEL", "gemini-flash-latest"),
         api_key_env="GEMINI_API_KEY",
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
     ),
@@ -92,7 +95,7 @@ FREE_CHAIN: List[ProviderConfig] = [
         # ping cleanly. This is the 4th free fallback (Groq → Cerebras → Gemini →
         # here), so it's rarely reached and an occasional free-tier 429 is tolerable.
         name="openrouter",
-        model="moonshotai/kimi-k2.6:free",
+        model=os.getenv("OPENROUTER_FREE_MODEL", "moonshotai/kimi-k2.6:free"),
         api_key_env="OPENROUTER_API_KEY",
         base_url="https://openrouter.ai/api/v1",
     ),
