@@ -55,7 +55,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "db:studio": "npx prisma studio",
-    "prisma:generate": "prisma generate --no-engine",
+    "prisma:generate": "prisma generate",
     "prepare": "is-ci || husky install",
     "rag:setup": "./scripts/setup-rag.sh",
     "rag:ingest": "bun run lib/llamaindex/ingestion-pipeline.ts",
