@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Loader2, Sparkles } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
+import { isConfiguredAdminIdentity } from '@/lib/admin-identity'
 
 interface AgentAvatarControlProps {
   agentId: string
@@ -31,6 +33,16 @@ export function AgentAvatarControl({
   )
   const [isGenerating, setIsGenerating] = useState(false)
   const { toast } = useToast()
+
+  // Avatar generation is an admin/ops action (paid external generation + a
+  // persisted overwrite). The route enforces this server-side; here we just hide
+  // the button for non-admins. Resolved client-side so the cached page stays
+  // shared across users.
+  const { data: session } = useSession()
+  const sessionUser = session?.user as
+    | { id?: string; email?: string | null; name?: string | null; role?: string }
+    | undefined
+  const canGenerate = sessionUser?.role === 'admin' || isConfiguredAdminIdentity(sessionUser)
 
   useEffect(() => {
     if (!isImageAvatar(initialAvatar)) {
@@ -109,21 +121,23 @@ export function AgentAvatarControl({
         </div>
       )}
 
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        onClick={handleGenerateAvatar}
-        disabled={isGenerating}
-        className="gap-2"
-      >
-        {isGenerating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Sparkles className="h-4 w-4" />
-        )}
-        {avatarUrl ? 'Regenerate Avatar' : 'Generate Avatar'}
-      </Button>
+      {canGenerate && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          onClick={handleGenerateAvatar}
+          disabled={isGenerating}
+          className="gap-2"
+        >
+          {isGenerating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
+          {avatarUrl ? 'Regenerate Avatar' : 'Generate Avatar'}
+        </Button>
+      )}
     </div>
   )
 }

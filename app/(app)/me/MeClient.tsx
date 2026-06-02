@@ -190,11 +190,16 @@ export function MeClient({
   const [copied, setCopied] = useState(false)
 
   const handleCopyPrompt = () => {
-    if (renderImaginizer?.prompt) {
-      navigator.clipboard.writeText(renderImaginizer.prompt)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    }
+    if (!renderImaginizer?.prompt || !navigator.clipboard?.writeText) return
+    navigator.clipboard
+      .writeText(renderImaginizer.prompt)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(() => {
+        /* clipboard blocked (insecure context / permission denied) — no-op */
+      })
   }
 
   // Inject zodiac CSS custom properties via inline style on the root element
