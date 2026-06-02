@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { backend } from '@/lib/backend'
 import { buildAgentContext } from '@/lib/agents/persona/build-agent-context'
 import { consciousnessPersistence } from '@/lib/consciousness-persistence'
@@ -45,8 +44,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
 
       case 'interact':
       case 'chat': {
-        const session = await getServerSession(authOptions)
-        const userId = (session?.user as any)?.id
+        // Bridge-aware: recognizes PA-native sessions AND alchm.kitchen sessions.
+        const session = await auth()
+        const userId = session?.user?.id
 
         if (!userId) {
           return NextResponse.json(
@@ -86,6 +86,34 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
 
         const personaCtx = parameters.agentId ? buildAgentContext(parameters.agentId) : null
 
+        // Premium gating: cap the requested model tier to the user's entitlement
+        // (active subscription or validated BYOK key). Free users requesting a
+        // premium tier degrade to the free chain rather than being rejected.
+        const { getEntitlements } = await import('@/lib/premium/entitlements')
+        const { capModelTier } = await import('@/lib/premium/tiers')
+        // kitchenPremium unifies the role: an alchm.kitchen subscription grants
+        // premium here too (surfaced by the session bridge).
+        const entitlements = await getEntitlements(userId, {
+          kitchenPremium: session?.user?.kitchenPremium,
+        })
+        const effectiveTier = capModelTier(
+          parameters.modelTier,
+          entitlements.tier,
+          entitlements.byokProviders
+        )
+
+        // BYOK: forward the user's own provider keys so premium calls bill them.
+        let userProviderKeys: { anthropic?: string; openai?: string } | undefined
+        if (entitlements.byokProviders.length > 0) {
+          const { getDecryptedKey } = await import('@/lib/byok/store')
+          const keys: { anthropic?: string; openai?: string } = {}
+          for (const provider of entitlements.byokProviders) {
+            const decrypted = await getDecryptedKey(userId, provider)
+            if (decrypted) keys[provider] = decrypted
+          }
+          if (Object.keys(keys).length > 0) userProviderKeys = keys
+        }
+
         const chatData = await backend.agents.chat({
           agentId: parameters.agentId,
           message: parameters.message || parameters.userMessage,
@@ -94,7 +122,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
           context: parameters.context,
           systemPromptOverride: personaCtx?.personaBlock,
           personaCacheKey: personaCtx?.cacheKey,
-          modelTier: parameters.modelTier,
+          modelTier: effectiveTier,
+          userProviderKeys,
         })
 
         // Conserve interaction logging

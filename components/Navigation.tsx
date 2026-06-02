@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useSession, signOut } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Menu, X, Rocket, User, LogOut, Sparkles, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -244,7 +244,9 @@ export function Navigation() {
                   </Button>
                 </Link>
                 <button
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => {
+                    window.location.href = '/api/logout'
+                  }}
                   className="nav-signout-btn"
                   aria-label="Sign Out"
                 >
@@ -331,7 +333,7 @@ export function Navigation() {
                     className="nav-mobile-action nav-mobile-signout"
                     onClick={() => {
                       setMobileMenuOpen(false)
-                      signOut({ callbackUrl: '/' })
+                      window.location.href = '/api/logout'
                     }}
                   >
                     <LogOut className="w-4 h-4" /> Sign Out

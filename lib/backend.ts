@@ -594,6 +594,12 @@ export const backend = {
       personaCacheKey?: string
       /** Preferred model tier. Server default is `free` (Groq → Cerebras → Gemini → OpenRouter → OpenAI last-ditch). */
       modelTier?: 'free' | 'cheap_fast' | 'primary' | 'reflective'
+      /**
+       * BYOK: the user's own provider API keys, used by the backend in place of
+       * the app's keys for the matching provider. Sent server-to-server over TLS
+       * to our own backend; never persisted or logged backend-side.
+       */
+      userProviderKeys?: { anthropic?: string; openai?: string }
     }) =>
       agentRequest<{ text: string; agentId: string; sessionId: string; metadata: any }>(
         '/api/chat',

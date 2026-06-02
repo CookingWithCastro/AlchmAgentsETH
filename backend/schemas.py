@@ -117,6 +117,10 @@ class ChatRequest(BaseModel):
     # Cost tier: 'free' | 'cheap_fast' | 'primary' | 'reflective'.
     # Default applied server-side is 'cheap_fast' (Haiku 4.5).
     modelTier: Optional[str] = None
+    # BYOK: caller's own provider keys, e.g. {"anthropic": "sk-ant-...",
+    # "openai": "sk-..."}. Used in place of the app keys for the matching
+    # provider. Never persisted or logged backend-side.
+    userProviderKeys: Optional[Dict[str, str]] = None
 
 class ChatResponse(BaseModel):
     text: str

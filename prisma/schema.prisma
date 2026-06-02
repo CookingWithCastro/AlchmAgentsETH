@@ -1432,6 +1432,26 @@ model DesktopApiKey {
   @@map("desktop_api_keys")
 }
 
+// BYOK: a user's own OpenAI/Anthropic Console API key, encrypted at rest
+// (AES-256-GCM). The plaintext key is never stored, logged, or returned to the
+// client — only `last4` + `validatedAt` are surfaced. See lib/byok/.
+model user_provider_keys {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  provider    String // 'openai' | 'anthropic'
+  ciphertext  String
+  iv          String
+  authTag     String    @map("auth_tag")
+  last4       String
+  validatedAt DateTime? @map("validated_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([userId, provider])
+  @@index([userId])
+  @@map("user_provider_keys")
+}
+
 model TokenTransaction {
   id                 BigInt   @id @default(autoincrement())
   transactionGroupId String   @map("transaction_group_id")
