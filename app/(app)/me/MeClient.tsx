@@ -13,6 +13,8 @@ import {
   TrendingUp,
   ArrowRight,
   LogOut,
+  Crown,
+  ChefHat,
 } from 'lucide-react'
 
 const CircularNatalHoroscope = dynamic(
@@ -123,6 +125,22 @@ const tourCards = [
       'Interpret your natal chart, track transits and planetary aspects, and discover how celestial events shape your path.',
     href: '/chart-interpreter',
     cta: 'Interpret Chart',
+  },
+  {
+    icon: Crown,
+    title: 'Account & Premium',
+    description:
+      'Manage your subscription, unlock premium models (Claude Sonnet/Opus, GPT-5.x), and connect your own OpenAI or Anthropic key.',
+    href: '/account',
+    cta: 'Manage Account',
+  },
+  {
+    icon: ChefHat,
+    title: 'Your Kitchen Profile',
+    description:
+      'Your alchm.kitchen account and shared token wallet — same login, culinary side of the Alchm ecosystem.',
+    href: 'https://alchm.kitchen/profile',
+    cta: 'Open Kitchen Profile',
   },
 ]
 
