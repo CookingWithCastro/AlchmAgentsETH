@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -58,7 +57,7 @@ export function DashboardClient({ user, dashboardAgents }: DashboardClientProps)
   }, [])
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: '/' })
+    window.location.href = '/api/logout'
   }
 
   const getTierColor = (tier: string) => {

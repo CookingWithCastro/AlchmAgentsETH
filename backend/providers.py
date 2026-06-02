@@ -50,10 +50,13 @@ class ProviderConfig:
     api_key_env: str
     base_url: Optional[str] = None  # None → native SDK (Anthropic) or OpenAI default
     is_paid_lastditch: bool = False
+    # BYOK: a per-request user key that takes precedence over the env var. Never
+    # persisted or logged; lives only for the lifetime of the request.
+    api_key_override: Optional[str] = None
 
     @property
     def api_key(self) -> Optional[str]:
-        return os.getenv(self.api_key_env)
+        return self.api_key_override or os.getenv(self.api_key_env)
 
 
 # Free providers walked when tier=="free" or when paid Anthropic returns quota.
@@ -110,25 +113,51 @@ OPENAI_LASTDITCH = ProviderConfig(
 )
 
 
-def build_chain(tier: str, anthropic_model: Optional[str]) -> List[ProviderConfig]:
+def build_chain(
+    tier: str,
+    anthropic_model: Optional[str],
+    user_keys: Optional[Dict[str, str]] = None,
+) -> List[ProviderConfig]:
     """
     Build the fallback chain for a request.
     - tier=="free": skip Anthropic entirely; free chain → OpenAI last-ditch.
     - else: Anthropic (with tier-resolved model) → free chain → OpenAI last-ditch.
-    Anthropic is omitted if its key is unset (no point trying).
+    Anthropic is omitted if neither the app key nor a user (BYOK) key is available.
+
+    BYOK: `user_keys` may carry the caller's own {"anthropic","openai"} keys. When
+    present they override the env key for that provider (and let Anthropic run even
+    when the app has no ANTHROPIC_API_KEY). User keys are used only for this chain.
     """
+    user_keys = user_keys or {}
+    user_anthropic = user_keys.get("anthropic")
+    user_openai = user_keys.get("openai")
+
     chain: List[ProviderConfig] = []
-    if tier != "free" and anthropic_model and os.getenv("ANTHROPIC_API_KEY"):
+    if tier != "free" and anthropic_model and (os.getenv("ANTHROPIC_API_KEY") or user_anthropic):
         chain.append(
             ProviderConfig(
                 name="anthropic",
                 model=anthropic_model,
                 api_key_env="ANTHROPIC_API_KEY",
                 base_url=None,
+                api_key_override=user_anthropic,
             )
         )
     chain.extend(FREE_CHAIN)
-    chain.append(OPENAI_LASTDITCH)
+    # OpenAI last-ditch — prefer the user's own key when they've linked one.
+    if user_openai:
+        chain.append(
+            ProviderConfig(
+                name="openai",
+                model=os.getenv("MONICA_DEFAULT_MODEL", "gpt-4o-mini"),
+                api_key_env="OPENAI_API_KEY",
+                base_url=None,
+                is_paid_lastditch=True,
+                api_key_override=user_openai,
+            )
+        )
+    else:
+        chain.append(OPENAI_LASTDITCH)
     return chain
 
 

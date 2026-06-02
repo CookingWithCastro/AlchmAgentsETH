@@ -1,6 +1,7 @@
 import GoogleProvider from 'next-auth/providers/google'
 import { prisma } from '@/lib/db'
-import { randomUUID } from 'crypto'
+import { provisionPaUser } from '@/lib/user-provisioning'
+import { getPaTier } from '@/lib/premium/entitlements'
 
 const DB_TIMEOUT_MS = 5000
 
@@ -54,75 +55,10 @@ export const authOptions: import('next-auth').NextAuthOptions = {
         }
 
         try {
-          // Use a transaction to ensure atomicity
-          await prisma.$transaction(async tx => {
-            let dbUser = await tx.users.findUnique({
-              where: { email },
-              include: { user_profiles: true },
-            })
-
-            if (!dbUser) {
-              // New user - create all required rows
-              const userId = randomUUID()
-              const name = profile?.name || user?.name || email.split('@')[0]
-
-              await tx.users.create({
-                data: {
-                  id: userId,
-                  email,
-                  name,
-                  provider: 'google',
-                  verified: true,
-                  lastLogin: new Date(),
-                },
-              })
-
-              await tx.user_profiles.create({
-                data: {
-                  userId,
-                  birthDate: new Date(0), // Placeholder
-                  birthLocation: { name: 'Pending Onboarding', latitude: 0, longitude: 0 },
-                  natalChart: {},
-                  monicaConstant: 0,
-                  dominantElement: 'Fire',
-                },
-              })
-
-              await tx.profiles.create({
-                data: {
-                  userId,
-                  name,
-                },
-              })
-
-              await tx.monica_user_settings.create({
-                data: {
-                  userId,
-                  interests: '[]',
-                },
-              })
-            } else {
-              // Existing user - update last login
-              await tx.users.update({
-                where: { id: dbUser.id },
-                data: { lastLogin: new Date() },
-              })
-
-              // Ensure profile exists (migration for legacy users)
-              if (!dbUser.user_profiles) {
-                await tx.user_profiles.create({
-                  data: {
-                    userId: dbUser.id,
-                    birthDate: new Date(0),
-                    birthLocation: { name: 'Pending Onboarding', latitude: 0, longitude: 0 },
-                    natalChart: {},
-                    monicaConstant: 0,
-                    dominantElement: 'Fire',
-                  },
-                })
-              }
-            }
-          })
+          const name = profile?.name || user?.name || email.split('@')[0]
+          // Shared provisioning logic — see lib/user-provisioning.ts. The same
+          // helper backs the cross-site bridge so both flows create users identically.
+          await prisma.$transaction(tx => provisionPaUser(tx, { email, name, provider: 'google' }))
           return true
         } catch (error) {
           console.error('Error during Google sign-in transaction:', error)
@@ -166,7 +102,18 @@ export const authOptions: import('next-auth').NextAuthOptions = {
         }
       }
 
-      token.tier = token.role === 'admin' ? 'premium_pro' : 'master'
+      // Resolve the real PA tier (subscription/role-driven). While the premium
+      // enforcement flag is off, getPaTier returns 'master' for everyone, so
+      // this preserves the prior behavior until enforcement is enabled.
+      if (token.id) {
+        try {
+          token.tier = await getPaTier(token.id as string)
+        } catch {
+          token.tier = 'free'
+        }
+      } else {
+        token.tier = 'free'
+      }
       return token
     },
 

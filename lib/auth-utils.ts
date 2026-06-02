@@ -1,4 +1,6 @@
 import { getServerSession } from 'next-auth'
+import { auth } from '@/lib/auth'
+import { getPaTier } from '@/lib/premium/entitlements'
 
 /**
  * Check if user has access to a feature
@@ -19,17 +21,14 @@ export async function hasFeatureAccess(feature: string): Promise<boolean> {
 }
 
 /**
- * Get user tier with full access for authenticated users
+ * Get the user's real PA tier from their subscription/role. Resolution (incl.
+ * the enforcement flag + grandfather window) lives in lib/premium/entitlements.
  */
 export async function getUserTier(): Promise<'master' | 'alchemist' | 'free'> {
-  const session = await getServerSession()
-
-  // All authenticated users get master tier for testing
-  if (session?.user) {
-    return 'master'
-  }
-
-  return 'free'
+  const session = await auth()
+  if (!session?.user?.id) return 'free'
+  // kitchenPremium unifies the premium role with alchm.kitchen.
+  return getPaTier(session.user.id, { kitchenPremium: session.user.kitchenPremium })
 }
 
 /**

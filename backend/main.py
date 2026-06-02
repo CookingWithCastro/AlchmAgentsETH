@@ -1221,10 +1221,11 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
     if mcp_block:
         rag_block = "\n\n".join(part for part in [rag_block, mcp_block] if part)
 
-    # 5. Pick tier and build the provider fallback chain.
+    # 5. Pick tier and build the provider fallback chain. BYOK keys (if the
+    # caller linked their own) override the app keys for the matching provider.
     tier = _resolve_tier(request.modelTier)
     anthropic_model = ANTHROPIC_TIER_MODEL.get(tier)  # None for tier=="free"
-    chain = providers.build_chain(tier, anthropic_model)
+    chain = providers.build_chain(tier, anthropic_model, request.userProviderKeys)
 
     # 6. Walk the chain. First successful provider wins; failures cascade with
     # a `fallback_event` log line (grep "fallback_event" in Railway logs).

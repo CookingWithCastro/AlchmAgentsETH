@@ -11,7 +11,12 @@ const buttonVariants = cva(
       variant: {
         default: 'bg-primary text-primary-foreground hover:bg-primary/90',
         destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
-        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+        // `bg-transparent` (not `bg-background`) so the outline button adapts to
+        // whatever surface it sits on. The app renders dark pages while the theme
+        // tokens are in light mode (`:root`), so `bg-background` resolved to white
+        // and the inherited text was also white → invisible. Transparent + inherited
+        // currentColor stays legible on both light and dark backgrounds.
+        outline: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
