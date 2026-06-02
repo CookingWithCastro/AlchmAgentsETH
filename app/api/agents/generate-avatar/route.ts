@@ -8,6 +8,7 @@ import { syncAgentToWten, type SyncAgentProfilePayload } from '@/lib/wtenClient'
 import type { RenderBirthInfo } from '@/lib/agents/render-post-image'
 import { requireAdmin, adminErrorResponse } from '@/lib/admin-auth'
 import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
+import { hasInternalApiSecret } from '@/lib/security/internal-auth'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -270,15 +271,6 @@ async function persistAvatar(meta: AgentAvatarMeta, slug: string | undefined, av
   }
 }
 
-/** Server-to-server auth via the shared internal secret (cron / backfill). */
-function hasInternalSecret(request: Request): boolean {
-  const secret = process.env.INTERNAL_API_SECRET || process.env.ALCHM_KITCHEN_SYNC_SECRET
-  if (!secret) return false
-  const authToken = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
-  const syncToken = request.headers.get('x-sync-secret') || ''
-  return authToken === secret || syncToken === secret
-}
-
 export async function POST(request: Request) {
   // Authorization gate. This endpoint triggers paid external image generation
   // AND persists/overwrites the agent avatar + syncs the agentic profile to WTEN
@@ -286,7 +278,7 @@ export async function POST(request: Request) {
   // Allowed callers: a server-to-server secret (cron/backfill) OR an authenticated
   // admin (the avatar control on the agent page). The interactive path is also
   // per-IP rate-limited to blunt cost-amplification.
-  if (!hasInternalSecret(request)) {
+  if (!hasInternalApiSecret(request)) {
     const admin = await requireAdmin()
     if (!admin.ok) return adminErrorResponse(admin)
 
