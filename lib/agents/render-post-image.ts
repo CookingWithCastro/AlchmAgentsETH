@@ -176,7 +176,9 @@ export async function generateRenderPostImage(
   const width = input.width || DEFAULT_WIDTH
   const height = input.height || DEFAULT_HEIGHT
   const model = input.model || DEFAULT_MODEL
-  const provider = input.provider || 'OpenAI'
+  // Default to the free provider — agents never use premium billing image routes.
+  // (Avatars now use lib/agents/free-image-generation; this guards the feed/post path.)
+  const provider = input.provider || 'Livepeer'
 
   if (mode === 'alchmize') {
     if (!birthInfo) {

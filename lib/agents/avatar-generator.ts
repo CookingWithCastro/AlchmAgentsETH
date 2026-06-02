@@ -1,8 +1,5 @@
-import {
-  generateRenderPostImage,
-  type RenderBirthInfo,
-  type RenderImageMode,
-} from './render-post-image'
+import { generateFreeImage } from './free-image-generation'
+import type { RenderBirthInfo, RenderImageMode } from './render-post-image'
 
 export interface AgentAvatarMeta {
   agentId: string
@@ -23,6 +20,7 @@ export interface AgentAvatarResult {
   imageUrl: string | null
   prompt: string
   mode: RenderImageMode
+  provider?: string
   error?: string
 }
 
@@ -71,25 +69,22 @@ export function buildAvatarPrompt(agent: AgentAvatarMeta): string {
 
 export async function generateAgentAvatar(agent: AgentAvatarMeta): Promise<AgentAvatarResult> {
   const prompt = buildAvatarPrompt(agent)
-  // Prompt-controlled generation: the caricature prompt carries the full likeness +
-  // art direction, so we use `generate-image` rather than `alchmize`. This avoids the
-  // chart-derived prompt mutation and the hard birthInfo requirement, giving a more
-  // reliable, consistent avatar across every agent.
-  const mode: RenderImageMode = 'generate-image'
-  const result = await generateRenderPostImage({
-    agentId: agent.agentId,
-    agentName: agent.name,
-    prompt,
-    mode,
+  // FREE-ONLY image generation (Cloudflare Workers AI FLUX/SDXL → Pollinations).
+  // Agents never use premium billing image routes. The caricature prompt carries
+  // the full likeness + art direction; the result is a base64 data URI.
+  const result = await generateFreeImage(prompt, {
     width: 1024,
     height: 1024,
+    negativePrompt:
+      'text, words, letters, watermark, logo, signature, frame, border, multiple people, extra limbs, deformed face, lowres, blurry',
   })
 
   return {
     success: result.success,
-    imageUrl: result.imageUrl,
-    prompt: result.prompt || prompt,
-    mode: result.mode,
+    imageUrl: result.dataUri,
+    prompt,
+    mode: 'generate-image',
+    provider: result.provider,
     error: result.error,
   }
 }
