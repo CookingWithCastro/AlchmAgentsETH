@@ -16,6 +16,8 @@ export function normalizeDbActionToFeedEvent(row: any): FeedEvent {
   const baseEvent = {
     id: row.id || row.idempotencyKey,
     timestamp: typeof timestamp === 'string' ? timestamp : timestamp.toISOString(),
+    imageUrl: metadata.imageUrl || metadata.image_URL || undefined,
+    imagePrompt: metadata.imagePrompt || metadata.renderImage?.prompt || undefined,
   }
 
   if (row.eventType === 'insight') {

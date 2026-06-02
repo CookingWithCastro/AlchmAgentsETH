@@ -107,7 +107,7 @@ async function provisionAgenticUsers(
         result.skipped++
         // Still try to repair an unlinked existing user if WTEN ID is missing.
         if (!existing.alchmKitchenUserId) {
-          await syncAndPersist(existing.id, email, agent.name, result)
+          await syncAndPersist(existing.id, email, agent.name, agent, result)
         }
         continue
       }
@@ -159,7 +159,7 @@ async function provisionAgenticUsers(
       console.log(`  ✓ Provisioned ${agent.name} → ${email} (${newUserId})`)
       result.created++
 
-      await syncAndPersist(newUserId, email, agent.name, result)
+      await syncAndPersist(newUserId, email, agent.name, agent, result)
     } catch (err: any) {
       const msg = `Failed to provision ${agent.name}: ${err?.message ?? err}`
       console.error(`  ✗ ${msg}`)
@@ -179,10 +179,26 @@ async function syncAndPersist(
   userId: string,
   email: string,
   displayName: string | null,
+  agent: {
+    natalChart?: unknown
+    dominantElement?: string | null
+    monicaConstant?: number | null
+    birthDate?: Date | null
+    birthTime?: string | null
+    birthLocation?: unknown
+  },
   result: ProvisionResult
 ): Promise<void> {
   try {
-    const { wtenUserId } = await syncAgentToWten(email, displayName)
+    const { wtenUserId } = await syncAgentToWten(email, displayName, {
+      birthDate: agent.birthDate?.toISOString(),
+      birthTime: agent.birthTime ?? undefined,
+      birthLocation: agent.birthLocation,
+      natalChart: agent.natalChart,
+      natalPositions: extractNatalPositions(agent.natalChart),
+      monicaConstant: agent.monicaConstant ?? undefined,
+      dominantElement: agent.dominantElement ?? undefined,
+    })
     await prisma.users.update({
       where: { id: userId },
       data: { alchmKitchenUserId: wtenUserId } as any,

@@ -11,6 +11,7 @@ import { resolveAnyAgent } from '@/lib/agents/resolve-any-agent'
 import { classifyAgent } from '@/lib/agents/agent-type-model'
 import { getSpriteView } from '@/lib/agents/sprite-view'
 import { SkySpriteProfile } from '@/components/agent-profile/SkySpriteProfile'
+import { AgentAvatarControl } from '@/components/agent-profile/AgentAvatarControl'
 import {
   getAgentActions,
   getAgentInteractions,
@@ -107,13 +108,13 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ i
       <section className={`relative overflow-hidden border-b bg-gradient-to-br ${tint}`}>
         <div className="mx-auto max-w-5xl px-6 py-12 md:py-16">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
-            <div
-              className="flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl border-2 text-5xl shadow-lg backdrop-blur-sm md:h-32 md:w-32 md:text-6xl"
-              style={{ borderColor: accent, background: `${accent}22` }}
-              aria-hidden="true"
-            >
-              <span>{agent.appearance?.symbol ?? '✦'}</span>
-            </div>
+            <AgentAvatarControl
+              agentId={agent.id}
+              name={agent.name}
+              initialAvatar={agent.appearance?.avatar}
+              symbol={agent.appearance?.symbol}
+              color={accent}
+            />
             <div className="flex-1">
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 {agent.era && (

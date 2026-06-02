@@ -20,6 +20,18 @@ export interface SyncAgentToWtenResult {
   created: boolean
 }
 
+export interface SyncAgentProfilePayload {
+  avatar?: string
+  bio?: string
+  birthDate?: string
+  birthTime?: string
+  birthLocation?: unknown
+  natalChart?: unknown
+  natalPositions?: unknown
+  monicaConstant?: number
+  dominantElement?: string
+}
+
 let cachedConfig: { baseUrl: string; syncSecret: string; internalSecret: string } | null = null
 
 function loadConfig(): { baseUrl: string; syncSecret: string; internalSecret: string } {
@@ -43,11 +55,12 @@ function loadConfig(): { baseUrl: string; syncSecret: string; internalSecret: st
  */
 export async function syncAgentToWten(
   email: string,
-  displayName?: string | null
+  displayName?: string | null,
+  profile?: SyncAgentProfilePayload
 ): Promise<SyncAgentToWtenResult> {
-  if (!email.endsWith('@agentic.alchm.kitchen')) {
+  if (!email.endsWith('@agentic.alchm.kitchen') && !email.endsWith('@agents.alchm.kitchen')) {
     throw new Error(
-      `syncAgentToWten: email must end with @agentic.alchm.kitchen (got ${email}). WTEN returns 422 otherwise.`
+      `syncAgentToWten: email must end with @agentic.alchm.kitchen or @agents.alchm.kitchen (got ${email}).`
     )
   }
   const { baseUrl, syncSecret } = loadConfig()
@@ -62,7 +75,11 @@ export async function syncAgentToWten(
       'Content-Type': 'application/json',
       'X-Sync-Secret': syncSecret,
     },
-    body: JSON.stringify({ email, displayName: displayName ?? undefined }),
+    body: JSON.stringify({
+      email,
+      displayName: displayName ?? undefined,
+      ...profile,
+    }),
   })
   if (!res.ok) {
     const body = await res.text().catch(() => '(unreadable)')

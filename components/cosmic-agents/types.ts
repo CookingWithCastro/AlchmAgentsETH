@@ -157,6 +157,8 @@ export interface JingMove {
 interface BaseEvent {
   id: string
   timestamp: string | Date
+  imageUrl?: string
+  imagePrompt?: string
 }
 
 export interface StreamingEvent extends BaseEvent {

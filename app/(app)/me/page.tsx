@@ -5,6 +5,7 @@ import ProfileOnboardingForm from '@/components/profile/onboarding-form'
 import { calculateMC } from '@/lib/monica/monica-constant-validator'
 import { backend } from '@/lib/backend'
 import { getSunSign, getZodiacTheme } from '@/lib/zodiac-utils'
+import { fetchRenderSupplementalData } from '@/lib/agents/render-supplemental'
 import { MeClient } from './MeClient'
 import './me.css'
 
@@ -88,6 +89,7 @@ export default async function MePage() {
   // ── Compute Alchemical Data ─────────────────────────────────────────
   let alchm: any = {}
   let computationError: string | null = null
+  let renderSupplemental: any = null
 
   try {
     const birth = profile.birthInfo as any
@@ -113,6 +115,23 @@ export default async function MePage() {
       birth.latitude ?? 0,
       birth.longitude ?? 0
     )
+
+    // Fetch supplemental Render data stream
+    try {
+      const birthInfoInput = {
+        name: profile.name || session.user.name || 'Subject',
+        year: birth.year,
+        month: birth.month, // 0-based month expected
+        day: birth.day,
+        hour: birth.hour ?? 12,
+        minute: birth.minute ?? 0,
+        latitude: birth.latitude ?? 0,
+        longitude: birth.longitude ?? 0,
+      }
+      renderSupplemental = await fetchRenderSupplementalData(birthInfoInput as any)
+    } catch (e) {
+      console.error('Error fetching Render supplemental data:', e)
+    }
 
     alchm = {
       'Alchemy Effects': {
@@ -220,6 +239,9 @@ export default async function MePage() {
         longitude: birthInfo.longitude,
       }}
       profileName={profile.name}
+      renderAstrologize={renderSupplemental?.raw?.astrology_info}
+      renderAlchemize={renderSupplemental?.raw?.alchemy_info}
+      renderImaginizer={renderSupplemental?.raw?.imaginizer_info}
     />
   )
 }

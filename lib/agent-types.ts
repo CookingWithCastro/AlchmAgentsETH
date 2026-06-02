@@ -240,6 +240,7 @@ export interface AuraPattern {
 
 export interface Appearance {
   avatar: string
+  portraitDescription?: string
   color: string
   symbol: string
   aura?: AuraPattern
