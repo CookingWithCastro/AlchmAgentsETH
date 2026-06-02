@@ -128,8 +128,8 @@ stable cross-site join key.
 
 - **Allowed origins:** `https://agents.alchm.kitchen`, `https://alchm.kitchen`,
   `http://localhost:3000`. _(Added ✓ — confirm `alchm.kitchen` is included.)_
-- Login methods: **email, Google, wallet**. Embedded wallets: **off**
-  (`embeddedWallets: { ethereum: { createOnLogin: 'off' }, solana: { createOnLogin: 'off' } }`).
+- Login methods: **email, Google, wallet**. Embedded wallets: **on (Base)** — see §4d
+  (`embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' }, solana: { createOnLogin: 'off' } }`).
 
 **4b. WTEN code (mirror PA):**
 
