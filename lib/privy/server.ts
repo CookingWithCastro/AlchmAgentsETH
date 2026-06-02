@@ -12,7 +12,7 @@ import { PrivyClient } from '@privy-io/server-auth'
 
 let _client: PrivyClient | null = null
 
-function getPrivyClient(): PrivyClient {
+export function getPrivyClient(): PrivyClient {
   if (_client) return _client
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID
   const appSecret = process.env.PRIVY_APP_SECRET

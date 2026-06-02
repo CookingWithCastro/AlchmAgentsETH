@@ -1,0 +1,74 @@
+/**
+ * On-chain ESMS (soulbound ERC-1155 on Base) — addresses, ABI, reads.
+ * Phase 1: read balances + (via minter.ts) mint settled claims. Off-chain WTEN
+ * ledger stays authoritative; on-chain is a claim/mirror.
+ */
+
+import { createPublicClient, http, type Address } from 'viem'
+import { base, baseSepolia } from 'viem/chains'
+
+/** Token ids on the ERC-1155 (must match EsmsToken.sol). */
+export const ESMS_IDS = [0n, 1n, 2n, 3n] as const // spirit, essence, matter, substance
+
+/** Minimal ABI for the two calls PA needs. */
+export const ESMS_ABI = [
+  {
+    type: 'function',
+    name: 'claimMint',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'claimId', type: 'bytes32' },
+      { name: 'ids', type: 'uint256[]' },
+      { name: 'amounts', type: 'uint256[]' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'balanceOfBatch',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'accounts', type: 'address[]' },
+      { name: 'ids', type: 'uint256[]' },
+    ],
+    outputs: [{ type: 'uint256[]' }],
+  },
+] as const
+
+export function esmsChain() {
+  return (process.env.NEXT_PUBLIC_ESMS_CHAIN || 'base-sepolia') === 'base' ? base : baseSepolia
+}
+
+/** CAIP-2 chain id, e.g. "eip155:8453" (Base) or "eip155:84532" (Base Sepolia). */
+export function esmsCaip2(): string {
+  return `eip155:${esmsChain().id}`
+}
+
+export function esmsContractAddress(): Address {
+  const a = process.env.ESMS_CONTRACT_ADDRESS
+  if (!a) throw new Error('ESMS_CONTRACT_ADDRESS is not set')
+  return a as Address
+}
+
+export function esmsRpcUrl(): string | undefined {
+  return esmsChain().id === base.id ? process.env.BASE_RPC_URL : process.env.BASE_SEPOLIA_RPC_URL
+}
+
+export function esmsPublicClient() {
+  return createPublicClient({ chain: esmsChain(), transport: http(esmsRpcUrl()) })
+}
+
+export type OnchainEsms = { spirit: bigint; essence: bigint; matter: bigint; substance: bigint }
+
+/** Read on-chain ESMS balances [spirit, essence, matter, substance] for an address. */
+export async function readEsmsBalances(address: Address): Promise<OnchainEsms> {
+  const accounts = ESMS_IDS.map(() => address)
+  const res = (await esmsPublicClient().readContract({
+    address: esmsContractAddress(),
+    abi: ESMS_ABI,
+    functionName: 'balanceOfBatch',
+    args: [accounts, [...ESMS_IDS]],
+  })) as readonly bigint[]
+  return { spirit: res[0], essence: res[1], matter: res[2], substance: res[3] }
+}

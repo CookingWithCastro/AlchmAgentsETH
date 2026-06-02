@@ -1427,6 +1427,29 @@ model TokenBalance {
   @@map("token_balances")
 }
 
+// On-chain ESMS claim ledger (reconciliation). A claim debits the off-chain
+// balance (authoritative WTEN ledger) then mints soulbound ESMS to the user's
+// Base wallet. `id` is the claimId — also the off-chain debit idempotency key and
+// the on-chain idempotency guard. See lib/esms-chain/ + app/api/esms/.
+model esms_claims {
+  id            String   @id // claimId
+  userId        String   @map("user_id")
+  walletAddress String   @map("wallet_address")
+  spirit        Decimal  @db.Decimal(12, 4)
+  essence       Decimal  @db.Decimal(12, 4)
+  matter        Decimal  @db.Decimal(12, 4)
+  substance     Decimal  @db.Decimal(12, 4)
+  status        String   @default("pending") // pending | debited | minted | failed
+  txHash        String?  @map("tx_hash")
+  network       String   @default("base-sepolia")
+  error         String?
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([userId])
+  @@map("esms_claims")
+}
+
 model DesktopApiKey {
   id         String    @id @default(cuid())
   userId     String    @map("user_id")

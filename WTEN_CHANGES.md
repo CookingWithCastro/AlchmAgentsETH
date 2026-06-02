@@ -199,17 +199,45 @@ use stateless JWT sessions, so clearing the cookie is a complete logout.
 
 ---
 
+## §7 — On-chain ESMS claim (INFO · no new WTEN endpoint)
+
+PA Phase 1 lets a user **claim** ESMS (Spirit/Essence/Matter/Substance) from the
+off-chain ledger to a soulbound ERC-1155 on **Base** (testnet first). The WTEN
+off-chain ledger stays **authoritative**; claiming mirrors a balance on-chain
+(debit off-chain → mint on-chain). **No new WTEN endpoint** — PA reuses the existing
+economy **sync-debit** path.
+
+- **PA flow** ([`app/api/esms/claim/route.ts`](app/api/esms/claim/route.ts)):
+  generate a `claimId` (bytes32), persist an `esms_claims` row, **debit off-chain
+  FIRST** via `syncDebitToAlchm({ … })`, then mint on-chain. A mint failure never
+  grants free tokens (debit-before-mint); the on-chain `claimId` guard +
+  sync-debit idempotency make retries safe (no double-debit, no double-mint).
+- **WTEN action — confirm only (no code if already true):** the economy debit
+  endpoint must (a) accept **`source: 'onchain_claim'`** (or any free-form source
+  string — do not reject it) and (b) be **idempotent on `idempotencyKey`** (the
+  `claimId`), so a retried claim debits **once**. If sync-debit already ignores
+  unknown sources and dedupes on the idempotency key, **no WTEN change is needed**.
+- **Authoritative ledger unchanged.** ESMS is still spent/earned off-chain on
+  alchm.kitchen; on-chain is a mirror for wallet display. **Phase 2** (redeem back
+  to off-chain) will use the existing **credit** path (`sync-credit`) with the same
+  `claimId` idempotency — flagged here so it isn't a surprise later.
+
+---
+
 ## Environment variables (must match across both deployments)
 
-| Var                         | Where              | Value / note                                                  |
-| --------------------------- | ------------------ | ------------------------------------------------------------- |
-| `ALCHM_KITCHEN_SYNC_SECRET` | PA + WTEN (server) | **Identical** value both sides — gates §2 + economy sync.     |
-| `ALCHM_KITCHEN_SYNC_URL`    | PA (server)        | `https://alchm.kitchen` (PA→WTEN base).                       |
-| `NEXT_PUBLIC_PRIVY_APP_ID`  | PA + WTEN (public) | `cmi9t84qs00acl80dam2j8195`. _(Set on PA Vercel Prod+Dev ✓.)_ |
-| `PRIVY_APP_SECRET`          | PA + WTEN (server) | From Privy dashboard. **Secret** — never client-exposed.      |
+| Var                         | Where              | Value / note                                                                  |
+| --------------------------- | ------------------ | ----------------------------------------------------------------------------- |
+| `ALCHM_KITCHEN_SYNC_SECRET` | PA + WTEN (server) | **Identical** value both sides — gates §2 + economy sync.                     |
+| `ALCHM_KITCHEN_SYNC_URL`    | PA (server)        | `https://alchm.kitchen` (PA→WTEN base).                                       |
+| `NEXT_PUBLIC_PRIVY_APP_ID`  | PA + WTEN (public) | `cmi9t84qs00acl80dam2j8195`. _(Set on PA Vercel Prod+Dev ✓.)_                 |
+| `PRIVY_APP_SECRET`          | PA + WTEN (server) | From Privy dashboard. **Secret** — never client-exposed.                      |
+| `NEXT_PUBLIC_ESMS_CHAIN`    | PA (public)        | `base-sepolia` (then `base`). ESMS on-chain network (§7).                     |
+| `ESMS_CONTRACT_ADDRESS`     | PA (server)        | Deployed `EsmsToken` proxy address (§7).                                      |
+| `PRIVY_MINTER_WALLET_ID`    | PA (server)        | Privy server wallet holding `MINTER_ROLE` (or `MINTER_PRIVATE_KEY` fallback). |
 
 WTEN session cookie must remain domain `.alchm.kitchen`; `ALCHM_KITCHEN_SYNC_SECRET`
-must match PA's.
+must match PA's. ESMS env (§7) is **PA-only** — WTEN needs none of it.
 
 ---
 
@@ -225,3 +253,4 @@ must match PA's.
 - [ ] Privy: WTEN mounts the SAME app id; `users.privy_did` column + connect route live.
 - [ ] Privy env on both repos: `NEXT_PUBLIC_PRIVY_APP_ID` + `PRIVY_APP_SECRET`.
 - [ ] (If WTEN revocation on) PA logout bounces through kitchen signout.
+- [ ] ESMS (§7): economy debit accepts `source:'onchain_claim'` + is idempotent on `idempotencyKey` (claimId). No new WTEN endpoint.
