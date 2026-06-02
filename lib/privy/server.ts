@@ -44,6 +44,25 @@ export async function verifyPrivyToken(accessToken: string): Promise<VerifiedPri
   }
 }
 
+/**
+ * Resolve the user's embedded EVM (Privy) wallet address from their DID — server
+ * authoritative (don't trust a client-sent address). Returns null if none / on error.
+ */
+export async function getPrivyWallet(did: string): Promise<string | null> {
+  try {
+    const user = await getPrivyClient().getUser(did)
+    const accounts = ((user as { linkedAccounts?: any[] }).linkedAccounts || []) as any[]
+    const embedded = accounts.find(
+      a => a?.type === 'wallet' && a?.walletClientType === 'privy' && a?.chainType === 'ethereum'
+    )
+    const anyWallet = accounts.find(a => a?.type === 'wallet')
+    return embedded?.address ?? anyWallet?.address ?? null
+  } catch (err) {
+    console.warn('[privy] getPrivyWallet failed:', err)
+    return null
+  }
+}
+
 /** Mask a DID for display: did:privy:••••<last6>. */
 export function maskDid(did: string): string {
   return `did:privy:••••${did.slice(-6)}`

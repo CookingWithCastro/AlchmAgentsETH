@@ -1256,6 +1256,11 @@ model users {
    * across sites: a stable, provider-agnostic join key. See lib/privy/.
    */
   privyDid           String?           @unique @map("privy_did")
+  /**
+   * Privy embedded wallet address (EVM, Base) — provisioned on Privy connect.
+   * Non-unique (defensive). Funded via Privy's fiat on-ramp. See lib/privy/.
+   */
+  walletAddress      String?           @map("wallet_address")
   created_agents     created_agents[]
   user_profiles      user_profiles?
   mcp_invocations    mcp_invocations[]

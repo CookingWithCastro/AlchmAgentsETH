@@ -158,6 +158,21 @@ stable cross-site join key.
 **4c. Result:** both `users` rows carry the same `privy_did` → join on it for a
 robust, provider-agnostic cross-site identity (cleaner than email / `alchmKitchenUserId`).
 
+**4d. Embedded wallets (Base) + fiat funding** — PA now provisions a per-user
+embedded EVM wallet on **Base** and funds it via Privy's built-in on-ramp:
+
+- Provider config (mirror PA): `embeddedWallets: { ethereum: { createOnLogin: 'users-without-wallets' }, solana: { createOnLogin: 'off' } }`, `defaultChain: base`, `supportedChains: [base]` (`import { base } from 'viem/chains'`). Funding via `useFundWallet().fundWallet({ address, options: { chain: base } })`.
+- Enable **embedded wallets** for the app in the Privy dashboard (the in-code
+  `createOnLogin` is honored only if wallets are enabled).
+- DB: add `wallet_address TEXT` to WTEN's `users` (non-unique). On connect,
+  resolve the wallet **server-side** from the verified DID via
+  `PrivyClient.getUser(did)` → the embedded ethereum wallet's `address` (don't
+  trust a client-sent address). Mirror PA's `getPrivyWallet()`.
+- Same Privy app ⇒ the user's wallet is the same address on both sites.
+- **Note:** stablecoin subscriptions are intentionally deferred (Stripe's
+  recurring-USDC is private-preview/access-gated) — this is wallet infrastructure;
+  the funded balance has no in-app spend yet.
+
 ---
 
 ## §5 — `/profile` ↔ PA cross-link (UX)
