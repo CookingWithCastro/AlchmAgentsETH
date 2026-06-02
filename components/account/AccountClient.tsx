@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ByokPanel } from './ByokPanel'
 import { PrivyConnect } from './PrivyConnect'
+import { EsmsOnchain } from './EsmsOnchain'
 
 type Props = {
   tier: 'free' | 'alchemist' | 'master'
@@ -131,6 +132,18 @@ export function AccountClient({ tier, hasActiveSub, premiumViaKitchen, email, na
           </p>
           <div className="mt-4">
             <PrivyConnect />
+          </div>
+        </section>
+
+        {/* On-chain ESMS (claim/mirror) */}
+        <section className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
+          <h2 className="text-lg font-semibold">ESMS on-chain</h2>
+          <p className="mt-1 text-sm text-white/60">
+            Claim your Spirit · Essence · Matter · Substance to your Base wallet as soulbound
+            tokens. Your off-chain balance stays authoritative — claiming mirrors it on-chain.
+          </p>
+          <div className="mt-4">
+            <EsmsOnchain />
           </div>
         </section>
 

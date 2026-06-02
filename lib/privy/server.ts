@@ -12,7 +12,7 @@ import { PrivyClient } from '@privy-io/server-auth'
 
 let _client: PrivyClient | null = null
 
-function getPrivyClient(): PrivyClient {
+export function getPrivyClient(): PrivyClient {
   if (_client) return _client
   const appId = process.env.NEXT_PUBLIC_PRIVY_APP_ID
   const appSecret = process.env.PRIVY_APP_SECRET
@@ -40,6 +40,25 @@ export async function verifyPrivyToken(accessToken: string): Promise<VerifiedPri
     return { did: claims.userId }
   } catch (err) {
     console.warn('[privy] token verification failed:', err)
+    return null
+  }
+}
+
+/**
+ * Resolve the user's embedded EVM (Privy) wallet address from their DID — server
+ * authoritative (don't trust a client-sent address). Returns null if none / on error.
+ */
+export async function getPrivyWallet(did: string): Promise<string | null> {
+  try {
+    const user = await getPrivyClient().getUser(did)
+    const accounts = ((user as { linkedAccounts?: any[] }).linkedAccounts || []) as any[]
+    const embedded = accounts.find(
+      a => a?.type === 'wallet' && a?.walletClientType === 'privy' && a?.chainType === 'ethereum'
+    )
+    const anyWallet = accounts.find(a => a?.type === 'wallet')
+    return embedded?.address ?? anyWallet?.address ?? null
+  } catch (err) {
+    console.warn('[privy] getPrivyWallet failed:', err)
     return null
   }
 }

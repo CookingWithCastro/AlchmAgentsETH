@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { verifyPrivyToken, maskDid } from '@/lib/privy/server'
+import { verifyPrivyToken, getPrivyWallet, maskDid } from '@/lib/privy/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,11 +13,12 @@ export async function GET() {
 
   const user = await prisma.users.findUnique({
     where: { id: userId },
-    select: { privyDid: true },
+    select: { privyDid: true, walletAddress: true },
   })
   return NextResponse.json({
     connected: !!user?.privyDid,
     did: user?.privyDid ? maskDid(user.privyDid) : null,
+    walletAddress: user?.walletAddress ?? null,
   })
 }
 
@@ -60,8 +61,14 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  await prisma.users.update({ where: { id: userId }, data: { privyDid: did } })
-  return NextResponse.json({ connected: true, did: maskDid(did) })
+  // Resolve the embedded wallet server-side from the verified DID (authoritative).
+  const walletAddress = await getPrivyWallet(did)
+
+  await prisma.users.update({
+    where: { id: userId },
+    data: { privyDid: did, ...(walletAddress ? { walletAddress } : {}) },
+  })
+  return NextResponse.json({ connected: true, did: maskDid(did), walletAddress })
 }
 
 /** DELETE — unlink the current user's Privy identity. */
@@ -70,6 +77,9 @@ export async function DELETE() {
   const userId = session?.user?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  await prisma.users.update({ where: { id: userId }, data: { privyDid: null } })
+  await prisma.users.update({
+    where: { id: userId },
+    data: { privyDid: null, walletAddress: null },
+  })
   return NextResponse.json({ ok: true })
 }
