@@ -1,16 +1,31 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Cormorant_Garamond, Manrope, IBM_Plex_Mono } from 'next/font/google'
 import './globals.css'
 import './navigation.css'
 import { Providers } from './providers'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { RootChrome } from '@/components/RootChrome'
 
-const inter = Inter({
+// Alchm Design System type families. Exposed as CSS variables and consumed by
+// app/globals.css (--ff-ui / --ff-display / --ff-mono) + tailwind.config.ts.
+const manrope = Manrope({
   subsets: ['latin'],
   display: 'swap',
-  preload: true,
-  adjustFontFallback: true,
+  variable: '--font-manrope',
+})
+
+const cormorant = Cormorant_Garamond({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+  variable: '--font-cormorant',
+})
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+  variable: '--font-ibm-plex-mono',
 })
 
 export const metadata: Metadata = {
@@ -33,8 +48,8 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} flex flex-col min-h-screen`}>
+    <html lang="en" className={`${manrope.variable} ${cormorant.variable} ${ibmPlexMono.variable}`}>
+      <body className="flex flex-col min-h-screen font-sans antialiased">
         <Providers>
           <RootChrome>{children}</RootChrome>
         </Providers>

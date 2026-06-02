@@ -33,11 +33,11 @@
   pointer-events: none;
   background-image:
     radial-gradient(2px 2px at 15% 25%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1.5px 1.5px at 78% 12%, rgba(167, 139, 250, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 78% 12%, rgb(var(--violet-rgb) / 0.8), transparent),
     radial-gradient(1px 1px at 35% 68%, rgba(255, 255, 255, 0.6), transparent),
     radial-gradient(2px 2px at 62% 82%, rgba(129, 140, 248, 0.6), transparent),
     radial-gradient(1px 1px at 88% 55%, rgba(255, 255, 255, 0.7), transparent),
-    radial-gradient(1.5px 1.5px at 8% 90%, rgba(167, 139, 250, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 8% 90%, rgb(var(--violet-rgb) / 0.5), transparent),
     radial-gradient(1px 1px at 52% 38%, rgba(255, 255, 255, 0.9), transparent);
   background-size:
     500% 500%,
@@ -73,12 +73,12 @@
   padding: 2.5rem;
   border-radius: 24px;
   background: linear-gradient(135deg, rgba(30, 20, 60, 0.95) 0%, rgba(15, 10, 40, 0.92) 100%);
-  border: 1px solid rgba(139, 92, 246, 0.3);
+  border: 1px solid rgb(var(--violet-500-rgb) / 0.3);
   backdrop-filter: blur(30px);
   -webkit-backdrop-filter: blur(30px);
   box-shadow:
     0 20px 60px rgba(0, 0, 0, 0.5),
-    0 0 50px rgba(139, 92, 246, 0.15),
+    0 0 50px rgb(var(--violet-500-rgb) / 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   text-align: center;
   overflow: hidden;
@@ -93,7 +93,7 @@
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    rgba(139, 92, 246, 0.15) 10%,
+    rgb(var(--violet-500-rgb) / 0.15) 10%,
     transparent 20%,
     rgba(99, 102, 241, 0.1) 30%,
     transparent 40%
@@ -117,15 +117,15 @@
   border-radius: 50%;
   background: conic-gradient(
     from 0deg,
-    rgba(139, 92, 246, 0.6),
+    rgb(var(--violet-500-rgb) / 0.6),
     rgba(99, 102, 241, 0.3),
-    rgba(139, 92, 246, 0.6),
+    rgb(var(--violet-500-rgb) / 0.6),
     rgba(99, 102, 241, 0.3),
-    rgba(139, 92, 246, 0.6)
+    rgb(var(--violet-500-rgb) / 0.6)
   );
   margin-bottom: 1.5rem;
   animation: signin-logo-spin 10s linear infinite;
-  box-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 30px rgb(var(--violet-500-rgb) / 0.3);
 }
 
 @keyframes signin-logo-spin {
@@ -143,13 +143,13 @@
   align-items: center;
   justify-content: center;
   font-size: 1.75rem;
-  color: #a78bfa;
+  color: var(--violet);
 }
 
 .signin-title {
   font-size: 1.75rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #a78bfa, #818cf8, #c4b5fd);
+  background: linear-gradient(135deg, var(--violet), #818cf8, var(--violet-hi));
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -166,7 +166,7 @@
 .signin-divider {
   width: 3rem;
   height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, rgb(var(--violet-500-rgb) / 0.5), transparent);
   margin: 1.5rem auto;
 }
 
@@ -193,7 +193,7 @@
   transform: translateY(-2px);
   box-shadow:
     0 8px 24px rgba(0, 0, 0, 0.3),
-    0 0 20px rgba(139, 92, 246, 0.2);
+    0 0 20px rgb(var(--violet-500-rgb) / 0.2);
 }
 
 .signin-google-btn:disabled {
@@ -209,7 +209,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #a78bfa;
+  border-top-color: var(--violet);
   border-radius: 50%;
   animation: signin-spin 0.7s linear infinite;
 }
