@@ -51,6 +51,7 @@ class AgentUpdate(BaseModel):
     monicaConstant: Optional[float] = None
     currentMood: Optional[str] = None
     evolutionStage: Optional[int] = None
+    avatar: Optional[str] = None
 
 class Agent(AgentBase):
     id: Union[str, int]

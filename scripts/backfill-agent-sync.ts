@@ -24,6 +24,16 @@ interface BackfillRow {
   id: string
   email: string
   name: string | null
+  user_profiles?: {
+    bio: string | null
+    birthDate: Date
+    birthTime: string | null
+    birthLocation: unknown
+    natalChart: unknown
+    natalPositions: unknown
+    monicaConstant: number
+    dominantElement: string
+  } | null
 }
 
 interface BackfillTotals {
@@ -35,7 +45,17 @@ interface BackfillTotals {
 async function syncOne(agent: BackfillRow): Promise<'synced' | 'failed'> {
   const t0 = Date.now()
   try {
-    const { wtenUserId, created } = await syncAgentToWten(agent.email, agent.name)
+    const profile = agent.user_profiles
+    const { wtenUserId, created } = await syncAgentToWten(agent.email, agent.name, {
+      bio: profile?.bio ?? undefined,
+      birthDate: profile?.birthDate?.toISOString(),
+      birthTime: profile?.birthTime ?? undefined,
+      birthLocation: profile?.birthLocation,
+      natalChart: profile?.natalChart,
+      natalPositions: profile?.natalPositions,
+      monicaConstant: profile?.monicaConstant,
+      dominantElement: profile?.dominantElement,
+    })
     await prisma.users.update({
       where: { id: agent.id },
       data: { alchmKitchenUserId: wtenUserId },
@@ -55,7 +75,23 @@ async function main() {
   // per-row. Idempotent or not, the round-trip is wasted bandwidth.
   const agents = await prisma.users.findMany({
     where: { isAgentic: true, alchmKitchenUserId: null } as any,
-    select: { id: true, email: true, name: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      user_profiles: {
+        select: {
+          bio: true,
+          birthDate: true,
+          birthTime: true,
+          birthLocation: true,
+          natalChart: true,
+          natalPositions: true,
+          monicaConstant: true,
+          dominantElement: true,
+        },
+      },
+    },
     orderBy: { email: 'asc' },
   })
 

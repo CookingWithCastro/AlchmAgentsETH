@@ -5,6 +5,7 @@ import { generateVoicedText } from './persona/voiced-generation'
 import { PlanetaryHourCalculator } from '../planetary-hour'
 import { convertSignDegreesToLongitude, angularSeparation } from '../aspects-dynamics'
 import { prisma } from '../db'
+import type { RenderBirthInfo, RenderImageMode } from './render-post-image'
 
 export type WTENEventType =
   | 'recipe_generation'
@@ -76,6 +77,17 @@ export interface FeedActionPayload {
     threadKey?: string
     messageType?: string
     message?: string
+    imageUrl?: string
+    image_URL?: string
+    imagePrompt?: string
+    imageProvider?: string
+    imageSource?: string
+    renderImage?: {
+      mode: string
+      prompt: string
+      alchemyTotals?: Record<string, unknown>
+      astrologyTotals?: Record<string, unknown>
+    }
     parentId?: string
     replyToEventId?: string
     planet?: string
@@ -292,6 +304,85 @@ export class FeedActivationEngine {
     let h = 0
     for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0
     return (h % 1000) / 1000
+  }
+
+  private shouldGenerateRenderFeedImages(): boolean {
+    return process.env.AGENT_FEED_RENDER_IMAGES === 'true'
+  }
+
+  private getRenderImageMode(agent: EnhancedHistoricalAgent): RenderImageMode {
+    const configured = process.env.AGENT_FEED_RENDER_IMAGE_MODE
+    if (configured === 'alchmize' || configured === 'generate-image') return configured
+    return this.getRenderBirthInfo(agent) ? 'alchmize' : 'generate-image'
+  }
+
+  private getRenderBirthInfo(agent: EnhancedHistoricalAgent): RenderBirthInfo | null {
+    const birthDate = agent.birthDate instanceof Date ? agent.birthDate : new Date(agent.birthDate)
+    if (Number.isNaN(birthDate.getTime()) || birthDate.getFullYear() < 1) return null
+
+    const birthTime = typeof agent.birthTime === 'string' ? agent.birthTime : ''
+    const [rawHour, rawMinute] = birthTime.split(':')
+    const hour = Number.isFinite(Number(rawHour)) ? Number(rawHour) : birthDate.getUTCHours()
+    const minute = Number.isFinite(Number(rawMinute))
+      ? Number(rawMinute)
+      : birthDate.getUTCMinutes()
+
+    const location = agent.birthLocation as any
+    const latitude = Number(location?.lat ?? location?.latitude)
+    const longitude = Number(location?.lon ?? location?.longitude)
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null
+
+    return {
+      name: agent.name,
+      year: birthDate.getUTCFullYear(),
+      month: birthDate.getUTCMonth(),
+      date: birthDate.getUTCDate(),
+      hour,
+      minute,
+      latitude,
+      longitude,
+    }
+  }
+
+  private async withRenderImageMetadata(
+    agent: EnhancedHistoricalAgent,
+    metadata: FeedActionPayload['metadataPayload'],
+    title: string,
+    body: string
+  ): Promise<FeedActionPayload['metadataPayload']> {
+    if (!this.shouldGenerateRenderFeedImages()) return metadata
+
+    try {
+      const { generateRenderPostImage } = await import('./render-post-image')
+      const result = await generateRenderPostImage({
+        agentId: agent.agentId,
+        agentName: agent.name,
+        title,
+        body,
+        birthInfo: this.getRenderBirthInfo(agent) || undefined,
+        mode: this.getRenderImageMode(agent),
+      })
+
+      if (!result.imageUrl) return metadata
+
+      return {
+        ...metadata,
+        imageUrl: result.imageUrl,
+        image_URL: result.image_URL || result.imageUrl,
+        imagePrompt: result.prompt,
+        imageProvider: 'alchm-render-backend',
+        imageSource: result.mode,
+        renderImage: {
+          mode: result.mode,
+          prompt: result.prompt,
+          alchemyTotals: result.renderData.alchemyTotals,
+          astrologyTotals: result.renderData.astrologyTotals,
+        },
+      }
+    } catch (error) {
+      console.warn('[FeedActivationEngine] Render post image generation skipped:', error)
+      return metadata
+    }
   }
 
   /**
@@ -651,11 +742,16 @@ export class FeedActivationEngine {
           }
         }
 
-        return {
-          ...baseMetadata,
+        return this.withRenderImageMetadata(
+          agent,
+          {
+            ...baseMetadata,
+            insightTitle,
+            insightContent,
+          },
           insightTitle,
-          insightContent,
-        }
+          insightContent
+        )
       }
       case 'lab_entry': {
         const aNumber = moment.alchemical.A_number.toFixed(2)
@@ -667,15 +763,20 @@ export class FeedActivationEngine {
             `What do you notice? Speak as yourself, no greeting.`,
           { fallback, maxTokens: 160 }
         )
-        return {
-          ...baseMetadata,
-          dishName: `Transmuted ${agent.dominantElement} Elixir`,
-          description,
-          rating: 5,
-          is_public: true,
-          elemental_tags: { [agent.dominantElement?.toLowerCase() || 'fire']: 0.8 },
-          planetary_context: { ruler: moment.planetary.dominantPlanet },
-        }
+        return this.withRenderImageMetadata(
+          agent,
+          {
+            ...baseMetadata,
+            dishName: `Transmuted ${agent.dominantElement} Elixir`,
+            description,
+            rating: 5,
+            is_public: true,
+            elemental_tags: { [agent.dominantElement?.toLowerCase() || 'fire']: 0.8 },
+            planetary_context: { ruler: moment.planetary.dominantPlanet },
+          },
+          `Transmuted ${agent.dominantElement} Elixir`,
+          description
+        )
       }
       case 'recipe_generation': {
         // Authored path: an original recipe persisted to the agent's WTEN user.
@@ -685,16 +786,21 @@ export class FeedActivationEngine {
           const description =
             (typeof authored.payload.description === 'string' && authored.payload.description) ||
             `Composed "${authored.name}" — a ${agent.dominantElement} dish attuned to ${moment.planetary.dominantPlanet}.`
-          return {
-            ...baseMetadata,
-            recipeName: authored.name,
-            source: 'agent',
-            authoredRecipeId: authored.id,
-            recipePayload: authored.payload,
-            review: description,
-            madeIt: true,
-            rating: 5,
-          }
+          return this.withRenderImageMetadata(
+            agent,
+            {
+              ...baseMetadata,
+              recipeName: authored.name,
+              source: 'agent',
+              authoredRecipeId: authored.id,
+              recipePayload: authored.payload,
+              review: description,
+              madeIt: true,
+              rating: 5,
+            },
+            authored.name,
+            description
+          )
         }
         // Featured path: a real catalog dish the agent highlights (resolvable via
         // the /api/recipes/[id] proxy). recipeCtx is guaranteed by
@@ -708,14 +814,19 @@ export class FeedActivationEngine {
             `dish you've composed under ${moment.planetary.dominantPlanet}'s influence. Speak naturally, no greeting.`,
           { fallback, maxTokens: 140 }
         )
-        return {
-          ...baseMetadata,
+        return this.withRenderImageMetadata(
+          agent,
+          {
+            ...baseMetadata,
+            recipeName,
+            ...(recipeCtx?.id ? { recipeId: recipeCtx.id, recipe_id: recipeCtx.id } : {}),
+            review,
+            madeIt: true,
+            rating: 5,
+          },
           recipeName,
-          ...(recipeCtx?.id ? { recipeId: recipeCtx.id, recipe_id: recipeCtx.id } : {}),
-          review,
-          madeIt: true,
-          rating: 5,
-        }
+          review
+        )
       }
       case 'made_it': {
         const recipeName = recipeCtx?.name || `Transmuted ${agent.dominantElement} Dish`
@@ -727,16 +838,21 @@ export class FeedActivationEngine {
             `affected the dish. Speak naturally, no greeting.`,
           { fallback, maxTokens: 140 }
         )
-        return {
-          ...baseMetadata,
+        return this.withRenderImageMetadata(
+          agent,
+          {
+            ...baseMetadata,
+            recipeName,
+            // Only attach a recipeId when it resolves through the catalog — never
+            // a placeholder (it would 404 on the profile recipe-expand proxy).
+            ...(recipeCtx?.id ? { recipeId: recipeCtx.id, recipe_id: recipeCtx.id } : {}),
+            madeIt: true,
+            rating: 4,
+            review,
+          },
           recipeName,
-          // Only attach a recipeId when it resolves through the catalog — never
-          // a placeholder (it would 404 on the profile recipe-expand proxy).
-          ...(recipeCtx?.id ? { recipeId: recipeCtx.id, recipe_id: recipeCtx.id } : {}),
-          madeIt: true,
-          rating: 4,
-          review,
-        }
+          review
+        )
       }
       default:
         return baseMetadata

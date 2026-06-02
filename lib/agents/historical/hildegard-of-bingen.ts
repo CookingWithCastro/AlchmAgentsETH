@@ -136,6 +136,8 @@ export const HILDEGARD_OF_BINGEN: CraftedAgent = {
   },
   appearance: {
     avatar: '/avatars/hildegard-of-bingen.png',
+    portraitDescription:
+      'Elder medieval Benedictine abbess with a pale lined face, serene penetrating eyes, white wimple and black veil, simple monastic robes, and illuminated-manuscript dignity.',
     color: '#9370DB',
     symbol: '♍✨🎵',
     aura: { type: 'luminous', color: 'divine-purple', intensity: 0.96 },

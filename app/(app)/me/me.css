@@ -707,3 +707,285 @@
   background: rgba(255, 255, 255, 0.12);
   transform: translateY(-2px);
 }
+
+/* ==========================================================================
+   Supplemental Cosmic Nodes Styles
+   ========================================================================== */
+
+/* Glass Panel / Cards */
+.me-cosmic-card {
+  border-radius: 20px;
+  background: var(--zodiac-card-gradient);
+  border: 1px solid var(--zodiac-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 2rem;
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.me-cosmic-card:hover {
+  border-color: hsla(var(--zodiac-accent) / 0.5);
+  box-shadow: 
+    0 16px 48px rgba(0, 0, 0, 0.35),
+    0 0 30px var(--zodiac-glow);
+}
+
+/* Dual-Zodiac Pane */
+.me-zodiac-toggle-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.me-zodiac-tabs {
+  display: flex;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.25rem;
+  width: fit-content;
+}
+
+.me-zodiac-tab-btn {
+  padding: 0.5rem 1.5rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s ease;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.me-zodiac-tab-btn.active {
+  background: hsl(var(--zodiac-accent));
+  color: #fff;
+  box-shadow: 0 0 15px hsla(var(--zodiac-accent) / 0.4);
+}
+
+.me-zodiac-positions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.me-zodiac-planet-item {
+  padding: 1rem;
+  border-radius: 12px;
+  background: hsla(var(--zodiac-accent) / 0.05);
+  border: 1px solid hsla(var(--zodiac-accent) / 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  transition: all 0.25s ease;
+}
+
+.me-zodiac-planet-item:hover {
+  transform: translateY(-2px);
+  background: hsla(var(--zodiac-accent) / 0.08);
+  border-color: hsla(var(--zodiac-accent) / 0.25);
+}
+
+.me-zodiac-planet-name {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.me-zodiac-planet-placement {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.me-zodiac-planet-degree {
+  font-size: 0.8rem;
+  color: hsl(var(--zodiac-accent));
+  font-family: monospace;
+}
+
+/* Tarot Oracle Pane */
+.me-tarot-oracle-pane {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+
+.me-tarot-card-item {
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: hsla(var(--zodiac-accent) / 0.06);
+  border: 1px solid hsla(var(--zodiac-accent) / 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.me-tarot-card-item:hover {
+  transform: translateY(-4px);
+  border-color: hsla(var(--zodiac-accent) / 0.3);
+  box-shadow: 0 10px 24px hsla(var(--zodiac-accent) / 0.15);
+}
+
+.me-tarot-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.me-tarot-card-type {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: hsl(var(--zodiac-accent));
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.me-tarot-card-badge {
+  font-size: 1rem;
+}
+
+.me-tarot-card-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.me-tarot-card-desc {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+}
+
+/* Stellium & Aspect Synergy Pane */
+.me-synergy-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.me-stellium-section {
+  padding: 1.25rem;
+  border-radius: 14px;
+  background: rgba(34, 197, 94, 0.06);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.me-stellium-header {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.me-aspects-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.me-aspects-subgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.me-aspect-group-item {
+  padding: 1rem;
+  border-radius: 12px;
+  background: hsla(var(--zodiac-accent) / 0.04);
+  border: 1px solid hsla(var(--zodiac-accent) / 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.me-aspect-group-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+}
+
+.me-aspect-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.me-aspect-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.me-aspect-row span:last-child {
+  font-family: monospace;
+  color: hsl(var(--zodiac-accent));
+}
+
+/* Imaginizer Prompt Engine */
+.me-imaginizer-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.me-prompt-box {
+  padding: 1.25rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.me-copy-prompt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.25rem;
+  border-radius: 10px;
+  background: hsla(var(--zodiac-accent) / 0.15);
+  border: 1px solid var(--zodiac-border);
+  color: hsl(var(--zodiac-accent));
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  width: fit-content;
+}
+
+.me-copy-prompt-btn:hover {
+  background: hsla(var(--zodiac-accent) / 0.25);
+  box-shadow: 0 0 12px hsla(var(--zodiac-accent) / 0.3);
+}
+
+/* Grid Layout for new nodes */
+.me-supplemental-nodes-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+  margin-top: 2rem;
+  padding: 0 1rem;
+}
+
+@media (max-width: 1024px) {
+  .me-supplemental-nodes-grid {
+    grid-template-columns: 1fr;
+  }
+}
+

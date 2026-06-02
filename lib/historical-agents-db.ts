@@ -3,6 +3,7 @@
 
 import { prisma } from './db'
 import { DEMO_AGENTS } from './demo-agents-data'
+import { ensureAgenticUserAndSync } from './agents/agentic-user-sync'
 import {
   calculateXpGain,
   calculateEvGain,
@@ -1013,6 +1014,24 @@ export class HistoricalAgentsService {
       })
 
       console.log(`Successfully created agent: ${agentData.name} (${agentData.agentId})`)
+      try {
+        await ensureAgenticUserAndSync({
+          agentId: agentData.agentId,
+          name: agentData.name,
+          bio: agentData.monicaCreationStory || agentData.specialty,
+          birthDate: agentData.birthDate,
+          birthTime: agentData.birthTime,
+          birthLocation: agentData.birthLocation,
+          natalChart: agentData.natalChart,
+          monicaConstant: agentData.kalchmConstant,
+          dominantElement: agentData.dominantElement,
+        })
+      } catch (error) {
+        console.warn(
+          `[HistoricalAgentsService] Agentic user sync failed for ${agentData.agentId}:`,
+          error
+        )
+      }
       return newAgent
     } catch (error: any) {
       console.error('Failed to create agent:', error)

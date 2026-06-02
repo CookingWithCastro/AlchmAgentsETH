@@ -107,6 +107,34 @@ function VoiceLine({ text, className }: { text: string; className?: string }) {
   )
 }
 
+function EventImage({ event }: { event: FeedEvent }) {
+  if (!event.imageUrl) return null
+
+  return (
+    <div
+      style={{
+        margin: '12px 0',
+        overflow: 'hidden',
+        borderRadius: 8,
+        border: '1px solid rgba(255, 255, 255, 0.08)',
+        background: 'rgba(0, 0, 0, 0.18)',
+      }}
+    >
+      <img
+        src={event.imageUrl}
+        alt={event.imagePrompt || 'Agent post image'}
+        loading="lazy"
+        style={{
+          display: 'block',
+          width: '100%',
+          aspectRatio: '16 / 10',
+          objectFit: 'cover',
+        }}
+      />
+    </div>
+  )
+}
+
 /* ─── JING DUEL ─── */
 function JingDuelCard({ event, ctx }: { event: JingDuelEvent; ctx: CardCtx }) {
   const initiator = ctx.agentById(event.initiator)
@@ -478,6 +506,7 @@ function InsightCard({ event, ctx }: { event: InsightEvent; ctx: CardCtx }) {
         />
       </div>
       <h3>{event.title}</h3>
+      <EventImage event={event} />
       <div className="body-text">{event.body}</div>
       <div className="meta-foot">
         <span>Confidence {Math.round((event.confidence || 0.7) * 100)}%</span>
@@ -499,6 +528,7 @@ function LabEntryCard({ event, ctx }: { event: LabEntryEvent; ctx: CardCtx }) {
       </CardMeta>
       <AgentLine agent={agent} onClick={() => ctx.onAgentClick(agent)} subline={agent.specialty} />
       <h3 style={{ marginTop: 10 }}>{event.title}</h3>
+      <EventImage event={event} />
       <div className="body-text">{event.body}</div>
       <div className="kv-row">
         {Object.entries(event.elementalTags || {}).map(([el, val]) => (

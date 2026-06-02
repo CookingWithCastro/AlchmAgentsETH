@@ -1,10 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Dialog,
   DialogContent,
@@ -80,6 +79,76 @@ const formatBirthLocation = (location: Coordinates) => {
   return `${location.name} (${location.lat.toFixed(1)}°, ${location.lon.toFixed(1)}°)`
 }
 
+function isImageAvatar(value?: string | null): value is string {
+  if (!value) return false
+  return /^(https?:\/\/|\/|data:image\/|blob:)/.test(value.trim())
+}
+
+function AgentCardAvatar({
+  agent,
+  className,
+  textClassName = 'text-lg',
+  showAura = false,
+}: {
+  agent: CraftedAgent
+  className: string
+  textClassName?: string
+  showAura?: boolean
+}) {
+  const avatar = agent.appearance?.avatar
+  const [imageFailed, setImageFailed] = useState(false)
+  const avatarIsImage = isImageAvatar(avatar)
+  const imageAvatar = !imageFailed && avatarIsImage ? avatar : null
+  const fallback = agent.appearance?.symbol || (!avatarIsImage ? avatar : null) || '✨'
+  const auraColor = agent.appearance?.aura?.color || '#A78BFA'
+
+  useEffect(() => {
+    setImageFailed(false)
+    if (!avatarIsImage || !avatar) return
+
+    let cancelled = false
+    const image = new window.Image()
+    image.onload = () => {
+      if (!cancelled) setImageFailed(false)
+    }
+    image.onerror = () => {
+      if (!cancelled) setImageFailed(true)
+    }
+    image.src = avatar
+
+    return () => {
+      cancelled = true
+    }
+  }, [avatar, avatarIsImage])
+
+  return (
+    <div className={`relative shrink-0 ${className}`}>
+      {imageAvatar ? (
+        <img
+          src={imageAvatar}
+          alt={agent.name}
+          className="h-full w-full rounded-full object-cover"
+          loading="lazy"
+          onError={() => setImageFailed(true)}
+        />
+      ) : (
+        <div
+          className={`flex h-full w-full items-center justify-center rounded-full font-bold text-white ${textClassName}`}
+          style={{ backgroundColor: agent.appearance?.color || '#8B5CF6' }}
+        >
+          {fallback}
+        </div>
+      )}
+      {showAura && (
+        <div
+          className="pointer-events-none absolute inset-0 animate-pulse rounded-full opacity-30"
+          style={{ backgroundColor: auraColor }}
+        />
+      )}
+    </div>
+  )
+}
+
 interface AgentCardProps {
   agent: CraftedAgent
   variant?: AgentCardVariant
@@ -150,12 +219,11 @@ export function AgentCard({
         onClick={() => onSelect?.(agent.id)}
       >
         <CardContent className="p-4 text-center space-y-2">
-          <div
-            className="w-16 h-16 rounded-full mx-auto flex items-center justify-center text-white font-bold text-xl mb-2"
-            style={{ backgroundColor: agent.appearance?.color || '#8B5CF6' }}
-          >
-            {agent.appearance?.symbol || '✨'}
-          </div>
+          <AgentCardAvatar
+            agent={agent}
+            className="mx-auto mb-2 h-16 w-16"
+            textClassName="text-xl"
+          />
           <h4 className="font-semibold text-sm">{agent.name}</h4>
           <p className="text-xs text-muted-foreground line-clamp-1">{agent.title}</p>
           <Badge size="sm" className={getConsciousnessColor(consciousnessLevel)}>
@@ -178,12 +246,7 @@ export function AgentCard({
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-                style={{ backgroundColor: agent.appearance?.color || '#8B5CF6' }}
-              >
-                {agent.appearance?.symbol || '✨'}
-              </div>
+              <AgentCardAvatar agent={agent} className="h-12 w-12" />
 
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -259,12 +322,7 @@ export function AgentCard({
         onClick={() => onSelect?.(agent.id)}
       >
         <CardContent className="p-3 text-center">
-          <div
-            className="w-12 h-12 rounded-full mx-auto flex items-center justify-center text-white font-bold mb-2"
-            style={{ backgroundColor: agent.appearance?.color || '#8B5CF6' }}
-          >
-            {agent.appearance?.symbol || '✨'}
-          </div>
+          <AgentCardAvatar agent={agent} className="mx-auto mb-2 h-12 w-12" />
           <p className="text-xs font-medium line-clamp-1">{agent.name}</p>
           <Badge size="sm" variant="outline" className="mt-1">
             Kalchm: {agent.consciousness.monicaConstant.toFixed(1)}
@@ -285,17 +343,7 @@ export function AgentCard({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg relative"
-              style={{ backgroundColor: agent.appearance?.color || '#8B5CF6' }}
-            >
-              {agent.appearance?.symbol || '✨'}
-              {/* Aura effect */}
-              <div
-                className="absolute inset-0 rounded-full animate-pulse opacity-30"
-                style={{ backgroundColor: agent.appearance?.aura?.color || '#A78BFA' }}
-              />
-            </div>
+            <AgentCardAvatar agent={agent} className="h-12 w-12" showAura />
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
                 {agent.name}
@@ -500,12 +548,7 @@ function AgentDetailsModal({ agent }: { agent: CraftedAgent }) {
     <>
       <DialogHeader>
         <DialogTitle className="flex items-center gap-3">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold"
-            style={{ backgroundColor: agent.appearance?.color || '#8B5CF6' }}
-          >
-            {agent.appearance?.symbol || '✨'}
-          </div>
+          <AgentCardAvatar agent={agent} className="h-12 w-12" />
           <div>
             <div className="flex items-center gap-2">
               {agent.name}

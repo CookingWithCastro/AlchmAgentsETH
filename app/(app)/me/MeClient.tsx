@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
@@ -15,6 +16,9 @@ import {
   LogOut,
   Crown,
   ChefHat,
+  Layers,
+  Copy,
+  Check,
 } from 'lucide-react'
 
 const CircularNatalHoroscope = dynamic(
@@ -75,6 +79,9 @@ interface MeClientProps {
     longitude?: number
   }
   profileName: string | null
+  renderAstrologize?: any
+  renderAlchemize?: any
+  renderImaginizer?: any
 }
 
 const tourCards = [
@@ -173,8 +180,22 @@ export function MeClient({
   computationError,
   birthInfo,
   profileName,
+  renderAstrologize,
+  renderAlchemize,
+  renderImaginizer,
 }: MeClientProps) {
   const maxAlchm = Math.max(spirit, essence, matter, substance, 1)
+
+  const [activeZodiacTab, setActiveZodiacTab] = useState<'tropical' | 'sidereal'>('tropical')
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyPrompt = () => {
+    if (renderImaginizer?.prompt) {
+      navigator.clipboard.writeText(renderImaginizer.prompt)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   // Inject zodiac CSS custom properties via inline style on the root element
   const zodiacCssVars = {
@@ -460,6 +481,273 @@ export function MeClient({
           </div>
         </div>
       </section>
+
+      {/* Supplemental Cosmic Alignment Nodes */}
+      {renderAlchemize && (
+        <>
+          <div className="me-section-title">
+            <h2>Supplemental Cosmic Alignments</h2>
+            <p>Tarot, Sidereal placements, and Alchemical synergy mapping</p>
+            <div className="divider" />
+          </div>
+
+          <section className="me-supplemental-nodes-grid">
+            {/* Node 1: Dual-Zodiac Placements */}
+            <div className="me-cosmic-card me-zodiac-toggle-pane">
+              <h3>Dual-Zodiac Toggle</h3>
+              <p>
+                Compare your Tropical (seasonal Western) and Sidereal (astronomical Vedic) planetary
+                coordinates.
+              </p>
+
+              <div className="me-zodiac-tabs">
+                <button
+                  className={`me-zodiac-tab-btn ${activeZodiacTab === 'tropical' ? 'active' : ''}`}
+                  onClick={() => setActiveZodiacTab('tropical')}
+                >
+                  Tropical
+                </button>
+                <button
+                  className={`me-zodiac-tab-btn ${activeZodiacTab === 'sidereal' ? 'active' : ''}`}
+                  onClick={() => setActiveZodiacTab('sidereal')}
+                >
+                  Sidereal
+                </button>
+              </div>
+
+              <div className="me-zodiac-positions-grid">
+                {Object.entries(
+                  activeZodiacTab === 'tropical'
+                    ? renderAstrologize?.totals?.planets || {}
+                    : renderAstrologize?.sidereal?.CelestialBodies?.all?.reduce(
+                        (acc: any, p: any) => {
+                          acc[p.label] = {
+                            sign: p.Sign?.label || 'Aries',
+                            degree: p.ChartPosition?.Ecliptic?.DecimalDegrees % 30 || 0,
+                            house: p.House?.id || '1',
+                          }
+                          return acc
+                        },
+                        {}
+                      ) || {}
+                ).map(([planet, details]: [string, any]) => (
+                  <div key={planet} className="me-zodiac-planet-item">
+                    <span className="me-zodiac-planet-name">{planet}</span>
+                    <span className="me-zodiac-planet-placement">{details.sign}</span>
+                    <span className="me-zodiac-planet-degree">
+                      {Number(details.degree || 0).toFixed(1)}°
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Node 2: Tarot Oracle */}
+            <div className="me-cosmic-card me-tarot-oracle-pane">
+              <div style={{ gridColumn: 'span 2' }}>
+                <h3>Tarot & Decan Oracle</h3>
+                <p>Sacred minor and major tarot archetypes mapped directly to your placements.</p>
+              </div>
+
+              {renderAlchemize.totals?.['Sun Major Arcana'] && (
+                <div className="me-tarot-card-item">
+                  <div className="me-tarot-card-header">
+                    <span className="me-tarot-card-type">Sun Sign</span>
+                    <span className="me-tarot-card-badge">☀️</span>
+                  </div>
+                  <div className="me-tarot-card-name">
+                    {renderAlchemize.totals['Sun Major Arcana']}
+                  </div>
+                  <div className="me-tarot-card-desc">
+                    Your core soul purpose card, expressing solar energy.
+                  </div>
+                </div>
+              )}
+
+              {renderAlchemize.totals?.['Ascendant Major Arcana'] && (
+                <div className="me-tarot-card-item">
+                  <div className="me-tarot-card-header">
+                    <span className="me-tarot-card-type">Ascendant</span>
+                    <span className="me-tarot-card-badge">🌅</span>
+                  </div>
+                  <div className="me-tarot-card-name">
+                    {renderAlchemize.totals['Ascendant Major Arcana']}
+                  </div>
+                  <div className="me-tarot-card-desc">
+                    Your outward persona and life path manifestation card.
+                  </div>
+                </div>
+              )}
+
+              {renderAlchemize.totals?.['Decan Minor Arcana'] && (
+                <div className="me-tarot-card-item">
+                  <div className="me-tarot-card-header">
+                    <span className="me-tarot-card-type">Decan Ruler</span>
+                    <span className="me-tarot-card-badge">✨</span>
+                  </div>
+                  <div className="me-tarot-card-name">
+                    {renderAlchemize.totals['Decan Minor Arcana']}
+                  </div>
+                  <div className="me-tarot-card-desc">
+                    Your decan card representing the sub-ruler qualities.
+                  </div>
+                </div>
+              )}
+
+              {renderAlchemize.totals?.['Cusp Minor Arcana'] &&
+                renderAlchemize.totals['Cusp Minor Arcana'] !== 'None' && (
+                  <div
+                    className="me-tarot-card-item"
+                    style={{
+                      border: '1px solid rgba(234, 179, 8, 0.4)',
+                      background: 'rgba(234, 179, 8, 0.05)',
+                    }}
+                  >
+                    <div className="me-tarot-card-header">
+                      <span className="me-tarot-card-type" style={{ color: '#eab308' }}>
+                        Cusp Influence
+                      </span>
+                      <span className="me-tarot-card-badge">🔮</span>
+                    </div>
+                    <div className="me-tarot-card-name">
+                      {renderAlchemize.totals['Cusp Minor Arcana']}
+                    </div>
+                    <div className="me-tarot-card-desc">
+                      A cusp card showing mixed gifts from sign borders.
+                    </div>
+                  </div>
+                )}
+            </div>
+
+            {/* Node 3: Stellium & Aspect Synergy Map */}
+            <div className="me-cosmic-card me-synergy-pane">
+              <h3>Consciousness Synergy Map</h3>
+              <p>Planetary groupings (Stelliums) and dynamic harmonic connections in your chart.</p>
+
+              {renderAlchemize['All Stelliums'] && renderAlchemize['All Stelliums'].length > 0 ? (
+                <div className="me-stellium-section">
+                  <div className="me-stellium-header">
+                    <span>🌟</span>
+                    <span>Active Stellium: {renderAlchemize['All Stelliums'].join(', ')}</span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'rgba(255,255,255,0.7)',
+                      marginTop: '0.25rem',
+                    }}
+                  >
+                    An exceptionally strong concentration of celestial bodies in this sign focuses
+                    your power intensely here.
+                  </p>
+                </div>
+              ) : (
+                <div
+                  className="me-stellium-section"
+                  style={{
+                    background: 'rgba(255,255,255,0.02)',
+                    borderColor: 'rgba(255,255,255,0.1)',
+                  }}
+                >
+                  <div className="me-stellium-header" style={{ color: 'rgba(255,255,255,0.6)' }}>
+                    <span>✨</span>
+                    <span>No Major Stelliums</span>
+                  </div>
+                  <p
+                    style={{
+                      fontSize: '0.8rem',
+                      color: 'rgba(255,255,255,0.4)',
+                      marginTop: '0.25rem',
+                    }}
+                  >
+                    Your planetary energies are harmoniously distributed across multiple zodiac
+                    signs.
+                  </p>
+                </div>
+              )}
+
+              <div className="me-aspects-section">
+                <h4>Dynamic Harmonizer Links</h4>
+                <div className="me-aspects-subgrid">
+                  {renderAlchemize['All Conjunctions'] &&
+                    renderAlchemize['All Conjunctions'].length > 0 && (
+                      <div className="me-aspect-group-item">
+                        <div className="me-aspect-group-title">
+                          <span>Conjunctions</span>
+                          <span>{renderAlchemize['All Conjunctions'].length}</span>
+                        </div>
+                        <div className="me-aspect-list">
+                          {renderAlchemize['All Conjunctions']
+                            .slice(0, 3)
+                            .map((a: any, i: number) => (
+                              <div key={i} className="me-aspect-row">
+                                <span>{a.Planets.join(' ☌ ')}</span>
+                                <span>{a.Sign}</span>
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+
+                  {renderAlchemize['All Trines'] && renderAlchemize['All Trines'].length > 0 && (
+                    <div className="me-aspect-group-item">
+                      <div className="me-aspect-group-title">
+                        <span>Trines</span>
+                        <span>{renderAlchemize['All Trines'].length}</span>
+                      </div>
+                      <div className="me-aspect-list">
+                        {renderAlchemize['All Trines'].slice(0, 3).map((a: any, i: number) => (
+                          <div key={i} className="me-aspect-row">
+                            <span>{a.Planets.join(' ▵ ')}</span>
+                            <span>{a.Sign}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {renderAlchemize['All Squares'] && renderAlchemize['All Squares'].length > 0 && (
+                    <div className="me-aspect-group-item">
+                      <div className="me-aspect-group-title">
+                        <span>Squares</span>
+                        <span>{renderAlchemize['All Squares'].length}</span>
+                      </div>
+                      <div className="me-aspect-list">
+                        {renderAlchemize['All Squares'].slice(0, 3).map((a: any, i: number) => (
+                          <div key={i} className="me-aspect-row">
+                            <span>{a.Planets.join(' □ ')}</span>
+                            <span>{a.Sign}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Node 4: Imaginizer Prompt Engine */}
+            <div className="me-cosmic-card me-imaginizer-pane">
+              <h3>Imaginizer Prompt Engine</h3>
+              <p>The prompt that shapes the visual sigil representing your alchemical blueprint.</p>
+
+              {renderImaginizer?.prompt ? (
+                <>
+                  <div className="me-prompt-box">{renderImaginizer.prompt}</div>
+                  <button className="me-copy-prompt-btn" onClick={handleCopyPrompt}>
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                    {copied ? 'Copied!' : 'Copy Sigil Prompt'}
+                  </button>
+                </>
+              ) : (
+                <div className="me-prompt-box" style={{ opacity: 0.6, fontSize: '0.8rem' }}>
+                  No prompt generated. Configure the Render Imaginizer to unlock prompt engine.
+                </div>
+              )}
+            </div>
+          </section>
+        </>
+      )}
 
       {/* Footer */}
       <footer className="me-footer">
