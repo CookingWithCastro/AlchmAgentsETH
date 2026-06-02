@@ -36,41 +36,50 @@ function truncate(value: string, maxLength: number): string {
 }
 
 export function buildAvatarPrompt(agent: AgentAvatarMeta): string {
-  const descriptors = [
-    `recognizable historically informed portrait likeness of ${agent.name}`,
-    agent.portraitDescription
-      ? `physical reference: ${truncate(agent.portraitDescription, 360)}`
-      : `base the facial likeness on well-known historical depictions of ${agent.name} when available`,
-    'human face first; preserve age, facial structure, hair, expression, and culturally appropriate clothing cues',
-    cleanSegment(agent.title),
-    cleanSegment(agent.cosmicRole),
-    agent.zodiacSign ? `${agent.zodiacSign} zodiac signature` : undefined,
-    agent.element ? `${agent.element} elemental energy` : undefined,
-    agent.planet ? `ruled by ${agent.planet}` : undefined,
-    agent.personality ? `personality: ${truncate(agent.personality, 220)}` : undefined,
-    'subtle alchemical and astrological aura around the person, not replacing their human likeness',
-    'alchemical digital art',
-    'luminous celestial atmosphere',
-    'expressive eyes',
-    'centered shoulders-up profile picture composition',
-    'clean circular-avatar friendly crop',
-    'rich detail',
-    'no readable text',
-    'no logo',
-    'no watermark',
-  ].filter(Boolean)
+  const rawRole = cleanSegment(agent.title) || cleanSegment(agent.cosmicRole) || 'historical figure'
+  // Avoid "the The Quantum Visionary" when the title already carries an article.
+  const role = /^(the|a|an)\s/i.test(rawRole) ? rawRole : `the ${rawRole}`
+  const likeness = agent.portraitDescription
+    ? `Physical likeness: ${truncate(agent.portraitDescription, 320)}`
+    : `Render the well-known appearance of ${agent.name} from established historical depictions`
 
-  return descriptors.join(', ')
+  // Caricature = gently exaggerated, characterful, but flattering and unmistakably
+  // recognizable. A single cohesive art direction across all agents keeps the
+  // gallery looking like one set rather than 71 unrelated styles.
+  const descriptors = [
+    `Stylized character caricature portrait of ${agent.name}, ${role}`,
+    likeness,
+    'Gently exaggerate their most characterful features so the personality reads instantly, while keeping the face dignified, flattering, and unmistakably recognizable — a refined caricature, never grotesque or comedic',
+    'Warm semi-realistic painterly digital illustration with confident brushwork, soft cinematic rim lighting, and a shallow depth of field',
+    'Period-accurate clothing, hair, and signature attributes that signal exactly who this person is',
+    agent.element
+      ? `A subtle ${agent.element.toLowerCase()} elemental aura woven into the lighting and background`
+      : 'A subtle elemental aura woven into the lighting',
+    agent.planet ? `Faint ${agent.planet} planetary energy glowing in the background` : undefined,
+    agent.personality
+      ? `Facial expression and mood conveying: ${truncate(agent.personality, 160)}`
+      : 'A characterful, alive expression with engaging eyes',
+    'Head-and-shoulders, centered, facing the viewer, exactly one person',
+    'Cohesive cosmic-alchemy art direction: deep jewel-tone background with a soft luminous halo behind the head',
+    'Clean composition that crops well to a circular avatar, sharp focus on the face, rich detail',
+    'No text, no lettering, no watermark, no logo, no frame or border, no extra people, no extra limbs, no deformities',
+  ].filter(Boolean) as string[]
+
+  // Strip trailing dots/spaces per segment so the join yields clean ". " separators.
+  return descriptors.map(s => s.trim().replace(/[.\s]+$/, '')).join('. ') + '.'
 }
 
 export async function generateAgentAvatar(agent: AgentAvatarMeta): Promise<AgentAvatarResult> {
   const prompt = buildAvatarPrompt(agent)
-  const mode: RenderImageMode = agent.birthInfo ? 'alchmize' : 'generate-image'
+  // Prompt-controlled generation: the caricature prompt carries the full likeness +
+  // art direction, so we use `generate-image` rather than `alchmize`. This avoids the
+  // chart-derived prompt mutation and the hard birthInfo requirement, giving a more
+  // reliable, consistent avatar across every agent.
+  const mode: RenderImageMode = 'generate-image'
   const result = await generateRenderPostImage({
     agentId: agent.agentId,
     agentName: agent.name,
     prompt,
-    birthInfo: agent.birthInfo || undefined,
     mode,
     width: 1024,
     height: 1024,
