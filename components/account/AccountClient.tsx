@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ByokPanel } from './ByokPanel'
+import { PrivyConnect } from './PrivyConnect'
 
 type Props = {
   tier: 'free' | 'alchemist' | 'master'
@@ -118,6 +119,18 @@ export function AccountClient({ tier, hasActiveSub, premiumViaKitchen, email, na
           </p>
           <div className="mt-4">
             <ByokPanel />
+          </div>
+        </section>
+
+        {/* Cross-site identity (Privy) */}
+        <section className="mt-6 rounded-xl border border-white/10 bg-white/5 p-5">
+          <h2 className="text-lg font-semibold">Cross-site identity</h2>
+          <p className="mt-1 text-sm text-white/60">
+            Link a portable Alchm identity (via Privy) — the same identity on alchm.kitchen, so your
+            account is unified across both sites. Email, Google, or wallet.
+          </p>
+          <div className="mt-4">
+            <PrivyConnect />
           </div>
         </section>
 

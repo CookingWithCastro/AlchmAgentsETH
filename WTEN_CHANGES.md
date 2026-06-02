@@ -78,6 +78,27 @@ round-trip needed.
   instead redirect through `https://alchm.kitchen/api/auth/signout` so the
   revocation record is written. Coordinate before turning revocation on.
 
+## 6. Privy shared cross-site identity (REQUIRED for the Privy unification)
+
+PA layers **Privy** as a shared cross-site identity: a logged-in user "connects"
+Privy on `/account`, PA verifies the token server-side (`@privy-io/server-auth`)
+and stores the Privy **DID** on `users.privy_did`. For the identity to span both
+sites, alchm.kitchen must use the **same Privy app**.
+
+- **Same app id** (`cmi9t84qs00acl80dam2j8195`): mount `PrivyProvider` with this
+  app id (`NEXT_PUBLIC_PRIVY_APP_ID`); add `agents.alchm.kitchen`, `alchm.kitchen`,
+  `http://localhost:3000` to the app's **Allowed origins** in the Privy dashboard.
+  Login methods: email, Google, wallet. Embedded wallets: **off**.
+- **Store the DID:** add a `privy_did` (TEXT, unique) column to WTEN's `users` and
+  a connect route that verifies the Privy access token with `@privy-io/server-auth`
+  (needs `PRIVY_APP_SECRET`) and writes `privy_did` for the current user. Mirror
+  PA's `app/api/account/privy/route.ts` + `lib/privy/server.ts`.
+- **Result:** the same person gets the same DID on both sites → join `users` on
+  `privy_did` for a robust, provider-agnostic cross-site identity (cleaner than the
+  email / `alchmKitchenUserId` link).
+- **Env (both repos):** `NEXT_PUBLIC_PRIVY_APP_ID=cmi9t84qs00acl80dam2j8195`
+  (public) + `PRIVY_APP_SECRET` (server-only, from the Privy dashboard).
+
 ---
 
 ## Quick verification checklist
@@ -87,3 +108,6 @@ round-trip needed.
 - [ ] `/profile` links to `agents.alchm.kitchen/me`.
 - [ ] `ALCHM_KITCHEN_SYNC_SECRET` matches PA.
 - [ ] (If revocation is on) coordinate PA logout to bounce through kitchen signout.
+- [ ] Privy: WTEN mounts the SAME Privy app id; both domains in Allowed origins.
+- [ ] Privy: WTEN `users.privy_did` column + connect route storing the DID.
+- [ ] Privy env set on both repos: `NEXT_PUBLIC_PRIVY_APP_ID` + `PRIVY_APP_SECRET`.

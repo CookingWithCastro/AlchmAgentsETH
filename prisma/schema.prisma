@@ -1250,6 +1250,12 @@ model users {
    * alchm.kitchen's UUID for this agent — returned by sync-debit. Used to build /profile/{id} links.
    */
   alchmKitchenUserId String?           @unique
+  /**
+   * Privy DID (did:privy:...) — the shared cross-site identity. Both PA and
+   * alchm.kitchen use the same Privy app, so this is the same value per person
+   * across sites: a stable, provider-agnostic join key. See lib/privy/.
+   */
+  privyDid           String?           @unique @map("privy_did")
   created_agents     created_agents[]
   user_profiles      user_profiles?
   mcp_invocations    mcp_invocations[]
