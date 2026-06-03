@@ -446,7 +446,7 @@ export function AgentDetailModal({ agent, trigger, open, onOpenChange }: AgentDe
               </Link>
             </Button>
             <Button variant="outline" asChild>
-              <Link href={`/synastry?agent=${agent.id}`}>
+              <Link href={`/synastry/${encodeURIComponent(agent.id)}`}>
                 <Heart className="w-4 h-4 mr-2" />
                 Synastry Analysis
               </Link>

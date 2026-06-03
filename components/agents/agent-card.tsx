@@ -847,7 +847,7 @@ function AgentDetailsModal({ agent }: { agent: CraftedAgent }) {
             </Link>
           </Button>
           <Button variant="outline" asChild>
-            <Link href={`/synastry?agent=${agent.id}`}>Synastry Analysis</Link>
+            <Link href={`/synastry/${encodeURIComponent(agent.id)}`}>Synastry Analysis</Link>
           </Button>
         </div>
       </div>

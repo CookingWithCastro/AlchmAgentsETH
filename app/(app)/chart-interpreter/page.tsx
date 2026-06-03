@@ -85,6 +85,15 @@ export default function ChartInterpreterPage() {
       refreshInterval: 30000,
     })
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const chartType = params.get('type')
+
+    if (chartType === 'birth' || chartType === 'current' || chartType === 'synastry') {
+      setChartData(prev => ({ ...prev, chartType }))
+    }
+  }, [])
+
   // Handle quick input parsed data
   const handleQuickInputParsed = (parsedData: ParsedChartData) => {
     setChartData(prev => ({
