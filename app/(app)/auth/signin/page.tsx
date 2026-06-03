@@ -16,7 +16,7 @@ import './signin.css'
 function SignInContent() {
   const [loading, setLoading] = useState(false)
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get('callbackUrl') || '/me'
+  const callbackUrl = searchParams.get('callbackUrl') || '/profile'
 
   const handleGoogleSignIn = async (e: React.MouseEvent) => {
     e.preventDefault()

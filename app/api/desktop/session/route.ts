@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from '@/lib/auth-options'
 import { prisma } from '@/lib/db'
 import { EconomyService } from '@/lib/services/economyService'
+import { buildProfileYieldStateFromBalances } from '@/lib/profile-yield'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -143,67 +144,14 @@ export async function GET(req: Request) {
     }
   }
 
-  // 6. Retrieve daily claim history to calculate dynamic streaks and cooldowns
-  const userBalancesRecord = await prisma.tokenBalance.findUnique({
-    where: { userId },
-  })
-
-  const lastClaimAt = userBalancesRecord?.lastDailyClaimAt
-    ? new Date(userBalancesRecord.lastDailyClaimAt).toISOString()
-    : null
-  const lastClaimAgentsAt = userBalancesRecord?.lastDailyClaimAgentsAt
-    ? new Date(userBalancesRecord.lastDailyClaimAgentsAt).toISOString()
-    : null
-
-  const todayDateString = new Date().toDateString()
-  const canClaimKitchen = lastClaimAt
-    ? new Date(lastClaimAt).toDateString() !== todayDateString
-    : true
-  const canClaimAgents = lastClaimAgentsAt
-    ? new Date(lastClaimAgentsAt).toDateString() !== todayDateString
-    : true
+  // 6. Retrieve daily claim history to calculate dynamic streaks and cooldowns.
+  const wallet = buildProfileYieldStateFromBalances(balances)
 
   return NextResponse.json({
     mode: 'authenticated',
     userId,
     apiKey: token,
-    balances: {
-      spirit: Number(balances.spirit),
-      essence: Number(balances.essence),
-      matter: Number(balances.matter),
-      substance: Number(balances.substance),
-    },
-    accounts: [
-      {
-        site: 'agents',
-        label: 'Alchm Agents',
-        homeUrl: 'https://agents.alchm.kitchen',
-        balances: {
-          spirit: Number(balances.spirit),
-          essence: Number(balances.essence),
-          matter: Number(balances.matter),
-          substance: Number(balances.substance),
-        },
-        canClaimDaily: canClaimAgents,
-        streak: 0,
-        lastDailyClaimAt: lastClaimAgentsAt,
-        status: 'linked',
-      },
-      {
-        site: 'kitchen',
-        label: 'Alchm Kitchen',
-        homeUrl: 'https://alchm.kitchen',
-        balances: {
-          spirit: Number(balances.spirit),
-          essence: Number(balances.essence),
-          matter: Number(balances.matter),
-          substance: Number(balances.substance),
-        },
-        canClaimDaily: canClaimKitchen,
-        streak: 0,
-        lastDailyClaimAt: lastClaimAt,
-        status: 'linked',
-      },
-    ],
+    balances: wallet.balances,
+    accounts: wallet.accounts,
   })
 }

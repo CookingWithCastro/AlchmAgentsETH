@@ -489,7 +489,10 @@ export default function LandingPage() {
                 <Monitor className="w-4 h-4 inline mr-1.5" />
                 {ALCHM_DESKTOP_DOWNLOAD_LABEL}
               </button>
-              <button className="landing-secondary-btn flex-1" onClick={() => router.push('/me')}>
+              <button
+                className="landing-secondary-btn flex-1"
+                onClick={() => router.push('/profile')}
+              >
                 <BarChart3 className="w-4 h-4 inline mr-1.5" />
                 Profile
               </button>

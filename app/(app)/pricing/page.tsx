@@ -66,7 +66,7 @@ export default function PricingPage() {
               ))}
             </ul>
             <a
-              href="/me"
+              href="/profile"
               className="mt-6 inline-block rounded-md border border-white/15 px-4 py-2 text-sm text-white/80 hover:bg-white/5"
             >
               Continue free

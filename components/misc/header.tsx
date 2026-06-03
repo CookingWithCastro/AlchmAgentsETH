@@ -142,7 +142,7 @@ export function Header() {
                   {isAuthed && (
                     <Link
                       key={`${group.title}-me`}
-                      href="/me"
+                      href="/profile"
                       className="block px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                     >
                       My Alchm
@@ -167,8 +167,8 @@ export function Header() {
           ))}
           {isAuthed && (
             <Link
-              key="simple-/me"
-              href="/me"
+              key="simple-/profile"
+              href="/profile"
               className="text-sm font-medium hover:text-primary transition-colors"
             >
               My Space
@@ -226,7 +226,7 @@ export function Header() {
                   {isAuthed && (
                     <Link
                       key={`mobile-${group.title}-me`}
-                      href="/me"
+                      href="/profile"
                       className="block px-4 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors rounded-md"
                       onClick={() => setMobileMenuOpen(false)}
                     >

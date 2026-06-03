@@ -6,6 +6,8 @@ import { calculateMC } from '@/lib/monica/monica-constant-validator'
 import { backend } from '@/lib/backend'
 import { getSunSign, getZodiacTheme } from '@/lib/zodiac-utils'
 import { fetchRenderSupplementalData } from '@/lib/agents/render-supplemental'
+import { getProfileYieldState, type ProfileYieldState } from '@/lib/profile-yield'
+import { ProfileYieldPanel } from '@/components/profile/ProfileYieldPanel'
 import { MeClient } from './MeClient'
 import './me.css'
 
@@ -45,7 +47,7 @@ export default async function MePage() {
               <Link href="/auth/signup" className="btn-primary">
                 Create Account
               </Link>
-              <Link href="/auth/signin" className="btn-secondary">
+              <Link href="/auth/signin?callbackUrl=/profile" className="btn-secondary">
                 Sign In
               </Link>
             </div>
@@ -57,7 +59,13 @@ export default async function MePage() {
 
   // ── Onboarding (no birth info yet) ──────────────────────────────────
   const userId = session.user.id
-  const profile = await prisma.profiles.findUnique({ where: { userId } })
+  const [profile, wallet] = await Promise.all([
+    prisma.profiles.findUnique({ where: { userId } }),
+    getProfileYieldState(userId).catch((error): ProfileYieldState | null => {
+      console.error('Profile wallet load error:', error)
+      return null
+    }),
+  ])
 
   if (!profile?.birthInfo) {
     return (
@@ -80,6 +88,7 @@ export default async function MePage() {
               Let&apos;s personalize your Alchm experience with your birth details.
             </p>
           </div>
+          <ProfileYieldPanel initialWallet={wallet} />
           <ProfileOnboardingForm />
         </div>
       </div>
@@ -242,6 +251,7 @@ export default async function MePage() {
       renderAstrologize={renderSupplemental?.raw?.astrology_info}
       renderAlchemize={renderSupplemental?.raw?.alchemy_info}
       renderImaginizer={renderSupplemental?.raw?.imaginizer_info}
+      wallet={wallet}
     />
   )
 }

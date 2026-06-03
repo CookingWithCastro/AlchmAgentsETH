@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import dynamic from 'next/dynamic'
 import type { ZodiacTheme } from '@/lib/zodiac-utils'
+import type { ProfileYieldState } from '@/lib/profile-yield'
+import { ProfileYieldPanel } from '@/components/profile/ProfileYieldPanel'
 import {
   Compass,
   Users,
@@ -82,6 +84,7 @@ interface MeClientProps {
   renderAstrologize?: any
   renderAlchemize?: any
   renderImaginizer?: any
+  wallet: ProfileYieldState | null
 }
 
 const tourCards = [
@@ -183,6 +186,7 @@ export function MeClient({
   renderAstrologize,
   renderAlchemize,
   renderImaginizer,
+  wallet,
 }: MeClientProps) {
   const maxAlchm = Math.max(spirit, essence, matter, substance, 1)
 
@@ -321,6 +325,8 @@ export function MeClient({
           </div>
         </div>
       </section>
+
+      <ProfileYieldPanel initialWallet={wallet} />
 
       {/* Explore the Cosmos — Site Tour */}
       <div className="me-section-title">

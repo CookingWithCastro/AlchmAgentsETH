@@ -243,7 +243,7 @@ export function Navigation() {
 
             {status === 'authenticated' && session?.user ? (
               <>
-                <Link href="/me">
+                <Link href="/profile">
                   <Button variant="ghost" size="icon" aria-label="Profile" className="nav-icon-btn">
                     <User className="h-5 w-5" />
                   </Button>
@@ -328,7 +328,7 @@ export function Navigation() {
               {status === 'authenticated' ? (
                 <>
                   <Link
-                    href="/me"
+                    href="/profile"
                     className="nav-mobile-action"
                     onClick={() => setMobileMenuOpen(false)}
                   >
