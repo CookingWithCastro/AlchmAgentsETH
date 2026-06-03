@@ -379,4 +379,109 @@ export class EconomyService {
       },
     }
   }
+
+  static async creditTokens(
+    userId: string,
+    amounts: { spirit: number; essence: number; matter: number; substance: number },
+    source: string,
+    description: string,
+    idempotencyKey?: string
+  ) {
+    try {
+      return await prisma.$transaction(async tx => {
+        // Upsert balance
+        const balances = await tx.tokenBalance.upsert({
+          where: { userId },
+          create: {
+            userId,
+            spirit: amounts.spirit,
+            essence: amounts.essence,
+            matter: amounts.matter,
+            substance: amounts.substance,
+            updatedAt: new Date(),
+          },
+          update: {
+            spirit: { increment: amounts.spirit },
+            essence: { increment: amounts.essence },
+            matter: { increment: amounts.matter },
+            substance: { increment: amounts.substance },
+            updatedAt: new Date(),
+          },
+        })
+
+        const transactionGroupId = crypto.randomUUID()
+        const dateStr = new Date().toISOString().split('T')[0]
+
+        // Create transaction logs
+        const tokens = [
+          { type: 'Spirit', amount: amounts.spirit },
+          { type: 'Essence', amount: amounts.essence },
+          { type: 'Matter', amount: amounts.matter },
+          { type: 'Substance', amount: amounts.substance },
+        ]
+
+        for (const token of tokens) {
+          if (token.amount <= 0) continue
+          await tx.tokenTransaction.create({
+            data: {
+              transactionGroupId,
+              userId,
+              tokenType: token.type,
+              amount: new Prisma.Decimal(token.amount),
+              sourceType: source,
+              description,
+              idempotencyKey: idempotencyKey
+                ? `${idempotencyKey}:${token.type}`
+                : `credit:${source}:${userId}:${dateStr}:${crypto.randomUUID()}:${token.type}`,
+              createdAt: new Date(),
+            },
+          })
+        }
+
+        // Fetch user email to sync credit to alchm.kitchen
+        const user = await tx.users.findUnique({
+          where: { id: userId },
+          select: { email: true },
+        })
+
+        if (user?.email) {
+          // Fire-and-forget sync to alchm.kitchen
+          const amountStrings = {
+            spirit: String(amounts.spirit),
+            essence: String(amounts.essence),
+            matter: String(amounts.matter),
+            substance: String(amounts.substance),
+          }
+
+          import('@/lib/alchm-credit-sync').then(({ syncCreditToAlchm }) => {
+            syncCreditToAlchm({
+              userEmail: user.email,
+              amounts: amountStrings,
+              source,
+              idempotencyKey: idempotencyKey || transactionGroupId,
+            }).catch(syncErr => {
+              console.error(
+                '[EconomyService] failed to sync token credit to alchm.kitchen:',
+                syncErr
+              )
+            })
+          })
+        }
+
+        return {
+          balances: {
+            spirit: Number(balances.spirit),
+            essence: Number(balances.essence),
+            matter: Number(balances.matter),
+            substance: Number(balances.substance),
+            lastDailyClaimAt: balances.lastDailyClaimAt?.toISOString() || null,
+            lastDailyClaimAgentsAt: balances.lastDailyClaimAgentsAt?.toISOString() || null,
+          },
+        }
+      })
+    } catch (error: any) {
+      console.error('[EconomyService] failed to credit tokens:', error)
+      throw error
+    }
+  }
 }

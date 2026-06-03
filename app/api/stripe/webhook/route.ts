@@ -3,6 +3,7 @@ import type Stripe from 'stripe'
 import { randomUUID } from 'crypto'
 import { getStripe, planForPrice } from '@/lib/stripe/client'
 import { prisma } from '@/lib/db'
+import { EconomyService } from '@/lib/services/economyService'
 
 // Must run on Node (raw body + crypto signature verification).
 export const runtime = 'nodejs'
@@ -35,7 +36,21 @@ export async function POST(request: NextRequest) {
         const s = event.data.object as Stripe.Checkout.Session
         const subId = typeof s.subscription === 'string' ? s.subscription : s.subscription?.id
         const userIdHint = s.metadata?.userId || s.client_reference_id || null
-        if (subId) await syncFromSubscriptionId(subId, userIdHint)
+        if (subId) {
+          await syncFromSubscriptionId(subId, userIdHint)
+        } else if (s.metadata?.type === 'token_purchase' && userIdHint) {
+          const spirit = Number(s.metadata.spirit || 0)
+          const essence = Number(s.metadata.essence || 0)
+          const matter = Number(s.metadata.matter || 0)
+          const substance = Number(s.metadata.substance || 0)
+          await EconomyService.creditTokens(
+            userIdHint,
+            { spirit, essence, matter, substance },
+            'token_purchase',
+            'Cosmic Token Purchase (Stripe)',
+            s.id
+          )
+        }
         break
       }
       case 'customer.subscription.created':
