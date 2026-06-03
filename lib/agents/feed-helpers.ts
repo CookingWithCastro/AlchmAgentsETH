@@ -55,7 +55,8 @@ export function normalizeDbActionToFeedEvent(row: any): FeedEvent {
       type: 'lab-entry',
       agentId,
       title: metadata.recipeName || 'Cosmic Recipe Channeling',
-      body: metadata.messageExcerpt || metadata.summary || metadata.message || '',
+      body:
+        metadata.review || metadata.messageExcerpt || metadata.summary || metadata.message || '',
       aNumber: metadata.aNumber || 7.43,
       rating: metadata.rating || 5,
       elementalTags: metadata.elemental_tags || { Earth: 0.8 },

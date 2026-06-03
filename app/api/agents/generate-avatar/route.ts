@@ -6,6 +6,9 @@ import { backend } from '@/lib/backend'
 import { getHistoricalPortraitHint } from '@/lib/agents/portrait-hints'
 import { syncAgentToWten, type SyncAgentProfilePayload } from '@/lib/wtenClient'
 import type { RenderBirthInfo } from '@/lib/agents/render-post-image'
+import { requireAdmin, adminErrorResponse } from '@/lib/admin-auth'
+import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
+import { hasInternalApiSecret } from '@/lib/security/internal-auth'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -269,6 +272,26 @@ async function persistAvatar(meta: AgentAvatarMeta, slug: string | undefined, av
 }
 
 export async function POST(request: Request) {
+  // Authorization gate. This endpoint triggers paid external image generation
+  // AND persists/overwrites the agent avatar + syncs the agentic profile to WTEN
+  // (using the server's privileged sync secret), so it must never be anonymous.
+  // Allowed callers: a server-to-server secret (cron/backfill) OR an authenticated
+  // admin (the avatar control on the agent page). The interactive path is also
+  // per-IP rate-limited to blunt cost-amplification.
+  if (!hasInternalApiSecret(request)) {
+    const admin = await requireAdmin()
+    if (!admin.ok) return adminErrorResponse(admin)
+
+    const ip = getClientIp(request.headers)
+    const limit = rateLimit(`generate-avatar:${ip}`, { limit: 10, windowMs: 5 * 60_000 })
+    if (!limit.ok) {
+      return NextResponse.json(
+        { success: false, error: 'Rate limit exceeded — try again shortly.' },
+        { status: 429 }
+      )
+    }
+  }
+
   let body: Record<string, unknown>
   try {
     body = await request.json()

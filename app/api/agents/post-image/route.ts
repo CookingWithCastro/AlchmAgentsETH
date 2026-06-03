@@ -4,26 +4,20 @@ import {
   type RenderImageMode,
   type RenderPostImageInput,
 } from '@/lib/agents/render-post-image'
+import { hasInternalApiSecret } from '@/lib/security/internal-auth'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 export const maxDuration = 120
-
-function isAuthorized(request: Request): boolean {
-  const secret = process.env.INTERNAL_API_SECRET || process.env.ALCHM_KITCHEN_SYNC_SECRET
-  if (!secret) return process.env.NODE_ENV !== 'production'
-
-  const authToken = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '').trim()
-  const syncToken = request.headers.get('x-sync-secret') || ''
-  return authToken === secret || syncToken === secret
-}
 
 function parseMode(value: unknown): RenderImageMode | undefined {
   return value === 'alchmize' || value === 'generate-image' ? value : undefined
 }
 
 export async function POST(request: Request) {
-  if (!isAuthorized(request)) {
+  // Server-to-server only (feed engine / cron / manual ops). Fail-closed: a
+  // missing secret denies rather than opening this paid generation endpoint.
+  if (!hasInternalApiSecret(request)) {
     return new Response('Unauthorized', { status: 401 })
   }
 
