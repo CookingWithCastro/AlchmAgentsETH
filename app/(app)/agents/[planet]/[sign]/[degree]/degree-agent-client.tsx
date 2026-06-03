@@ -87,6 +87,8 @@ const PLANET_EMOJIS: Record<string, string> = {
   Pluto: '♇',
 }
 
+const PLANET_OVERVIEW_SLUGS = new Set(['sun', 'moon', 'jupiter'])
+
 export default function DegreeAgentClient({
   planet,
   sign,
@@ -102,6 +104,10 @@ export default function DegreeAgentClient({
   const [loading, setLoading] = useState(false)
 
   const isDay = new Date().getHours() >= 6 && new Date().getHours() < 18
+  const planetSlug = planet.toLowerCase()
+  const planetOverviewHref = PLANET_OVERVIEW_SLUGS.has(planetSlug)
+    ? `/planets/${planetSlug}`
+    : `/planetary-agents?planet=${encodeURIComponent(planet)}`
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -641,7 +647,7 @@ export default function DegreeAgentClient({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 pt-4">
-                <Link href={`/planets/${planet.toLowerCase()}`} className="block">
+                <Link href={planetOverviewHref} className="block">
                   <Button
                     variant="outline"
                     size="sm"

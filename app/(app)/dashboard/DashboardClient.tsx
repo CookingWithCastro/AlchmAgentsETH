@@ -235,7 +235,7 @@ export function DashboardClient({ user, dashboardAgents }: DashboardClientProps)
               <Button
                 variant="outline"
                 className="h-20 flex-col gap-2 bg-white/5 border-white/10 hover:bg-white/10 text-purple-200 hover:text-white"
-                onClick={() => router.push('/agents')}
+                onClick={() => router.push('/planetary-agents')}
               >
                 <Users className="h-6 w-6" />
                 <span className="text-sm">Browse Agents</span>
