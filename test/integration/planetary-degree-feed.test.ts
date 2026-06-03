@@ -9,9 +9,10 @@ vi.mock('@/lib/services/planetary-positions-service', () => ({
 describe('Planetary degree feed responses', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    delete process.env.AGENT_FEED_RENDER_IMAGES
   })
 
-  it('returns valid response payloads for planetary and Moon degree agents', async () => {
+  it('returns valid transit meal payloads for planetary and Moon degree agents', async () => {
     const { planetaryPositionsService } = await import('@/lib/services/planetary-positions-service')
     const { planetaryDegreeFeedService } = await import('@/lib/agents/planetary-degree-feed')
 
@@ -71,14 +72,26 @@ describe('Planetary degree feed responses', () => {
     expect(messages).toHaveLength(3)
     expect(messages.every(message => message.valid)).toBe(true)
     expect(messages.every(message => message.response.length > 40)).toBe(true)
-    expect(messages.every(message => message.action.eventType === 'insight')).toBe(true)
-    expect(messages.every(message => Boolean(message.action.metadataPayload.insightContent))).toBe(
+    expect(messages.every(message => message.action.eventType === 'recipe_generation')).toBe(true)
+    expect(messages.every(message => Boolean(message.action.metadataPayload.recipeName))).toBe(true)
+    expect(messages.every(message => Boolean(message.action.metadataPayload.recipePayload))).toBe(
       true
     )
+    expect(messages.every(message => Boolean(message.action.metadataPayload.imagePrompt))).toBe(
+      true
+    )
+    expect(
+      messages.every(message => !message.action.metadataPayload.recipeName?.includes('entered'))
+    ).toBe(true)
     expect(messages.map(message => message.action.metadataPayload.internalTrigger)).toEqual([
       'planet_degree_changed',
       'planet_degree_changed',
       'moon_degree_changed',
+    ])
+    expect(messages.map(message => message.action.metadataPayload.messageType)).toEqual([
+      'planetary_degree_transit_meal',
+      'planetary_degree_transit_meal',
+      'moon_phase_transit_meal',
     ])
   })
 })

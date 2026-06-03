@@ -42,6 +42,11 @@ export interface FeedActionPayload {
     authoredRecipeId?: string
     review?: string
     madeIt?: boolean
+    ingredients?: string[]
+    cuisine?: string
+    mealType?: string
+    flavorProfile?: string[]
+    aNumber?: number
     // For 'commensal_request'
     targetName?: string
     withAgent?: string
