@@ -8,7 +8,7 @@ export default async function SynastryIndexPage({
   searchParams: Promise<{ agent?: string | string[] }>
 }) {
   const params = await searchParams
-  const rawAgent = Array.isArray(params.agent) ? params.agent[0] : params.agent
+  const rawAgent = (Array.isArray(params.agent) ? params.agent[0] : params.agent)?.trim()
 
   if (rawAgent) {
     redirect(`/synastry/${encodeURIComponent(rawAgent)}`)

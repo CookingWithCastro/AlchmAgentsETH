@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Star, Calendar, MapPin, Clock, Download, Save, Zap } from 'lucide-react'
+import { Loader2, Star, Calendar, MapPin, Clock, Download, Save, Zap, Heart } from 'lucide-react'
 import CircularNatalHoroscope from '@/components/charts/circular-natal-horoscope'
 import EnhancedChartDisplay from '@/components/charts/enhanced-chart-display'
 import QuickChartInput from '@/components/charts/quick-chart-input'
@@ -53,6 +53,10 @@ interface ChartData {
   planets: Record<string, { sign: string; degree: number; house: number }>
 }
 
+function formatSynastryAgentLabel(agentId: string) {
+  return agentId.replace(/[-_]+/g, ' ').replace(/\b\w/g, char => char.toUpperCase())
+}
+
 export default function ChartInterpreterPage() {
   const [chartData, setChartData] = useState<ChartData>({
     name: '',
@@ -77,6 +81,7 @@ export default function ChartInterpreterPage() {
   const [interpretation, setInterpretation] = useState('')
   const [loading, setLoading] = useState(false)
   const [selectedPlanet, setSelectedPlanet] = useState<string | null>(null)
+  const [synastryAgentId, setSynastryAgentId] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'input' | 'analysis'>('input')
 
   // Use planetary positions hook for real-time current moment data
@@ -88,9 +93,14 @@ export default function ChartInterpreterPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const chartType = params.get('type')
+    const agentId = params.get('agent')
 
     if (chartType === 'birth' || chartType === 'current' || chartType === 'synastry') {
       setChartData(prev => ({ ...prev, chartType }))
+    }
+
+    if (agentId) {
+      setSynastryAgentId(agentId)
     }
   }, [])
 
@@ -104,7 +114,7 @@ export default function ChartInterpreterPage() {
       birthPlace: parsedData.birthPlace || '',
       latitude: parsedData.latitude,
       longitude: parsedData.longitude,
-      chartType: 'birth' as ChartType,
+      chartType: prev.chartType === 'synastry' ? 'synastry' : ('birth' as ChartType),
     }))
     // Auto-switch to analysis mode if we have enough data
     if (parsedData.birthDate && parsedData.birthPlace) {
@@ -239,6 +249,7 @@ export default function ChartInterpreterPage() {
     'Pisces',
   ]
   const houses = Array.from({ length: 12 }, (_, i) => i + 1)
+  const synastryAgentLabel = synastryAgentId ? formatSynastryAgentLabel(synastryAgentId) : null
 
   // Effect to populate current moment data when chart type is 'current'
   useEffect(() => {
@@ -280,7 +291,13 @@ export default function ChartInterpreterPage() {
                 AI-enhanced astrological analysis with planetary council wisdom
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {chartData.chartType === 'synastry' && synastryAgentLabel && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Heart className="w-3 h-3" />
+                  Partner: {synastryAgentLabel}
+                </Badge>
+              )}
               <Badge variant="outline" className="flex items-center gap-1">
                 <Zap className="w-3 h-3" />
                 Monica Constant: {monicaConstant.toFixed(3)}

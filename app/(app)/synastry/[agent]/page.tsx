@@ -1,22 +1,33 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { cache } from 'react'
 import { ArrowLeft, Heart, MessageCircle, Sparkles, Stars, UserRound } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
 import { resolveAnyAgent } from '@/lib/agents/resolve-any-agent'
 
-export const dynamic = 'force-dynamic'
+// Pre-render the known historical set and resolve the thousands of planetary,
+// lunar, and DB-backed crafted agents on demand.
+export const dynamicParams = true
+export const revalidate = 3600
+
+const getSynastryAgent = cache((agentId: string) => resolveAnyAgent(agentId))
 
 type SynastryAgentPageProps = {
   params: Promise<{ agent: string }>
 }
 
+export async function generateStaticParams() {
+  return HISTORICAL_AGENTS.map(agent => ({ agent: agent.id }))
+}
+
 export async function generateMetadata({ params }: SynastryAgentPageProps): Promise<Metadata> {
   const { agent: agentId } = await params
-  const agent = await resolveAnyAgent(agentId)
+  const agent = await getSynastryAgent(agentId)
 
   if (!agent) {
     return {
@@ -27,6 +38,9 @@ export async function generateMetadata({ params }: SynastryAgentPageProps): Prom
   return {
     title: `${agent.name} Synastry`,
     description: `Explore compatibility, resonance, and chart comparison with ${agent.name}.`,
+    alternates: {
+      canonical: `/synastry/${encodeURIComponent(agent.id)}`,
+    },
   }
 }
 
@@ -38,7 +52,7 @@ function percent(value?: number) {
 
 export default async function SynastryAgentPage({ params }: SynastryAgentPageProps) {
   const { agent: agentId } = await params
-  const agent = await resolveAnyAgent(agentId)
+  const agent = await getSynastryAgent(agentId)
 
   if (!agent) notFound()
 
