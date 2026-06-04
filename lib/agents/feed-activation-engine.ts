@@ -668,7 +668,18 @@ export class FeedActivationEngine {
     // Elemental surges manifest as a cooked dish — a real, resolvable catalog
     // recipe (see fetchCatalogRecipe). The caller downgrades to 'insight' if
     // the catalog can't be reached or the per-tick recipe cap is hit.
-    if (trigger.reason.includes('elemental')) return 'recipe_generation'
+    if (trigger.reason.includes('elemental')) {
+      const chart = agent.natalChart as any
+      const hasBirthchart =
+        chart &&
+        typeof chart === 'object' &&
+        chart.planets &&
+        typeof chart.planets === 'object' &&
+        Object.keys(chart.planets).length > 0
+      if (hasBirthchart) {
+        return 'recipe_generation'
+      }
+    }
     return 'insight'
   }
 
