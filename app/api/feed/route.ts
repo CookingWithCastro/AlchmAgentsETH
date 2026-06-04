@@ -24,8 +24,54 @@ export async function GET(req: Request) {
   const since = url.searchParams.get('since')
   const before = url.searchParams.get('before')
 
+  // 1. Query active historical agents with birthcharts to get whitelisted IDs
+  let validAgentIds: string[] = []
+  let agentsMap = new Map<string, any>()
+  try {
+    const dbAgents = await prisma.historical_agents.findMany({
+      select: {
+        agentId: true,
+        name: true,
+        natalChart: true,
+        dominantElement: true,
+      },
+    })
+    for (const a of dbAgents) {
+      agentsMap.set(a.agentId, a)
+      const chart = a.natalChart as any
+      const hasBirthchart =
+        chart &&
+        typeof chart === 'object' &&
+        chart.planets &&
+        typeof chart.planets === 'object' &&
+        Object.keys(chart.planets).length > 0
+      if (hasBirthchart) {
+        validAgentIds.push(a.agentId)
+      }
+    }
+  } catch (err) {
+    console.error('[feed/GET] failed to query historical_agents:', err)
+    return NextResponse.json(
+      { error: 'feed_unavailable', events: [], cursor: null, hasMore: false },
+      { status: 503 }
+    )
+  }
+
   const whereClause: any = {
     status: { in: ['executed', 'posted'] },
+    agentId: { in: validAgentIds },
+    eventType: {
+      in: [
+        'recipe_generation',
+        'recipe',
+        'made_it',
+        'made-it',
+        'transmutation',
+        'lab_entry',
+        'lab-entry',
+        'yield_claim',
+      ],
+    },
   }
 
   if (since) {
@@ -43,10 +89,6 @@ export async function GET(req: Request) {
       take: PAGE_SIZE + 1, // fetch one extra to detect hasMore
     })
   } catch (err) {
-    // A DB failure here must surface as a hard error, not an empty feed.
-    // An empty 200 is indistinguishable from "no activity yet" and masked a
-    // total Prisma outage in June 2026 — return 503 so the SSE catch-up loop
-    // and monitoring see the fault instead of a silently-empty timeline.
     console.error('[feed/GET] failed to query agent_action_events:', err)
     return NextResponse.json(
       { error: 'feed_unavailable', events: [], cursor: null, hasMore: false },
@@ -57,12 +99,64 @@ export async function GET(req: Request) {
   const hasMore = dbEvents.length > PAGE_SIZE
   if (hasMore) dbEvents = dbEvents.slice(0, PAGE_SIZE)
 
-  const events = dbEvents.map(normalizeDbActionToFeedEvent)
+  const events = dbEvents.map(row => {
+    const metadata = (row.metadataPayload || {}) as Record<string, any>
+    const agent = agentsMap.get(row.agentId)
+    const createdAt = row.postedAt || row.createdAt || new Date()
+    const createdAtStr = typeof createdAt === 'string' ? createdAt : createdAt.toISOString()
+
+    if (row.eventType === 'yield_claim') {
+      return {
+        id: row.id || row.idempotencyKey,
+        type: 'yield_claim',
+        historicalAgentId: metadata.historicalAgentId || row.agentId,
+        planetaryAgentId: metadata.planetaryAgentId || 'planetary-unknown',
+        amount: Number(metadata.amount || 0),
+        createdAt: createdAtStr,
+      }
+    }
+
+    // Recipe Event mapping
+    const recipeName = metadata.recipeName || metadata.dishName || 'Cosmic Recipe'
+    const element = metadata.element || agent?.dominantElement || 'Fire'
+    const elements = metadata.elemental_tags || { [element]: 0.8 }
+
+    const ELEMENT_TO_SACRED_STAT: Record<string, string> = {
+      Fire: 'Spirit',
+      Water: 'Essence',
+      Earth: 'Matter',
+      Air: 'Substance',
+    }
+    const esmsTag = ELEMENT_TO_SACRED_STAT[element] || 'Spirit'
+    const planetaryHour =
+      metadata.planetarySignature?.planetaryHour || metadata.planetaryHour || 'Sun'
+
+    return {
+      id: row.id || row.idempotencyKey,
+      type: 'recipe_post',
+      agent: {
+        id: row.agentId,
+        name: agent?.name || row.agentId,
+        kind: 'historical',
+        hasBirthchart: true,
+        birthchart: agent?.natalChart || {},
+      },
+      recipe: {
+        name: recipeName,
+        elements,
+      },
+      planetaryHour,
+      esmsTag,
+      element,
+      createdAt: createdAtStr,
+    }
+  })
+
   const oldest = events[events.length - 1]
 
   return NextResponse.json({
     events,
-    cursor: oldest?.timestamp || null,
+    cursor: oldest?.createdAt || null,
     hasMore,
   })
 }
