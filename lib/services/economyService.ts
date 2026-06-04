@@ -15,6 +15,7 @@ export type TransactionSourceType =
   | 'agents_operation'
   | 'transit_attunement'
   | 'group_chat_quest'
+  | 'yield_claim'
 
 function isSameUtcDay(iso: string | null | undefined): boolean {
   if (!iso) return false
@@ -482,6 +483,238 @@ export class EconomyService {
     } catch (error: any) {
       console.error('[EconomyService] failed to credit tokens:', error)
       throw error
+    }
+  }
+
+  static async claimPlanetaryYield(historicalAgentId: string, planetaryAgentId: string) {
+    // 1. Verify historical agent
+    const agent = await prisma.historical_agents.findUnique({
+      where: { agentId: historicalAgentId },
+    })
+    if (!agent) {
+      throw new Error(`Historical agent with ID ${historicalAgentId} not found`)
+    }
+
+    const chart = agent.natalChart as any
+    const hasBirthchart =
+      chart &&
+      typeof chart === 'object' &&
+      chart.planets &&
+      typeof chart.planets === 'object' &&
+      Object.keys(chart.planets).length > 0
+
+    if (!hasBirthchart) {
+      throw new Error('Historical agent must have a birthchart to claim yield')
+    }
+
+    // 2. Classify planetary agent
+    const { classifyAgent } = await import('@/lib/agents/agent-type-model')
+    const c = classifyAgent(planetaryAgentId)
+    if (!c.isSprite) {
+      throw new Error(`Agent with ID ${planetaryAgentId} is not a planetary yield source`)
+    }
+
+    // 3. Upsert both users and balances
+    const historicalEmail = `${historicalAgentId}@agentic.alchm.kitchen`
+    const planetaryEmail = `${planetaryAgentId}@agentic.alchm.kitchen`
+
+    const histUser = await prisma.users.upsert({
+      where: { email: historicalEmail },
+      create: {
+        email: historicalEmail,
+        name: agent.name,
+        provider: 'agentic',
+        role: 'agent',
+        isAgentic: true,
+      },
+      update: {},
+    })
+
+    const planUser = await prisma.users.upsert({
+      where: { email: planetaryEmail },
+      create: {
+        email: planetaryEmail,
+        name: planetaryAgentId,
+        provider: 'agentic',
+        role: 'agent',
+        isAgentic: true,
+      },
+      update: {},
+    })
+
+    // Upsert token balances if missing
+    await prisma.tokenBalance.upsert({
+      where: { userId: histUser.id },
+      create: {
+        userId: histUser.id,
+        spirit: 0,
+        essence: 0,
+        matter: 0,
+        substance: 0,
+      },
+      update: {},
+    })
+
+    const { spriteReservoirFor } = await import('@/lib/agents/sprite-reservoirs')
+    const reservoir = spriteReservoirFor(planetaryAgentId, 0.5) || {
+      spirit: 100,
+      essence: 100,
+      matter: 100,
+      substance: 100,
+    }
+
+    const currentPlanetaryBalance = await prisma.tokenBalance.upsert({
+      where: { userId: planUser.id },
+      create: {
+        userId: planUser.id,
+        spirit: reservoir.spirit,
+        essence: reservoir.essence,
+        matter: reservoir.matter,
+        substance: reservoir.substance,
+      },
+      update: {},
+    })
+
+    // 4. Calculate claim amount (10% of current planetary balance, minimum 5.0 total)
+    const BESTOW_FRACTION = 0.1
+    const bestow = {
+      spirit: Number(currentPlanetaryBalance.spirit) * BESTOW_FRACTION,
+      essence: Number(currentPlanetaryBalance.essence) * BESTOW_FRACTION,
+      matter: Number(currentPlanetaryBalance.matter) * BESTOW_FRACTION,
+      substance: Number(currentPlanetaryBalance.substance) * BESTOW_FRACTION,
+    }
+    let totalClaim = bestow.spirit + bestow.essence + bestow.matter + bestow.substance
+    if (totalClaim < 5.0) {
+      // If balance is too low, use default minimum tokens
+      bestow.spirit = 2.5
+      bestow.essence = 2.5
+      bestow.matter = 2.5
+      bestow.substance = 2.5
+      totalClaim = 10.0
+    }
+
+    const transactionGroupId = crypto.randomUUID()
+    const idempotencyKey = `claim:yield:${historicalAgentId}:${planetaryAgentId}:${Date.now()}`
+
+    // 5. Database transaction
+    const updated = await prisma.$transaction(async tx => {
+      // Decrement planetary agent's balance
+      await tx.tokenBalance.update({
+        where: { userId: planUser.id },
+        data: {
+          spirit: { decrement: bestow.spirit },
+          essence: { decrement: bestow.essence },
+          matter: { decrement: bestow.matter },
+          substance: { decrement: bestow.substance },
+          updatedAt: new Date(),
+        },
+      })
+
+      // Increment historical agent's balance
+      const updatedBalance = await tx.tokenBalance.update({
+        where: { userId: histUser.id },
+        data: {
+          spirit: { increment: bestow.spirit },
+          essence: { increment: bestow.essence },
+          matter: { increment: bestow.matter },
+          substance: { increment: bestow.substance },
+          updatedAt: new Date(),
+        },
+      })
+
+      // Log transactions
+      const tokens = [
+        { type: 'Spirit', amount: bestow.spirit },
+        { type: 'Essence', amount: bestow.essence },
+        { type: 'Matter', amount: bestow.matter },
+        { type: 'Substance', amount: bestow.substance },
+      ]
+
+      for (const token of tokens) {
+        if (token.amount <= 0) continue
+        // Outflow from planetary agent
+        await tx.tokenTransaction.create({
+          data: {
+            transactionGroupId,
+            userId: planUser.id,
+            tokenType: token.type,
+            amount: new Prisma.Decimal(-token.amount),
+            sourceType: 'yield_claim',
+            description: `Yield claimed by ${historicalAgentId}`,
+            idempotencyKey: `${idempotencyKey}:out:${token.type}`,
+          },
+        })
+        // Inflow to historical agent
+        await tx.tokenTransaction.create({
+          data: {
+            transactionGroupId,
+            userId: histUser.id,
+            tokenType: token.type,
+            amount: new Prisma.Decimal(token.amount),
+            sourceType: 'yield_claim',
+            description: `Yield claimed from ${planetaryAgentId}`,
+            idempotencyKey: `${idempotencyKey}:in:${token.type}`,
+          },
+        })
+      }
+
+      // Create agent feed event
+      await tx.agent_action_events.create({
+        data: {
+          agentId: historicalAgentId,
+          agentEmail: historicalEmail,
+          eventType: 'yield_claim',
+          triggerType: 'yield_claim',
+          triggerSummary: `${historicalAgentId} claimed yield from ${planetaryAgentId}`,
+          score: 0.9,
+          idempotencyKey,
+          status: 'posted',
+          evaluatedAt: new Date(),
+          postedAt: new Date(),
+          metadataPayload: {
+            historicalAgentId,
+            planetaryAgentId,
+            amount: totalClaim,
+            bestowed: bestow,
+          },
+        },
+      })
+
+      return updatedBalance
+    })
+
+    // 6. Sync credit to alchm.kitchen if active
+    try {
+      const { syncCreditToAlchm } = await import('@/lib/alchm-credit-sync')
+      await syncCreditToAlchm({
+        userEmail: historicalEmail,
+        amounts: {
+          spirit: bestow.spirit.toFixed(4),
+          essence: bestow.essence.toFixed(4),
+          matter: bestow.matter.toFixed(4),
+          substance: bestow.substance.toFixed(4),
+        },
+        source: 'yield_claim',
+        idempotencyKey,
+        metadata: {
+          historicalAgentId,
+          planetaryAgentId,
+          amount: totalClaim,
+        },
+      })
+    } catch (syncErr) {
+      console.error('[EconomyService] failed to sync yield claim credit to alchm.kitchen:', syncErr)
+    }
+
+    return {
+      success: true,
+      amount: totalClaim,
+      balances: {
+        spirit: Number(updated.spirit),
+        essence: Number(updated.essence),
+        matter: Number(updated.matter),
+        substance: Number(updated.substance),
+      },
     }
   }
 }
