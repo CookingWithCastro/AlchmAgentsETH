@@ -35,6 +35,9 @@ export async function syncCreditToAlchm(params: {
     degree?: number
     totalTokens?: number
     degreeAgentId?: string
+    historicalAgentId?: string
+    planetaryAgentId?: string
+    amount?: number
   }
 }): Promise<{ ok: boolean; error?: string; balances?: any }> {
   const alchmConfig = (() => {

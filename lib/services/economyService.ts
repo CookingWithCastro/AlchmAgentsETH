@@ -551,6 +551,7 @@ export class EconomyService {
         essence: 0,
         matter: 0,
         substance: 0,
+        updatedAt: new Date(),
       },
       update: {},
     })
@@ -571,6 +572,7 @@ export class EconomyService {
         essence: reservoir.essence,
         matter: reservoir.matter,
         substance: reservoir.substance,
+        updatedAt: new Date(),
       },
       update: {},
     })
@@ -642,6 +644,7 @@ export class EconomyService {
             sourceType: 'yield_claim',
             description: `Yield claimed by ${historicalAgentId}`,
             idempotencyKey: `${idempotencyKey}:out:${token.type}`,
+            createdAt: new Date(),
           },
         })
         // Inflow to historical agent
@@ -654,6 +657,7 @@ export class EconomyService {
             sourceType: 'yield_claim',
             description: `Yield claimed from ${planetaryAgentId}`,
             idempotencyKey: `${idempotencyKey}:in:${token.type}`,
+            createdAt: new Date(),
           },
         })
       }
