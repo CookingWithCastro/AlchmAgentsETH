@@ -7,6 +7,10 @@ import { join, dirname, basename } from 'path'
 import { createHash, randomUUID } from 'crypto'
 import { mkdir, rename, unlink } from 'fs/promises'
 import { calculateAllPlanets, type EnhancedBirthInfo } from './lib/enhanced-astronomical-calculator'
+import { detectPatternsStatic, type PlanetPosition } from './lib/astrological-pattern-recognition'
+import { createNatalSigilRune, type SigilStyle } from './lib/runes/natal-sigil-runes'
+import { ChartGeometryExtractor } from './lib/chart-geometry-extractor'
+import { createSigilSvg, sigilSvgToDataUrl } from './lib/sigil-download'
 import {
   computeElementalMomentum,
   computeElementalVelocity,
@@ -194,6 +198,7 @@ interface PhilosopherStoneInput {
   longitude: number
   agentName?: string
   additionalContext?: string
+  style?: string
 }
 
 const DAILY_YIELD_TOTAL = 10
@@ -290,34 +295,58 @@ function calculateLocalPhilosopherStone(input: PhilosopherStoneInput) {
     return { ok: false, status: 400, message: 'Latitude or longitude is invalid.' }
   }
 
-  const month = date.getUTCMonth() + 1
-  const day = date.getUTCDate()
-  const hour = date.getUTCHours()
-  const minute = date.getUTCMinutes()
-  const sunElement = sunElementForDate(month, day)
-  const contextWeight = String(input.additionalContext || '').length % 23
-  const raw: Record<StoneElement, number> = {
-    Fire: 18 + ((month * 7 + day + Math.max(0, latitude) + contextWeight) % 35),
-    Water: 18 + ((day * 5 + hour + Math.abs(Math.min(0, longitude))) % 35),
-    Air: 18 + ((hour * 9 + minute + Math.abs(longitude) + contextWeight) % 35),
-    Earth: 18 + ((month * 3 + minute + Math.abs(latitude)) % 35),
+  // Calculate planetary positions using high-precision calculations
+  const birthInfo: EnhancedBirthInfo = {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    minute: date.getUTCMinutes(),
+    second: date.getUTCSeconds() || 0,
+    latitude,
+    longitude,
   }
-  raw[sunElement] += 32
 
-  const total = Object.values(raw).reduce((sum, value) => sum + value, 0)
-  const elements = {
-    Fire: raw.Fire / total,
-    Water: raw.Water / total,
-    Air: raw.Air / total,
-    Earth: raw.Earth / total,
-  }
-  const dominantElement = Object.entries(elements).sort((a, b) => b[1] - a[1])[0][0]
+  const chart = calculateAllPlanets(birthInfo)
+
+  // Map to PlanetPosition interface
+  const planetPositions: PlanetPosition[] = ASTROLOGY_PLANET_ORDER.map(name => {
+    const p = chart.planets[name]
+    return {
+      planet: name,
+      sign: p.sign,
+      degree: p.signDegree,
+      house: 1,
+      date,
+    }
+  })
+
+  // Calculate aspects and patterns static
+  const { aspects, patterns } = detectPatternsStatic(planetPositions)
+
+  // Extract geometry for sigil generation
+  const geometry = ChartGeometryExtractor.extractFromChartData(planetPositions, aspects, 800, 800)
+
+  // Assign patterns to geometry
+  geometry.sacredPatterns = patterns
+
+  const dominantElement = geometry.dominantElement as StoneElement
+
+  // Elements map: Air -> spirit, Earth -> essence, Water -> matter, Fire -> substance
   const constitution = {
-    spirit: Math.round(elements.Air * 100),
-    essence: Math.round(elements.Earth * 100),
-    matter: Math.round(elements.Water * 100),
-    substance: Math.round(elements.Fire * 100),
+    spirit: geometry.elementalBalance.air,
+    essence: geometry.elementalBalance.earth,
+    matter: geometry.elementalBalance.water,
+    substance: geometry.elementalBalance.fire,
   }
+
+  const elements = {
+    Fire: geometry.elementalBalance.fire / 100,
+    Water: geometry.elementalBalance.water / 100,
+    Air: geometry.elementalBalance.air / 100,
+    Earth: geometry.elementalBalance.earth / 100,
+  }
+
   const average =
     (constitution.spirit + constitution.essence + constitution.matter + constitution.substance) / 4
   const spread =
@@ -335,6 +364,13 @@ function calculateLocalPhilosopherStone(input: PhilosopherStoneInput) {
           ? 'Developing'
           : 'Emerging'
 
+  // Generate NatalSigilRune
+  const style = (input.style as SigilStyle) || 'alchemical'
+  const sigil = createNatalSigilRune(geometry, style, 'aspect-based')
+  const svg = createSigilSvg(sigil)
+  sigil.svgGeometry = svg
+  sigil.generatedImageUrl = sigilSvgToDataUrl(svg)
+
   return {
     ok: true,
     data: {
@@ -347,6 +383,11 @@ function calculateLocalPhilosopherStone(input: PhilosopherStoneInput) {
       constitution,
       monicaConstant,
       consciousnessLevel,
+      sigil,
+      natalChart: {
+        planets: planetPositions,
+        aspects,
+      },
     },
   }
 }

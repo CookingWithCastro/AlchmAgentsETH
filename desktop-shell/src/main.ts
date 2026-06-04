@@ -3,6 +3,13 @@ import { LocalMcpClient } from './localMcpClient'
 
 import type { CraftedAgent, Element } from '../../lib/agent-types'
 import { DEMO_AGENTS } from '../../lib/demo-agents-data'
+import { calculateAllPlanets } from '../../lib/enhanced-astronomical-calculator'
+import { detectPatternsStatic } from '../../lib/astrological-pattern-recognition'
+import { ChartGeometryExtractor } from '../../lib/chart-geometry-extractor'
+import { createNatalSigilRune } from '../../lib/runes/natal-sigil-runes'
+import { createSigilSvg, sigilSvgToDataUrl } from '../../lib/sigil-download'
+import type { NatalSigilRune } from '../../lib/runes/natal-sigil-runes'
+import type { PlanetPosition, Aspect } from '../../lib/astrological-pattern-recognition'
 
 type View = 'chat' | 'astrology' | 'physics' | 'agents' | 'stone' | 'account' | 'diagnostics'
 type Surface = 'main' | 'composer'
@@ -63,6 +70,11 @@ interface StoneBlueprint {
   constitution: Balances
   monicaConstant: number
   consciousnessLevel: string
+  sigil?: NatalSigilRune
+  natalChart?: {
+    planets: PlanetPosition[]
+    aspects: Aspect[]
+  }
 }
 
 interface StoneFormInput {
@@ -437,6 +449,7 @@ interface PersistedDesktopState {
   jingCasterId?: string | null
   jingTargetId?: string | null
   jingMoveId?: string | null
+  showSigilPanel?: boolean
 }
 
 interface RuntimeState {
@@ -831,6 +844,7 @@ function loadState(): DesktopState {
     jingCasterId: null,
     jingTargetId: null,
     jingMoveId: null,
+    showSigilPanel: false,
   }
 
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -877,6 +891,7 @@ function loadState(): DesktopState {
       jingCasterId: saved.jingCasterId ?? null,
       jingTargetId: saved.jingTargetId ?? null,
       jingMoveId: saved.jingMoveId ?? null,
+      showSigilPanel: saved.showSigilPanel ?? false,
     }
   } catch (error) {
     console.warn('Unable to restore Alchm desktop state:', error)
@@ -998,6 +1013,7 @@ function saveState() {
     jingCasterId: state.jingCasterId,
     jingTargetId: state.jingTargetId,
     jingMoveId: state.jingMoveId,
+    showSigilPanel: state.showSigilPanel,
   }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(persisted))
 }
@@ -1240,6 +1256,7 @@ function renderChatView() {
           ${renderChatHeaderActions(agents)}
         </header>
         ${renderChatAgentSelector(agents)}
+        ${state.showSigilPanel && agents.length === 1 && agents[0].stoneBlueprint?.sigil ? renderChatSigilPanel(agents[0]) : ''}
         ${state.showJingPanel && agents.length >= 2 ? renderChatJingPanel(agents) : ''}
         ${state.train.show && agents.length === 1 ? renderChatTrainPanel(agents[0]) : ''}
         <div class="messages" data-messages>
@@ -1337,8 +1354,14 @@ function renderChatHeaderActions(agents: LocalAgent[]) {
     `
   }
 
+  const sigilActive = state.showSigilPanel ? ' active' : ''
+  const sigilButton = agent.stoneBlueprint?.sigil
+    ? `<button class="jing-toggle-button${sigilActive}" data-action="toggle-sigil-panel">✨ Sigil</button>`
+    : ''
+
   return `
     <div class="button-row">
+      ${sigilButton}
       <button class="jing-toggle-button${state.train.show ? ' active' : ''}" data-action="toggle-train-panel">🎓 Train &amp; Teach</button>
       <button class="secondary-button" data-action="view" data-view="agents">Catalog</button>
       <button class="danger-button" data-action="remove-agent" data-agent-id="${agent.id}">
@@ -1394,6 +1417,51 @@ function renderChatTrainPanel(agent: LocalAgent) {
         </div>
       </div>
     </section>
+  `
+}
+
+function renderChatSigilPanel(agent: LocalAgent) {
+  const blueprint = agent.stoneBlueprint
+  if (!blueprint || !blueprint.sigil) return ''
+
+  const sigil = blueprint.sigil
+  const svg = sigil.svgGeometry || ''
+  const rarityClass = `rarity-${sigil.rarity || 'common'}`
+
+  return `
+    <div class="sigil-panel">
+      <div class="panel-heading unframed-heading">
+        <div>
+          <div class="eyebrow">Natal Sigil Resonance</div>
+          <h2>${escapeHtml(sigil.name || 'Alchemical Sigil')}</h2>
+        </div>
+        <button class="icon-button" data-action="toggle-sigil-panel" title="Close Panel">✕</button>
+      </div>
+      <div class="sigil-panel-layout">
+        <div class="sigil-svg-container">
+          ${svg}
+        </div>
+        <div class="sigil-details">
+          <div class="sigil-meta-badges">
+            <span class="sigil-badge ${rarityClass}">${escapeHtml(sigil.rarity)}</span>
+            <span class="sigil-badge">Element: ${escapeHtml(sigil.element)}</span>
+            <span class="sigil-badge">Power: ${sigil.powerLevel || 0}</span>
+          </div>
+          <div class="sigil-text-guide">
+            <strong>Personal Meaning</strong>
+            ${escapeHtml(sigil.personalizedMeaning)}
+          </div>
+          <div class="sigil-text-guide">
+            <strong>Activation Ritual</strong>
+            ${escapeHtml(sigil.activationRitual || 'Meditate on the center point of the sigil for 5 minutes.')}
+          </div>
+          <div class="sigil-text-guide">
+            <strong>Meditation Guide</strong>
+            ${sigil.meditationInstructions ? sigil.meditationInstructions.map(inst => `<div>• ${escapeHtml(inst)}</div>`).join('') : 'Visualize the alignment of the aspect lines.'}
+          </div>
+        </div>
+      </div>
+    </div>
   `
 }
 
@@ -3985,6 +4053,8 @@ function normalizeStoneBlueprint(input: StoneFormInput, result: any): StoneBluep
     consciousnessLevel: String(
       result?.consciousnessLevel || classifyLocalConsciousness(constitution)
     ),
+    sigil: result?.sigil,
+    natalChart: result?.natalChart,
   }
 }
 
@@ -4019,6 +4089,23 @@ function buildStoneAgent(input: StoneFormInput, blueprint: StoneBlueprint): Loca
 }
 
 function buildStonePromptSeed(input: StoneFormInput, blueprint: StoneBlueprint) {
+  const planetList = blueprint.natalChart?.planets
+    ? blueprint.natalChart.planets
+        .map(p => `${p.planet} in ${p.sign} (${p.degree.toFixed(1)}°)`)
+        .join(', ')
+    : ''
+
+  const sigilInfo = blueprint.sigil
+    ? [
+        `\n## Natal Sigil Core Details:`,
+        `Rune Name: ${blueprint.sigil.name}`,
+        `Sacred Symbol: ${blueprint.sigil.symbol}`,
+        `Cosmic Rarity: ${blueprint.sigil.rarity}`,
+        `Personalized Alchemical Meaning: ${blueprint.sigil.personalizedMeaning}`,
+        `Activation Ritual: ${blueprint.sigil.activationRitual}`,
+      ].join('\n')
+    : ''
+
   return [
     `${input.name} is a local Philosopher's Stone agent created in Alchm Desktop.`,
     `Birth anchor: ${blueprint.birthDate} ${blueprint.birthTime}, ${blueprint.birthLocation}.`,
@@ -4026,8 +4113,10 @@ function buildStonePromptSeed(input: StoneFormInput, blueprint: StoneBlueprint) 
     `Dominant element: ${capitalize(blueprint.dominantElement)}.`,
     `Alchemical constitution: Spirit ${blueprint.constitution.spirit}, Essence ${blueprint.constitution.essence}, Matter ${blueprint.constitution.matter}, Substance ${blueprint.constitution.substance}.`,
     `Consciousness level: ${blueprint.consciousnessLevel}; MC ${blueprint.monicaConstant.toFixed(2)}.`,
+    planetList ? `Planetary Placements: ${planetList}.` : '',
     input.additionalContext ? `Additional context from creator: ${input.additionalContext}` : '',
-    'Use the birth information and creator context as your local identity. Be useful, specific, and grounded in the user-provided context.',
+    sigilInfo,
+    'Use the birth information, planetary placements, Runic Sigil, and creator context as your local identity. Be useful, specific, and grounded in the user-provided context.',
   ]
     .filter(Boolean)
     .join('\n')
@@ -4132,40 +4221,105 @@ function classifyLocalConsciousness(constitution: Balances) {
 
 function calculateLocalStoneBlueprint(input: StoneFormInput) {
   const date = new Date(`${input.date}T${input.time}:00`)
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const hour = date.getHours()
-  const minute = date.getMinutes()
-  const sunElement = sunElementForDate(month, day)
-  const raw = {
-    Fire: 18 + ((month * 7 + day + Math.max(0, input.latitude)) % 35),
-    Water: 18 + ((day * 5 + hour + Math.abs(Math.min(0, input.longitude))) % 35),
-    Air: 18 + ((hour * 9 + minute + Math.abs(input.longitude)) % 35),
-    Earth: 18 + ((month * 3 + minute + Math.abs(input.latitude)) % 35),
-  }
-  raw[sunElement] += 32
+  const latitude = Number(input.latitude)
+  const longitude = Number(input.longitude)
 
-  const total = Object.values(raw).reduce((sum, value) => sum + value, 0)
-  const elements = {
-    Fire: raw.Fire / total,
-    Water: raw.Water / total,
-    Air: raw.Air / total,
-    Earth: raw.Earth / total,
+  // Calculate planetary positions using high-precision calculations
+  const birthInfo = {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    minute: date.getUTCMinutes(),
+    second: 0,
+    latitude,
+    longitude,
   }
-  const dominantElement = Object.entries(elements).sort((a, b) => b[1] - a[1])[0][0]
+
+  const chart = calculateAllPlanets(birthInfo)
+
+  const planetPositions: PlanetPosition[] = [
+    'Sun',
+    'Moon',
+    'Mercury',
+    'Venus',
+    'Mars',
+    'Jupiter',
+    'Saturn',
+    'Uranus',
+    'Neptune',
+    'Pluto',
+  ].map(name => {
+    const p = chart.planets[name]
+    return {
+      planet: name,
+      sign: p.sign,
+      degree: p.signDegree,
+      house: 1,
+      date,
+    }
+  })
+
+  // Calculate aspects and patterns
+  const { aspects, patterns } = detectPatternsStatic(planetPositions)
+
+  // Extract geometry for sigil generation
+  const geometry = ChartGeometryExtractor.extractFromChartData(planetPositions, aspects, 800, 800)
+
+  // Assign patterns to geometry
+  geometry.sacredPatterns = patterns
+
+  const dominantElement = geometry.dominantElement
+
+  // Elements map: Air -> spirit, Earth -> essence, Water -> matter, Fire -> substance
+  const constitution = {
+    spirit: geometry.elementalBalance.air,
+    essence: geometry.elementalBalance.earth,
+    matter: geometry.elementalBalance.water,
+    substance: geometry.elementalBalance.fire,
+  }
+
+  const elements = {
+    Fire: geometry.elementalBalance.fire / 100,
+    Water: geometry.elementalBalance.water / 100,
+    Air: geometry.elementalBalance.air / 100,
+    Earth: geometry.elementalBalance.earth / 100,
+  }
+
+  const average =
+    (constitution.spirit + constitution.essence + constitution.matter + constitution.substance) / 4
+  const spread =
+    Math.abs(constitution.spirit - average) +
+    Math.abs(constitution.essence - average) +
+    Math.abs(constitution.matter - average) +
+    Math.abs(constitution.substance - average)
+  const monicaConstant = Number(((average + spread / 4) / 12).toFixed(2))
+  const consciousnessLevel =
+    monicaConstant >= 8
+      ? 'Master'
+      : monicaConstant >= 6
+        ? 'Advanced'
+        : monicaConstant >= 4
+          ? 'Developing'
+          : 'Emerging'
+
+  // Generate NatalSigilRune
+  const sigil = createNatalSigilRune(geometry, 'alchemical', 'aspect-based')
+  const svg = createSigilSvg(sigil)
+  sigil.svgGeometry = svg
+  sigil.generatedImageUrl = sigilSvgToDataUrl(svg)
 
   return {
     dominantElement,
     elements,
-    monicaConstant: Number(
-      (Object.values(elements).reduce((sum, value) => sum + value ** 2, 0) * 10).toFixed(2)
-    ),
-    consciousnessLevel: classifyLocalConsciousness({
-      spirit: Math.round(elements.Air * 100),
-      essence: Math.round(elements.Earth * 100),
-      matter: Math.round(elements.Water * 100),
-      substance: Math.round(elements.Fire * 100),
-    }),
+    constitution,
+    monicaConstant,
+    consciousnessLevel,
+    sigil,
+    natalChart: {
+      planets: planetPositions,
+      aspects,
+    },
   }
 }
 
@@ -4831,6 +4985,307 @@ async function refreshTelemetry() {
   render()
 }
 
+const ZODIAC_ABBREVIATIONS: Record<string, string> = {
+  Aries: 'ARI',
+  Taurus: 'TAU',
+  Gemini: 'GEM',
+  Cancer: 'CAN',
+  Leo: 'LEO',
+  Virgo: 'VIR',
+  Libra: 'LIB',
+  Scorpio: 'SCO',
+  Sagittarius: 'SAG',
+  Capricorn: 'CAP',
+  Aquarius: 'AQU',
+  Pisces: 'PIS',
+}
+
+const ZODIAC_COLORS: Record<string, string> = {
+  Aries: '#f97316',
+  Taurus: '#84cc16',
+  Gemini: '#22d3ee',
+  Cancer: '#60a5fa',
+  Leo: '#facc15',
+  Virgo: '#34d399',
+  Libra: '#a78bfa',
+  Scorpio: '#e11d48',
+  Sagittarius: '#fb7185',
+  Capricorn: '#a3e635',
+  Aquarius: '#38bdf8',
+  Pisces: '#818cf8',
+}
+
+const PLANETARY_DIGNITIES: Record<
+  string,
+  { domicile: string[]; exaltation: string[]; detriment: string[]; fall: string[] }
+> = {
+  Sun: { domicile: ['Leo'], exaltation: ['Aries'], detriment: ['Aquarius'], fall: ['Libra'] },
+  Moon: {
+    domicile: ['Cancer'],
+    exaltation: ['Taurus'],
+    detriment: ['Capricorn'],
+    fall: ['Scorpio'],
+  },
+  Mercury: {
+    domicile: ['Gemini', 'Virgo'],
+    exaltation: ['Virgo'],
+    detriment: ['Sagittarius', 'Pisces'],
+    fall: ['Pisces'],
+  },
+  Venus: {
+    domicile: ['Taurus', 'Libra'],
+    exaltation: ['Pisces'],
+    detriment: ['Scorpio', 'Aries'],
+    fall: ['Virgo'],
+  },
+  Mars: {
+    domicile: ['Aries', 'Scorpio'],
+    exaltation: ['Capricorn'],
+    detriment: ['Libra', 'Taurus'],
+    fall: ['Cancer'],
+  },
+  Jupiter: {
+    domicile: ['Sagittarius', 'Pisces'],
+    exaltation: ['Cancer'],
+    detriment: ['Gemini', 'Virgo'],
+    fall: ['Capricorn'],
+  },
+  Saturn: {
+    domicile: ['Capricorn', 'Aquarius'],
+    exaltation: ['Libra'],
+    detriment: ['Cancer', 'Leo'],
+    fall: ['Aries'],
+  },
+  Uranus: { domicile: ['Aquarius'], exaltation: ['Scorpio'], detriment: ['Leo'], fall: ['Taurus'] },
+  Neptune: {
+    domicile: ['Pisces'],
+    exaltation: ['Cancer'],
+    detriment: ['Virgo'],
+    fall: ['Capricorn'],
+  },
+  Pluto: { domicile: ['Scorpio'], exaltation: ['Leo'], detriment: ['Taurus'], fall: ['Aquarius'] },
+}
+
+function getSignDignity(planet: string, sign: string): string {
+  const d = PLANETARY_DIGNITIES[planet]
+  if (!d) return 'peregrine'
+  if (d.domicile.includes(sign)) return 'domicile'
+  if (d.exaltation.includes(sign)) return 'exaltation'
+  if (d.detriment.includes(sign)) return 'detriment'
+  if (d.fall.includes(sign)) return 'fall'
+  return 'peregrine'
+}
+
+const ZODIAC_ELEMENTS: Record<string, string> = {
+  Aries: 'Fire',
+  Leo: 'Fire',
+  Sagittarius: 'Fire',
+  Taurus: 'Earth',
+  Virgo: 'Earth',
+  Capricorn: 'Earth',
+  Gemini: 'Air',
+  Libra: 'Air',
+  Aquarius: 'Air',
+  Cancer: 'Water',
+  Scorpio: 'Water',
+  Pisces: 'Water',
+}
+
+const ZODIAC_MODALITIES: Record<string, string> = {
+  Aries: 'Cardinal',
+  Cancer: 'Cardinal',
+  Libra: 'Cardinal',
+  Capricorn: 'Cardinal',
+  Taurus: 'Fixed',
+  Leo: 'Fixed',
+  Scorpio: 'Fixed',
+  Aquarius: 'Fixed',
+  Gemini: 'Mutable',
+  Virgo: 'Mutable',
+  Sagittarius: 'Mutable',
+  Pisces: 'Mutable',
+}
+
+const ZODIAC_RULERS: Record<string, string> = {
+  Aries: 'Mars',
+  Scorpio: 'Mars',
+  Taurus: 'Venus',
+  Libra: 'Venus',
+  Gemini: 'Mercury',
+  Virgo: 'Mercury',
+  Cancer: 'Moon',
+  Leo: 'Sun',
+  Sagittarius: 'Jupiter',
+  Pisces: 'Jupiter',
+  Capricorn: 'Saturn',
+  Aquarius: 'Saturn',
+}
+
+function buildLocalAstrologySnapshot(date = new Date(), latitude = 40.7128, longitude = -74.006) {
+  const birthInfo = {
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: date.getUTCHours(),
+    minute: date.getUTCMinutes(),
+    second: date.getUTCSeconds() || 0,
+    latitude,
+    longitude,
+  }
+
+  const chart = calculateAllPlanets(birthInfo)
+
+  const planets: AstrologyPlanet[] = [
+    'Sun',
+    'Moon',
+    'Mercury',
+    'Venus',
+    'Mars',
+    'Jupiter',
+    'Saturn',
+    'Uranus',
+    'Neptune',
+    'Pluto',
+  ].map(name => {
+    const p = chart.planets[name]
+    const sign = p.sign
+    const signAbbreviation = ZODIAC_ABBREVIATIONS[sign] || 'ARI'
+    const color = ZODIAC_COLORS[sign] || '#f97316'
+    const degree = p.signDegree
+    const wholeDegree = Math.floor(degree)
+    const minute = Math.floor((degree - wholeDegree) * 60)
+    const display = `${sign} ${wholeDegree}deg ${String(minute).padStart(2, '0')}'`
+    const dignity = getSignDignity(name, sign)
+    const motion = p.retrograde ? 'retrograde' : 'direct'
+
+    return {
+      planet: name,
+      sign,
+      signAbbreviation,
+      degree,
+      minute,
+      display,
+      longitude: p.longitude,
+      element: ZODIAC_ELEMENTS[sign] || 'Fire',
+      mode: ZODIAC_MODALITIES[sign] || 'Cardinal',
+      ruler: ZODIAC_RULERS[sign] || 'Unknown',
+      dignity,
+      motion,
+      speed: p.speed,
+      source: 'enhanced astronomical calculator',
+      domain: '',
+      counsel: '',
+      agent: '',
+      agentRole: '',
+      esms: '',
+      color,
+      strength: 1,
+    }
+  })
+
+  // Map aspects using detectPatternsStatic
+  const { aspects: rawAspects } = detectPatternsStatic(
+    planets.map(p => ({
+      planet: p.planet,
+      sign: p.sign,
+      degree: p.degree,
+      house: 1,
+      date,
+    }))
+  )
+
+  const aspects: AstrologyAspect[] = rawAspects.map(aspect => ({
+    id: `${aspect.planet1}-${aspect.planet2}-${aspect.type}`,
+    planetA: aspect.planet1,
+    planetB: aspect.planet2,
+    type: aspect.type,
+    angle: aspect.angle,
+    orb: aspect.orb,
+    exactness:
+      aspect.strength === 'exact'
+        ? 100
+        : aspect.strength === 'tight'
+          ? 80
+          : aspect.strength === 'moderate'
+            ? 60
+            : 40,
+    applying: aspect.applying,
+    polarity: '',
+    weight: 1,
+    summary: `${aspect.planet1} ${aspect.type} ${aspect.planet2}`,
+  }))
+
+  const fireCount = planets.filter(p => p.element === 'Fire').length
+  const waterCount = planets.filter(p => p.element === 'Water').length
+  const airCount = planets.filter(p => p.element === 'Air').length
+  const earthCount = planets.filter(p => p.element === 'Earth').length
+  const totalCounts = planets.length || 1
+
+  const dominantElement = [
+    { name: 'Fire', count: fireCount },
+    { name: 'Water', count: waterCount },
+    { name: 'Air', count: airCount },
+    { name: 'Earth', count: earthCount },
+  ].sort((a, b) => b.count - a.count)[0].name
+
+  const moon = planets.find(p => p.planet === 'Moon')
+  const sun = planets.find(p => p.planet === 'Sun')
+  const phaseAngle = sun && moon ? (moon.longitude - sun.longitude + 360) % 360 : 0
+  const phaseNames = [
+    { max: 22.5, name: 'New Moon' },
+    { max: 67.5, name: 'Waxing Crescent' },
+    { max: 112.5, name: 'First Quarter' },
+    { max: 157.5, name: 'Waxing Gibbous' },
+    { max: 202.5, name: 'Full Moon' },
+    { max: 247.5, name: 'Waning Gibbous' },
+    { max: 292.5, name: 'Last Quarter' },
+    { max: 337.5, name: 'Waning Crescent' },
+    { max: 360, name: 'New Moon' },
+  ]
+  const phase = phaseNames.find(item => phaseAngle <= item.max) || phaseNames[0]
+
+  return {
+    generatedAt: date.toISOString(),
+    provenance: [],
+    chart: {
+      title: 'Local High-Precision Consensus Sky',
+      source: 'local astronomical calculator',
+      sunSign: sun?.sign || 'Aries',
+      moonSign: moon?.sign || 'Aries',
+      ascendant: {
+        sign: chart.ascendant?.sign || 'Aries',
+        degree: chart.ascendant?.signDegree || 0,
+        longitude: chart.ascendant?.longitude || 0,
+      },
+      julianDay: chart.julianDay,
+      planets,
+      aspects,
+    },
+    quantities: {
+      dominantElement,
+      ANumber: 100,
+      elements: {
+        Fire: Math.round((fireCount / totalCounts) * 100),
+        Water: Math.round((waterCount / totalCounts) * 100),
+        Air: Math.round((airCount / totalCounts) * 100),
+        Earth: Math.round((earthCount / totalCounts) * 100),
+      },
+    },
+    moonPhase: {
+      name: phase.name,
+      angle: phaseAngle,
+      illumination: Math.round(((1 - Math.cos((phaseAngle * Math.PI) / 180)) / 2) * 100),
+      instruction: '',
+    },
+    planetaryHour: {
+      current: 'Sun',
+    },
+    activeAgents: [],
+    layers: [],
+    recommendations: [],
+  } as any
+}
+
 async function refreshAstrologyConsensus(options: { silent?: boolean } = {}) {
   if (!invokeCommand) {
     state.astrology.status = 'error'
@@ -4845,59 +5300,12 @@ async function refreshAstrologyConsensus(options: { silent?: boolean } = {}) {
 
   if (state.localOfflineMode) {
     try {
-      const apiKey = state.account.apiKey || 'dev-desktop-token'
-      const mcpResult = await alchmMcpClient.call('tools/call', {
-        name: 'get_live_sky_transits',
-        arguments: {
-          latitude: 40.7128,
-          longitude: -74.006,
-          _meta: {
-            apiKey: apiKey,
-            caller: 'alchm-desktop-shell',
-          },
-        },
-      })
-
-      if (mcpResult && mcpResult.content && mcpResult.content[0]) {
-        const transits = JSON.parse(mcpResult.content[0].text)
-        state.astrology.snapshot = {
-          generatedAt: new Date().toISOString(),
-          location: { label: 'Local Stdio Coordinates', latitude: 40.7128, longitude: -74.006 },
-          provenance: [],
-          chart: {
-            title: 'Local Sky (Stdio)',
-            source: 'Local Alchm MCP sidecar',
-            sunSign: transits.dominantElement || 'Aries',
-            moonSign: 'Aries',
-            ascendant: { sign: 'Aries', degree: 0, longitude: 0 },
-            julianDay: 0,
-            planets: [],
-            aspects: [],
-          },
-          quantities: {
-            dominantElement: transits.dominantElement || 'Earth',
-            ANumber: 100,
-            elements: transits.elementalBalance || {
-              Fire: 0.25,
-              Water: 0.25,
-              Air: 0.25,
-              Earth: 0.25,
-            },
-          },
-          moonPhase: { name: transits.moonPhase?.name || 'Full Moon' },
-          planetaryHour: { current: 'Sun' },
-          activeAgents: [],
-          layers: [],
-          recommendations: [],
-        } as any
-        state.astrology.status = 'ready'
-        state.astrology.lastError = null
-      } else {
-        throw new Error('Invalid MCP response format')
-      }
+      state.astrology.snapshot = buildLocalAstrologySnapshot(new Date(), 40.7128, -74.006)
+      state.astrology.status = 'ready'
+      state.astrology.lastError = null
     } catch (error: any) {
       state.astrology.status = 'error'
-      state.astrology.lastError = `Local MCP Transit failed: ${error.message}`
+      state.astrology.lastError = `Local Offline Transit failed: ${error.message}`
     }
     render()
     return
@@ -5265,6 +5673,11 @@ function bindEvents() {
       saveState()
       render()
       if (state.showJingPanel) void refreshJingOverlays()
+    }
+    if (action === 'toggle-sigil-panel') {
+      state.showSigilPanel = !state.showSigilPanel
+      saveState()
+      render()
     }
     if (action === 'toggle-train-panel') {
       state.train.show = !state.train.show
