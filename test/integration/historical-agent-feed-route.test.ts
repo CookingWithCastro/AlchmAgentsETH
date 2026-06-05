@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { GET } from '@/app/api/feed/historical-agents/route'
+import { prisma } from '@/lib/db'
 import {
   deriveBirthchartSummary,
   hasBirthchart,
@@ -11,6 +12,15 @@ import {
   type RecipePostItem,
   type YieldClaimItem,
 } from '@/lib/agents/historical-feed-contract'
+
+vi.mock('@/lib/db', () => ({
+  prisma: {
+    historical_agents: { findMany: vi.fn() },
+    agent_action_events: { findMany: vi.fn() },
+  },
+}))
+
+const prismaMock = vi.mocked(prisma, { deep: true })
 
 const SECRET = 'test-internal-secret'
 const NOW = '2026-06-05T12:00:00.000Z'
@@ -137,8 +147,11 @@ describe('historical-feed-contract serializers', () => {
 
 describe('GET /api/feed/historical-agents — auth', () => {
   beforeEach(() => {
+    vi.clearAllMocks()
     process.env.INTERNAL_API_SECRET = SECRET
     delete process.env.FEED_FIXTURE
+    // default: no agents → authorized requests resolve to an empty feed (200)
+    prismaMock.historical_agents.findMany.mockResolvedValue([] as never)
   })
   afterEach(() => {
     delete process.env.ALCHM_KITCHEN_SYNC_SECRET
@@ -233,5 +246,92 @@ describe('GET /api/feed/historical-agents — fixture mode', () => {
     expect(res.status).toBe(200)
     const body = (await res.json()) as { items: HistoricalFeedItem[] }
     expect(body.items.length).toBeGreaterThan(0)
+  })
+})
+
+describe('GET /api/feed/historical-agents — real data', () => {
+  const leonardo = {
+    agentId: 'leonardo-da-vinci',
+    name: 'Leonardo da Vinci',
+    natalChart: { planets: { Sun: { sign: 'Taurus' }, Moon: { sign: 'Pisces' } }, ascendant: 0 },
+    dominantElement: 'Fire',
+  }
+  const noBirthchart = {
+    agentId: 'anonymous-cook',
+    name: 'Anonymous Cook',
+    natalChart: { planets: {} },
+    dominantElement: 'Earth',
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    process.env.INTERNAL_API_SECRET = SECRET
+    delete process.env.FEED_FIXTURE
+  })
+
+  it('serializes recipe_post (birthchart only) + yield_claim with looked-up names', async () => {
+    prismaMock.historical_agents.findMany.mockResolvedValue([leonardo, noBirthchart] as never)
+    prismaMock.agent_action_events.findMany.mockResolvedValue([
+      {
+        id: 'evt-yield',
+        agentId: 'leonardo-da-vinci',
+        eventType: 'yield_claim',
+        metadataPayload: {
+          historicalAgentId: 'leonardo-da-vinci',
+          planetaryAgentId: 'sun-gemini',
+          amount: 7.5,
+        },
+        postedAt: '2026-06-05T12:00:00.000Z',
+      },
+      {
+        id: 'evt-recipe',
+        agentId: 'leonardo-da-vinci',
+        eventType: 'recipe_generation',
+        metadataPayload: { recipeName: 'Saffron Risotto', element: 'Fire', planetaryHour: 'Venus' },
+        postedAt: '2026-06-05T11:00:00.000Z',
+      },
+    ] as never)
+
+    const res = await GET(feedRequest({ limit: 10 }))
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { items: HistoricalFeedItem[] }
+    expect(body.items).toHaveLength(2)
+
+    const yieldItem = body.items[0] as YieldClaimItem
+    expect(yieldItem.type).toBe('yield_claim')
+    expect(yieldItem.amount).toBe(7.5)
+    expect(yieldItem.historicalAgentName).toBe('Leonardo da Vinci') // from agents map
+    expect(yieldItem.planetaryAgentName).toBe('Sun Gemini') // humanized fallback (not in map)
+
+    const recipeItem = body.items[1] as RecipePostItem
+    expect(recipeItem.type).toBe('recipe_post')
+    expect(recipeItem.agent.slug).toBe('leonardo-da-vinci')
+    expect(recipeItem.agent.hasBirthchart).toBe(true)
+    expect(recipeItem.agent.birthchart).toMatchObject({ sun: 'Taurus', moon: 'Pisces' })
+    expect(recipeItem.esmsTag).toBe('Spirit')
+    expect(recipeItem.recipe.name).toBe('Saffron Risotto')
+
+    // only birthchart-bearing agents are whitelisted into the events query, capped to limit
+    const queryArg = prismaMock.agent_action_events.findMany.mock.calls[0][0] as any
+    expect(queryArg.where.agentId.in).toEqual(['leonardo-da-vinci'])
+    expect(queryArg.take).toBe(10)
+    expect(queryArg.orderBy).toEqual({ evaluatedAt: 'desc' })
+  })
+
+  it('returns [] and skips the events query when no agent has a birthchart', async () => {
+    prismaMock.historical_agents.findMany.mockResolvedValue([noBirthchart] as never)
+    const res = await GET(feedRequest())
+    expect(res.status).toBe(200)
+    const body = (await res.json()) as { items: HistoricalFeedItem[] }
+    expect(body.items).toEqual([])
+    expect(prismaMock.agent_action_events.findMany).not.toHaveBeenCalled()
+  })
+
+  it('returns 503 with empty items on a DB error', async () => {
+    prismaMock.historical_agents.findMany.mockRejectedValue(new Error('db down') as never)
+    const res = await GET(feedRequest())
+    expect(res.status).toBe(503)
+    const body = (await res.json()) as { items: HistoricalFeedItem[] }
+    expect(body.items).toEqual([])
   })
 })
