@@ -544,6 +544,7 @@ interface DesktopState extends PersistedDesktopState {
   leveling: Record<string, { level: number; xp: number; evTotal: number }>
   // Train & Teach panel state (runtime-only).
   train: TrainState
+  agentSearchQuery: string
 }
 
 type InvokeFn = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
@@ -845,6 +846,7 @@ function loadState(): DesktopState {
     jingTargetId: null,
     jingMoveId: null,
     showSigilPanel: false,
+    agentSearchQuery: '',
   }
 
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -3329,6 +3331,17 @@ function physicsAccentFor(key: string) {
 }
 
 function renderAgentsView() {
+  const query = (state.agentSearchQuery || '').toLowerCase().trim()
+  const filteredAgents = AGENT_LIBRARY.filter(agent => {
+    if (!query) return true
+    return (
+      agent.name.toLowerCase().includes(query) ||
+      agent.title.toLowerCase().includes(query) ||
+      agent.element.toLowerCase().includes(query) ||
+      agent.domains.some(domain => domain.toLowerCase().includes(query))
+    )
+  })
+
   return `
     <section class="view">
       <header class="view-header">
@@ -3344,8 +3357,28 @@ function renderAgentsView() {
           <button class="secondary-button" data-action="open-site" data-site="agents">Open Agents</button>
         </div>
       </header>
+      
+      <div class="search-bar-container">
+        <input 
+          type="text" 
+          class="agent-search-input" 
+          data-agent-search 
+          value="${escapeHtml(state.agentSearchQuery || '')}" 
+          placeholder="Search agents by name, title, element, or domain..." 
+        />
+        ${
+          state.agentSearchQuery
+            ? `<button class="clear-search-button" data-action="clear-search" title="Clear search">&times;</button>`
+            : ''
+        }
+      </div>
+
       <div class="agent-grid">
-        ${AGENT_LIBRARY.map(renderAgentCard).join('')}
+        ${
+          filteredAgents.length
+            ? filteredAgents.map(renderAgentCard).join('')
+            : `<div class="no-results">No agents match your search query "${escapeHtml(state.agentSearchQuery)}".</div>`
+        }
       </div>
     </section>
   `
@@ -4423,6 +4456,18 @@ async function sendMessage(text: string) {
 
           if (agent.source === 'app-guide') {
             addLedger('App Guide Chat', 'Monica answered in the desktop companion.', 'No charge')
+            const targetView = handleAgenticNavigation(cleaned)
+            if (targetView) {
+              state.activeView = targetView
+              saveState()
+              render()
+              if (targetView === 'astrology' && state.astrology.status === 'idle') {
+                void refreshAstrologyConsensus({ silent: true })
+              }
+              if (targetView === 'physics' && state.physics.status === 'idle') {
+                void refreshAlchmPhysics({ silent: true })
+              }
+            }
           } else {
             addLedger(
               agents.length > 1 ? 'Group Agent Chat' : 'Agent Chat',
@@ -4734,14 +4779,117 @@ function buildAstrologyProfileLine(agent: LocalAgent, message: string) {
   return `${agent.name} would use the chart as a mirror for timing, temperament, and the next honest question.`
 }
 
+function handleAgenticNavigation(message: string): View | null {
+  const text = message.toLowerCase()
+
+  const hasAstro = hasAny(text, ['astrology', 'sky', 'chart', 'zodiac', 'transit', 'alignment'])
+  const hasPhysics = hasAny(text, [
+    'physics',
+    'quantities',
+    'kinetic',
+    'thermodynamic',
+    'pressure',
+    'entropy',
+    'reactivity',
+    'force',
+    'momentum',
+  ])
+  const hasStone = hasAny(text, [
+    'stone',
+    'philosopher',
+    'create agent',
+    'craft agent',
+    'custom agent',
+    'natal input',
+  ])
+  const hasAccount = hasAny(text, [
+    'account',
+    'wallet',
+    'sync',
+    'profile',
+    'claim yield',
+    'claim daily',
+    'esms',
+    'link',
+  ])
+  const hasDiag = hasAny(text, [
+    'diagnostics',
+    'hardware',
+    'telemetry',
+    'system',
+    'logs',
+    'cpu',
+    'memory',
+    'gpu',
+  ])
+  const hasChat = hasAny(text, ['chat', 'guide', 'conversation', 'talk to', 'message'])
+  const hasAgents = hasAny(text, [
+    'agent library',
+    'agent catalog',
+    'agents list',
+    'agents catalog',
+    'agent search',
+    'catalog',
+  ])
+
+  const isNavRequest = hasAny(text, [
+    'go to',
+    'switch',
+    'open',
+    'show',
+    'navigate',
+    'take me',
+    'view',
+    'display',
+    'jump to',
+  ])
+
+  if (isNavRequest) {
+    if (hasAstro) return 'astrology'
+    if (hasPhysics) return 'physics'
+    if (hasStone) return 'stone'
+    if (hasAccount) return 'account'
+    if (hasDiag) return 'diagnostics'
+    if (hasChat) return 'chat'
+    if (hasAgents) return 'agents'
+  }
+
+  if (text.startsWith('go ') || text.startsWith('open ') || text.startsWith('show ')) {
+    if (hasAstro) return 'astrology'
+    if (hasPhysics) return 'physics'
+    if (hasStone) return 'stone'
+    if (hasAccount) return 'account'
+    if (hasDiag) return 'diagnostics'
+    if (hasChat) return 'chat'
+    if (hasAgents) return 'agents'
+  }
+
+  return null
+}
+
 function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContext) {
   const message = userMessage.toLowerCase()
   const userAgentCount = state.roster.filter(agent => agent.source !== 'app-guide').length
   const selectedNames = turnContext.groupAgents.map(agent => agent.name).join(', ')
 
+  const navigatedView = handleAgenticNavigation(userMessage)
+  let navNotice = ''
+  if (navigatedView) {
+    const viewLabels: Record<View, string> = {
+      chat: 'Chat',
+      astrology: 'Astrology',
+      physics: 'Physics',
+      agents: 'Agents',
+      stone: 'Stone',
+      account: 'Account',
+      diagnostics: 'Diagnostics',
+    }
+    navNotice = `🌌 I've automatically switched you to the ${viewLabels[navigatedView]} tab! `
+  }
+
   if (turnContext.groupAgents.length > 1 && hasAny(message, ['group', 'chat', 'agent'])) {
     return [
-      "I'm Monica, and this chat is in group mode.",
+      navNotice + "I'm Monica, and this chat is in group mode.",
       `Selected agents: ${selectedNames}.`,
       'Each agent will answer the turn in sequence and later agents can respond to earlier answers.',
     ].join(' ')
@@ -4749,7 +4897,7 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
 
   if (hasAny(message, ['claim', 'yield', 'daily', 'balance', 'esms', 'account', 'kitchen'])) {
     return [
-      "I'm Monica, your desktop guide.",
+      navNotice + "I'm Monica, your desktop guide.",
       'Use Account to sync Alchm Agents and Alchm Kitchen, then claim daily yield for each site from its account card.',
       'The desktop app tracks those balances locally here, while full account management still belongs on the browser apps.',
     ].join(' ')
@@ -4757,7 +4905,7 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
 
   if (hasAny(message, ['stone', 'philosopher', 'birth', 'create', 'local agent', 'custom'])) {
     return [
-      "I'm Monica, and the Philosopher's Stone is ready in the Stone tab.",
+      navNotice + "I'm Monica, and the Philosopher's Stone is ready in the Stone tab.",
       'Enter the agent name, birth date, birth time, birth location, and any extra context for purpose, tone, skills, or boundaries.',
       'I will add the result to your local desktop roster for companion chat on this device.',
     ].join(' ')
@@ -4782,7 +4930,7 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
     ])
   ) {
     return [
-      "I'm Monica, and the Physics tab is the desktop Alchm landscape dashboard.",
+      navNotice + "I'm Monica, and the Physics tab is the desktop Alchm landscape dashboard.",
       'It shows current quantities, z-score deviations, thermodynamic drift, velocity, momentum, force, power, and planetary-hour context.',
       "Use it when you want to understand the active Alchm conditions before choosing an agent, claiming yield, or creating a local Philosopher's Stone agent.",
     ].join(' ')
@@ -4802,7 +4950,7 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
     ])
   ) {
     return [
-      "I'm Monica, and the Astrology tab is the desktop consensus dashboard.",
+      navNotice + "I'm Monica, and the Astrology tab is the desktop consensus dashboard.",
       'It combines the Kitchen current chart, planetary chart, standing chart workflow, Alchm quantities, dynamic aspects, and Agents routing.',
       "Use it when you want the live sky, today's ESMS state, and which agents are activated before you chat or create a Philosopher's Stone agent.",
     ].join(' ')
@@ -4812,7 +4960,7 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
     hasAny(message, ['catalog', 'purchase', 'unlock', 'web agent', 'send agent', 'agents site'])
   ) {
     return [
-      "I'm Monica.",
+      navNotice + "I'm Monica.",
       'Use Catalog to review the same agent definitions as the Alchm Agents website.',
       'Purchases and unlocks stay on the main web app; when an agent is sent here, the desktop companion adds it to local chat.',
     ].join(' ')
@@ -4820,14 +4968,14 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
 
   if (hasAny(message, ['model', 'runtime', 'inference', 'chat', 'thinking', 'install'])) {
     return [
-      "I'm Monica.",
+      navNotice + "I'm Monica.",
       'I can guide the app without a local model, but other desktop agents need their official local model installed before they can answer on this device.',
       'Until then, their chat will show a runtime notice and you can continue with them on the Alchm Agents web app.',
     ].join(' ')
   }
 
   return [
-    "I'm Monica, your Alchm Desktop guide.",
+    navNotice + "I'm Monica, your Alchm Desktop guide.",
     `This companion manages Agents and Kitchen accounts, claims daily yield, shows the consensus astrology and Alchm physics dashboards, sends web agents into desktop chat, and creates local Philosopher's Stone agents. You currently have ${userAgentCount} user agent${userAgentCount === 1 ? '' : 's'} in the desktop roster.`,
     "Tell me whether you want help with Astrology, Physics, Account, Catalog, Philosopher's Stone, or local chat runtime.",
   ].join(' ')
@@ -5603,6 +5751,11 @@ function bindEvents() {
       }
     }
 
+    if (action === 'clear-search') {
+      state.agentSearchQuery = ''
+      render()
+    }
+
     if (action === 'select-agent' && agentId) {
       setSingleChatAgent(agentId)
       saveState()
@@ -5778,6 +5931,19 @@ function bindEvents() {
     updateStoneDraftFromField(event.target)
     if (target.matches('[data-composer-input]') && target instanceof HTMLTextAreaElement) {
       state.composerDraft = target.value
+    }
+    const searchTarget = (event.target as HTMLElement).closest<HTMLInputElement>(
+      '[data-agent-search]'
+    )
+    if (searchTarget) {
+      state.agentSearchQuery = searchTarget.value
+      render()
+      const inputEl = document.querySelector<HTMLInputElement>('[data-agent-search]')
+      if (inputEl) {
+        inputEl.focus()
+        const valLen = inputEl.value.length
+        inputEl.setSelectionRange(valLen, valLen)
+      }
     }
   })
 
