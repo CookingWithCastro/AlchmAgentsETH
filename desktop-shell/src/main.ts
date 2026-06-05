@@ -612,15 +612,32 @@ let telemetryTimer: number | null = null
 const app = document.querySelector<HTMLDivElement>('#app')
 const state = loadState()
 
-export const alchmMcpClient = new LocalMcpClient('bin/alchm-mcp', status => {
-  state.runtime.alchmMcpStatus = status
-  render()
-})
+// The bundled MCP sidecars default to localhost when run with no env, which
+// has no backend on an end-user machine. Point them at the production hosts so
+// "Use Local MCP" chat/astrology actually resolves. Any externally-set env
+// still wins (see _resolve_url in planetary_agents_mcp_server.py).
+const MCP_SIDECAR_ENV: Record<string, string> = {
+  PLANETARY_AGENTS_BACKEND_URL: 'https://api.agents.alchm.kitchen',
+  PLANETARY_AGENTS_FRONTEND_URL: 'https://agents.alchm.kitchen',
+}
 
-export const paMcpClient = new LocalMcpClient('bin/pa-mcp', status => {
-  state.runtime.paMcpStatus = status
-  render()
-})
+export const alchmMcpClient = new LocalMcpClient(
+  'bin/alchm-mcp',
+  status => {
+    state.runtime.alchmMcpStatus = status
+    render()
+  },
+  MCP_SIDECAR_ENV
+)
+
+export const paMcpClient = new LocalMcpClient(
+  'bin/pa-mcp',
+  status => {
+    state.runtime.paMcpStatus = status
+    render()
+  },
+  MCP_SIDECAR_ENV
+)
 
 function getSurface(): Surface {
   const requested = new URLSearchParams(window.location.search).get('surface')
@@ -904,7 +921,6 @@ function loadState(): DesktopState {
 function sanitizeChats(chats: Record<string, ChatMessage[]>) {
   const sanitized: Record<string, ChatMessage[]> = {}
   const legacyFallbackReply = ['I am answering from the local desktop', 'fallback'].join(' ')
-  const mcpFailurePrefix = 'Local MCP chat failed:'
 
   for (const [chatKey, messages] of Object.entries(chats)) {
     const template = AGENT_LIBRARY.find(item => item.id === chatKey)
@@ -924,22 +940,6 @@ function sanitizeChats(chats: Record<string, ChatMessage[]>) {
         }
 
         return message
-      })
-      .map(message => {
-        if (message.role !== 'agent' || !message.content.startsWith(mcpFailurePrefix)) {
-          return message
-        }
-
-        const withoutPrefix = message.content.replace(/^Local MCP chat failed:[^.]*\.\s*/, '')
-        return {
-          ...message,
-          content:
-            withoutPrefix.trim() ||
-            runtimeNotice ||
-            'The desktop agent is ready, but the saved response could not be restored.',
-          channel:
-            message.channel === 'Desktop agent (Fallback)' ? 'Desktop agent' : message.channel,
-        }
       })
   }
 
@@ -4577,11 +4577,13 @@ async function requestAgentText(
       }
       throw new Error('Invalid MCP response format')
     } catch (error: any) {
-      console.warn('Local MCP chat failed, using profile-guided desktop reply:', error)
+      // Don't hide the failure: record it for the Diagnostics panel and label
+      // the reply as a fallback so the user knows it didn't come from the MCP.
+      console.error('Local MCP chat failed, using profile-guided desktop reply:', error)
       state.runtime.lastError = error instanceof Error ? error.message : 'Local MCP chat failed.'
       return {
         content: buildProfileGuidedAgentReply(agent, userMessage, turnContext),
-        channel: 'Desktop agent',
+        channel: 'Desktop agent (Fallback)',
         metered: false,
       }
     }
