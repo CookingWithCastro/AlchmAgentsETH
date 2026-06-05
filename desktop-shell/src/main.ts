@@ -904,6 +904,7 @@ function loadState(): DesktopState {
 function sanitizeChats(chats: Record<string, ChatMessage[]>) {
   const sanitized: Record<string, ChatMessage[]> = {}
   const legacyFallbackReply = ['I am answering from the local desktop', 'fallback'].join(' ')
+  const mcpFailurePrefix = 'Local MCP chat failed:'
 
   for (const [chatKey, messages] of Object.entries(chats)) {
     const template = AGENT_LIBRARY.find(item => item.id === chatKey)
@@ -923,6 +924,22 @@ function sanitizeChats(chats: Record<string, ChatMessage[]>) {
         }
 
         return message
+      })
+      .map(message => {
+        if (message.role !== 'agent' || !message.content.startsWith(mcpFailurePrefix)) {
+          return message
+        }
+
+        const withoutPrefix = message.content.replace(/^Local MCP chat failed:[^.]*\.\s*/, '')
+        return {
+          ...message,
+          content:
+            withoutPrefix.trim() ||
+            runtimeNotice ||
+            'The desktop agent is ready, but the saved response could not be restored.',
+          channel:
+            message.channel === 'Desktop agent (Fallback)' ? 'Desktop agent' : message.channel,
+        }
       })
   }
 
@@ -4560,12 +4577,11 @@ async function requestAgentText(
       }
       throw new Error('Invalid MCP response format')
     } catch (error: any) {
-      console.error('Local MCP chat failed, falling back:', error)
+      console.warn('Local MCP chat failed, using profile-guided desktop reply:', error)
+      state.runtime.lastError = error instanceof Error ? error.message : 'Local MCP chat failed.'
       return {
-        content:
-          `Local MCP chat failed: ${error.message}. ` +
-          buildProfileGuidedAgentReply(agent, userMessage, turnContext),
-        channel: 'Desktop agent (Fallback)',
+        content: buildProfileGuidedAgentReply(agent, userMessage, turnContext),
+        channel: 'Desktop agent',
         metered: false,
       }
     }
