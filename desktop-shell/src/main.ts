@@ -619,6 +619,12 @@ const state = loadState()
 const MCP_SIDECAR_ENV: Record<string, string> = {
   PLANETARY_AGENTS_BACKEND_URL: 'https://api.agents.alchm.kitchen',
   PLANETARY_AGENTS_FRONTEND_URL: 'https://agents.alchm.kitchen',
+  // The bundled alchm-mcp (WTEN data server) resolves its astrologize API via
+  // getSelfBaseUrl(), which falls back to http://localhost:3000 when no env is
+  // set — so live-sky transits/recipes fail with "Unable to connect" on an
+  // end-user machine. Point it at the WTEN production site that serves
+  // /api/astrologize. Any externally-set NEXT_PUBLIC_SITE_URL/SITE_URL wins.
+  NEXT_PUBLIC_SITE_URL: 'https://alchm.kitchen',
 }
 
 export const alchmMcpClient = new LocalMcpClient(
