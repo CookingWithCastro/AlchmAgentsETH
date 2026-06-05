@@ -1108,7 +1108,7 @@
 
 .me-cosmic-card:hover {
   border-color: hsla(var(--zodiac-accent) / 0.5);
-  box-shadow: 
+  box-shadow:
     0 16px 48px rgba(0, 0, 0, 0.35),
     0 0 30px var(--zodiac-glow);
 }
