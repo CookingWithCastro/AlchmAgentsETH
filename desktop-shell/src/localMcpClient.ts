@@ -181,24 +181,25 @@ export class LocalMcpClient {
 
       console.log(`Spawning local MCP sidecar: ${this.commandName}`)
       const command = Command.sidecar(this.commandName)
-      this.child = await command.spawn()
-      ;(window as any)[globalKey] = this.child
 
-      this.child.stdout.on('data', (data: string) => {
+      command.stdout.on('data', (data: string) => {
         this.handleStdout(data)
       })
 
-      this.child.stderr.on('data', (data: string) => {
+      command.stderr.on('data', (data: string) => {
         // Keep the console log for dev-tools visibility, but also
         // capture so a UI Diagnostics panel can read it.
         console.error(`[${this.commandName} stderr]:`, data)
         this.appendStderr(typeof data === 'string' ? data : String(data))
       })
 
-      this.child.on('close', (data: any) => {
+      command.on('close', (data: any) => {
         console.warn(`[${this.commandName}] sidecar process closed:`, data)
         this.handleProcessClose()
       })
+
+      this.child = await command.spawn()
+      ;(window as any)[globalKey] = this.child
 
       // MCP initialize handshake. Using the same call() path the rest
       // of the client uses means initialize benefits from the retry

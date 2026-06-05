@@ -16,18 +16,38 @@ type Listener = (data: any) => void
  * id-bearing JSON-RPC request (e.g. initialize) with a success result
  * so start()'s handshake completes.
  */
-class FakeChild {
+class FakeCommand {
   stdoutCbs: Listener[] = []
   stderrCbs: Listener[] = []
   closeCbs: Listener[] = []
+
+  stdout = {
+    on: (_evt: string, cb: Listener) => {
+      this.stdoutCbs.push(cb)
+    },
+  }
+  stderr = {
+    on: (_evt: string, cb: Listener) => {
+      this.stderrCbs.push(cb)
+    },
+  }
+  on(evt: string, cb: Listener) {
+    if (evt === 'close') this.closeCbs.push(cb)
+  }
+
+  async spawn() {
+    return spawnMock(this)
+  }
+}
+
+class FakeChild {
   writes: string[] = []
   killed = false
   autoRespond = true
+  cmd: FakeCommand
 
-  stdout = { on: (_evt: string, cb: Listener) => this.stdoutCbs.push(cb) }
-  stderr = { on: (_evt: string, cb: Listener) => this.stderrCbs.push(cb) }
-  on(evt: string, cb: Listener) {
-    if (evt === 'close') this.closeCbs.push(cb)
+  constructor(cmd: FakeCommand) {
+    this.cmd = cmd
   }
 
   write(line: string) {
@@ -50,25 +70,27 @@ class FakeChild {
   }
 
   emitStdout(data: string) {
-    this.stdoutCbs.forEach(cb => cb(data))
+    this.cmd.stdoutCbs.forEach(cb => cb(data))
   }
   emitStderr(data: string) {
-    this.stderrCbs.forEach(cb => cb(data))
+    this.cmd.stderrCbs.forEach(cb => cb(data))
   }
   emitClose(data: any) {
-    this.closeCbs.forEach(cb => cb(data))
+    this.cmd.closeCbs.forEach(cb => cb(data))
   }
 }
 
 const children: FakeChild[] = []
-const spawnMock = vi.fn(async () => {
-  const c = new FakeChild()
+const spawnMock = vi.fn(async (cmd: FakeCommand) => {
+  const c = new FakeChild(cmd)
   children.push(c)
   return c
 })
 
 vi.mock('@tauri-apps/plugin-shell', () => ({
-  Command: { sidecar: vi.fn(() => ({ spawn: spawnMock })) },
+  Command: {
+    sidecar: vi.fn(() => new FakeCommand()),
+  },
 }))
 
 import { LocalMcpClient } from '../../desktop-shell/src/localMcpClient'

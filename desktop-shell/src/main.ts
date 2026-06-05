@@ -612,12 +612,12 @@ let telemetryTimer: number | null = null
 const app = document.querySelector<HTMLDivElement>('#app')
 const state = loadState()
 
-export const alchmMcpClient = new LocalMcpClient('alchm-mcp', status => {
+export const alchmMcpClient = new LocalMcpClient('bin/alchm-mcp', status => {
   state.runtime.alchmMcpStatus = status
   render()
 })
 
-export const paMcpClient = new LocalMcpClient('pa-mcp', status => {
+export const paMcpClient = new LocalMcpClient('bin/pa-mcp', status => {
   state.runtime.paMcpStatus = status
   render()
 })
@@ -3819,6 +3819,13 @@ function renderDiagnosticsView() {
             ? 'unknown'
             : `${telemetry.memory.usedPercent}% of ${formatBytes(telemetry.memory.totalBytes || 0)}`
         )}
+      </div>
+      <div class="panel stack" style="margin-top: 1rem; padding: 1rem; border: 1px solid var(--border-color); border-radius: 6px; font-family: monospace; font-size: 0.85rem; line-height: 1.4;">
+        <div class="eyebrow" style="margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.75rem; color: var(--text-muted);">MCP Debugging Info</div>
+        <div><strong>Alchm MCP Last Error:</strong> <span style="color: var(--text-color);">${escapeHtml(alchmMcpClient.getSnapshot().lastError || 'None')}</span></div>
+        <div style="margin-top: 0.25rem;"><strong>PA MCP Last Error:</strong> <span style="color: var(--text-color);">${escapeHtml(paMcpClient.getSnapshot().lastError || 'None')}</span></div>
+        <div style="margin-top: 0.5rem;"><strong>PA MCP Stderr (last 5 lines):</strong></div>
+        <pre style="margin: 0.25rem 0 0 0; padding: 0.5rem; background: rgba(0,0,0,0.2); border-radius: 4px; overflow-x: auto; font-size: 0.8rem; color: #ff8888;">${escapeHtml(paMcpClient.getSnapshot().stderrLog.slice(-5).join('\n') || '(empty)')}</pre>
       </div>
       <div class="form-grid">
         <div class="panel stack">
