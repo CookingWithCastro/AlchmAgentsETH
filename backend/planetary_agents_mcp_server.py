@@ -15,10 +15,32 @@ import mcp_invocation_log
 
 
 PROTOCOL_VERSION = os.getenv("PLANETARY_AGENTS_MCP_PROTOCOL_VERSION", "2025-06-18")
-BACKEND_URL = os.getenv("PLANETARY_AGENTS_BACKEND_URL") or os.getenv(
-    "NEXT_PUBLIC_BACKEND_URL", "http://localhost:8000"
+
+
+def _resolve_url(env_names: tuple[str, ...], frozen_default: str, dev_default: str) -> str:
+    """Resolve a service URL for the MCP server.
+
+    Explicit env always wins. When running as the frozen PyInstaller desktop
+    sidecar there is no local dev backend on localhost, so fall back to the
+    production host instead (the desktop app may also inject these via env).
+    """
+    for name in env_names:
+        value = os.getenv(name)
+        if value:
+            return value
+    return frozen_default if getattr(sys, "frozen", False) else dev_default
+
+
+BACKEND_URL = _resolve_url(
+    ("PLANETARY_AGENTS_BACKEND_URL", "NEXT_PUBLIC_BACKEND_URL"),
+    "https://api.agents.alchm.kitchen",
+    "http://localhost:8000",
 )
-FRONTEND_URL = os.getenv("PLANETARY_AGENTS_FRONTEND_URL", "http://localhost:3000")
+FRONTEND_URL = _resolve_url(
+    ("PLANETARY_AGENTS_FRONTEND_URL",),
+    "https://agents.alchm.kitchen",
+    "http://localhost:3000",
+)
 DEFAULT_MODEL_TIER = os.getenv("PLANETARY_AGENTS_MCP_MODEL_TIER", "free")
 
 AGENT_ALIASES = {
