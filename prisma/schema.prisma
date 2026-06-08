@@ -114,6 +114,95 @@ model AgentJingDuel {
   @@index([casterId, targetId])
 }
 
+/// Word Duels of the Spheres (the Lettered Arcana) — sibling to AgentJingDuel.
+/// One row per planetary-agent word move served to a caller (Pentacles' duel,
+/// the desktop shell, or the public API). No FK: the opponent is a synthetic
+/// planet, not a historical_agents row, and the player is a human, so this
+/// records flat telemetry for the personalization feed + admin board.
+model AgentWordDuel {
+  id             String   @id @default(cuid())
+  sessionId      String   @default("desktop-word-duel")
+  userId         String?
+  source         String   @default("api") // desktop | web | api
+  planet         String // Sun | Moon | … | Pluto
+  rack           String
+  candidateCount Int      @default(0)
+  agentWord      String
+  agentRationale String?
+  agentScore     Int      @default(0)
+  playerWord     String?
+  playerScore    Int?
+  round          Int?
+  roundDegree    Int? // world Ascendant degree (0..359)
+  moveSource     String   @default("model") // model | fallback | yield
+  provider       String?
+  modelUsed      String?
+  fallbackUsed   Boolean  @default(false)
+  latencyMs      Int?
+  contextSnapshot Json?
+  createdAt      DateTime @default(now())
+
+  @@index([planet])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+}
+
+/// Agent Scrabble League — one row per agent-vs-agent match in a rolling round-robin
+/// season. Sibling to AgentWordDuel (which stays planet-vs-human single-move). Flat
+/// telemetry, NO FK: agentIds are historical_agents slugs, but persistence is
+/// best-effort and must survive a not-yet-migrated table, so relational constraints
+/// are avoided. `matchKey` is the per-season idempotency key (scrabble:<season>:<a>__<b>).
+model AgentScrabbleMatch {
+  id             String   @id @default(cuid())
+  seasonId       String
+  matchKey       String   @unique
+  agentAId       String
+  agentBId       String
+  winnerId       String?
+  loserId        String?
+  tie            Boolean  @default(false)
+  scoreA         Int      @default(0)
+  scoreB         Int      @default(0)
+  margin         Int      @default(0)
+  rounds         Int      @default(7)
+  seedUsed       Int
+  highlight      String? // bingo | upset | sweep | null
+  eloAAfter      Int?
+  eloBAfter      Int?
+  turns          Json? // per-agent turn logs (rack, word, score)
+  costMode       String   @default("deterministic") // moves are LLM-free
+  totalLatencyMs Int?
+  createdAt      DateTime @default(now())
+
+  @@index([seasonId])
+  @@index([agentAId])
+  @@index([agentBId])
+  @@index([winnerId])
+  @@index([createdAt])
+  @@index([seasonId, agentAId])
+}
+
+/// Cumulative standings + ELO for an agent within a Scrabble League season.
+/// Upserted on (seasonId, agentId) after each match; best-effort like the match row.
+model AgentScrabbleStanding {
+  id        String   @id @default(cuid())
+  seasonId  String
+  agentId   String
+  played    Int      @default(0)
+  won       Int      @default(0)
+  lost      Int      @default(0)
+  tied      Int      @default(0)
+  pointsFor Int      @default(0)
+  elo       Int      @default(1200)
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@unique([seasonId, agentId])
+  @@index([seasonId])
+  @@index([elo])
+}
+
 model AgentEvolution {
   id                String            @id @default(cuid())
   agentId           String

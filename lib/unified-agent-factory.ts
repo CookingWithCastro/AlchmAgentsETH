@@ -18,6 +18,15 @@ import {
   getPlanetaryElement,
   calculateElementalAffinity,
 } from './astrological-data'
+// Per-planet temperament tables — single source of truth shared with the
+// Word Duel strategy engine (lib/agents/duel/planet-strategy.ts).
+import {
+  planetarySpecialty,
+  planetaryWisdomDomains,
+  planetaryTeachingStyle,
+  planetaryResonance,
+  planetaryAuraType,
+} from './agents/planetary-traits'
 import {
   calculateMoonPhase,
   getMoonDegree,
@@ -345,84 +354,27 @@ export class UnifiedAgentFactory implements AgentFactory {
     return Number((base + degreeModifier).toFixed(2))
   }
 
+  // The per-planet temperament tables now live in lib/agents/planetary-traits.ts
+  // (single source of truth shared with the Word Duel strategy engine). These
+  // thin delegators preserve the original signatures, values, and fallbacks.
   private getPlanetarySpecialty(planet: string): string {
-    const specialties: Record<string, string> = {
-      Sun: 'Identity & Leadership',
-      Moon: 'Emotions & Intuition',
-      Mercury: 'Communication & Logic',
-      Venus: 'Love & Harmony',
-      Mars: 'Action & Energy',
-      Jupiter: 'Wisdom & Expansion',
-      Saturn: 'Structure & Discipline',
-      Uranus: 'Innovation & Rebellion',
-      Neptune: 'Dreams & Spirituality',
-      Pluto: 'Transformation & Power',
-    }
-    return specialties[planet] || 'Universal Energy'
+    return planetarySpecialty(planet)
   }
 
   private getPlanetaryWisdomDomains(planet: string): string[] {
-    const domains: Record<string, string[]> = {
-      Sun: ['Leadership', 'Self-Expression', 'Vitality', 'Authority'],
-      Moon: ['Emotions', 'Intuition', 'Memory', 'Nurturing'],
-      Mercury: ['Communication', 'Learning', 'Analysis', 'Adaptability'],
-      Venus: ['Relationships', 'Beauty', 'Values', 'Harmony'],
-      Mars: ['Action', 'Courage', 'Competition', 'Initiative'],
-      Jupiter: ['Philosophy', 'Growth', 'Optimism', 'Higher Learning'],
-      Saturn: ['Responsibility', 'Discipline', 'Limits', 'Maturity'],
-      Uranus: ['Innovation', 'Freedom', 'Technology', 'Rebellion'],
-      Neptune: ['Spirituality', 'Imagination', 'Compassion', 'Transcendence'],
-      Pluto: ['Transformation', 'Psychology', 'Power', 'Regeneration'],
-    }
-    return domains[planet] || ['Universal Wisdom']
+    return planetaryWisdomDomains(planet)
   }
 
   private getPlanetaryTeachingStyle(planet: string): string {
-    const styles: Record<string, string> = {
-      Sun: 'Authoritative-Inspiring',
-      Moon: 'Nurturing-Intuitive',
-      Mercury: 'Analytical-Communicative',
-      Venus: 'Harmonious-Aesthetic',
-      Mars: 'Direct-Energetic',
-      Jupiter: 'Philosophical-Expansive',
-      Saturn: 'Structured-Disciplined',
-      Uranus: 'Revolutionary-Innovative',
-      Neptune: 'Mystical-Transcendent',
-      Pluto: 'Transformative-Penetrating',
-    }
-    return styles[planet] || 'Balanced-Universal'
+    return planetaryTeachingStyle(planet)
   }
 
   private getPlanetaryResonance(planet: string): string {
-    const resonance: Record<string, string> = {
-      Sun: 'Energetic',
-      Moon: 'Emotional',
-      Mercury: 'Intellectual',
-      Venus: 'Magnetic',
-      Mars: 'Energetic',
-      Jupiter: 'Spiritual',
-      Saturn: 'Practical',
-      Uranus: 'Creative',
-      Neptune: 'Spiritual',
-      Pluto: 'Psychological',
-    }
-    return resonance[planet] || 'Universal'
+    return planetaryResonance(planet)
   }
 
   private getPlanetaryAuraType(planet: string): string {
-    const auras: Record<string, string> = {
-      Sun: 'radiant',
-      Moon: 'flowing',
-      Mercury: 'crackling',
-      Venus: 'shimmering',
-      Mars: 'burning',
-      Jupiter: 'pulsing',
-      Saturn: 'crystalline',
-      Uranus: 'crackling',
-      Neptune: 'swirling',
-      Pluto: 'pulsing',
-    }
-    return auras[planet] || 'shimmering'
+    return planetaryAuraType(planet)
   }
 }
 

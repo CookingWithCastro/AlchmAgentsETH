@@ -32,6 +32,7 @@ import {
   Cpu,
   Network,
   FileSearch,
+  Trophy,
   type LucideIcon,
 } from 'lucide-react'
 import { PerformanceDashboard } from '@/components/admin/performance-dashboard'
@@ -46,6 +47,7 @@ import CosmicLevelingPanel from '@/components/admin/panels/CosmicLevelingPanel'
 import McpInvocationsPanel from '@/components/admin/panels/McpInvocationsPanel'
 import RagKnowledgePanel from '@/components/admin/panels/RagKnowledgePanel'
 import GroupChatSessionsPanel from '@/components/admin/panels/GroupChatSessionsPanel'
+import ScrabbleLeaguePanel from '@/components/admin/panels/ScrabbleLeaguePanel'
 
 import type {
   AdminDashboardData,
@@ -63,6 +65,7 @@ type AdminTab =
   | 'mcp'
   | 'groupChats'
   | 'jing'
+  | 'scrabble'
   | 'leveling'
   | 'rag'
   | 'infrastructure'
@@ -110,6 +113,7 @@ const tabs: Array<{ id: AdminTab; label: string; icon: LucideIcon }> = [
   { id: 'mcp', label: 'MCP Invocations', icon: Cpu },
   { id: 'groupChats', label: 'Council Convenings', icon: Network },
   { id: 'jing', label: 'Jing Arena', icon: Swords },
+  { id: 'scrabble', label: 'Scrabble League', icon: Trophy },
   { id: 'leveling', label: 'Cosmic Leveling', icon: Gauge },
   { id: 'rag', label: 'RAG / Knowledge', icon: FileSearch },
   { id: 'infrastructure', label: 'Infrastructure', icon: Server },
@@ -290,6 +294,8 @@ export function AdminOperatorConsole({ initialUser, authSource }: AdminOperatorC
   const [selectedDuel, setSelectedDuel] = useState<AdminJingDuel | null>(null)
   const [leveling, setLeveling] = useState<AdminLevelingSummary | null>(null)
   const [levelingLoading, setLevelingLoading] = useState(false)
+  const [scrabble, setScrabble] = useState<any | null>(null)
+  const [scrabbleLoading, setScrabbleLoading] = useState(false)
 
   const fetchDashboard = useCallback(async () => {
     setRefreshing(true)
@@ -362,6 +368,23 @@ export function AdminOperatorConsole({ initialUser, authSource }: AdminOperatorC
       fetchLeveling()
     }
   }, [activeTab, fetchLeveling, leveling, levelingLoading])
+
+  const fetchScrabble = useCallback(async () => {
+    setScrabbleLoading(true)
+    try {
+      const response = await fetch('/api/admin/scrabble-standings', { cache: 'no-store' })
+      const payload = await response.json().catch(() => null)
+      if (response.ok && payload?.success) setScrabble(payload)
+    } finally {
+      setScrabbleLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'scrabble' && !scrabble && !scrabbleLoading) {
+      fetchScrabble()
+    }
+  }, [activeTab, fetchScrabble, scrabble, scrabbleLoading])
 
   const totalAgents = data
     ? data.agents.historical + data.agents.planetary + data.agents.created
@@ -785,6 +808,11 @@ export function AdminOperatorConsole({ initialUser, authSource }: AdminOperatorC
                 {/* 8. COSMIC LEVELING PANEL */}
                 {activeTab === 'leveling' && (
                   <CosmicLevelingPanel leveling={leveling} loading={levelingLoading} />
+                )}
+
+                {/* AGENT SCRABBLE LEAGUE PANEL */}
+                {activeTab === 'scrabble' && (
+                  <ScrabbleLeaguePanel data={scrabble} loading={scrabbleLoading} />
                 )}
 
                 {/* 9. RAG / KNOWLEDGE PANEL */}

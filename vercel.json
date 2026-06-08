@@ -22,6 +22,10 @@
       "schedule": "0 * * * *"
     },
     {
+      "path": "/api/cron/scrabble/tick",
+      "schedule": "0 * * * *"
+    },
+    {
       "path": "/api/cron/push-feed",
       "schedule": "*/30 * * * *"
     },
