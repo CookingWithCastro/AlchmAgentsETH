@@ -19,7 +19,7 @@ use tauri::State;
 use tauri::WindowEvent;
 use tauri::Wry;
 use tauri_plugin_global_shortcut::ShortcutState;
-use tauri_plugin_shell::process::CommandEvent;
+use tauri_plugin_shell::process::{CommandChild, CommandEvent};
 use tauri_plugin_shell::ShellExt;
 use url::Url;
 use uuid::Uuid;
@@ -27,9 +27,11 @@ use uuid::Uuid;
 type HmacSha256 = Hmac<Sha256>;
 const TRAY_ID: &str = "alchm-tray";
 
-// State to hold the IPC Nonce
+// State to hold the IPC Nonce and the handles of spawned sidecar processes so
+// they can be terminated on app exit (rather than orphaned).
 struct AppState {
     ipc_nonce: Mutex<String>,
+    sidecar_children: Mutex<Vec<CommandChild>>,
 }
 
 #[derive(serde::Deserialize)]
@@ -401,6 +403,7 @@ fn main() {
         .plugin(tauri_plugin_notification::init())
         .manage(AppState {
             ipc_nonce: Mutex::new(ipc_nonce),
+            sidecar_children: Mutex::new(Vec::new()),
         })
         .invoke_handler(tauri::generate_handler![
             get_ipc_nonce,
@@ -498,7 +501,12 @@ fn main() {
             // In release with no configured secret, the sidecar will refuse to
             // sign deep links — matching `verify_deep_link` above.
 
-            let (mut rx, _child) = sidecar_command.spawn().expect("Failed to spawn sidecar");
+            let (mut rx, child) = sidecar_command.spawn().expect("Failed to spawn sidecar");
+            app.state::<AppState>()
+                .sidecar_children
+                .lock()
+                .expect("sidecar_children lock poisoned")
+                .push(child);
 
             tauri::async_runtime::spawn(async move {
                 // Read events such as stdout
@@ -511,8 +519,87 @@ fn main() {
                 }
             });
 
+            // 3. Spawn the Rust backend sidecar ("pa-rust-backend").
+            // It binds a dedicated loopback port so it never collides with a
+            // local Python backend (uvicorn :8000) or the Next.js dev server.
+            // Override with PA_RUST_BACKEND_PORT if a different port is needed.
+            let pa_backend_port =
+                std::env::var("PA_RUST_BACKEND_PORT").unwrap_or_else(|_| "8771".to_string());
+            let mut rust_backend_command = app
+                .shell()
+                .sidecar("pa-rust-backend")
+                .expect("failed to create `pa-rust-backend` binary command")
+                .env("APP_DATA_DIR", &app_data_dir)
+                .env("HOST", "127.0.0.1")
+                .env("PORT", &pa_backend_port);
+
+            // Forward relevant environment variables from host if they exist.
+            // PORT/HOST are deliberately omitted — they are set explicitly above
+            // so the sidecar never inherits an ambiguous host PORT (e.g. the
+            // frontend dev-server port).
+            for var in &[
+                "DATABASE_URL",
+                "DIRECT_URL",
+                "ANTHROPIC_API_KEY",
+                "AI_GATEWAY_API_KEY",
+                "GROQ_API_KEY",
+                "CEREBRAS_API_KEY",
+                "GEMINI_API_KEY",
+                "OPENROUTER_API_KEY",
+                "OPENAI_API_KEY",
+                "COSMIC_RECIPE_MODEL_TIER",
+                "HISTORICAL_AGENT_MAX_TIER",
+                "INTERNAL_API_SECRET",
+            ] {
+                if let Ok(val) = std::env::var(var) {
+                    rust_backend_command = rust_backend_command.env(var, &val);
+                }
+            }
+
+            let (mut backend_rx, backend_child) = rust_backend_command
+                .spawn()
+                .expect("Failed to spawn pa-rust-backend sidecar");
+            app.state::<AppState>()
+                .sidecar_children
+                .lock()
+                .expect("sidecar_children lock poisoned")
+                .push(backend_child);
+
+            tauri::async_runtime::spawn(async move {
+                while let Some(event) = backend_rx.recv().await {
+                    match event {
+                        CommandEvent::Stdout(line) => {
+                            if let Ok(line_str) = String::from_utf8(line) {
+                                println!("PA Rust Backend: {}", line_str);
+                            }
+                        }
+                        CommandEvent::Stderr(line) => {
+                            if let Ok(line_str) = String::from_utf8(line) {
+                                eprintln!("PA Rust Backend Stderr: {}", line_str);
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            });
+
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app_handle, event| {
+            // Terminate spawned sidecars on exit so they are not orphaned.
+            if matches!(
+                event,
+                tauri::RunEvent::ExitRequested { .. } | tauri::RunEvent::Exit
+            ) {
+                if let Some(state) = app_handle.try_state::<AppState>() {
+                    if let Ok(mut children) = state.sidecar_children.lock() {
+                        for child in children.drain(..) {
+                            let _ = child.kill();
+                        }
+                    }
+                }
+            }
+        });
 }

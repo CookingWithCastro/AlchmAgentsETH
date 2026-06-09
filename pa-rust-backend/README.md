@@ -93,6 +93,15 @@ cargo run --release          # listens on $HOST:$PORT (default 0.0.0.0:8000)
 `OPENROUTER_API_KEY` / `OPENAI_API_KEY`, `COSMIC_RECIPE_MODEL_TIER`,
 `HISTORICAL_AGENT_MAX_TIER`, `INTERNAL_API_SECRET`.
 
+### As a Tauri sidecar
+
+The desktop app (`src-tauri/`) ships this binary as the `pa-rust-backend`
+sidecar. To avoid colliding with a local Python backend (uvicorn `:8000`) or the
+Next.js dev server, the host spawns it bound to **`127.0.0.1:8771`** by default
+(override with `PA_RUST_BACKEND_PORT`); the host sets `HOST`/`PORT` explicitly
+rather than forwarding the ambiguous host `PORT`. The spawned process is tracked
+in `AppState` and terminated on app exit so it is never orphaned.
+
 ## Test
 
 ```bash

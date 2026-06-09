@@ -2,21 +2,23 @@
 # Build the Tauri sidecar binaries that get dropped into src-tauri/bin/.
 #
 # Sidecars and how they're produced:
-#   orchestrator  - Bun-compiled TS binary from this repo's server.ts.
-#   alchm-mcp     - Bun-compiled TS binary from the sibling WTEN repo
-#                   (../WhatToEatNext-master/mcp-server/src/index.ts).
-#   pa-mcp        - PyInstaller-frozen Python from
-#                   backend/planetary_agents_mcp_server.py.
-#   llama-server  - User-supplied; not built here. Drop a Metal-compiled
-#                   llama-cli into src-tauri/bin/llama-server-<triple>
-#                   before packaging. See src-tauri/bin/README.md.
+#   orchestrator    - Bun-compiled TS binary from this repo's server.ts.
+#   alchm-mcp       - Bun-compiled TS binary from the sibling WTEN repo
+#                     (../WhatToEatNext-master/mcp-server/src/index.ts).
+#   pa-mcp          - PyInstaller-frozen Python from
+#                     backend/planetary_agents_mcp_server.py.
+#   pa-rust-backend - Rust-compiled backend from pa-rust-backend/ directory.
+#   llama-server    - User-supplied; not built here. Drop a Metal-compiled
+#                     llama-cli into src-tauri/bin/llama-server-<triple>
+#                     before packaging. See src-tauri/bin/README.md.
 #
 # Default behavior: build everything we can for the current host arch.
 #
 # Flags:
-#   --skip-orchestrator   skip the orchestrator build
-#   --skip-alchm-mcp      skip the alchm-mcp build
-#   --skip-pa-mcp         skip the pa-mcp build
+#   --skip-orchestrator     skip the orchestrator build
+#   --skip-alchm-mcp        skip the alchm-mcp build
+#   --skip-pa-mcp           skip the pa-mcp build
+#   --skip-pa-rust-backend  skip the pa-rust-backend build
 #   --arch <triple>       override default host arch
 #                         (aarch64-apple-darwin | x86_64-apple-darwin)
 #   --all-mac-archs       build both Mac arches (requires Rosetta for x86_64)
@@ -53,6 +55,7 @@ PA_MCP_DEPS=(httpx sqlalchemy python-dotenv pyinstaller)
 SKIP_ORCHESTRATOR=0
 SKIP_ALCHM_MCP=0
 SKIP_PA_MCP=0
+SKIP_PA_RUST_BACKEND=0
 ALL_MAC_ARCHS=0
 
 case "$(uname -sm)" in
@@ -68,6 +71,7 @@ while [[ $# -gt 0 ]]; do
     --skip-orchestrator) SKIP_ORCHESTRATOR=1; shift ;;
     --skip-alchm-mcp) SKIP_ALCHM_MCP=1; shift ;;
     --skip-pa-mcp) SKIP_PA_MCP=1; shift ;;
+    --skip-pa-rust-backend) SKIP_PA_RUST_BACKEND=1; shift ;;
     --arch) TRIPLE="$2"; shift 2 ;;
     --all-mac-archs) ALL_MAC_ARCHS=1; shift ;;
     -h|--help) sed -n '1,40p' "$0"; exit 0 ;;
@@ -182,12 +186,52 @@ build_pa_mcp() {
   atomic_move "$tmp" "$out"
 }
 
+build_pa_rust_backend() {
+  local arch="$1"
+  local out="$BIN_DIR/pa-rust-backend-$arch"
+  local tmp="$out.tmp"
+
+  log "Building pa-rust-backend ($arch) → $out"
+  rm -f "$tmp"
+
+  local target_flag=""
+  # Only cross-compile if building a specific arch and we have it configured.
+  # Otherwise cargo will compile for host architecture.
+  if [[ "$arch" == "x86_64-apple-darwin" || "$arch" == "aarch64-apple-darwin" || "$arch" == "x86_64-unknown-linux-gnu" || "$arch" == "x86_64-pc-windows-msvc" ]]; then
+    target_flag="--target $arch"
+  fi
+
+  cargo build --release $target_flag --manifest-path "$ROOT_DIR/pa-rust-backend/Cargo.toml"
+
+  local target_dir="$ROOT_DIR/pa-rust-backend/target"
+  local bin_path=""
+  if [[ -n "$target_flag" ]]; then
+    bin_path="$target_dir/$arch/release/pa-rust-backend"
+  else
+    bin_path="$target_dir/release/pa-rust-backend"
+  fi
+
+  if [[ ! -f "$bin_path" ]]; then
+    # Fallback to local default build directory if target was not used
+    bin_path="$target_dir/release/pa-rust-backend"
+  fi
+
+  if [[ ! -f "$bin_path" ]]; then
+    echo "[build-sidecar] Compiled binary not found at $bin_path" >&2
+    return 1
+  fi
+
+  cp "$bin_path" "$tmp"
+  atomic_move "$tmp" "$out"
+}
+
 build_for_triple() {
   local arch="$1"
   log "=== Target: $arch ==="
   [[ "$SKIP_ORCHESTRATOR" == 1 ]] || build_orchestrator "$arch"
   [[ "$SKIP_ALCHM_MCP" == 1 ]] || build_alchm_mcp "$arch"
   [[ "$SKIP_PA_MCP" == 1 ]] || build_pa_mcp "$arch"
+  [[ "$SKIP_PA_RUST_BACKEND" == 1 ]] || build_pa_rust_backend "$arch"
 }
 
 if [[ "$ALL_MAC_ARCHS" == 1 ]]; then

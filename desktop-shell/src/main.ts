@@ -11,7 +11,15 @@ import { createSigilSvg, sigilSvgToDataUrl } from '../../lib/sigil-download'
 import type { NatalSigilRune } from '../../lib/runes/natal-sigil-runes'
 import type { PlanetPosition, Aspect } from '../../lib/astrological-pattern-recognition'
 
-type View = 'chat' | 'astrology' | 'physics' | 'agents' | 'stone' | 'account' | 'diagnostics'
+type View =
+  | 'chat'
+  | 'astrology'
+  | 'physics'
+  | 'agents'
+  | 'stone'
+  | 'account'
+  | 'diagnostics'
+  | 'scrabble'
 type Surface = 'main' | 'composer'
 type ElementKey = 'fire' | 'water' | 'air' | 'earth'
 type AgentTier = 'base' | 'premium'
@@ -280,6 +288,54 @@ interface AstrologyState {
   lastError: string | null
 }
 
+interface Standing {
+  rank: number
+  agentId: string
+  name: string
+  elo: number
+  played: number
+  won: number
+  lost: number
+  tied: number
+  pointsFor: number
+  seasonId: string
+}
+
+interface RecentMatch {
+  id: string
+  seasonId: string
+  agentA: string
+  agentB: string
+  winner: string | null
+  scoreA: number
+  scoreB: number
+  margin: number
+  highlight: string | null
+  tie: boolean
+  createdAt: string
+}
+
+interface ScrabbleLeagueData {
+  available: boolean
+  aggregates: {
+    totalMatches: number
+    last24h: number
+    activeSeasons: number
+    latestSeason: string | null
+    highlights: { bingo: number; upset: number; sweep: number }
+  } | null
+  standings: Standing[]
+  recentMatches: RecentMatch[]
+}
+
+type ScrabbleStatus = 'idle' | 'loading' | 'ready' | 'error'
+
+interface ScrabbleState {
+  status: ScrabbleStatus
+  data: ScrabbleLeagueData | null
+  lastError: string | null
+}
+
 type PhysicsBand = 'low' | 'below' | 'normal' | 'elevated' | 'extreme'
 
 interface PhysicsZMetric {
@@ -536,6 +592,7 @@ interface DesktopState extends PersistedDesktopState {
   runtime: RuntimeState
   astrology: AstrologyState
   physics: PhysicsState
+  scrabble: ScrabbleState
   composerDraft: string
   stoneDraft: StoneDraft
   notice: string | null
@@ -565,6 +622,7 @@ const VIEW_IDS: View[] = [
   'stone',
   'account',
   'diagnostics',
+  'scrabble',
 ]
 const CHAT_COST: Balances = { spirit: 2, essence: 1, matter: 0, substance: 0 }
 const GENERATION_TIMEOUT_MS = 20000
@@ -864,6 +922,11 @@ function loadState(): DesktopState {
       snapshot: null,
       lastError: null,
     },
+    scrabble: {
+      status: 'idle',
+      data: null,
+      lastError: null,
+    },
     composerDraft: '',
     stoneDraft: createDefaultStoneDraft(),
     notice: null,
@@ -1117,6 +1180,7 @@ function renderTab(view: View) {
     stone: "Philosopher's Stone",
     account: 'Account',
     diagnostics: 'Diagnostics',
+    scrabble: 'Scrabble League',
   }
 
   return `
@@ -1250,6 +1314,8 @@ function renderActiveView() {
       return renderAccountView()
     case 'diagnostics':
       return renderDiagnosticsView()
+    case 'scrabble':
+      return renderScrabbleView()
     case 'chat':
     default:
       return renderChatView()
@@ -4860,6 +4926,15 @@ function handleAgenticNavigation(message: string): View | null {
     'memory',
     'gpu',
   ])
+  const hasScrabble = hasAny(text, [
+    'scrabble',
+    'league',
+    'tournament',
+    'lettered arena',
+    'arena',
+    'standings',
+    'scores',
+  ])
   const hasChat = hasAny(text, ['chat', 'guide', 'conversation', 'talk to', 'message'])
   const hasAgents = hasAny(text, [
     'agent library',
@@ -4888,6 +4963,7 @@ function handleAgenticNavigation(message: string): View | null {
     if (hasStone) return 'stone'
     if (hasAccount) return 'account'
     if (hasDiag) return 'diagnostics'
+    if (hasScrabble) return 'scrabble'
     if (hasChat) return 'chat'
     if (hasAgents) return 'agents'
   }
@@ -4898,6 +4974,7 @@ function handleAgenticNavigation(message: string): View | null {
     if (hasStone) return 'stone'
     if (hasAccount) return 'account'
     if (hasDiag) return 'diagnostics'
+    if (hasScrabble) return 'scrabble'
     if (hasChat) return 'chat'
     if (hasAgents) return 'agents'
   }
@@ -4921,6 +4998,7 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
       stone: 'Stone',
       account: 'Account',
       diagnostics: 'Diagnostics',
+      scrabble: 'Scrabble League',
     }
     navNotice = `🌌 I've automatically switched you to the ${viewLabels[navigatedView]} tab! `
   }
@@ -5012,10 +5090,18 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
     ].join(' ')
   }
 
+  if (hasScrabble) {
+    return [
+      navNotice + "I'm Monica, and the Scrabble League tab shows the Lettered Arena standings.",
+      'It tracks the rolling round-robin seasons, ELO ratings, recent match results, and highlights (like sweeps, upsets, or bingos) between historical agents.',
+      'This always-on league uses a Sacred-7-blended persona strategy to choose moves deterministically without LLM overhead.',
+    ].join(' ')
+  }
+
   return [
     navNotice + "I'm Monica, your Alchm Desktop guide.",
-    `This companion manages Agents and Kitchen accounts, claims daily yield, shows the consensus astrology and Alchm physics dashboards, sends web agents into desktop chat, and creates local Philosopher's Stone agents. You currently have ${userAgentCount} user agent${userAgentCount === 1 ? '' : 's'} in the desktop roster.`,
-    "Tell me whether you want help with Astrology, Physics, Account, Catalog, Philosopher's Stone, or local chat runtime.",
+    `This companion manages Agents and Kitchen accounts, claims daily yield, shows the consensus astrology and Alchm physics dashboards, sends web agents into desktop chat, creates local Philosopher's Stone agents, and tracks the Scrabble Agent League. You currently have ${userAgentCount} user agent${userAgentCount === 1 ? '' : 's'} in the desktop roster.`,
+    "Tell me whether you want help with Astrology, Physics, Account, Catalog, Philosopher's Stone, Scrabble League, or local chat runtime.",
   ].join(' ')
 }
 
@@ -5787,6 +5873,13 @@ function bindEvents() {
       if (state.activeView === 'physics' && state.physics.status === 'idle') {
         void refreshAlchmPhysics({ silent: true })
       }
+      if (state.activeView === 'scrabble' && state.scrabble.status === 'idle') {
+        void refreshScrabbleLeague({ silent: true })
+      }
+    }
+
+    if (action === 'refresh-scrabble') {
+      void refreshScrabbleLeague()
     }
 
     if (action === 'clear-search') {
@@ -6221,6 +6314,214 @@ async function ingestKnowledge(traineeId: string) {
     state.train.ingesting = false
     render()
   }
+}
+
+async function refreshScrabbleLeague(options: { silent?: boolean } = {}) {
+  state.scrabble.status = 'loading'
+  state.scrabble.lastError = null
+  if (!options.silent) render()
+
+  if (!canCallNetwork()) {
+    state.scrabble.status = 'error'
+    state.scrabble.lastError = 'Offline mode: cannot fetch online Scrabble League standings.'
+    render()
+    return
+  }
+
+  try {
+    const base = (state.account.agentsUrl || DEFAULT_ACCOUNT.agentsUrl).replace(/\/$/, '')
+    const response = await fetch(`${base}/api/agents/scrabble-standings`)
+    if (!response.ok) throw new Error(`Scrabble League standings returned HTTP ${response.status}`)
+
+    const payload = await response.json()
+    if (payload && payload.success) {
+      state.scrabble.data = payload
+      state.scrabble.status = 'ready'
+      state.scrabble.lastError = null
+    } else {
+      throw new Error(payload?.reason || 'Failed to load Scrabble League data.')
+    }
+  } catch (error) {
+    state.scrabble.status = 'error'
+    state.scrabble.lastError =
+      error instanceof Error ? error.message : 'Scrabble League refresh failed.'
+  }
+
+  render()
+}
+
+function renderScrabbleView() {
+  const scrabble = state.scrabble.data
+
+  if (state.scrabble.status === 'loading' && !scrabble) {
+    return `
+      <section class="view empty-state">
+        <div class="panel stack">
+          <div class="eyebrow">Scrabble Agent Tournament</div>
+          <h1>Loading League Standings...</h1>
+          <p class="muted">Fetching rolling seasons, ELO ratings, and recent matches from the alchemical feed.</p>
+        </div>
+      </section>
+    `
+  }
+
+  if (!scrabble || !scrabble.available || !scrabble.aggregates) {
+    return `
+      <section class="view empty-state">
+        <div class="panel stack">
+          <div class="eyebrow">Scrabble Agent Tournament</div>
+          <h1>League stands inactive</h1>
+          <p class="muted">
+            The Agent Scrabble League has no data recorded yet.
+            Ensure SCRABBLE_LEAGUE_ENABLED=true in the environment and that the database has resolved its first tick.
+          </p>
+          ${
+            state.scrabble.lastError
+              ? `<div class="panel error-panel">${escapeHtml(state.scrabble.lastError)}</div>`
+              : ''
+          }
+          <div class="button-row center-row">
+            <button class="primary-button" data-action="refresh-scrabble">
+              ${state.scrabble.status === 'loading' ? 'Loading' : 'Load Standings'}
+            </button>
+          </div>
+        </div>
+      </section>
+    `
+  }
+
+  const { aggregates, standings, recentMatches } = scrabble
+  const highlightTotal =
+    (aggregates.highlights?.bingo || 0) +
+    (aggregates.highlights?.upset || 0) +
+    (aggregates.highlights?.sweep || 0)
+
+  return `
+    <section class="view">
+      <header class="view-header">
+        <div>
+          <div class="eyebrow">The Lettered Arena</div>
+          <h1>Scrabble Agent League</h1>
+          <p>
+            An always-on round-robin tournament between historical agents. 
+            Moves are chosen deterministically by a Sacred-7-blended persona strategy (0 LLM overhead).
+          </p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" data-action="refresh-scrabble">
+            ${state.scrabble.status === 'loading' ? 'Refreshing' : 'Refresh Standings'}
+          </button>
+        </div>
+      </header>
+
+      <div class="diag-grid">
+        <article class="panel metric">
+          <span class="eyebrow">Total Matches</span>
+          <strong>${aggregates.totalMatches.toLocaleString()}</strong>
+          <small class="muted" style="font-size: 10px;">Season ${aggregates.latestSeason || '—'}</small>
+        </article>
+        <article class="panel metric">
+          <span class="eyebrow">Last 24h</span>
+          <strong>${aggregates.last24h.toLocaleString()}</strong>
+          <small class="muted" style="font-size: 10px;">Matches today</small>
+        </article>
+        <article class="panel metric">
+          <span class="eyebrow">Active Seasons</span>
+          <strong>${aggregates.activeSeasons}</strong>
+          <small class="muted" style="font-size: 10px;">Rolling schedules</small>
+        </article>
+        <article class="panel metric">
+          <span class="eyebrow">Highlight Events</span>
+          <strong>${highlightTotal}</strong>
+          <small class="muted" style="font-size: 10px;">
+            ${aggregates.highlights?.bingo || 0} bingo · ${aggregates.highlights?.upset || 0} upset · ${aggregates.highlights?.sweep || 0} sweep
+          </small>
+        </article>
+      </div>
+
+      <div class="form-grid">
+        <div class="panel stack" style="grid-column: span 2;">
+          <div class="eyebrow">🏆 Season Standings (by ELO)</div>
+          ${
+            standings.length === 0
+              ? '<p class="muted">No standings recorded yet.</p>'
+              : `
+              <div style="overflow-x: auto; width: 100%;">
+                <table style="width: 100%; text-align: left; font-size: 0.9rem; border-collapse: collapse;">
+                  <thead>
+                    <tr style="text-transform: uppercase; font-size: 10px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                      <th style="padding: 8px 12px; font-weight: 800;">#</th>
+                      <th style="padding: 8px 12px; font-weight: 800;">Agent</th>
+                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">ELO</th>
+                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">W–L–T</th>
+                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">Played</th>
+                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${standings
+                      .map(
+                        s => `
+                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 10px 12px; font-family: monospace; color: var(--text-muted);">${s.rank}</td>
+                        <td style="padding: 10px 12px; font-weight: 700; color: #fff;">${escapeHtml(s.name)}</td>
+                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; font-weight: 700; color: #fcd34d;">${s.elo}</td>
+                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.won}–${s.lost}–${s.tied}</td>
+                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.played}</td>
+                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.pointsFor.toLocaleString()}</td>
+                      </tr>
+                    `
+                      )
+                      .join('')}
+                  </tbody>
+                </table>
+              </div>
+            `
+          }
+        </div>
+      </div>
+
+      <div class="panel stack">
+        <div class="eyebrow">🎯 Recent Matches</div>
+        ${
+          recentMatches.length === 0
+            ? '<p class="muted">No matches played yet.</p>'
+            : `
+            <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 8px;">
+              ${recentMatches
+                .map(m => {
+                  let badge = ''
+                  if (m.highlight === 'bingo')
+                    badge =
+                      '<span style="font-size: 10px; font-weight: 800; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.1); color: #f59e0b; padding: 2px 6px; border-radius: 99px; float: right;">🎯 Bingo</span>'
+                  else if (m.highlight === 'upset')
+                    badge =
+                      '<span style="font-size: 10px; font-weight: 800; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.1); color: #8b5cf6; padding: 2px 6px; border-radius: 99px; float: right;">⚡ Upset</span>'
+                  else if (m.highlight === 'sweep')
+                    badge =
+                      '<span style="font-size: 10px; font-weight: 800; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: #10b981; padding: 2px 6px; border-radius: 99px; float: right;">⚔️ Sweep</span>'
+
+                  return `
+                    <li style="border: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.15); padding: 12px; border-radius: 8px; font-size: 0.9rem;">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                          <span style="font-weight: ${m.winner === m.agentA ? '700; color: #fff;' : '400; color: var(--text-muted);'}">${escapeHtml(m.agentA)}</span>
+                          <span style="font-family: monospace; margin: 0 8px; color: var(--text-muted);">${m.scoreA}–${m.scoreB}</span>
+                          <span style="font-weight: ${m.winner === m.agentB ? '700; color: #fff;' : '400; color: var(--text-muted);'}">${escapeHtml(m.agentB)}</span>
+                          ${m.tie ? '<span style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">(tie)</span>' : ''}
+                        </div>
+                        ${badge}
+                      </div>
+                    </li>
+                  `
+                })
+                .join('')}
+            </ul>
+          `
+        }
+      </div>
+    </section>
+  `
 }
 
 function boot() {
