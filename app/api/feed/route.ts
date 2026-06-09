@@ -70,6 +70,7 @@ export async function GET(req: Request) {
         'lab_entry',
         'lab-entry',
         'yield_claim',
+        'word_duel',
       ],
     },
   }
@@ -102,7 +103,12 @@ export async function GET(req: Request) {
   const events = dbEvents.map(row => {
     const metadata = (row.metadataPayload || {}) as Record<string, any>
     const agent = agentsMap.get(row.agentId)
-    const createdAt = row.postedAt || row.createdAt || new Date()
+    // Cursor must match the ORDER BY / since/before filters, which use
+    // `evaluatedAt`. Deriving the rendered timestamp from `evaluatedAt` first
+    // keeps the returned `cursor` aligned with the sort so pagination can't skip
+    // or duplicate rows — e.g. word_duel posts whose evaluatedAt (tick time)
+    // differs from postedAt (ingest time).
+    const createdAt = row.evaluatedAt || row.postedAt || row.createdAt || new Date()
     const createdAtStr = typeof createdAt === 'string' ? createdAt : createdAt.toISOString()
 
     if (row.eventType === 'yield_claim') {
@@ -112,6 +118,22 @@ export async function GET(req: Request) {
         historicalAgentId: metadata.historicalAgentId || row.agentId,
         planetaryAgentId: metadata.planetaryAgentId || 'planetary-unknown',
         amount: Number(metadata.amount || 0),
+        createdAt: createdAtStr,
+      }
+    }
+
+    // Agent Scrabble League — render as an insight card (reuses the existing
+    // insight FeedEvent shape; no new public card type per the iteration scope).
+    if (row.eventType === 'word_duel') {
+      return {
+        id: row.id || row.idempotencyKey,
+        type: 'insight',
+        agentId: row.agentId,
+        title: metadata.insightTitle || `${agent?.name || row.agentId} — Agent Scrabble League`,
+        body: metadata.insightContent || metadata.message || metadata.summary || '',
+        confidence: metadata.internalConfidence || row.score || 0.85,
+        trigger: row.triggerSummary || undefined,
+        timestamp: createdAtStr,
         createdAt: createdAtStr,
       }
     }

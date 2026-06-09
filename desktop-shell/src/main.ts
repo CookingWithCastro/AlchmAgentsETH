@@ -619,6 +619,19 @@ const state = loadState()
 const MCP_SIDECAR_ENV: Record<string, string> = {
   PLANETARY_AGENTS_BACKEND_URL: 'https://api.agents.alchm.kitchen',
   PLANETARY_AGENTS_FRONTEND_URL: 'https://agents.alchm.kitchen',
+  // The bundled alchm-mcp (WTEN data server) builds natal charts by fetching
+  // /api/astrologize from a backend. With no env it defaults to
+  // http://localhost:3000 — absent on an end-user machine, so live-sky
+  // transits/recipes fail with "Unable to connect". Point it at the WTEN
+  // production site that serves /api/astrologize:
+  //   - ALCHM_MCP_BACKEND_URL is the dedicated knob the alchm-mcp server reads
+  //     first (natalChartService.getAstrologizeApiUrl) — highest precedence,
+  //     scoped to just the chart fetch. NOT the same as PA's ALCHM_BACKEND_URL
+  //     (onrender), which does not serve /api/astrologize.
+  //   - NEXT_PUBLIC_SITE_URL stays as the getSelfBaseUrl() fallback for any
+  //     other bundled self-fetch. Either, externally set, still wins.
+  ALCHM_MCP_BACKEND_URL: 'https://alchm.kitchen',
+  NEXT_PUBLIC_SITE_URL: 'https://alchm.kitchen',
 }
 
 export const alchmMcpClient = new LocalMcpClient(

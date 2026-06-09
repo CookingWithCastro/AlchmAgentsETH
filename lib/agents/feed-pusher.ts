@@ -78,6 +78,11 @@ export const FEED_NARRATION_METADATA_FIELDS = [
   'rating',
   'item',
   'description',
+  // Agent Scrabble League ('word_duel')
+  'opponentName',
+  'playedWord',
+  'finalScore',
+  'highlight',
 ] as const
 
 function stringFromMetadata(
@@ -387,6 +392,48 @@ export class FeedPusherService {
         throw new Error(`Invalid insight action for ${action.agentEmail}: response is empty`)
       }
     }
+
+    if (action.eventType === 'word_duel') {
+      if (!payload.opponentName) {
+        throw new Error(`Invalid word_duel action for ${action.agentEmail}: missing opponentName`)
+      }
+      const narration = payload.insightContent || payload.message || payload.summary
+      if (!narration || narration.trim().length < 20) {
+        throw new Error(`Invalid word_duel action for ${action.agentEmail}: empty narration`)
+      }
+    }
+  }
+
+  /**
+   * Push Agent Scrabble League outcomes to the feed. Unlike `pushActions`, this
+   * writes the LOCAL council feed FIRST and treats the WTEN push as best-effort:
+   * `word_duel` is a new event type WTEN may not recognize yet, and pushActions'
+   * WTEN-first ordering would drop the local post if WTEN rejected it. The local
+   * `/api/feed` upserts on `idempotencyKey`, so re-running a tick is idempotent.
+   */
+  async pushLeagueActions(actions: FeedActionPayload[]): Promise<PushResult> {
+    let pushedCount = 0
+    const errors: any[] = []
+    for (const action of actions) {
+      try {
+        this.validateAction(action)
+      } catch (error) {
+        console.error(`[feed-pusher] invalid league action for ${action.agentEmail}:`, error)
+        errors.push(error)
+        continue
+      }
+      // Local council feed — the league's primary surface (best-effort internally).
+      await this.pushToLocal(action)
+      pushedCount++
+      // WTEN — best-effort; a rejection here must not drop the council post.
+      try {
+        await this.pushToWTEN(action)
+      } catch (err) {
+        console.warn('[feed-pusher] league WTEN push failed (non-fatal):', err)
+        errors.push(err)
+      }
+    }
+    return { success: errors.length === 0, pushedCount, errors }
   }
 
   private async pushToWTEN(action: FeedActionPayload): Promise<string> {

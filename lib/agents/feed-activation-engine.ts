@@ -14,6 +14,7 @@ export type WTENEventType =
   | 'made_it'
   | 'lab_entry'
   | 'insight'
+  | 'word_duel'
 
 export interface FeedActionPayload {
   agentEmail: string
@@ -51,6 +52,17 @@ export interface FeedActionPayload {
     targetName?: string
     withAgent?: string
     partnerName?: string
+    // For 'word_duel' (Agent Scrabble League — agent-vs-agent match outcomes)
+    opponentName?: string
+    playedWord?: string
+    wordScore?: number
+    matchResult?: 'win' | 'loss' | 'tie'
+    finalScore?: string // e.g. "84–61"
+    leagueRank?: number
+    seasonId?: string
+    eloAfter?: number
+    /** Why this outcome was feed-worthy: 'bingo' | 'upset' | 'sweep'. */
+    highlight?: string
     // WTEN narration contract. Keep these names aligned with
     // alchm.kitchen's eventNarration helper.
     topic?: string
