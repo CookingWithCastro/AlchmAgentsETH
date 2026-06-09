@@ -113,7 +113,7 @@ export function seedFromKey(key: string): number {
     h ^= key.charCodeAt(i)
     h = Math.imul(h, 16777619)
   }
-  return h >>> 0
+  return (h >>> 0) & 0x7fffffff
 }
 
 /** ELO update (K=32). `sa` is agent A's actual score: 1 win / 0.5 tie / 0 loss. */
