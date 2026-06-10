@@ -9,8 +9,7 @@
  * spoofed body `userId` can never spend someone else's tokens.
  */
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { EconomyService } from '@/lib/services/economyService'
 import { AGENT_OPERATION_COSTS } from '@/lib/economy-config'
@@ -25,8 +24,8 @@ export async function POST(
   const timestamp = new Date().toISOString()
 
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as any)?.id
+    const session = await auth()
+    const userId = session?.user.id
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'Authentication required to reset Evolution Values.', timestamp },

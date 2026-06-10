@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
 import type { Prisma } from '@prisma/client'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 interface NotificationRequest {
@@ -27,8 +26,8 @@ function toInputJson(value: unknown): Prisma.InputJsonValue {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as { id?: string } | undefined)?.id
+    const session = await auth()
+    const userId = session?.user.id
     const { type, metadata }: NotificationRequest = await req.json()
 
     if (!userId) {
@@ -112,8 +111,8 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as { id?: string } | undefined)?.id
+    const session = await auth()
+    const userId = session?.user.id
     const { searchParams } = new URL(req.url)
     const type = searchParams.get('type')
 
@@ -166,8 +165,8 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as { id?: string } | undefined)?.id
+    const session = await auth()
+    const userId = session?.user.id
     const {
       notificationId,
       read = true,

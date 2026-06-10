@@ -1,8 +1,7 @@
 import 'server-only'
 
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import {
   ADMIN_EMAILS,
@@ -93,7 +92,7 @@ export function adminErrorResponse(result: AdminAuthFailure) {
 }
 
 async function getSessionUser(): Promise<AdminSessionUser | null> {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
   const user = session?.user as AdminSessionUser | undefined
 
   return toSessionUser(user)

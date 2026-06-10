@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 interface UserSettings {
@@ -79,8 +78,8 @@ const defaultSettings: UserSettings = {
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as any)?.id
+    const session = await auth()
+    const userId = session?.user.id
 
     if (!userId) {
       return NextResponse.json(
@@ -189,8 +188,8 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as any)?.id
+    const session = await auth()
+    const userId = session?.user.id
 
     if (!userId) {
       return NextResponse.json(
@@ -310,8 +309,8 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as any)?.id
+    const session = await auth()
+    const userId = session?.user.id
 
     if (!userId) {
       return NextResponse.json(

@@ -32,6 +32,8 @@ describe('resolveBridgeUser', () => {
       email: 'a@example.com',
       name: 'A',
       image: null,
+      role: null,
+      tier: null,
       kitchenPremium: false,
     })
     expect(provisionPaUser).toHaveBeenCalledWith(

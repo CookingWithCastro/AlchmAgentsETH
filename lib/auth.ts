@@ -1,6 +1,7 @@
 import { getServerSession } from 'next-auth'
 import { authOptions } from './auth-options'
 import { cookies } from 'next/headers'
+import { unstable_rethrow } from 'next/navigation'
 import { resolveBridgeUser } from './auth-bridge'
 
 export type SessionUser = {
@@ -8,6 +9,8 @@ export type SessionUser = {
   email?: string | null
   name?: string | null
   image?: string | null
+  role?: string | null
+  tier?: string | null
   /**
    * Set when the user was resolved via the alchm.kitchen bridge and the kitchen
    * reports them as premium. Used to unify the premium role across both sites.
@@ -29,14 +32,22 @@ export async function auth(): Promise<Session | null> {
       const u = session.user as any
       if (u.id) {
         return {
-          user: { id: u.id, email: u.email ?? null, name: u.name ?? null, image: u.image ?? null },
+          user: {
+            id: u.id,
+            email: u.email ?? null,
+            name: u.name ?? null,
+            image: u.image ?? null,
+            role: u.role ?? null,
+            tier: u.tier ?? null,
+          },
         }
       }
     }
   } catch (err) {
-    // A NextAuth provider/config error shouldn't block login — we fall back to
-    // the bridge / cookie auth below — but surface it so a misconfig isn't invisible.
-    console.warn('[auth] getServerSession failed; falling back to bridge/cookie auth', err)
+    unstable_rethrow(err)
+    // A NextAuth provider/config error should not block the shared kitchen
+    // session bridge, but surface it so a misconfiguration is visible.
+    console.warn('[auth] getServerSession failed; falling back to the kitchen bridge', err)
   }
 
   // 2. Cross-site bridge: the user may be signed in on alchm.kitchen, whose
@@ -57,26 +68,19 @@ export async function auth(): Promise<Session | null> {
             email: bridged.email,
             name: bridged.name,
             image: bridged.image,
+            role: bridged.role,
+            tier: bridged.tier,
             kitchenPremium: bridged.kitchenPremium,
           },
         }
       }
     }
   } catch (err) {
-    console.warn('[auth] bridge resolution failed; falling back to cookie auth', err)
+    unstable_rethrow(err)
+    console.warn('[auth] bridge resolution failed', err)
   }
 
-  // 3. Legacy cookie-based auth (manual login flow).
-  try {
-    const c = await cookies()
-    const userId = c.get('userId')?.value
-    if (!userId) return null
-    const name = c.get('userName')?.value || 'Explorer'
-    const image = c.get('userAvatar')?.value || null
-    return { user: { id: userId, name, image } }
-  } catch {
-    return null
-  }
+  return null
 }
 
 export async function requireAuthOrRedirect(): Promise<SessionUser | null> {

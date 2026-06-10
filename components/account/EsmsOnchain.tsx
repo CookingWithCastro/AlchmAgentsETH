@@ -24,6 +24,7 @@ const FIELDS = [
 
 const CHAIN = process.env.NEXT_PUBLIC_ESMS_CHAIN || 'base-sepolia'
 const EXPLORER = CHAIN === 'base' ? 'https://basescan.org/tx/' : 'https://sepolia.basescan.org/tx/'
+const PENDING_CLAIM_KEY = 'alchm.esms.pendingClaimId'
 
 function fmt(v: string | undefined): string {
   const n = Number(v ?? 0)
@@ -37,6 +38,7 @@ export function EsmsOnchain() {
   const [claiming, setClaiming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<{ text: string; tx?: string } | null>(null)
+  const [pendingClaimId, setPendingClaimId] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -50,6 +52,7 @@ export function EsmsOnchain() {
 
   useEffect(() => {
     load()
+    setPendingClaimId(window.localStorage.getItem(PENDING_CLAIM_KEY))
   }, [load])
 
   const claim = useCallback(async () => {
@@ -66,17 +69,23 @@ export function EsmsOnchain() {
       const res = await fetch('/api/esms/claim', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amounts: payload }),
+        body: JSON.stringify(pendingClaimId ? { claimId: pendingClaimId } : { amounts: payload }),
       })
       const data = await res.json()
       if (res.ok) {
         setNotice({ text: 'Claimed to your wallet.', tx: data.txHash })
         setAmounts({})
+        setPendingClaimId(null)
+        window.localStorage.removeItem(PENDING_CLAIM_KEY)
         load()
       } else if (res.status === 402) {
         setError('Insufficient off-chain balance for that claim.')
       } else if (res.status === 502 && data.retryable) {
         setNotice({ text: 'Balance debited — on-chain mint is pending. Retry shortly.' })
+        if (typeof data.claimId === 'string') {
+          setPendingClaimId(data.claimId)
+          window.localStorage.setItem(PENDING_CLAIM_KEY, data.claimId)
+        }
         load()
       } else {
         setError(data.error || 'Claim failed.')
@@ -86,7 +95,7 @@ export function EsmsOnchain() {
     } finally {
       setClaiming(false)
     }
-  }, [amounts, load])
+  }, [amounts, load, pendingClaimId])
 
   // Not linked yet → guide to the wallet section above.
   if (state && !state.connected) {
@@ -140,8 +149,8 @@ export function EsmsOnchain() {
           ))}
         </div>
         <div className="mt-3 flex items-center gap-3">
-          <Button disabled={claiming || total <= 0} onClick={claim}>
-            {claiming ? 'Claiming…' : 'Claim to wallet'}
+          <Button disabled={claiming || (!pendingClaimId && total <= 0)} onClick={claim}>
+            {claiming ? 'Claiming…' : pendingClaimId ? 'Retry pending claim' : 'Claim to wallet'}
           </Button>
           <span className="text-xs text-white/40">Debits your off-chain balance.</span>
         </div>

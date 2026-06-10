@@ -1,11 +1,10 @@
 import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { DashboardClient } from './DashboardClient'
 import { backend } from '@/lib/backend'
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions)
+  const session = await auth()
 
   // Use real agent data from the system
   let dashboardAgents: Array<{
