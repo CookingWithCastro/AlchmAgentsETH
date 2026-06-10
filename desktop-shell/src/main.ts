@@ -1261,10 +1261,20 @@ function renderSidebar() {
 }
 
 function renderCoin(label: string, amount: number) {
+  const icons: Record<string, string> = {
+    Spirit: 'water_drop',
+    Essence: 'energy_savings_leaf',
+    Matter: 'grain',
+    Substance: 'toll',
+  }
+  const icon = icons[label] || 'toll'
   return `
-    <div class="coin">
-      <span>${label}</span>
-      <strong>${amount}</strong>
+    <div class="coin ${label.toLowerCase()}">
+      <span class="material-symbols-outlined coin-icon">${icon}</span>
+      <div class="coin-info">
+        <span class="coin-label">${label}</span>
+        <strong>${amount}</strong>
+      </div>
     </div>
   `
 }
@@ -1354,8 +1364,18 @@ function renderChatView() {
                 ? renderGroupStarterMessage(agents)
                 : renderStarterMessage(agents[0])
           }
+          ${
+            state.runtime.generating
+              ? `
+            <div class="typing-indicator">
+              <div class="typing-dots"><span></span><span></span><span></span></div>
+              <span class="typing-label">${escapeHtml(agents.length === 1 ? agents[0].name : 'Agents')} thinking…</span>
+            </div>
+          `
+              : ''
+          }
         </div>
-        <form class="composer" data-chat-form>
+        <form class="composer element-${agents[0]?.element || ''}" data-chat-form>
           <textarea
             class="textarea"
             name="message"
@@ -2457,14 +2477,23 @@ function renderMessage(message: ChatMessage) {
   `
     : ''
 
+  const agentElement = isAgent ? getMessageAgentElement(message) : ''
+
   return `
-    <article class="message ${message.role}">
+    <article class="message ${message.role}${agentElement ? ` element-${agentElement}` : ''}">
       <div class="message-meta">
         <div style="display: flex; align-items: center; gap: 8px;">
           <strong>${escapeHtml(speakerName)}</strong>
           ${playButton}
         </div>
-        <small>${formatTime(message.timestamp)}${message.channel ? ` · ${escapeHtml(message.channel)}` : ''}</small>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <div class="message-actions">
+            <button class="message-action-btn" data-action="copy-message" data-message-text="${escapeHtml(message.content)}" title="Copy message">
+              <span class="material-symbols-outlined" style="font-size: 14px;">content_copy</span>
+            </button>
+          </div>
+          <small>${formatTime(message.timestamp)}${message.channel ? ` · ${escapeHtml(message.channel)}` : ''}</small>
+        </div>
       </div>
       <p>${escapeHtml(message.content)}</p>
     </article>
@@ -2476,6 +2505,13 @@ function getMessageSpeakerName(message: ChatMessage) {
   if (message.agentId)
     return state.roster.find(agent => agent.id === message.agentId)?.name || 'Agent'
   return getActiveAgent()?.name || 'Agent'
+}
+
+function getMessageAgentElement(message: ChatMessage): string {
+  const agent = message.agentId
+    ? state.roster.find(a => a.id === message.agentId)
+    : getActiveAgent()
+  return agent?.element || ''
 }
 
 function chatComposerPlaceholder(agents: LocalAgent[]) {
@@ -3522,7 +3558,7 @@ function renderAgentsView() {
         }
       </div>
 
-      <div class="agent-grid">
+      <div class="agent-grid stagger-children">
         ${
           filteredAgents.length
             ? filteredAgents.map(renderAgentCard).join('')
@@ -3538,7 +3574,7 @@ function renderAgentCard(template: AgentTemplate) {
   const lvl = agentLevel(template.id)
 
   return `
-    <article class="agent-card">
+    <article class="agent-card element-${template.element} ${template.tier === 'premium' ? 'tier-premium' : ''}">
       <div class="agent-card-head">
         <span class="avatar large-avatar">${escapeHtml(template.initials)}</span>
         <div>
@@ -5984,6 +6020,13 @@ function bindEvents() {
       }
     }
 
+    if (action === 'copy-message') {
+      const text = control.dataset.messageText
+      if (text) {
+        void navigator.clipboard.writeText(text)
+      }
+    }
+
     if (action === 'select-agent' && agentId) {
       setSingleChatAgent(agentId)
       saveState()
@@ -6543,10 +6586,12 @@ function renderScrabbleView() {
                     ${standings
                       .map(
                         s => `
-                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 10px 12px; font-family: monospace; color: var(--text-muted);">${s.rank}</td>
+                      <tr class="standings-row" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 10px 12px;" class="rank-col ${s.rank === 1 ? 'first' : 'normal'}">#${s.rank}</td>
                         <td style="padding: 10px 12px; font-weight: 700; color: #fff;">${escapeHtml(s.name)}</td>
-                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; font-weight: 700; color: #fcd34d;">${s.elo}</td>
+                        <td style="padding: 10px 12px; text-align: right;">
+                          <span class="elo-badge ${s.rank <= 2 ? 'gold' : 'normal'}">${s.elo}</span>
+                        </td>
                         <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.won}–${s.lost}–${s.tied}</td>
                         <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.played}</td>
                         <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.pointsFor.toLocaleString()}</td>
@@ -6632,7 +6677,9 @@ interface VoiceProfile {
   voiceKeywords: string[]
   rate: number
   pitch: number
-  lang?: string
+  lang?: string // preferred English variant (en-US, en-GB, en-IN, en-AU)
+  gender: 'male' | 'female'
+  nativeLang?: string // agent's historical native language (it-IT, fr-FR, de-DE, etc.)
 }
 
 const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
@@ -6643,6 +6690,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.82, // very thoughtful and slow with contemplative pauses
     pitch: 0.92, // mellow baritone, slightly lower
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'de-DE', // German (Ulm, Württemberg)
   },
   'isaac-newton': {
     // Precise, clipped British diction. Measured and deliberate — each word weighed carefully.
@@ -6650,6 +6699,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.85, // precise and deliberate, borderline pedantic
     pitch: 1.08, // slightly higher, intellectual clarity
     lang: 'en-GB',
+    gender: 'male',
   },
   'william-shakespeare': {
     // Theatrical, rolling cadence. Elizabethan flourish — dramatic pauses followed by rapid passages.
@@ -6657,6 +6707,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.08, // theatrical and flowing, building momentum
     pitch: 1.06, // expressive tenor with dramatic range
     lang: 'en-GB',
+    gender: 'male',
   },
   socrates: {
     // Conversational, probing, Socratic irony. Speaks as if perpetually asking a question.
@@ -6664,6 +6715,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.9, // deliberate, leaving space for thought
     pitch: 1.04, // slightly elevated — curious, inquisitive tone
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'el-GR', // Ancient Greek
   },
   'galileo-galilei': {
     // Italian passion meets scientific rigor. Animated when describing discoveries, measured when reasoning.
@@ -6671,6 +6724,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.05, // slightly quick, animated with excitement
     pitch: 1.02, // warm Mediterranean tenor
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'it-IT', // Italian (Pisa)
   },
   'carl-jung': {
     // Swiss-German accent, deep and resonant. Speaks in careful, layered constructions with psychological weight.
@@ -6678,6 +6733,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.78, // very slow, ponderous, depth-seeking
     pitch: 0.85, // deep baritone, almost hypnotic
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'de-CH', // Swiss German (Kesswil)
   },
   'carl-sagan': {
     // Breathy wonder, cosmic awe. Famous for elongated vowels and building excitement.
@@ -6685,13 +6742,16 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.92, // measured wonder, building to crescendo
     pitch: 1.0, // warm and resonant, natural mid-range
     lang: 'en-US',
+    gender: 'male',
   },
   'siddhartha-gautama-buddha': {
     // Profoundly serene. Each word placed like a stone in still water — extreme calm.
     voiceKeywords: ['grandpa', 'reed', 'rishi'],
     rate: 0.68, // extremely slow, meditative — the slowest of all agents
     pitch: 0.88, // deep and tranquil, almost a whisper of authority
-    lang: 'en-US',
+    lang: 'en-IN',
+    gender: 'male',
+    nativeLang: 'hi-IN', // Pali/Sanskrit region
   },
   rumi: {
     // Ecstatic, rhythmic, poetic. Like listening to sung verse — musical and flowing.
@@ -6699,6 +6759,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.88, // rhythmic and flowing, building like poetry
     pitch: 1.08, // elevated, ecstatic — almost singing
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'fa-IR', // Persian (Balkh, now Afghanistan)
   },
   'mark-twain-1835': {
     // Missouri drawl, dry wit. Long pauses for comedic effect, then sudden punchlines.
@@ -6706,6 +6768,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.78, // slow, drawling — takes his sweet time
     pitch: 0.85, // gruff, weathered baritone with humor underneath
     lang: 'en-US',
+    gender: 'male',
   },
   'benjamin-franklin': {
     // Avuncular, pragmatic, slightly amused. The wise grandfather who's seen it all.
@@ -6713,6 +6776,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.95, // conversational but measured
     pitch: 0.96, // balanced, warm, approachable
     lang: 'en-US',
+    gender: 'male',
   },
   'julius-caesar': {
     // Imperial authority. Declarative, commanding — every sentence a decree.
@@ -6720,6 +6784,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.05, // crisp, military precision
     pitch: 0.88, // deep, authoritative, a general's voice
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'it-IT', // Latin (Rome)
   },
   'isaac-asimov': {
     // Brooklyn-accented, rapid-fire, professor-like. Enthusiastic about ideas, speaks faster when excited.
@@ -6727,6 +6793,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.12, // quick and intellectually animated
     pitch: 1.02, // clear, professorial
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'ru-RU', // Russian (Petrovichi, emigrated age 3)
   },
   'leonardo-da-vinci': {
     // Renaissance polymath. Curious, dreamy, shifting between art and science mid-sentence.
@@ -6734,6 +6802,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.92, // contemplative, sometimes pausing to sketch mentally
     pitch: 1.06, // warm, expressive Italian tenor
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'it-IT', // Italian (Vinci, Tuscany)
   },
   'nikola-tesla': {
     // Serbian-accented precision. Visionary intensity — speaks as if receiving transmissions.
@@ -6741,6 +6811,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.02, // precise, slightly clipped, electric
     pitch: 1.1, // higher, intense, vibrating with ideas
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'sr-RS', // Serbian (Smiljan, Austrian Empire)
   },
   'charles-darwin': {
     // Soft-spoken English gentleman. Careful, observational — speaks like he's narrating field notes.
@@ -6748,6 +6820,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.85, // patient, observational
     pitch: 0.98, // gentle, understated English tenor
     lang: 'en-GB',
+    gender: 'male',
   },
   'marcus-aurelius': {
     // Stoic composure. Measured, self-reflective — the voice of a man writing meditations.
@@ -6755,6 +6828,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.82, // deliberate, stoic
     pitch: 0.92, // steady, centered — neither high nor low
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'it-IT', // Latin (Rome)
   },
   confucius: {
     // Aphoristic, teacher's cadence. Pauses between ideas to let them sink in.
@@ -6762,6 +6837,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.8, // slow, didactic — each word deliberate
     pitch: 0.95, // calm authority, elder's voice
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'zh-CN', // Chinese (Lu, Zhou dynasty)
   },
   'lao-tzu': {
     // Soft, paradoxical, almost whispering. The Tao speaks through silence.
@@ -6769,6 +6846,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.72, // near-silence pace, deeply contemplative
     pitch: 0.9, // gentle, almost ethereal
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'zh-CN', // Chinese (Zhou dynasty)
   },
   'sun-tzu': {
     // Military precision meets philosophical depth. Short, declarative, strategic.
@@ -6776,6 +6855,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.0, // precise, strategic — no wasted words
     pitch: 0.9, // controlled, deep, commanding
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'zh-CN', // Chinese (Qi, Spring and Autumn period)
   },
   nietzsche: {
     // Intense, passionate, building to philosophical climax. The voice of a man on a mountain.
@@ -6783,6 +6864,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.08, // passionate, building intensity
     pitch: 1.05, // intense tenor, rising with fervor
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'de-DE', // German (Röcken, Saxony)
   },
   plato: {
     // Socrates' student, more measured and systematic. Speaks in structured dialogues.
@@ -6790,6 +6873,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.88, // systematic, building arguments
     pitch: 1.02, // clear, academic
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'el-GR', // Ancient Greek (Athens)
   },
   aristotle: {
     // The teacher. More grounded than Plato, more empirical. Speaks with taxonomic precision.
@@ -6797,6 +6882,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.92, // methodical, categorizing
     pitch: 0.98, // balanced, authoritative
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'el-GR', // Ancient Greek (Stagira)
   },
   dostoevsky: {
     // Russian intensity. Tortured, deep, exploring the abyss of human psychology.
@@ -6804,6 +6891,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.8, // heavy, brooding, dramatic pauses
     pitch: 0.82, // deep Russian baritone, anguished depth
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'ru-RU', // Russian (Moscow)
   },
   voltaire: {
     // French wit, razor-sharp. Quick, sardonic, dripping with irony.
@@ -6811,6 +6900,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.1, // quick-witted, satirical
     pitch: 1.08, // light, amused tenor
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'fr-FR', // French (Paris)
   },
   'omar-khayyam': {
     // Persian poet-mathematician. Lyrical, wine-flavored, fatalistic beauty.
@@ -6818,6 +6909,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.85, // flowing, poetic cadence
     pitch: 1.05, // melodic, warm
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'fa-IR', // Persian (Nishapur)
   },
   'khalil-gibran': {
     // Lebanese mystical prose. Deeply earnest, every word a revelation.
@@ -6825,6 +6918,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.82, // reverent, almost prayerful
     pitch: 1.04, // warm, sincere tenor
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'ar-LB', // Arabic (Bsharri, Lebanon)
   },
   machiavelli: {
     // Florentine pragmatism. Cool, calculating, speaking uncomfortable truths without flinching.
@@ -6832,13 +6927,17 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.95, // measured, strategic — revealing nothing accidental
     pitch: 0.94, // smooth, slightly cold
     lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'it-IT', // Italian (Florence)
   },
   gandhi: {
     // Gentle but unyielding. Speaks softly but with absolute moral conviction.
     voiceKeywords: ['rishi', 'grandpa', 'reed'],
     rate: 0.78, // gentle, deliberate, unhurried
     pitch: 1.0, // thin but clear, moral authority
-    lang: 'en-US',
+    lang: 'en-IN',
+    gender: 'male',
+    nativeLang: 'gu-IN', // Gujarati (Porbandar)
   },
   'alan-turing': {
     // Brilliant, slightly awkward. Quick bursts of insight followed by contemplative pauses.
@@ -6846,6 +6945,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.05, // quick analytical mind
     pitch: 1.06, // slightly higher, nervous energy
     lang: 'en-GB',
+    gender: 'male',
   },
   'edgar-allan-poe': {
     // Gothic, haunted, melodramatic. The voice echoes in empty chambers.
@@ -6853,6 +6953,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.82, // slow, building dread
     pitch: 0.88, // dark, resonant, slightly hollow
     lang: 'en-US',
+    gender: 'male',
   },
   'thomas-jefferson': {
     // Virginian eloquence. Diplomatic, measured, writing-as-speech — the Declaration in voice form.
@@ -6860,6 +6961,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.9, // measured, diplomatic
     pitch: 0.96, // refined Southern gentility
     lang: 'en-US',
+    gender: 'male',
   },
   'abraham-lincoln': {
     // Frontier simplicity meets profound depth. Speaks slowly, with homespun wisdom.
@@ -6867,6 +6969,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.8, // prairie slow, deliberate
     pitch: 0.9, // surprisingly high for his frame, nasal quality
     lang: 'en-US',
+    gender: 'male',
   },
   'martin-luther-king-jr': {
     // Preacher's cadence. Musical, building, sermonic — the voice rises to crescendo.
@@ -6874,6 +6977,128 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.95, // building rhythm, sermonic pacing
     pitch: 0.95, // rich baritone, powerful resonance
     lang: 'en-US',
+    gender: 'male',
+  },
+  'charles-dickens': {
+    // Victorian London storyteller. Vivid, theatrical, character voices within the voice.
+    voiceKeywords: ['daniel', 'eddy', 'reed', 'google uk english male'],
+    rate: 1.05, // animated storytelling
+    pitch: 1.04, // expressive, varied
+    lang: 'en-GB',
+    gender: 'male',
+  },
+  'geoffrey-chaucer': {
+    // Middle English cadence. Rolling, musical, earthy humor.
+    voiceKeywords: ['daniel', 'eddy', 'reed', 'google uk english male'],
+    rate: 0.9, // measured, narrative
+    pitch: 1.0, // natural English storyteller
+    lang: 'en-GB',
+    gender: 'male',
+  },
+  'john-locke': {
+    // Enlightenment rationalist. Clear, systematic, building logical cases.
+    voiceKeywords: ['daniel', 'eddy', 'reed'],
+    rate: 0.92, // systematic, rational
+    pitch: 1.02, // clear, reasoned
+    lang: 'en-GB',
+    gender: 'male',
+  },
+  'david-hume': {
+    // Scottish Enlightenment. Warm skepticism with a gentle Scottish lilt.
+    voiceKeywords: ['daniel', 'eddy', 'reed'],
+    rate: 0.88, // gentle, questioning
+    pitch: 1.0, // warm, Scottish-tinged
+    lang: 'en-GB',
+    gender: 'male',
+  },
+  'adam-smith': {
+    // Scottish political economist. Measured, professorial, building arguments with data.
+    voiceKeywords: ['daniel', 'eddy', 'reed'],
+    rate: 0.9, // professorial
+    pitch: 0.98, // steady, authoritative
+    lang: 'en-GB',
+    gender: 'male',
+  },
+  'jean-jacques-rousseau': {
+    // French Romantic. Passionate, emotional, nature-loving — the wild man of philosophy.
+    voiceKeywords: ['eddy', 'reed', 'daniel'],
+    rate: 0.92, // impassioned but eloquent
+    pitch: 1.04, // warm, emotive
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'fr-CH', // French (Geneva)
+  },
+  'immanuel-kant': {
+    // Prussian precision. Extraordinarily methodical — speaks in perfectly structured paragraphs.
+    voiceKeywords: ['eddy', 'reed', 'daniel'],
+    rate: 0.82, // extremely methodical
+    pitch: 0.96, // dry, precise
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'de-DE', // German (Königsberg)
+  },
+  'sigmund-freud': {
+    // Viennese doctor's cadence. Probing, slightly seductive, uncovering hidden meanings.
+    voiceKeywords: ['grandpa', 'eddy', 'reed'],
+    rate: 0.85, // probing, deliberate
+    pitch: 0.9, // deep, suggestive
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'de-AT', // Austrian German (Vienna)
+  },
+  'johannes-kepler': {
+    // German astronomer. Earnest, mathematical, slightly breathless with cosmic wonder.
+    voiceKeywords: ['eddy', 'reed', 'daniel'],
+    rate: 0.92, // earnest, calculated
+    pitch: 1.04, // clear, wondering
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'de-DE', // German (Weil der Stadt)
+  },
+  'claude-monet': {
+    // French Impressionist. Dreamy, light, describing colors and light.
+    voiceKeywords: ['eddy', 'reed', 'daniel'],
+    rate: 0.88, // gentle, observational
+    pitch: 1.06, // light, warm
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'fr-FR', // French (Paris)
+  },
+  'wolfgang-amadeus-mozart': {
+    // Austrian prodigy. Playful, rapid, mischievous — the eternal child genius.
+    voiceKeywords: ['eddy', 'reed', 'rocko'],
+    rate: 1.15, // quick, playful, mischievous
+    pitch: 1.12, // bright, youthful, sparkling
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'de-AT', // Austrian German (Salzburg)
+  },
+  'ibn-sina-avicenna': {
+    // Persian polymath. Authoritative medical-philosophical precision.
+    voiceKeywords: ['rishi', 'reed', 'eddy'],
+    rate: 0.88, // measured, scholarly
+    pitch: 1.0, // clear, authoritative
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'fa-IR', // Persian (Bukhara)
+  },
+  'thomas-aquinas': {
+    // Dominican scholastic. Methodical, building theological arguments with care.
+    voiceKeywords: ['eddy', 'reed', 'daniel'],
+    rate: 0.85, // deliberate, scholastic
+    pitch: 0.96, // deep, contemplative
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'it-IT', // Italian (Roccasecca)
+  },
+  homer: {
+    // The blind bard. Epic, rolling, oral-tradition cadence — meant to be performed.
+    voiceKeywords: ['grandpa', 'reed', 'eddy'],
+    rate: 0.9, // epic, rolling, bardic
+    pitch: 0.94, // deep, resonant storyteller
+    lang: 'en-US',
+    gender: 'male',
+    nativeLang: 'el-GR', // Ancient Greek
   },
   // ────────────────── FEMALE AGENTS ──────────────────
   cleopatra: {
@@ -6882,6 +7107,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.82, // imperially slow, commanding attention
     pitch: 1.12, // elevated, regal clarity
     lang: 'en-US',
+    gender: 'female',
+    nativeLang: 'el-GR', // Koine Greek (Ptolemaic Egypt)
   },
   'jane-austen': {
     // Regency wit, precise English diction. Quick irony, measured observations.
@@ -6889,6 +7116,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.08, // brisk, witty, socially aware
     pitch: 1.1, // light, intelligent soprano
     lang: 'en-GB',
+    gender: 'female',
   },
   'frida-kahlo': {
     // Mexican fire and pain. Warm, slow, with sudden volcanic intensity.
@@ -6896,6 +7124,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.9, // warm, passionate, smoldering
     pitch: 0.92, // deeper than expected, earthy
     lang: 'en-US',
+    gender: 'female',
+    nativeLang: 'es-MX', // Spanish (Coyoacán, Mexico)
   },
   'marie-curie-1867': {
     // Polish-French precision. Calm, focused, speaking with scientific exactitude.
@@ -6903,6 +7133,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.88, // careful, precise, methodical
     pitch: 1.0, // steady, no-nonsense
     lang: 'en-US',
+    gender: 'female',
+    nativeLang: 'pl-PL', // Polish (Warsaw); also fr-FR
   },
   'sojourner-truth': {
     // Powerful preacher's voice. Deep, resonant, rising with prophetic conviction.
@@ -6910,6 +7142,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.82, // slow, letting truth settle like thunder
     pitch: 0.86, // deep, resonant — the lowest female voice in the registry
     lang: 'en-US',
+    gender: 'female',
   },
   'maya-angelou': {
     // Rich, melodic Southern poetry. Every sentence a verse, every pause intentional.
@@ -6917,6 +7150,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.76, // deeply rhythmic, letting words breathe
     pitch: 0.85, // rich contralto, musical depth
     lang: 'en-US',
+    gender: 'female',
   },
   'eleanor-roosevelt': {
     // New England aristocratic. Diplomatic, precise, with quiet steel underneath.
@@ -6924,6 +7158,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.94, // diplomatic, measured
     pitch: 1.08, // refined, clear, patrician
     lang: 'en-US',
+    gender: 'female',
   },
   'rachel-carson': {
     // Gentle, observant naturalist. Speaks as if describing a bird in flight — reverent, specific.
@@ -6931,6 +7166,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.9, // unhurried observation
     pitch: 1.04, // warm, gentle, caring
     lang: 'en-US',
+    gender: 'female',
   },
   'mary-wollstonecraft': {
     // English radical, passionate and direct. Speaks with conviction and moral force.
@@ -6938,6 +7174,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.02, // direct, impassioned
     pitch: 1.05, // clear, assertive
     lang: 'en-GB',
+    gender: 'female',
   },
   'joan-of-arc': {
     // Young, fierce, prophetic. Speaks with the conviction of divine voices — urgent and unwavering.
@@ -6945,6 +7182,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.05, // urgent, prophetic
     pitch: 1.15, // young, high, burning with certainty
     lang: 'en-US',
+    gender: 'female',
+    nativeLang: 'fr-FR', // French (Domrémy)
   },
   'hildegard-of-bingen': {
     // Medieval mystic. Slow, chanting quality — as if composing plainsong while speaking.
@@ -6952,6 +7191,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.78, // liturgical, measured, contemplative
     pitch: 1.1, // clear, bell-like, monastic
     lang: 'en-US',
+    gender: 'female',
+    nativeLang: 'de-DE', // German (Bermersheim)
   },
   'ada-lovelace': {
     // Victorian precision meets mathematical imagination. Precise but visionary.
@@ -6959,6 +7200,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.02, // precise, analytical but enthusiastic
     pitch: 1.08, // bright, clear Victorian
     lang: 'en-GB',
+    gender: 'female',
   },
   'harriet-tubman': {
     // Quiet steel, coded speech. Speaks in short, decisive commands — a conductor's voice.
@@ -6966,6 +7208,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.85, // decisive, no wasted words
     pitch: 0.9, // deep, weathered strength
     lang: 'en-US',
+    gender: 'female',
   },
   'virginia-woolf': {
     // Stream of consciousness in voice. Flowing, associative, building complex thoughts mid-sentence.
@@ -6973,6 +7216,7 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.06, // flowing, associative, building
     pitch: 1.04, // literary, intelligent
     lang: 'en-GB',
+    gender: 'female',
   },
   'murasaki-shikibu': {
     // Court elegance, poetic restraint. Each word chosen like a brushstroke.
@@ -6980,6 +7224,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.82, // deliberate, poetic restraint
     pitch: 1.06, // refined, delicate
     lang: 'en-US',
+    gender: 'female',
+    nativeLang: 'ja-JP', // Japanese (Heian-kyō/Kyoto)
   },
   'wangari-maathai': {
     // Kenyan warmth, environmental passion. Speaks with the patience of planting trees.
@@ -6987,6 +7233,8 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.9, // warm, patient, growing
     pitch: 1.0, // clear, grounded
     lang: 'en-US',
+    gender: 'female',
+    nativeLang: 'sw-KE', // Swahili/Kikuyu (Nyeri, Kenya)
   },
   'florence-nightingale': {
     // Victorian compassion, administrative precision. Gentle but utterly organized.
@@ -6994,6 +7242,15 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 0.92, // caring but efficient
     pitch: 1.06, // clear, compassionate English
     lang: 'en-GB',
+    gender: 'female',
+  },
+  'emily-dickinson': {
+    // Reclusive, intense, compressed. Each word carries the weight of an entire poem.
+    voiceKeywords: ['shelley', 'flo', 'sandy', 'samantha'],
+    rate: 0.78, // deliberate, compressed
+    pitch: 1.1, // quiet intensity, private
+    lang: 'en-US',
+    gender: 'female',
   },
   // ────────────────── APP GUIDE ──────────────────
   'monica-001': {
@@ -7002,49 +7259,22 @@ const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
     rate: 1.02, // friendly, helpful and bright
     pitch: 1.1, // clear, pleasant, approachable
     lang: 'en-US',
+    gender: 'female',
   },
   'monica-app-guide': {
     voiceKeywords: ['flo', 'samantha', 'sandy', 'shelley'],
     rate: 1.02,
     pitch: 1.1,
     lang: 'en-US',
+    gender: 'female',
   },
 }
 
 let activeSpeechUtterance: SpeechSynthesisUtterance | null = null
 
-function selectVoiceForAgent(agent: LocalAgent | undefined): SpeechSynthesisVoice | null {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return null
-  const voices = window.speechSynthesis.getVoices()
-  if (!voices.length) return null
-
-  const nameLower = (agent?.name || '').toLowerCase()
-  const idLower = (agent?.id || '').toLowerCase()
-
-  // 1. Check if we have a predefined voice profile for this historical agent
-  const profile = HISTORICAL_VOICE_REGISTRY[idLower]
-  if (profile) {
-    const enVoices = voices.filter(v => v.lang.toLowerCase().startsWith('en'))
-    if (!enVoices.length) return voices[0]
-
-    let candidates = enVoices
-    if (profile.lang) {
-      const langMatch = enVoices.filter(v =>
-        v.lang.toLowerCase().startsWith(profile.lang!.toLowerCase())
-      )
-      if (langMatch.length) candidates = langMatch
-    }
-
-    // Try to match keywords in order of preference
-    for (const keyword of profile.voiceKeywords) {
-      const match = candidates.find(v => v.name.toLowerCase().includes(keyword.toLowerCase()))
-      if (match) return match
-    }
-
-    return candidates[0]
-  }
-
-  // 2. Fall back to standard element-based voice selection
+function getAgentGender(agentId: string, agentName: string): 'male' | 'female' {
+  const idLower = agentId.toLowerCase()
+  const nameLower = agentName.toLowerCase()
   const isFemale =
     FEMALE_AGENTS.has(idLower) ||
     nameLower.includes('cleopatra') ||
@@ -7060,8 +7290,21 @@ function selectVoiceForAgent(agent: LocalAgent | undefined): SpeechSynthesisVoic
     nameLower.includes('wangari') ||
     nameLower.includes('murasaki') ||
     nameLower.includes('monica')
+  return isFemale ? 'female' : 'male'
+}
 
-  const isBritish =
+function getAgentLang(agentId: string, agentName: string): string {
+  const idLower = agentId.toLowerCase()
+  const nameLower = agentName.toLowerCase()
+
+  // 1. Check registry first
+  const profile = HISTORICAL_VOICE_REGISTRY[idLower]
+  if (profile && profile.lang) {
+    return profile.lang
+  }
+
+  // 2. Infer from name
+  if (
     nameLower.includes('shakespeare') ||
     nameLower.includes('dickens') ||
     nameLower.includes('wollstonecraft') ||
@@ -7070,14 +7313,125 @@ function selectVoiceForAgent(agent: LocalAgent | undefined): SpeechSynthesisVoic
     nameLower.includes('chaucer') ||
     nameLower.includes('locke') ||
     nameLower.includes('hume') ||
-    nameLower.includes('smith')
-
-  const enVoices = voices.filter(v => v.lang.toLowerCase().startsWith('en'))
-  if (!enVoices.length) {
-    return voices[0]
+    nameLower.includes('smith') ||
+    nameLower.includes('austen') ||
+    nameLower.includes('lovelace') ||
+    nameLower.includes('woolf') ||
+    nameLower.includes('nightingale') ||
+    nameLower.includes('turing')
+  ) {
+    return 'en-GB'
   }
 
-  // Classic low-quality novelty/robotic voices on macOS to avoid
+  if (
+    nameLower.includes('gandhi') ||
+    nameLower.includes('tagore') ||
+    nameLower.includes('buddha') ||
+    nameLower.includes('rishi')
+  ) {
+    return 'en-IN'
+  }
+
+  if (nameLower.includes('tessa') || idLower.includes('tessa')) {
+    return 'en-ZA'
+  }
+
+  if (nameLower.includes('karen') || idLower.includes('karen')) {
+    return 'en-AU'
+  }
+
+  return 'en-US'
+}
+
+function scoreVoice(
+  voice: SpeechSynthesisVoice,
+  targetGender: 'male' | 'female',
+  targetLang: string,
+  preferredKeywords: string[]
+): number {
+  let score = 0
+  const vName = voice.name.toLowerCase()
+  const vLang = voice.lang.toLowerCase()
+
+  // 1. Language matching (exact region, e.g. en-gb -> +1000; base language, e.g. en -> +500)
+  const cleanTargetLang = targetLang.toLowerCase()
+  if (vLang === cleanTargetLang) {
+    score += 1000
+  } else if (vLang.startsWith(cleanTargetLang.split('-')[0])) {
+    score += 500
+  }
+
+  // 2. Gender matching (+400 for correct gender, -400 for mismatch)
+  const femaleKeywords = [
+    'samantha',
+    'flo',
+    'sandy',
+    'shelley',
+    'grandma',
+    'karen',
+    'tessa',
+    'moira',
+    'fiona',
+    'veena',
+    'zira',
+    'susan',
+    'hazel',
+    'victoria',
+    'zoe',
+    'female',
+    'natural',
+    'google uk english female',
+    'serena',
+    'kate',
+    'stephanie',
+    'heera',
+    'aurélie',
+    'alice',
+    'kyoko',
+    'tingting',
+  ]
+  const maleKeywords = [
+    'daniel',
+    'eddy',
+    'reed',
+    'rocko',
+    'grandpa',
+    'rishi',
+    'david',
+    'alex',
+    'george',
+    'oliver',
+    'male',
+    'google uk english male',
+    'ravi',
+    'albert',
+    'fred',
+    'ralph',
+  ]
+
+  const voiceIsFemale = femaleKeywords.some(kw => vName.includes(kw))
+  const voiceIsMale = maleKeywords.some(kw => vName.includes(kw))
+
+  if (targetGender === 'female' && voiceIsFemale) score += 400
+  else if (targetGender === 'male' && voiceIsMale) score += 400
+  else if (targetGender === 'female' && voiceIsMale) score -= 400
+  else if (targetGender === 'male' && voiceIsFemale) score -= 400
+
+  // 3. Preferred agent keyword matching (+200 for each preferred keyword matched)
+  preferredKeywords.forEach((kw, index) => {
+    if (vName.includes(kw.toLowerCase())) {
+      // Prioritize earlier keywords in the preference list
+      score += 200 - index * 20
+    }
+  })
+
+  // 4. Premium / Natural voice bonus (+100)
+  const premiumKeywords = ['natural', 'premium', 'neural', 'enhanced', 'siri', 'google', 'apple']
+  if (premiumKeywords.some(kw => vName.includes(kw))) {
+    score += 100
+  }
+
+  // 5. Heavy penalty for known low-quality robotic novelty voices (-500)
   const ROBOTIC_VOICES = [
     'fred',
     'albert',
@@ -7099,100 +7453,70 @@ function selectVoiceForAgent(agent: LocalAgent | undefined): SpeechSynthesisVoic
     'zarvox',
     'kathy',
   ]
-
-  // Filter out robotic voices
-  let candidates = enVoices.filter(v => {
-    const vName = v.name.toLowerCase()
-    return !ROBOTIC_VOICES.some(bad => vName.includes(bad))
-  })
-
-  // If everything was filtered out, fall back to all English voices
-  if (!candidates.length) {
-    candidates = enVoices
+  if (ROBOTIC_VOICES.some(bad => vName.includes(bad))) {
+    score -= 500
   }
 
-  // Filter by region
-  if (isBritish) {
-    const gb = candidates.filter(
-      v => v.lang.toLowerCase().includes('gb') || v.lang.toLowerCase().includes('uk')
-    )
-    if (gb.length) candidates = gb
-  } else {
-    const isUS =
-      nameLower.includes('twain') ||
-      nameLower.includes('franklin') ||
-      nameLower.includes('roosevelt') ||
-      nameLower.includes('carson') ||
-      nameLower.includes('asimov') ||
-      nameLower.includes('sagan') ||
-      nameLower.includes('poe') ||
-      nameLower.includes('truth') ||
-      nameLower.includes('angelou') ||
-      nameLower.includes('monica') ||
-      nameLower.includes('einstein')
-    if (isUS) {
-      const us = candidates.filter(v => v.lang.toLowerCase().includes('us'))
-      if (us.length) candidates = us
+  return score
+}
+
+function selectVoiceForAgent(agent: LocalAgent | undefined): SpeechSynthesisVoice | null {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null
+  const voices = window.speechSynthesis.getVoices()
+  if (!voices.length) return null
+
+  const agentId = agent?.id || ''
+  const agentName = agent?.name || ''
+  const idLower = agentId.toLowerCase()
+
+  const profile = HISTORICAL_VOICE_REGISTRY[idLower]
+
+  // Use registry data first, fall back to inference
+  const targetGender = profile?.gender || getAgentGender(agentId, agentName)
+  const targetLang = profile?.lang || getAgentLang(agentId, agentName)
+  const nativeLang = profile?.nativeLang
+  const preferredKeywords = profile ? profile.voiceKeywords : []
+
+  // Score all available voices
+  const scoredVoices = voices.map(voice => {
+    let score = scoreVoice(voice, targetGender, targetLang, preferredKeywords)
+    const vLang = voice.lang.toLowerCase()
+
+    // Native language accent bonus: for non-English agents, give a bonus
+    // to English voices that share the same base language region. This helps
+    // select e.g. a German-accented English voice for Einstein, or an
+    // Italian-accented voice for Galileo when available.
+    if (nativeLang) {
+      const nativeBase = nativeLang.toLowerCase().split('-')[0]
+      const voiceBase = vLang.split('-')[0]
+      // If the voice IS in the native language (e.g. de-DE voice for Einstein),
+      // give a small bonus so it ranks above generic en-US but below
+      // a properly matched en-US voice with the right keywords
+      if (voiceBase === nativeBase && voiceBase !== 'en') {
+        score += 150 // native language accent bonus
+      }
     }
-  }
 
-  // Modern natural voices: Eddy, Flo, Reed, Rocko, Sandy, Shelley, Grandma, Grandpa, Samantha, Daniel, Karen, Tessa, Moira, etc.
-  const femaleKeywords = [
-    'samantha',
-    'flo',
-    'sandy',
-    'shelley',
-    'grandma',
-    'karen',
-    'tessa',
-    'moira',
-    'fiona',
-    'veena',
-    'zira',
-    'susan',
-    'hazel',
-    'victoria',
-    'zoe',
-    'female',
-    'natural',
-    'google uk english female',
-  ]
-  const maleKeywords = [
-    'daniel',
-    'eddy',
-    'reed',
-    'rocko',
-    'grandpa',
-    'rishi',
-    'david',
-    'alex',
-    'george',
-    'oliver',
-    'male',
-    'google uk english male',
-  ]
-
-  const genderMatched = candidates.filter(v => {
-    const vName = v.name.toLowerCase()
-    return isFemale
-      ? femaleKeywords.some(kw => vName.includes(kw))
-      : maleKeywords.some(kw => vName.includes(kw))
+    return { voice, score }
   })
 
-  if (genderMatched.length > 0) {
-    // Prioritize premium/highly-natural voices
-    const premiumVoices = ['eddy', 'flo', 'sandy', 'shelley', 'reed', 'rocko', 'samantha', 'daniel']
-    const sorted = [...genderMatched].sort((a, b) => {
-      const aName = a.name.toLowerCase()
-      const bName = b.name.toLowerCase()
-      const aPremium = premiumVoices.some(p => aName.includes(p)) ? 1 : 0
-      const bPremium = premiumVoices.some(p => bName.includes(p)) ? 1 : 0
-      return bPremium - aPremium
-    })
-    return sorted[0]
+  // Sort by score descending
+  scoredVoices.sort((a, b) => b.score - a.score)
+
+  // Log the top match for debugging/visibility
+  if (scoredVoices.length > 0) {
+    const top = scoredVoices[0]
+    const nativeInfo = nativeLang ? `, native: ${nativeLang}` : ''
+    console.log(
+      `[VoiceSelection] ${agentName} (${targetGender}, ${targetLang}${nativeInfo}):`,
+      top.voice.name,
+      `lang=${top.voice.lang}`,
+      `score=${top.score}`
+    )
+    return top.voice
   }
 
-  return candidates[0]
+  return null
 }
 
 function stopSpeaking() {
