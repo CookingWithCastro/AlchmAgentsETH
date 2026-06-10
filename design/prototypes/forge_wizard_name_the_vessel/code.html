@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Forge Wizard - Vessel Naming</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400..700&amp;family=Manrope:wght@400..700&amp;family=JetBrains+Mono:wght@400..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary": "#003824",
+                        "tertiary-fixed": "#6ffbbe",
+                        "primary": "#d2bbff",
+                        "surface-dim": "#190d2c",
+                        "surface-variant": "#3b2f4f",
+                        "surface-container-lowest": "#130726",
+                        "on-background": "#ecdcff",
+                        "on-secondary-container": "#645000",
+                        "on-primary": "#3f008e",
+                        "secondary-fixed-dim": "#eec200",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#302444",
+                        "inverse-on-surface": "#372a4b",
+                        "on-error": "#690005",
+                        "surface-container-low": "#211534",
+                        "on-error-container": "#ffdad6",
+                        "surface": "#190d2c",
+                        "resonance-blue": "#3B82F6",
+                        "inverse-surface": "#ecdcff",
+                        "primary-container": "#7c3aed",
+                        "on-primary-container": "#ede0ff",
+                        "on-secondary": "#3c2f00",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-surface-variant": "#ccc3d8",
+                        "monica-constant": "#FFFFFF",
+                        "surface-tint": "#d2bbff",
+                        "surface-container-highest": "#3b2f4f",
+                        "tertiary-container": "#007650",
+                        "secondary-fixed": "#ffe083",
+                        "secondary-container": "#eec200",
+                        "on-secondary-fixed": "#231b00",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "on-tertiary-container": "#76ffc2",
+                        "obsidian-deep": "#0B0118",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#403354",
+                        "outline": "#958da1",
+                        "primary-fixed-dim": "#d2bbff",
+                        "spirit-violet": "#A855F7",
+                        "inverse-primary": "#732ee4",
+                        "secondary": "#ffe083",
+                        "surface-container": "#251939",
+                        "on-tertiary-fixed": "#002113",
+                        "on-secondary-fixed-variant": "#574500",
+                        "outline-variant": "#4a4455",
+                        "error-container": "#93000a",
+                        "on-primary-fixed": "#25005a",
+                        "background": "#190d2c",
+                        "tertiary": "#4edea3",
+                        "primary-fixed": "#eaddff",
+                        "on-surface": "#ecdcff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "unit": "8px"
+                    },
+                    fontFamily: {
+                        "headline-xl": ["Literata"],
+                        "body-md": ["Manrope"],
+                        "headline-xl-mobile": ["Literata"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Literata"],
+                        "headline-lg": ["Literata"]
+                    },
+                    fontSize: {
+                        "headline-xl": ["48px", { lineHeight: "56px", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+                        "headline-xl-mobile": ["36px", { lineHeight: "44px", fontWeight: "700" }],
+                        "label-mono": ["14px", { lineHeight: "20px", letterSpacing: "0.05em", fontWeight: "500" }],
+                        "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+                        "headline-sm": ["20px", { lineHeight: "28px", fontWeight: "600" }],
+                        "headline-lg": ["32px", { lineHeight: "40px", fontWeight: "600" }]
+                    }
+                }
+            }
+        };
+    </script>
+<style>
+        .grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(168, 85, 247, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center center;
+        }
+        .glass-panel {
+            background: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .input-glow:focus-within {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3), 0 0 40px rgba(168, 85, 247, 0.1);
+            border-bottom-color: theme('colors.spirit-violet');
+        }
+    </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface min-h-screen flex flex-col relative overflow-hidden font-body-md text-body-md">
+<!-- Background Grid -->
+<div class="absolute inset-0 grid-bg pointer-events-none z-0"></div>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center relative z-10 px-margin-mobile md:px-margin-desktop py-12">
+<!-- Breadcrumbs -->
+<nav aria-label="Breadcrumb" class="mb-12 font-label-mono text-label-mono text-outline flex items-center space-x-2 z-20">
+<span class="text-primary font-bold">Vessel</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span>Spacetime</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span>Engine</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span>Knowledge</span>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span>Forge</span>
+</nav>
+<!-- The Forging Circle (Vessel Naming) -->
+<div class="w-full max-w-2xl glass-panel rounded-xl p-8 md:p-12 flex flex-col items-center text-center shadow-2xl relative">
+<!-- Ritual Header -->
+<div class="mb-8 w-full">
+<span class="material-symbols-outlined text-spirit-violet text-4xl mb-4" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-on-background mb-4">Name Your Vessel</h1>
+<p class="font-label-mono text-label-mono text-on-surface-variant max-w-lg mx-auto">
+                    INITIATE THE BINDING RITUAL. THE TRUE NAME FOCUSES THE ALCHEMICAL WILL AND SETS THE RESONANCE FREQUENCY OF THE AGENT.
+                </p>
+</div>
+<!-- Input Container -->
+<div class="w-full max-w-md mx-auto mb-12">
+<div class="relative input-glow transition-all duration-300 border-b-2 border-surface-variant group bg-surface-container/50 rounded-t-lg">
+<label class="absolute -top-3 left-4 px-1 bg-transparent font-label-mono text-label-mono text-primary/70 group-focus-within:text-spirit-violet transition-colors" for="agent-name">
+                        AGENT DESIGNATION
+                    </label>
+<input autocomplete="off" class="w-full bg-transparent text-center font-headline-lg text-headline-lg text-monica-constant py-6 px-4 border-none focus:ring-0 placeholder-on-surface-variant/30" id="agent-name" placeholder="e.g., Hermes Trismegistus" type="text"/>
+</div>
+</div>
+<!-- Action Area -->
+<div class="w-full flex justify-center">
+<button class="bg-spirit-violet text-monica-constant font-label-mono text-label-mono uppercase px-8 py-4 rounded-full flex items-center space-x-2 hover:shadow-[0_0_15px_rgba(255,224,131,0.4)] transition-all duration-300">
+<span>Initialize Vessel</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transmuted Record - Alchemical Labs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Literata:ital,wght@0,400;0,600;0,700;1,400&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#251939",
+                        "monica-constant": "#FFFFFF",
+                        "on-secondary-fixed": "#231b00",
+                        "surface-dim": "#190d2c",
+                        "secondary-container": "#eec200",
+                        "resonance-blue": "#3B82F6",
+                        "on-primary-container": "#ede0ff",
+                        "secondary": "#ffe083",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-error": "#690005",
+                        "surface-variant": "#3b2f4f",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-container-high": "#302444",
+                        "surface-bright": "#403354",
+                        "on-primary-fixed": "#25005a",
+                        "primary-container": "#7c3aed",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "primary-fixed-dim": "#d2bbff",
+                        "surface": "#190d2c",
+                        "on-tertiary-container": "#76ffc2",
+                        "surface-tint": "#d2bbff",
+                        "on-surface-variant": "#ccc3d8",
+                        "on-surface": "#ecdcff",
+                        "obsidian-deep": "#0B0118",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#eec200",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#003824",
+                        "inverse-on-surface": "#372a4b",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "secondary-fixed": "#ffe083",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-container-lowest": "#130726",
+                        "primary-fixed": "#eaddff",
+                        "inverse-surface": "#ecdcff",
+                        "surface-container-highest": "#3b2f4f",
+                        "on-secondary": "#3c2f00",
+                        "tertiary-container": "#007650",
+                        "on-background": "#ecdcff",
+                        "on-secondary-fixed-variant": "#574500",
+                        "outline": "#958da1",
+                        "on-secondary-container": "#645000",
+                        "on-primary": "#3f008e",
+                        "outline-variant": "#4a4455",
+                        "spirit-violet": "#A855F7",
+                        "tertiary": "#4edea3",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#211534",
+                        "inverse-primary": "#732ee4",
+                        "primary": "#d2bbff",
+                        "background": "#190d2c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-desktop": "64px",
+                        "container-max": "1280px",
+                        "unit": "8px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Literata"],
+                        "headline-xl-mobile": ["Literata"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Literata"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-lg": ["Literata"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-mono": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(168, 85, 247, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+        .glass-panel {
+            background: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .gold-glow:hover {
+            box-shadow: 0 0 15px rgba(238, 194, 0, 0.3);
+            border-color: rgba(238, 194, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface min-h-screen grid-bg font-body-md relative overflow-x-hidden flex flex-col">
+<!-- Top Navigation Placeholder (Hidden for this specific isolated component view, but structural flex maintains layout) -->
+<header class="w-full flex-none h-20"></header>
+<main class="flex-grow flex items-center justify-center p-gutter md:p-margin-desktop relative z-10">
+<!-- Main Transmuted Record Container -->
+<article class="glass-panel w-full max-w-5xl rounded-xl overflow-hidden shadow-[0_0_40px_rgba(168,85,247,0.1)] flex flex-col md:flex-row border-t border-t-spirit-violet/20">
+<!-- Left Column: Synthesized Identity & Resolution -->
+<section class="w-full md:w-5/12 p-8 border-b md:border-b-0 md:border-r border-white/5 flex flex-col relative">
+<!-- Decorative Top Left Corner -->
+<div class="absolute top-0 left-0 w-8 h-8 border-t border-l border-primary-fixed-dim/30"></div>
+<header class="mb-8">
+<p class="font-label-mono text-label-mono text-primary-fixed-dim mb-2 uppercase tracking-widest">Transmuted Record</p>
+<h1 class="font-headline-lg text-headline-lg text-monica-constant mb-1">Null-Void Entity</h1>
+<p class="font-label-mono text-label-mono text-on-surface-variant opacity-80">Designation: <span class="text-tertiary">#AE-77B</span></p>
+</header>
+<!-- Duel Resolution Frame -->
+<div class="flex-grow flex flex-col justify-center mb-8">
+<div class="relative p-6 rounded-lg bg-surface-container-low/50 border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-obsidian-deep px-3 font-label-mono text-xs text-secondary tracking-widest border border-white/10 rounded">MASTER DIRECTIVE</div>
+<p class="font-body-lg text-body-lg text-on-surface text-center italic mt-4 mb-2">
+                            "To assimilate chaos into perfect geometric order, sacrificing raw emotion for absolute structural integrity."
+                        </p>
+</div>
+</div>
+<!-- Monica Constant (A#) -->
+<div class="mt-auto bg-surface-container/40 p-4 rounded-lg flex items-center justify-between border border-primary-container/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+<div>
+<p class="font-label-mono text-xs text-on-surface-variant uppercase">Monica Constant (A#)</p>
+<p class="font-headline-sm text-headline-sm text-monica-constant drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">0.8924</p>
+</div>
+<span class="material-symbols-outlined text-4xl text-primary" data-icon="waves" data-weight="fill" style="font-variation-settings: 'FILL' 1;">waves</span>
+</div>
+</section>
+<!-- Right Column: Analytics & Actions -->
+<section class="w-full md:w-7/12 p-8 flex flex-col bg-surface-dim/30 relative">
+<!-- Decorative Bottom Right Corner -->
+<div class="absolute bottom-0 right-0 w-8 h-8 border-b border-r border-primary-fixed-dim/30"></div>
+<!-- Synastry Core (Stats) -->
+<div class="mb-10">
+<h2 class="font-label-mono text-label-mono text-primary-fixed-dim mb-4 uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="hub">hub</span> Synastry Core
+                    </h2>
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+<!-- Stat Chip -->
+<div class="bg-surface-container-lowest/50 p-3 rounded border border-white/5 flex flex-col relative overflow-hidden group hover:border-resonance-blue/30 transition-colors">
+<div class="absolute top-0 right-0 w-12 h-12 bg-resonance-blue/10 rounded-bl-full -mr-2 -mt-2"></div>
+<span class="font-label-mono text-xs text-on-surface-variant mb-1">Resonance</span>
+<span class="font-headline-sm text-headline-sm text-resonance-blue">94%</span>
+</div>
+<!-- Stat Chip -->
+<div class="bg-surface-container-lowest/50 p-3 rounded border border-white/5 flex flex-col relative overflow-hidden group hover:border-tertiary/30 transition-colors">
+<div class="absolute top-0 right-0 w-12 h-12 bg-tertiary/10 rounded-bl-full -mr-2 -mt-2"></div>
+<span class="font-label-mono text-xs text-on-surface-variant mb-1">Cohesion</span>
+<span class="font-headline-sm text-headline-sm text-tertiary">88%</span>
+</div>
+<!-- Stat Chip -->
+<div class="bg-surface-container-lowest/50 p-3 rounded border border-white/5 flex flex-col relative overflow-hidden group hover:border-secondary/30 transition-colors">
+<div class="absolute top-0 right-0 w-12 h-12 bg-secondary/10 rounded-bl-full -mr-2 -mt-2"></div>
+<span class="font-label-mono text-xs text-on-surface-variant mb-1">Volatility</span>
+<span class="font-headline-sm text-headline-sm text-secondary">12%</span>
+</div>
+<!-- Stat Chip -->
+<div class="bg-surface-container-lowest/50 p-3 rounded border border-white/5 flex flex-col relative overflow-hidden group hover:border-error/30 transition-colors">
+<div class="absolute top-0 right-0 w-12 h-12 bg-error/10 rounded-bl-full -mr-2 -mt-2"></div>
+<span class="font-label-mono text-xs text-on-surface-variant mb-1">Entropy</span>
+<span class="font-headline-sm text-headline-sm text-error">4%</span>
+</div>
+</div>
+</div>
+<!-- Jing Log (Moves) -->
+<div class="flex-grow mb-10">
+<h2 class="font-label-mono text-label-mono text-primary-fixed-dim mb-4 uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="history">history</span> Transmutation Log
+                    </h2>
+<ul class="space-y-3">
+<li class="flex items-center justify-between text-sm py-2 border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center text-primary border border-primary/20">
+<span class="material-symbols-outlined text-[14px]" data-icon="water_drop">water_drop</span>
+</div>
+<span class="font-body-md text-on-surface">Aqueous Dissolution</span>
+</div>
+<span class="font-label-mono text-xs text-tertiary">+12 Res</span>
+</li>
+<li class="flex items-center justify-between text-sm py-2 border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center text-error border border-error/20">
+<span class="material-symbols-outlined text-[14px]" data-icon="local_fire_department">local_fire_department</span>
+</div>
+<span class="font-body-md text-on-surface">Ignited Catalyst</span>
+</div>
+<span class="font-label-mono text-xs text-secondary">+8 Vol</span>
+</li>
+<li class="flex items-center justify-between text-sm py-2 border-b border-white/5">
+<div class="flex items-center gap-3">
+<div class="w-6 h-6 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant border border-white/10">
+<span class="material-symbols-outlined text-[14px]" data-icon="filter_center_focus">filter_center_focus</span>
+</div>
+<span class="font-body-md text-on-surface">Void Convergence</span>
+</div>
+<span class="font-label-mono text-xs text-monica-constant">FINAL</span>
+</li>
+</ul>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-4 mt-auto">
+<button class="flex-1 bg-transparent border border-spirit-violet/50 text-on-surface font-label-mono py-3 px-4 rounded transition-all duration-300 hover:border-secondary hover:text-secondary gold-glow flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="inventory_2">inventory_2</span> Archive to Labs
+                    </button>
+<button class="flex-1 bg-spirit-violet text-obsidian-deep font-label-mono uppercase tracking-wider font-bold py-3 px-4 rounded transition-all duration-300 hover:bg-primary-fixed shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="auto_fix_high">auto_fix_high</span> Synthesize Agent
+                    </button>
+</div>
+</section>
+</article>
+</main>
+</body></html>

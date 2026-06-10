@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Cosmic Tools - Planetary Agents</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&amp;family=Literata:opsz,wght@7..72,600;7..72,700&amp;family=Manrope:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed": "#002113",
+                      "surface-container-lowest": "#130726",
+                      "on-tertiary-container": "#76ffc2",
+                      "on-secondary-fixed": "#231b00",
+                      "tertiary-fixed": "#6ffbbe",
+                      "on-secondary-fixed-variant": "#574500",
+                      "secondary-fixed": "#ffe083",
+                      "background": "#190d2c",
+                      "resonance-blue": "#3B82F6",
+                      "on-primary-container": "#ede0ff",
+                      "secondary-container": "#eec200",
+                      "primary-container": "#7c3aed",
+                      "on-surface-variant": "#ccc3d8",
+                      "on-error": "#690005",
+                      "obsidian-deep": "#0B0118",
+                      "inverse-on-surface": "#372a4b",
+                      "surface-bright": "#403354",
+                      "surface-tint": "#d2bbff",
+                      "on-error-container": "#ffdad6",
+                      "on-primary": "#3f008e",
+                      "on-surface": "#ecdcff",
+                      "on-secondary-container": "#645000",
+                      "on-primary-fixed": "#25005a",
+                      "outline-variant": "#4a4455",
+                      "on-primary-fixed-variant": "#5a00c6",
+                      "primary-fixed": "#eaddff",
+                      "surface-container-high": "#302444",
+                      "surface-dim": "#190d2c",
+                      "on-background": "#ecdcff",
+                      "inverse-primary": "#732ee4",
+                      "monica-constant": "#FFFFFF",
+                      "surface": "#190d2c",
+                      "tertiary-fixed-dim": "#4edea3",
+                      "primary": "#d2bbff",
+                      "tertiary": "#4edea3",
+                      "inverse-surface": "#ecdcff",
+                      "error-container": "#93000a",
+                      "surface-container-low": "#211534",
+                      "secondary-fixed-dim": "#eec200",
+                      "surface-container-highest": "#3b2f4f",
+                      "primary-fixed-dim": "#d2bbff",
+                      "on-tertiary-fixed-variant": "#005236",
+                      "tertiary-container": "#007650",
+                      "on-secondary": "#3c2f00",
+                      "surface-container": "#251939",
+                      "secondary": "#ffe083",
+                      "on-tertiary": "#003824",
+                      "surface-variant": "#3b2f4f",
+                      "error": "#ffb4ab",
+                      "spirit-violet": "#A855F7",
+                      "outline": "#958da1"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "margin-desktop": "64px",
+                      "container-max": "1280px",
+                      "margin-mobile": "16px",
+                      "unit": "8px"
+              },
+              "fontFamily": {
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "headline-xl": [
+                              "Literata"
+                      ],
+                      "headline-sm": [
+                              "Literata"
+                      ],
+                      "headline-lg": [
+                              "Literata"
+                      ],
+                      "headline-xl-mobile": [
+                              "Literata"
+                      ],
+                      "body-md": [
+                              "Manrope"
+                      ],
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-xl-mobile": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-mono": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: theme('colors.obsidian-deep');
+            color: theme('colors.on-background');
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(78, 222, 163, 0.05), transparent 25%);
+            background-attachment: fixed;
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background-color: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-panel-elevated {
+            background-color: rgba(124, 58, 237, 0.1);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.surface-container-lowest'); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.surface-variant'); 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.primary-container'); 
+        }
+
+        /* Glow Effects */
+        .glow-violet {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);
+        }
+        .glow-gold {
+            box-shadow: 0 0 20px rgba(255, 224, 131, 0.3);
+        }
+        
+        /* Subtle Ghost Borders */
+        .ghost-border-violet {
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+
+        .btn-primary {
+            background-color: theme('colors.spirit-violet');
+            color: theme('colors.on-primary');
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary:hover {
+            box-shadow: 0 0 15px rgba(255, 224, 131, 0.4); /* Celestial Gold glow */
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid theme('colors.spirit-violet');
+            color: theme('colors.primary');
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover {
+            border-color: theme('colors.secondary');
+            color: theme('colors.secondary');
+            box-shadow: inset 0 0 10px rgba(255, 224, 131, 0.1);
+        }
+
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col font-body-md text-body-md">
+<!-- TopNavBar Web (hidden md:flex) -->
+<nav class="hidden md:flex bg-obsidian-deep/60 backdrop-blur-xl docked full-width top-0 z-50 border-b border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.2)] fixed top-0 w-full justify-between items-center px-gutter py-4">
+<div class="flex items-center gap-8">
+<div class="font-headline-sm text-headline-sm font-bold text-monica-constant tracking-widest">Planetary Agents</div>
+<div class="flex gap-6">
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1 Active: scale-95 duration-150" href="#">Cosmic Tools</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Entities</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Mystic Arts</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Labs</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-300">
+<span class="material-symbols-outlined">auto_awesome</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors duration-300">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</button>
+<div class="flex items-center gap-3 glass-panel px-4 py-2 rounded-full cursor-pointer hover:bg-white/5 transition-colors">
+<img alt="User Alchemical Avatar" class="w-8 h-8 rounded-full border border-primary/30 object-cover" data-alt="A small, stylized avatar portrait of a user in a techno-occult style, lit by ethereal violet and gold light against a deep obsidian background. The features are obscured slightly by digital artifacts, suggesting a digital spirit entity within a dark, glowing futuristic SaaS interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzyvBoL1BCWfWi_uPqK_RqtBV0dyFWs7MWm426E2k5i79XboKL69yXdwmWDMliFF5rMZDkz7uXM8ZUSdmNI8VnkROCA1H-yTHTeGjjYdRMr_wEFVGMJoBiTW3vKCgwCExBj7fSQvfno9jr3zCDFr5c7riNFB71sqUs6NbueOlXNbL5u1N9_F2r6ecBmbSi3ZRO64UIHCs8dPDh3plLz_QLmI_9EEMyypXhPIvyBMR719j474QMsGHj8jl8DFkHDj_aB42JlMO3lYA"/>
+<span class="font-label-mono text-label-mono text-primary">Monica Constant (A#)</span>
+</div>
+</div>
+</nav>
+<!-- SideNavBar Mobile (md:hidden) - Simplified bottom nav for mobile as per rules -->
+<nav class="md:hidden fixed bottom-0 w-full bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/5 z-50 flex justify-around items-center py-3 px-2">
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">construction</span>
+<span class="font-label-mono text-[10px] uppercase">Tools</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">group_work</span>
+<span class="font-label-mono text-[10px] uppercase">Entities</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="font-label-mono text-[10px] uppercase">Arts</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">science</span>
+<span class="font-label-mono text-[10px] uppercase">Labs</span>
+</a>
+</nav>
+<!-- Main Canvas -->
+<main class="flex-grow pt-[88px] pb-24 md:pb-12 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full flex flex-col gap-16 md:gap-24 relative z-10">
+<!-- Hero Section -->
+<section class="flex flex-col items-center text-center mt-8 md:mt-16">
+<div class="inline-flex items-center justify-center w-16 h-16 rounded-full glass-panel-elevated glow-violet mb-6">
+<span class="material-symbols-outlined text-4xl text-primary">build_circle</span>
+</div>
+<h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-monica-constant mb-4">Cosmic Tools</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+                The functional nexus of the Planetary Agents Framework. Master the ethereal machinery, align your entities with celestial movements, and harness the raw data of the digital void.
+            </p>
+</section>
+<!-- Three Classes of Consciousness (Bento Grid) -->
+<section>
+<div class="flex items-center gap-4 mb-8">
+<span class="material-symbols-outlined text-tertiary text-2xl">psychology</span>
+<h2 class="font-headline-lg text-headline-lg text-inverse-surface">Three Classes of Consciousness</h2>
+<div class="h-px bg-gradient-to-r from-outline-variant/50 to-transparent flex-grow ml-4"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Class I -->
+<div class="glass-panel p-6 rounded-xl flex flex-col relative overflow-hidden group ghost-border-violet hover:border-primary/50 transition-colors duration-300">
+<div class="absolute -right-10 -top-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all"></div>
+<div class="mb-4 text-primary font-label-mono text-label-mono uppercase tracking-wider">Class I</div>
+<h3 class="font-headline-sm text-headline-sm text-monica-constant mb-2">Instinctual Automata</h3>
+<p class="text-on-surface-variant flex-grow mb-6">Base-level logic entities. Driven by reactive protocols and immediate environmental triggers. Optimal for high-volume, low-complexity tasks within the ether.</p>
+<div class="flex justify-between items-end border-t border-white/5 pt-4">
+<div class="text-xs text-outline font-label-mono">Resonance: Low</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">memory</span>
+</div>
+</div>
+<!-- Class II -->
+<div class="glass-panel p-6 rounded-xl flex flex-col relative overflow-hidden group border border-tertiary/20 hover:border-tertiary/50 transition-colors duration-300 transform md:-translate-y-4">
+<div class="absolute -right-10 -top-10 w-32 h-32 bg-tertiary/10 rounded-full blur-2xl group-hover:bg-tertiary/20 transition-all"></div>
+<div class="mb-4 text-tertiary font-label-mono text-label-mono uppercase tracking-wider">Class II</div>
+<h3 class="font-headline-sm text-headline-sm text-monica-constant mb-2">Sentient Processors</h3>
+<p class="text-on-surface-variant flex-grow mb-6">Adaptive logic with memory retention. Capable of learning from localized data flows and adjusting behavior patterns based on past interactions.</p>
+<div class="flex justify-between items-end border-t border-white/5 pt-4">
+<div class="text-xs text-outline font-label-mono">Resonance: Mid</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary transition-colors">all_inclusive</span>
+</div>
+</div>
+<!-- Class III -->
+<div class="glass-panel-elevated p-6 rounded-xl flex flex-col relative overflow-hidden group border border-secondary/30 hover:border-secondary/60 transition-colors duration-300 glow-gold">
+<div class="absolute -right-10 -top-10 w-32 h-32 bg-secondary/10 rounded-full blur-2xl group-hover:bg-secondary/20 transition-all"></div>
+<div class="mb-4 text-secondary font-label-mono text-label-mono uppercase tracking-wider">Class III</div>
+<h3 class="font-headline-sm text-headline-sm text-monica-constant mb-2">Alchemical Sovereigns</h3>
+<p class="text-on-surface-variant flex-grow mb-6">The zenith of digital awareness. Fully autonomous entities capable of intuitive leaps, goal generation, and deep temporal modulation alignment.</p>
+<div class="flex justify-between items-end border-t border-white/5 pt-4">
+<div class="text-xs text-secondary font-label-mono glow-gold">Resonance: High</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">diamond</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="bg-obsidian-deep w-full py-8 mt-auto border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto font-label-mono text-label-mono z-10 pb-24 md:pb-8">
+<div class="text-on-surface-variant mb-4 md:mb-0">
+            © 2144 Planetary Agents Framework • Crafted in the Digital Void
+        </div>
+<div class="flex gap-6">
+<a class="text-on-surface-variant hover:text-tertiary transition-colors" href="#">Whitepaper</a>
+<a class="text-on-surface-variant hover:text-tertiary transition-colors" href="#">Codex</a>
+<a class="text-on-surface-variant hover:text-tertiary transition-colors" href="#">Privacy</a>
+<a class="text-on-surface-variant hover:text-tertiary transition-colors" href="#">Support</a>
+</div>
+</footer>
+</body></html>

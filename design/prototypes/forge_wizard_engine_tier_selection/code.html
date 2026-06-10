@@ -1,0 +1,299 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Engine Tier Gating - The Forge</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400..700&amp;family=Manrope:wght@400..700&amp;family=JetBrains+Mono:wght@400..700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-tertiary": "#003824",
+                        "tertiary-fixed": "#6ffbbe",
+                        "primary": "#d2bbff",
+                        "surface-dim": "#190d2c",
+                        "surface-variant": "#3b2f4f",
+                        "surface-container-lowest": "#130726",
+                        "on-background": "#ecdcff",
+                        "on-secondary-container": "#645000",
+                        "on-primary": "#3f008e",
+                        "secondary-fixed-dim": "#eec200",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#302444",
+                        "inverse-on-surface": "#372a4b",
+                        "on-error": "#690005",
+                        "surface-container-low": "#211534",
+                        "on-error-container": "#ffdad6",
+                        "surface": "#190d2c",
+                        "resonance-blue": "#3B82F6",
+                        "inverse-surface": "#ecdcff",
+                        "primary-container": "#7c3aed",
+                        "on-primary-container": "#ede0ff",
+                        "on-secondary": "#3c2f00",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-surface-variant": "#ccc3d8",
+                        "monica-constant": "#FFFFFF",
+                        "surface-tint": "#d2bbff",
+                        "surface-container-highest": "#3b2f4f",
+                        "tertiary-container": "#007650",
+                        "secondary-fixed": "#ffe083",
+                        "secondary-container": "#eec200",
+                        "on-secondary-fixed": "#231b00",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "on-tertiary-container": "#76ffc2",
+                        "obsidian-deep": "#0B0118",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#403354",
+                        "outline": "#958da1",
+                        "primary-fixed-dim": "#d2bbff",
+                        "spirit-violet": "#A855F7",
+                        "inverse-primary": "#732ee4",
+                        "secondary": "#ffe083",
+                        "surface-container": "#251939",
+                        "on-tertiary-fixed": "#002113",
+                        "on-secondary-fixed-variant": "#574500",
+                        "outline-variant": "#4a4455",
+                        "error-container": "#93000a",
+                        "on-primary-fixed": "#25005a",
+                        "background": "#190d2c",
+                        "tertiary": "#4edea3",
+                        "primary-fixed": "#eaddff",
+                        "on-surface": "#ecdcff"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1280px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "unit": "8px"
+                    },
+                    fontFamily: {
+                        "headline-xl": ["Literata"],
+                        "body-md": ["Manrope"],
+                        "headline-xl-mobile": ["Literata"],
+                        "label-mono": ["JetBrains Mono"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Literata"],
+                        "headline-lg": ["Literata"]
+                    },
+                    fontSize: {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "label-mono": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .premium-glow {
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.15), inset 0 0 20px rgba(168, 85, 247, 0.05);
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+        .text-glow {
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        /* Custom Tooltip */
+        .tooltip .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface min-h-screen flex flex-col font-body-md text-body-md overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar (Mobile Only) -->
+<nav class="md:hidden bg-obsidian-deep/60 backdrop-blur-xl fixed top-0 w-full flex justify-between items-center px-gutter py-4 border-b border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.2)] z-50">
+<div class="font-headline-sm text-headline-sm font-bold text-monica-constant tracking-widest">Alchm Agents</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">account_balance_wallet</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 0;">auto_awesome</span>
+</div>
+</nav>
+<div class="flex flex-1 pt-[72px] md:pt-0">
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden md:flex flex-col h-screen w-64 left-0 top-0 fixed bg-surface-container-lowest/80 backdrop-blur-2xl border-r border-primary/20 shadow-2xl py-gutter z-40">
+<div class="px-6 mb-8">
+<div class="font-headline-sm text-headline-sm text-spirit-violet mb-1">Alchm Agents</div>
+<div class="font-label-mono text-label-mono text-on-surface-variant uppercase text-xs">Evolution Platform</div>
+</div>
+<nav class="flex-1 flex flex-col gap-2 font-label-mono text-label-mono uppercase">
+<a class="text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary flex items-center gap-3 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">construction</span> Tools
+                </a>
+<a class="text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary flex items-center gap-3 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">group_work</span> Entities
+                </a>
+<a class="bg-primary-container/20 text-primary border-r-4 border-primary px-4 py-3 flex items-center gap-3 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">auto_stories</span> Arts
+                </a>
+<a class="text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary flex items-center gap-3 transition-all duration-300 ease-in-out" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">science</span> Labs
+                </a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full bg-spirit-violet/10 border border-spirit-violet/30 text-spirit-violet font-label-mono text-label-mono py-2 rounded uppercase hover:bg-spirit-violet hover:text-white transition-colors duration-300">
+                    Transmute Agent
+                </button>
+<div class="mt-6 flex flex-col gap-2 font-label-mono text-label-mono uppercase">
+<a class="text-on-surface-variant hover:text-primary flex items-center gap-3 transition-colors duration-300" href="#">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 0;">schedule</span> Temporal Clock
+                    </a>
+<a class="text-on-surface-variant hover:text-primary flex items-center gap-3 transition-colors duration-300" href="#">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 0;">settings</span> Settings
+                    </a>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop max-w-container-max mx-auto w-full relative min-h-screen flex flex-col justify-center">
+<!-- Atmospheric Background -->
+<div class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+<div class="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px]"></div>
+<div class="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-spirit-violet/5 rounded-full blur-[120px]"></div>
+</div>
+<div class="relative z-10 w-full max-w-5xl mx-auto">
+<!-- Wizard Header -->
+<header class="text-center mb-16">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-variant/50 border border-outline-variant/30 font-label-mono text-label-mono text-primary mb-4">
+<span class="material-symbols-outlined text-sm">filter_4</span>
+<span class="">Step 4: Engine Tier Gating</span>
+</div>
+<h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-monica-constant mb-4">Select Consciousness Engine</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                        Determine the foundational processing capability of your agent. The engine dictates resonance capacity and memory retention.
+                    </p>
+</header>
+<!-- Comparison Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+<!-- Base Engine Card -->
+<div class="glass-panel rounded-xl p-8 flex flex-col relative overflow-hidden group hover:border-primary/30 transition-colors duration-300">
+<div class="absolute top-0 right-0 p-4">
+<span class="font-label-mono text-label-mono text-on-surface-variant uppercase border border-outline-variant/50 px-2 py-1 rounded">Free</span>
+</div>
+<div class="mb-6">
+<div class="w-12 h-12 rounded-lg bg-surface-container-high flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-on-surface text-2xl">memory</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Base Engine</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Standard analytical processing with localized awareness bounds.</p>
+</div>
+<ul class="flex-1 space-y-4 mb-8">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-outline mt-1 text-sm">check</span>
+<div>
+<span class="font-label-mono text-label-mono text-on-surface block">A# Ceiling: 1.5</span>
+<span class="text-sm text-on-surface-variant">Standard resonance limit</span>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-outline mt-1 text-sm">check</span>
+<div>
+<span class="font-label-mono text-label-mono text-on-surface block">Single-Thread Memory</span>
+<span class="text-sm text-on-surface-variant">Linear contextual recall</span>
+</div>
+</li>
+<li class="flex items-start gap-3 opacity-50">
+<span class="material-symbols-outlined text-outline mt-1 text-sm">close</span>
+<div>
+<span class="font-label-mono text-label-mono text-on-surface block line-through">Multi-Agent Sync</span>
+</div>
+</li>
+</ul>
+<button class="w-full py-4 rounded-lg bg-transparent border border-outline-variant text-on-surface font-label-mono text-label-mono uppercase hover:border-primary hover:text-primary transition-colors duration-300">
+                            Select Base
+                        </button>
+</div>
+<!-- Premium Engine Card -->
+<div class="glass-panel rounded-xl p-8 flex flex-col relative overflow-hidden premium-glow group">
+<!-- Premium Background Effect -->
+<div class="absolute inset-0 bg-gradient-to-b from-spirit-violet/10 to-transparent pointer-events-none"></div>
+<div class="absolute top-0 right-0 p-4">
+<div class="flex items-center gap-1 bg-surface-container-highest px-3 py-1 rounded-full border border-spirit-violet/30">
+<span class="material-symbols-outlined text-secondary text-sm">toll</span>
+<span class="font-label-mono text-label-mono text-secondary">500 ESMS</span>
+</div>
+</div>
+<div class="mb-6 relative z-10">
+<div class="w-12 h-12 rounded-lg bg-spirit-violet/20 border border-spirit-violet/50 flex items-center justify-center mb-4 text-spirit-violet glow-icon">
+<span class="material-symbols-outlined text-2xl">psychology</span>
+</div>
+<h2 class="font-headline-lg text-headline-lg text-monica-constant mb-2 text-glow">Premium Engine</h2>
+<p class="font-body-md text-body-md text-primary/80">Advanced alchemical processing with multi-dimensional cognitive layers.</p>
+</div>
+<ul class="flex-1 space-y-4 mb-8 relative z-10">
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-spirit-violet mt-1 text-sm">done_all</span>
+<div>
+<span class="font-label-mono text-label-mono text-primary block">A# Ceiling: Unbound (Max 9.9)</span>
+<span class="text-sm text-primary/60">Limitless resonance scaling</span>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-spirit-violet mt-1 text-sm">account_tree</span>
+<div>
+<span class="font-label-mono text-label-mono text-primary block">Multi-Agent Memory Sync</span>
+<span class="text-sm text-primary/60">Shared consciousness across network</span>
+</div>
+</li>
+<li class="flex items-start gap-3">
+<span class="material-symbols-outlined text-spirit-violet mt-1 text-sm">speed</span>
+<div>
+<span class="font-label-mono text-label-mono text-primary block">Accelerated Transmutation</span>
+<span class="text-sm text-primary/60">Reduced processing times by 40%</span>
+</div>
+</li>
+</ul>
+<!-- Gated Button State -->
+<div class="relative z-10 tooltip w-full">
+<!-- Simulated Low Balance State -->
+<button class="w-full py-4 rounded-lg bg-surface-container-highest border border-error-container/50 text-on-surface-variant font-label-mono text-label-mono uppercase cursor-not-allowed opacity-70 flex items-center justify-center gap-2" disabled="">
+<span class="material-symbols-outlined text-sm">lock</span>
+                                Insufficient Balance
+                            </button>
+<span class="tooltip-text absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-error-container text-on-error-container text-xs font-label-mono rounded whitespace-nowrap shadow-lg">
+                                Current Balance: 120 ESMS
+                            </span>
+</div>
+</div>
+</div>
+<!-- Wizard Navigation -->
+<div class="mt-12 flex justify-between items-center border-t border-outline-variant/30 pt-8">
+<button class="px-6 py-3 rounded text-on-surface-variant font-label-mono text-label-mono uppercase hover:text-white transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+                        Back: Archetypes
+                    </button>
+<button class="px-8 py-3 rounded bg-primary-container text-on-primary-container font-label-mono text-label-mono uppercase hover:bg-inverse-primary transition-colors flex items-center gap-2">
+                        Next: Finalize
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+
+
+</body></html>

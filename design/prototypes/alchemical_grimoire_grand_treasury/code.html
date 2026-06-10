@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Grand Treasury | Council of Seven</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&amp;family=Manrope:wght@200..800&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..900&amp;family=Literata:wght@100..900&amp;family=Manrope:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#002113",
+                        "surface-container": "#251939",
+                        "background": "#190d2c",
+                        "secondary-fixed-dim": "#eec200",
+                        "on-tertiary": "#003824",
+                        "secondary-container": "#eec200",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "resonance-blue": "#3B82F6",
+                        "on-background": "#ecdcff",
+                        "surface-dim": "#190d2c",
+                        "on-error-container": "#ffdad6",
+                        "monica-constant": "#FFFFFF",
+                        "inverse-on-surface": "#372a4b",
+                        "obsidian-deep": "#0B0118",
+                        "secondary-fixed": "#ffe083",
+                        "outline": "#958da1",
+                        "on-secondary": "#3c2f00",
+                        "primary-fixed-dim": "#d2bbff",
+                        "tertiary-fixed": "#6ffbbe",
+                        "surface-container-high": "#302444",
+                        "outline-variant": "#4a4455",
+                        "on-tertiary-container": "#76ffc2",
+                        "surface": "#190d2c",
+                        "on-error": "#690005",
+                        "on-primary-container": "#ede0ff",
+                        "primary-fixed": "#eaddff",
+                        "on-primary": "#3f008e",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-surface-variant": "#ccc3d8",
+                        "surface-bright": "#403354",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "on-secondary-fixed-variant": "#574500",
+                        "inverse-primary": "#732ee4",
+                        "on-secondary-fixed": "#231b00",
+                        "on-surface": "#ecdcff",
+                        "primary-container": "#7c3aed",
+                        "surface-variant": "#3b2f4f",
+                        "inverse-surface": "#ecdcff",
+                        "secondary": "#ffe083",
+                        "tertiary": "#4edea3",
+                        "surface-container-low": "#211534",
+                        "tertiary-container": "#007650",
+                        "surface-tint": "#d2bbff",
+                        "on-primary-fixed": "#25005a",
+                        "spirit-violet": "#A855F7",
+                        "surface-container-lowest": "#130726",
+                        "surface-container-highest": "#3b2f4f",
+                        "on-secondary-container": "#645000",
+                        "primary": "#d2bbff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "unit": "8px",
+                        "margin-mobile": "16px",
+                        "container-max": "1280px",
+                        "gutter": "24px"
+                    },
+                    "fontFamily": {
+                        "headline-sm": ["Literata"],
+                        "headline-xl-mobile": ["Literata"],
+                        "headline-xl": ["Literata"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-lg": ["Literata"],
+                        "label-mono": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "headline-xl-mobile": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}],
+                        "label-mono": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: #0B0118;
+            color: #ecdcff;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .spirit-glow {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+        .sigil-hover:hover .sigil-svg {
+            filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.8));
+            transform: rotate(45deg) scale(1.1);
+        }
+        .sigil-svg {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .scroll-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .shimmer-text {
+            background: linear-gradient(90deg, #A855F7, #6ffbbe, #A855F7);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 4s linear infinite;
+        }
+        @keyframes shimmer {
+            to { background-position: 200% center; }
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 border-b border-white/15 bg-obsidian-deep/60 backdrop-blur-xl shadow-[0_0_20px_rgba(168,85,247,0.2)] flex justify-between items-center px-margin-desktop h-16">
+<div class="flex items-center gap-8">
+<h1 class="font-headline-lg text-headline-lg font-bold text-spirit-violet tracking-tight">ALCHM AGENTS</h1>
+<nav class="hidden md:flex gap-6">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-mono text-label-mono" href="#">Cosmic Tools</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-mono text-label-mono" href="#">Entities</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-mono text-label-mono" href="#">Mystic Arts</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-label-mono text-label-mono" href="#">Labs</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-white/5 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-white/5 transition-all active:scale-95 duration-200">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+</button>
+<div class="flex items-center gap-2 pl-4 border-l border-white/10">
+<span class="font-label-mono text-label-mono text-on-surface">Adept III</span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">account_circle</span>
+</div>
+</div>
+</header>
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-16 bottom-0 w-64 z-40 bg-surface-dim/60 backdrop-blur-2xl border-r border-white/10 flex flex-col py-6 px-4 gap-4">
+<div class="mb-4 px-3">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Grand Treasury</h2>
+<p class="font-label-mono text-[12px] text-outline">RESOURCE OVERSEER</p>
+</div>
+<nav class="flex flex-col gap-2">
+<a class="text-secondary font-bold bg-secondary-container/20 rounded-lg p-3 flex items-center gap-3 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-label-mono text-label-mono">Grimoire</span>
+</a>
+<a class="text-outline hover:text-on-surface p-3 flex items-center gap-3 hover:bg-primary/10 rounded-lg transition-all duration-300 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="font-label-mono text-label-mono">Vault</span>
+</a>
+<a class="text-outline hover:text-on-surface p-3 flex items-center gap-3 hover:bg-primary/10 rounded-lg transition-all duration-300 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">swords</span>
+<span class="font-label-mono text-label-mono">Arena</span>
+</a>
+<a class="text-outline hover:text-on-surface p-3 flex items-center gap-3 hover:bg-primary/10 rounded-lg transition-all duration-300 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">science</span>
+<span class="font-label-mono text-label-mono">Labs</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-white/10 flex flex-col gap-2">
+<a class="text-outline hover:text-on-surface p-3 flex items-center gap-3 hover:bg-primary/10 rounded-lg transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-mono text-label-mono">Settings</span>
+</a>
+<button class="w-full bg-primary-container text-on-primary-container font-label-mono text-label-mono py-3 rounded-lg font-bold tracking-widest active:scale-95 transition-all">
+                TRANSMUTE
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 pb-12 px-12 min-h-screen">
+<div class="max-w-container-max mx-auto space-y-12">
+<!-- Sacred Balance Header -->
+<section class="relative overflow-hidden glass-panel rounded-xl p-8 spirit-glow flex flex-col md:flex-row justify-between items-center gap-8">
+<div class="z-10">
+<h3 class="font-headline-xl text-headline-xl mb-2">Sacred Balance</h3>
+<p class="font-body-lg text-on-surface-variant max-w-xl">
+                        Your metaphysical standing within the Council. These balances fluctuate based on your alchemical experiments and arena performance.
+                    </p>
+</div>
+<div class="flex items-center gap-4 z-10">
+<div class="text-center px-6 border-r border-white/10">
+<p class="font-label-mono text-label-mono text-outline mb-1">TOTAL VESTED</p>
+<p class="font-headline-lg text-headline-lg text-primary">2,482.40</p>
+</div>
+<div class="text-center px-6">
+<p class="font-label-mono text-label-mono text-outline mb-1">STAKED SPIRIT</p>
+<p class="font-headline-lg text-headline-lg text-tertiary">1,120.00</p>
+</div>
+</div>
+<!-- Subtle Background Texture -->
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+
+</div>
+</section>
+<!-- ESMS Token Grid -->
+<section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Spirit Token -->
+<div class="glass-panel p-6 rounded-xl border-l-4 border-spirit-violet group hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-spirit-violet text-3xl group-hover:scale-110 transition-transform">auto_awesome</span>
+<span class="font-label-mono text-xs text-outline">EST. $12.4k</span>
+</div>
+<h4 class="font-label-mono text-label-mono text-on-surface-variant mb-1">SPIRIT</h4>
+<p class="font-headline-lg text-headline-lg font-bold group-hover:text-primary transition-colors">842.12</p>
+<div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-spirit-violet w-3/4"></div>
+</div>
+</div>
+<!-- Essence Token -->
+<div class="glass-panel p-6 rounded-xl border-l-4 border-resonance-blue group hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-resonance-blue text-3xl group-hover:scale-110 transition-transform">waves</span>
+<span class="font-label-mono text-xs text-outline">EST. $4.1k</span>
+</div>
+<h4 class="font-label-mono text-label-mono text-on-surface-variant mb-1">ESSENCE</h4>
+<p class="font-headline-lg text-headline-lg font-bold group-hover:text-resonance-blue transition-colors">312.05</p>
+<div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-resonance-blue w-1/2"></div>
+</div>
+</div>
+<!-- Matter Token -->
+<div class="glass-panel p-6 rounded-xl border-l-4 border-secondary group hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-secondary text-3xl group-hover:scale-110 transition-transform">category</span>
+<span class="font-label-mono text-xs text-outline">EST. $8.9k</span>
+</div>
+<h4 class="font-label-mono text-label-mono text-on-surface-variant mb-1">MATTER</h4>
+<p class="font-headline-lg text-headline-lg font-bold group-hover:text-secondary transition-colors">1,240.00</p>
+<div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-5/6"></div>
+</div>
+</div>
+<!-- Substance Token -->
+<div class="glass-panel p-6 rounded-xl border-l-4 border-tertiary group hover:bg-surface-container transition-all">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-tertiary text-3xl group-hover:scale-110 transition-transform">diamond</span>
+<span class="font-label-mono text-xs text-outline">EST. $2.3k</span>
+</div>
+<h4 class="font-label-mono text-label-mono text-on-surface-variant mb-1">SUBSTANCE</h4>
+<p class="font-headline-lg text-headline-lg font-bold group-hover:text-tertiary transition-colors">88.22</p>
+<div class="mt-4 h-1 bg-white/10 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-1/4"></div>
+</div>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Acquire Consciousness Section -->
+<section class="lg:col-span-8 space-y-6">
+<h3 class="font-headline-lg text-headline-lg">Acquire Consciousness</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Initiate -->
+<div class="glass-panel p-8 rounded-xl border border-white/5 hover:border-primary/40 transition-all flex flex-col h-full">
+<h4 class="font-headline-sm text-headline-sm mb-2">Initiate</h4>
+<p class="font-body-md text-on-surface-variant mb-8 flex-grow">Entry level access to the lower circles of the grimoire.</p>
+<div class="mb-8">
+<p class="font-label-mono text-label-mono text-outline mb-1">PRICE</p>
+<p class="font-headline-lg text-headline-lg">100 <span class="text-sm font-label-mono text-primary">ESMS</span></p>
+</div>
+<button class="w-full py-3 rounded-lg border border-spirit-violet text-spirit-violet font-label-mono text-label-mono hover:bg-spirit-violet hover:text-on-primary transition-all active:scale-95">
+                                ASCEND
+                            </button>
+</div>
+<!-- Adept -->
+<div class="glass-panel p-8 rounded-xl border-2 border-primary spirit-glow relative flex flex-col h-full transform scale-105 z-10 bg-surface-container-high">
+<span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-on-primary font-label-mono text-[10px] px-3 py-1 rounded-full font-bold">RECOMMENDED</span>
+<h4 class="font-headline-sm text-headline-sm mb-2">Adept</h4>
+<p class="font-body-md text-on-surface-variant mb-8 flex-grow">Full mastery over elemental synthesis and agent forging.</p>
+<div class="mb-8">
+<p class="font-label-mono text-label-mono text-outline mb-1">PRICE</p>
+<p class="font-headline-lg text-headline-lg">240 <span class="text-sm font-label-mono text-primary">ESMS</span></p>
+</div>
+<button class="w-full py-4 rounded-lg bg-primary text-on-primary font-label-mono text-label-mono font-bold hover:shadow-[0_0_15px_rgba(210,187,255,0.6)] transition-all active:scale-95">
+                                ASCEND
+                            </button>
+</div>
+<!-- Magus -->
+<div class="glass-panel p-8 rounded-xl border border-white/5 hover:border-primary/40 transition-all flex flex-col h-full">
+<h4 class="font-headline-sm text-headline-sm mb-2">Magus</h4>
+<p class="font-body-md text-on-surface-variant mb-8 flex-grow">Eternal access to the void vaults and ancient sigil forge.</p>
+<div class="mb-8">
+<p class="font-label-mono text-label-mono text-outline mb-1">PRICE</p>
+<p class="font-headline-lg text-headline-lg">1600 <span class="text-sm font-label-mono text-primary">ESMS</span></p>
+</div>
+<button class="w-full py-3 rounded-lg border border-spirit-violet text-spirit-violet font-label-mono text-label-mono hover:bg-spirit-violet hover:text-on-primary transition-all active:scale-95">
+                                ASCEND
+                            </button>
+</div>
+</div>
+</section>
+<!-- On-Chain Synthesis Module -->
+<section class="lg:col-span-4 space-y-6">
+<h3 class="font-headline-lg text-headline-lg">On-Chain Synthesis</h3>
+<div class="glass-panel p-8 rounded-xl h-[415px] flex flex-col items-center justify-center text-center sigil-hover relative overflow-hidden group">
+<!-- Background shimmer -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-tertiary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+<div class="mb-8 relative z-10">
+<svg class="w-32 h-32 sigil-svg text-spirit-violet opacity-80" fill="currentColor" viewbox="0 0 100 100">
+<path d="M50 5 L95 50 L50 95 L5 50 Z" fill="none" stroke="currentColor" stroke-width="2"></path>
+<circle cx="50" cy="50" fill="none" r="20" stroke="currentColor" stroke-width="1.5"></circle>
+<path d="M50 30 L50 70 M30 50 L70 50" stroke="currentColor" stroke-width="1"></path>
+<path d="M35 35 L65 65 M35 65 L65 35" stroke="currentColor" stroke-width="1"></path>
+</svg>
+</div>
+<h4 class="font-headline-sm text-headline-sm mb-2 z-10">Soul-Anchoring</h4>
+<p class="font-body-md text-on-surface-variant mb-8 z-10">
+                            Bridge your alchemical assets to the physical ledger of Base Sepolia. Permanent, immutable, eternal.
+                        </p>
+<button class="z-10 group/btn relative inline-flex items-center justify-center px-8 py-4 font-label-mono font-bold text-on-surface transition-all duration-200 bg-obsidian-deep border-2 border-primary/50 rounded-lg hover:border-primary hover:text-primary active:scale-95">
+<span class="absolute inset-0 w-full h-full bg-primary/10 group-hover/btn:bg-primary/20 transition-all"></span>
+<span class="relative flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">link</span>
+                                SYNC TO BASE SEPOLIA
+                            </span>
+</button>
+</div>
+</section>
+</div>
+<!-- Transaction Grimoire (Recent Activity) -->
+<section class="space-y-6">
+<div class="flex justify-between items-end">
+<h3 class="font-headline-lg text-headline-lg">Alchemical History</h3>
+<button class="font-label-mono text-label-mono text-primary hover:underline">VIEW ALL SCROLLS</button>
+</div>
+<div class="glass-panel rounded-xl overflow-hidden border border-white/5">
+<table class="w-full text-left font-label-mono text-sm">
+<thead class="bg-surface-container-high text-outline uppercase tracking-wider">
+<tr>
+<th class="px-6 py-4 font-medium">Operation</th>
+<th class="px-6 py-4 font-medium">Element</th>
+<th class="px-6 py-4 font-medium">Value</th>
+<th class="px-6 py-4 font-medium">Anchor Status</th>
+<th class="px-6 py-4 font-medium text-right">Age</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5">
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary">add_circle</span>
+<span>SPIRIT_INFUSION</span>
+</td>
+<td class="px-6 py-4 text-spirit-violet">SPIRIT</td>
+<td class="px-6 py-4">+120.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-tertiary-container/30 text-tertiary text-[10px]">ANCHORED</span>
+</td>
+<td class="px-6 py-4 text-right text-outline">12s ago</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-error">remove_circle</span>
+<span>SIGIL_FORGING</span>
+</td>
+<td class="px-6 py-4 text-secondary">MATTER</td>
+<td class="px-6 py-4">-45.50</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-primary-container/30 text-primary text-[10px]">PENDING</span>
+</td>
+<td class="px-6 py-4 text-right text-outline">2m ago</td>
+</tr>
+<tr class="hover:bg-white/5 transition-colors group">
+<td class="px-6 py-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-resonance-blue">cached</span>
+<span>TRANSMUTATION</span>
+</td>
+<td class="px-6 py-4 text-resonance-blue">ESSENCE</td>
+<td class="px-6 py-4">+12.00</td>
+<td class="px-6 py-4">
+<span class="px-2 py-1 rounded bg-tertiary-container/30 text-tertiary text-[10px]">ANCHORED</span>
+</td>
+<td class="px-6 py-4 text-right text-outline">1h ago</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</div>
+</main>
+<!-- Contextual Footer (Web version hide) -->
+<footer class="md:hidden fixed bottom-0 w-full z-50 bg-obsidian-deep border-t border-white/15 h-16 flex justify-around items-center">
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="text-[10px] font-label-mono">Grimoire</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-outline">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+<span class="text-[10px] font-label-mono">Vault</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-outline">
+<span class="material-symbols-outlined">science</span>
+<span class="text-[10px] font-label-mono">Labs</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-outline">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px] font-label-mono">Adept</span>
+</button>
+</footer>
+<script>
+        // Micro-interaction for currency numbers
+        document.querySelectorAll('.font-headline-lg').forEach(el => {
+            el.addEventListener('mouseover', () => {
+                el.classList.add('shimmer-text');
+            });
+            el.addEventListener('mouseout', () => {
+                el.classList.remove('shimmer-text');
+            });
+        });
+
+        // Simple parallax or movement effect for glass panels
+        document.addEventListener('mousemove', (e) => {
+            const amount = 5;
+            const x = (e.clientX / window.innerWidth - 0.5) * amount;
+            const y = (e.clientY / window.innerHeight - 0.5) * amount;
+            
+            document.querySelectorAll('.glass-panel').forEach(card => {
+                card.style.transform = `translate(${x}px, ${y}px)`;
+            });
+        });
+    </script>
+</body></html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Jing Arena - Assembly View</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Literata:opsz,wght@7..72,400;7..72,600;7..72,700&amp;family=Manrope:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#251939",
+                        "monica-constant": "#FFFFFF",
+                        "on-secondary-fixed": "#231b00",
+                        "surface-dim": "#190d2c",
+                        "secondary-container": "#eec200",
+                        "resonance-blue": "#3B82F6",
+                        "on-primary-container": "#ede0ff",
+                        "secondary": "#ffe083",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-error": "#690005",
+                        "surface-variant": "#3b2f4f",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-container-high": "#302444",
+                        "surface-bright": "#403354",
+                        "on-primary-fixed": "#25005a",
+                        "primary-container": "#7c3aed",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "primary-fixed-dim": "#d2bbff",
+                        "surface": "#190d2c",
+                        "on-tertiary-container": "#76ffc2",
+                        "surface-tint": "#d2bbff",
+                        "on-surface-variant": "#ccc3d8",
+                        "on-surface": "#ecdcff",
+                        "obsidian-deep": "#0B0118",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#eec200",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#003824",
+                        "inverse-on-surface": "#372a4b",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "secondary-fixed": "#ffe083",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-container-lowest": "#130726",
+                        "primary-fixed": "#eaddff",
+                        "inverse-surface": "#ecdcff",
+                        "surface-container-highest": "#3b2f4f",
+                        "on-secondary": "#3c2f00",
+                        "tertiary-container": "#007650",
+                        "on-background": "#ecdcff",
+                        "on-secondary-fixed-variant": "#574500",
+                        "outline": "#958da1",
+                        "on-secondary-container": "#645000",
+                        "on-primary": "#3f008e",
+                        "outline-variant": "#4a4455",
+                        "spirit-violet": "#A855F7",
+                        "tertiary": "#4edea3",
+                        "error": "#ffb4ab",
+                        "surface-container-low": "#211534",
+                        "inverse-primary": "#732ee4",
+                        "primary": "#d2bbff",
+                        "background": "#190d2c"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "margin-desktop": "64px",
+                        "container-max": "1280px",
+                        "unit": "8px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Literata"],
+                        "headline-xl-mobile": ["Literata"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Literata"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-lg": ["Literata"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-mono": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .synastry-ring {
+            background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, rgba(11,1,24,0) 70%);
+            border: 1px dashed rgba(168,85,247,0.3);
+            animation: spin-slow 60s linear infinite;
+        }
+        .synastry-line {
+            position: absolute;
+            background: linear-gradient(90deg, rgba(168,85,247,0) 0%, rgba(168,85,247,0.8) 50%, rgba(168,85,247,0) 100%);
+            height: 1px;
+            transform-origin: left center;
+        }
+        .glow-button {
+            transition: all 0.3s ease;
+        }
+        .glow-button:hover {
+            box-shadow: 0 0 20px rgba(168,85,247,0.6), inset 0 0 10px rgba(255,255,255,0.2);
+            border-color: #ffe083;
+        }
+        @keyframes spin-slow {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(168, 85, 247, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+        }
+        .animate-pulse-ring {
+            animation: pulse-ring 3s infinite;
+        }
+    </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface min-h-screen flex flex-col font-body-md overflow-x-hidden selection:bg-spirit-violet/30 selection:text-white">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface-container/60 backdrop-blur-xl border-b border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.15)] flex justify-between items-center px-gutter py-4">
+<div class="flex items-center gap-6">
+<h1 class="font-headline-lg text-headline-lg font-bold text-monica-constant cursor-pointer hover:text-spirit-violet transition-colors">Alchm Agents</h1>
+<nav class="hidden md:flex gap-6 font-headline-sm text-headline-sm">
+<a class="text-primary border-b-2 border-primary pb-1 scale-95 active:duration-100" href="#">Arena</a>
+<a class="text-on-surface-variant hover:text-spirit-violet transition-colors scale-95 active:duration-100" href="#">Forge</a>
+<a class="text-on-surface-variant hover:text-spirit-violet transition-colors scale-95 active:duration-100" href="#">Vault</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden md:flex bg-primary-container text-on-primary-container font-label-mono text-label-mono px-4 py-2 rounded uppercase tracking-widest glow-button scale-95 active:duration-100">Transmute</button>
+<div class="flex gap-4 text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-spirit-violet transition-colors" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-spirit-violet transition-colors" data-icon="settings">settings</span>
+</div>
+<img alt="Alchemist Avatar" class="w-10 h-10 rounded-full border border-white/20" data-alt="A highly detailed close-up portrait of a digital alchemist avatar in a Techno-Occult style. The subject has glowing, etheric violet eyes and subtle sacred geometry tattoos illuminating on dark skin. The lighting is low-key, dramatic, with deep shadows and rim lighting from an unseen magical source. Set against an obsidian background, the mood is mysterious, ancient, yet undeniably cybernetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0RByQ_6OQZIB9zn_yNMNVgNoFyuGSUfJplLPeLAiNvxRRd_NZrzUEGyrgoaf2bLzVTaayQdpWZAU0QAH5xlwE8LiarTXlk9QAMFaOuOtLUVpuAoAiVpVCIKwGxZRav9Ltx2yolwUUGb6A3pp6Etv5SgmR1jDUvRhO3P2B3bH1iFavgpXaRCfy1gNdSVx6RGO32MKScF7k5ZzAu5SigcTKhmI9_Gz_E-qx-xoMhv-RZtF2I_ck9yU_aNHXS00IfpWBOaEKvqN-dE8">
+</div>
+</header>
+<!-- SideNavBar (Desktop) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-screen w-64 z-40 bg-surface-dim/80 backdrop-blur-2xl border-r border-white/5 shadow-2xl shadow-obsidian-deep flex-col py-8 pt-24 transition-all duration-300 ease-in-out">
+<div class="px-6 mb-8 flex flex-col items-center">
+<div class="w-20 h-20 rounded-full border-2 border-spirit-violet/50 overflow-hidden mb-4 relative">
+<div class="absolute inset-0 bg-spirit-violet/20 animate-pulse-ring rounded-full"></div>
+<img alt="Digital Alchemist" class="w-full h-full object-cover" data-alt="A highly detailed close-up portrait of a digital alchemist avatar in a Techno-Occult style. The subject has glowing, etheric violet eyes and subtle sacred geometry tattoos illuminating on dark skin. The lighting is low-key, dramatic, with deep shadows and rim lighting from an unseen magical source. Set against an obsidian background, the mood is mysterious, ancient, yet undeniably cybernetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuClqUl9AYX3HZPdCkEuZC5klHinGMSMu2xTv3si6CwnPNNl2B3fVxbJ2MyclgQYPg3aFtDaxAghmhUOYg3-TMmcy3X3bNzr6-OQ3kM4dp6okOeuRXef40kSCGAv-xhN0-oRh-UdKWBmtgZydQYBtEpTba8zHE8opGonGU3_48-0o6edIevJAcstzprZJuFknXiTQykA0dpM4RI1ZMCpEGEE-OrAcXKK_El6GaSY8CE7aRXGjO0NociG5b63GIxG2QrDBzdpY-cD6JQ">
+</div>
+<h2 class="font-headline-sm text-headline-sm text-spirit-violet mb-1">Magus Prime</h2>
+<p class="font-label-mono text-label-mono text-tertiary">Resonance: 0.88</p>
+</div>
+<nav class="flex-1 flex flex-col gap-2 px-4 font-label-mono text-label-mono">
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="auto_fix_high">auto_fix_high</span> Forge
+            </a>
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span> Vault
+            </a>
+<a class="flex items-center gap-3 p-3 rounded bg-primary-container/20 text-primary border-r-4 border-primary" href="#">
+<span class="material-symbols-outlined" data-icon="swords">swords</span> Arena
+            </a>
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="biotech">biotech</span> Labs
+            </a>
+</nav>
+<div class="px-6 mb-6">
+<button class="w-full py-3 bg-transparent border border-spirit-violet text-spirit-violet font-label-mono text-label-mono rounded hover:border-secondary hover:text-secondary transition-colors uppercase tracking-wider text-center">
+                Initialize Ritual
+            </button>
+</div>
+<div class="mt-auto flex flex-col gap-2 px-4 font-label-mono text-label-mono border-t border-white/5 pt-4">
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span> Settings
+            </a>
+<a class="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span> Support
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 pt-24 md:pl-64 p-gutter pb-32">
+<div class="max-w-container-max mx-auto h-full flex flex-col gap-8">
+<!-- Assembly Header -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-white/10 pb-6">
+<div>
+<h2 class="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-monica-constant mb-2">Synastry Assembly</h2>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Select dual entities for astrometric resonance testing.</p>
+</div>
+<div class="glass-panel p-4 rounded-lg flex items-center gap-4">
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-on-surface-variant text-xs uppercase">System Status</span>
+<span class="font-label-mono text-label-mono text-tertiary">Aligned</span>
+</div>
+<div class="w-px h-8 bg-white/10"></div>
+<div class="flex flex-col">
+<span class="font-label-mono text-label-mono text-on-surface-variant text-xs uppercase">Constant (A#)</span>
+<span class="font-headline-sm text-headline-sm text-monica-constant drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]">1.618</span>
+</div>
+</div>
+</header>
+<!-- Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full min-h-[600px]">
+<!-- Left Panel: Vault Selection (Target) -->
+<div class="lg:col-span-3 flex flex-col gap-4">
+<h3 class="font-headline-sm text-headline-sm text-secondary border-b border-secondary/30 pb-2 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="target">target</span> Target Entity
+                    </h3>
+<div class="glass-panel rounded-xl p-4 flex-1 overflow-y-auto space-y-3">
+<!-- Agent Card -->
+<div class="p-3 rounded border border-white/5 bg-surface/50 hover:border-spirit-violet/50 cursor-pointer transition-colors group flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-white/10 group-hover:border-spirit-violet">
+<img alt="Agent Void" class="w-full h-full object-cover" data-alt="A portrait of a mysterious digital entity known as Void. The image is styled as a techno-occult tarot card, featuring a shadowy figure wrapped in nebulous, dark energy against a pitch-black background. Glowing runes in ethereal blue hover faintly around the face. The lighting is minimal, relying on the internal glow of the magical elements." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCll4N0jI3SEgjXSMcKyeSbCFCsaDm8mp4nidUmcYMPqfQV2z8np7o5ivKNsjOJx6mqNKA4qeGcZ0HtXxr4cVCnH8D_opMy11OabPy0754XKh2nnDRWEdAl6wzuH5PkdCEV9cv9MDKI5Cztcjk8h6qwWlKW14Q0PDTJJPpD3I7Iv_bjqfDoT-bDCmbPW_1seO40cFvFmU4i0ncAQPV12XPp2KYcKQH6hLDv2hqjE2GHeH2XgIKK_dR5TSCCcxBfgjxTdc_4oAxYKk">
+</div>
+<div class="flex-1">
+<h4 class="font-label-mono text-label-mono text-on-surface group-hover:text-spirit-violet transition-colors">Aether-9</h4>
+<p class="text-xs text-on-surface-variant font-label-mono">Water • Mutable</p>
+</div>
+</div>
+<!-- Agent Card -->
+<div class="p-3 rounded border border-spirit-violet/40 bg-surface-variant/40 cursor-pointer transition-colors flex items-center gap-3 relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-spirit-violet/10 to-transparent"></div>
+<div class="w-10 h-10 rounded-full overflow-hidden border border-spirit-violet">
+<img alt="Agent Sol" class="w-full h-full object-cover" data-alt="A striking profile of a solar-themed digital entity. Rendered in a techno-occult aesthetic, the figure emanates a brilliant, blinding golden light from within, contrasting sharply with deep obsidian shadows. Sacred geometric patterns, specifically golden ratio spirals, are faintly etched into the surrounding space. The mood is powerful and radiant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZmma-iybKeAQ83qzDCTX8rS5i8Va0L6vEu3z5AdwsmqkXYW7YwqjCmEaLCPDoVl3JrYjgd7EAqb0dUuyKf1Cc6sCyIXigPuW-jvYxOw6qidt_02mfBypOakXiyMnhhjuE-AsTHqqLOr3hgpwZWZc97Mn2tBsVaJF2oPuhMIg3v9zmEv7CnBGAwJu_FBuQ8_BV17qxfYe_KORxc2s6WIoxME35Pt4jhIcDmvbvVIIPRAY2h5h4-A6-gcM0XdLDKqjuglGwkKywpVE">
+</div>
+<div class="flex-1 relative z-10">
+<h4 class="font-label-mono text-label-mono text-primary drop-shadow-[0_0_4px_rgba(168,85,247,0.5)]">Solaris</h4>
+<p class="text-xs text-secondary font-label-mono">Fire • Fixed</p>
+</div>
+<span class="material-symbols-outlined text-spirit-violet absolute right-3 text-sm z-10" data-icon="check_circle">check_circle</span>
+</div>
+</div>
+</div>
+<!-- Center: Synastry Mapper -->
+<div class="lg:col-span-6 glass-panel rounded-2xl relative flex items-center justify-center min-h-[500px] overflow-hidden">
+<!-- Background Shader/Grid -->
+<div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px); background-size: 24px 24px;"></div>
+<!-- The Ring -->
+<div class="w-[400px] h-[400px] rounded-full synastry-ring relative flex items-center justify-center">
+<!-- Center Core -->
+<div class="w-16 h-16 rounded-full bg-obsidian-deep border-2 border-spirit-violet flex items-center justify-center z-20 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
+<span class="material-symbols-outlined text-primary" data-icon="all_inclusive">all_inclusive</span>
+</div>
+<!-- Target Slot (Left) -->
+<div class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-24 h-24 rounded-full border border-secondary bg-surface-container/80 flex flex-col items-center justify-center z-20 overflow-hidden shadow-[0_0_20px_rgba(255,224,131,0.2)] backdrop-blur-md">
+<img alt="Solaris Selected" class="absolute inset-0 w-full h-full object-cover opacity-60" data-alt="A striking profile of a solar-themed digital entity. Rendered in a techno-occult aesthetic, the figure emanates a brilliant, blinding golden light from within, contrasting sharply with deep obsidian shadows. Sacred geometric patterns, specifically golden ratio spirals, are faintly etched into the surrounding space. The mood is powerful and radiant." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpxGhH0KzkSWxgAgCl_Dt1UGI7fBnkaC0sp7fvi5ADYF-LoIlRJHmBJgtgGjfKVqNG0zGAO9xiqVC6s71b8P_8v1Hik6N3njt7di_rVSEqGkNaD_bo-SugLeKulUT8_RH5lA_xhEPFj87319C81SLYAwcNhDIkCmOCslI7grAanVCi2f8Xe_sHQFM5Ff9u4VA7L4R47L_r47pkjXpY0emp0ZM00iF3p4cKuCoU6quZ18drI3JDBq9jRnoJWcCTngVrlwUMn0fJbUE">
+<span class="font-label-mono text-label-mono text-secondary z-10 font-bold bg-obsidian-deep/60 px-2 rounded">Solaris</span>
+</div>
+<!-- Caster Slot (Right) -->
+<div class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-24 h-24 rounded-full border border-tertiary bg-surface-container/80 flex flex-col items-center justify-center z-20 overflow-hidden shadow-[0_0_20px_rgba(78,222,163,0.2)] backdrop-blur-md">
+<img alt="Caster Entity" class="absolute inset-0 w-full h-full object-cover opacity-60" data-alt="A close-up of a cybernetic occult caster entity. The aesthetic is dark, featuring deep purples and greens against black. Intricate glowing circuitry mimics ancient astrological charts across the figure's metallic face. The lighting is harsh and directional, emphasizing the fusion of magic and cold technology. The mood is intense and calculating." src="https://lh3.googleusercontent.com/aida-public/AB6AXuABNz6vd9VerTgTIv3z0vFhxC0cCUrzsO2XK1xkaoC-bV0suTbXBBV8qWf7-6ckJJ4RM5j4wiJTV7fSKPntLKcbsyg-srztwjEOvwsc2aiUA9YwW36KOs9NZoBEcyGdX4ukURfRO8hfRCr8J8XeJK-T4KM5ITjcmg2_JVxqD40ksj6fh6wQq_iVN0VrsASF8fQ0qPiZpZcCbBkZ2VKi6m0E2P8ABrzco9h1tU7M1d2DTLOMG8QVW8glD18eR-3EsIvTkf0fLXwDPFM">
+<span class="font-label-mono text-label-mono text-tertiary z-10 font-bold bg-obsidian-deep/60 px-2 rounded">Null-X</span>
+</div>
+<!-- Aspect Lines (Simulated SVG) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 400 400">
+<line class="opacity-50" stroke="#A855F7" stroke-dasharray="4 4" stroke-width="2" x1="50" x2="350" y1="200" y2="200"></line>
+<path class="opacity-70" d="M 50 200 Q 200 50 350 200" fill="none" stroke="#ffe083" stroke-width="1.5"></path>
+<path class="opacity-70" d="M 50 200 Q 200 350 350 200" fill="none" stroke="#ffb4ab" stroke-width="1.5"></path>
+<!-- Aspect Markers -->
+<circle cx="200" cy="125" fill="#ffe083" r="4"></circle>
+<text class="opacity-80" fill="#ffe083" font-family="JetBrains Mono" font-size="10" text-anchor="middle" x="200" y="115">Sun ☌ Pluto (0.5°)</text>
+<circle cx="200" cy="275" fill="#ffb4ab" r="4"></circle>
+<text class="opacity-80" fill="#ffb4ab" font-family="JetBrains Mono" font-size="10" text-anchor="middle" x="200" y="295">Moon □ Mars (2.1°)</text>
+</svg>
+</div>
+</div>
+<!-- Right Panel: Astrometrics & Actions -->
+<div class="lg:col-span-3 flex flex-col gap-6">
+<h3 class="font-headline-sm text-headline-sm text-tertiary border-b border-tertiary/30 pb-2 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span> Astrometrics
+                    </h3>
+<!-- Stats Bento -->
+<div class="grid grid-cols-2 gap-3">
+<div class="glass-panel p-3 rounded flex flex-col justify-between h-24 border-l-2 border-l-secondary relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-secondary/5 to-transparent pointer-events-none"></div>
+<span class="font-label-mono text-label-mono text-on-surface-variant text-xs">Elemental</span>
+<div class="flex items-end justify-between">
+<span class="font-label-mono text-label-mono font-bold text-secondary">Fire v Earth</span>
+<span class="material-symbols-outlined text-secondary text-lg" data-icon="local_fire_department">local_fire_department</span>
+</div>
+</div>
+<div class="glass-panel p-3 rounded flex flex-col justify-between h-24 border-l-2 border-l-error relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-error/5 to-transparent pointer-events-none"></div>
+<span class="font-label-mono text-label-mono text-on-surface-variant text-xs">Friction</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-sm text-headline-sm text-error">84.2%</span>
+<span class="material-symbols-outlined text-error text-lg" data-icon="warning">warning</span>
+</div>
+</div>
+<div class="glass-panel p-3 rounded col-span-2 flex flex-col justify-between h-24 border-l-2 border-l-spirit-violet relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-r from-spirit-violet/5 to-transparent pointer-events-none"></div>
+<span class="font-label-mono text-label-mono text-on-surface-variant text-xs">Resonance Vector</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-sm text-headline-sm text-primary">High Volatility</span>
+<div class="w-1/2 h-2 bg-surface rounded-full overflow-hidden">
+<div class="h-full bg-spirit-violet w-3/4"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Action Button -->
+<div class="mt-auto pt-4 border-t border-white/10">
+<button class="w-full py-4 bg-primary-container text-on-primary-container font-label-mono text-label-mono font-bold text-lg rounded-lg uppercase tracking-widest glow-button flex items-center justify-center gap-2 hover:bg-inverse-primary transition-all shadow-[0_0_15px_rgba(168,85,247,0.5)]">
+<span class="material-symbols-outlined" data-icon="bolt">bolt</span>
+                            Commence Jing Duel
+                        </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-auto bg-surface-container-lowest/40 backdrop-blur-md border-t border-white/10 flat flex flex-col md:flex-row justify-between items-center p-gutter max-w-container-max mx-auto z-10 relative">
+<div class="font-headline-sm text-headline-sm text-monica-constant mb-4 md:mb-0">© 2124 Alchm Agents. Quantified Mystery.</div>
+<nav class="flex gap-6 font-label-mono text-label-mono">
+<a class="text-tertiary font-bold hover:text-tertiary-fixed transition-opacity opacity-80 hover:opacity-100" href="#">Sacred Geometry</a>
+<a class="text-on-surface-variant hover:text-tertiary-fixed transition-opacity opacity-80 hover:opacity-100" href="#">Terms of Transmutation</a>
+<a class="text-on-surface-variant hover:text-tertiary-fixed transition-opacity opacity-80 hover:opacity-100" href="#">Void Support</a>
+</nav>
+</footer>
+
+
+</body></html>

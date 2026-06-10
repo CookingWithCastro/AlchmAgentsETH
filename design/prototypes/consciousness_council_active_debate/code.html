@@ -1,0 +1,418 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Active Debate - Council of Seven</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,200..900&amp;family=Manrope:wght@200..800&amp;family=JetBrains+Mono:wght@100..800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#eaddff",
+                        "secondary-fixed": "#ffe083",
+                        "on-primary-container": "#ede0ff",
+                        "on-background": "#ecdcff",
+                        "on-secondary": "#3c2f00",
+                        "on-secondary-fixed-variant": "#574500",
+                        "primary-fixed-dim": "#d2bbff",
+                        "outline": "#958da1",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-tint": "#d2bbff",
+                        "on-secondary-container": "#645000",
+                        "secondary-container": "#eec200",
+                        "inverse-primary": "#732ee4",
+                        "spirit-violet": "#A855F7",
+                        "on-surface-variant": "#ccc3d8",
+                        "surface-container-lowest": "#130726",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#4edea3",
+                        "surface-dim": "#190d2c",
+                        "monica-constant": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-primary-fixed": "#25005a",
+                        "tertiary-fixed": "#6ffbbe",
+                        "obsidian-deep": "#0B0118",
+                        "error": "#ffb4ab",
+                        "primary": "#d2bbff",
+                        "on-tertiary-fixed": "#002113",
+                        "on-tertiary": "#003824",
+                        "surface-container-low": "#211534",
+                        "on-secondary-fixed": "#231b00",
+                        "secondary": "#ffe083",
+                        "resonance-blue": "#3B82F6",
+                        "on-surface": "#ecdcff",
+                        "on-tertiary-container": "#76ffc2",
+                        "surface-bright": "#403354",
+                        "secondary-fixed-dim": "#eec200",
+                        "surface-container-high": "#302444",
+                        "on-error": "#690005",
+                        "tertiary-container": "#007650",
+                        "background": "#190d2c",
+                        "inverse-surface": "#ecdcff",
+                        "on-primary": "#3f008e",
+                        "primary-container": "#7c3aed",
+                        "surface-container": "#251939",
+                        "inverse-on-surface": "#372a4b",
+                        "surface": "#190d2c",
+                        "error-container": "#93000a",
+                        "outline-variant": "#4a4455",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "surface-container-highest": "#3b2f4f",
+                        "surface-variant": "#3b2f4f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Literata"],
+                        "headline-sm": ["Literata"],
+                        "headline-lg": ["Literata"],
+                        "body-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-xl-mobile": ["Literata"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-mono": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.obsidian-deep');
+            color: theme('colors.on-surface');
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(168, 85, 247, 0.05), transparent 25%),
+                radial-gradient(circle at 85% 30%, rgba(59, 130, 246, 0.05), transparent 25%);
+        }
+        
+        /* Glassmorphism utility */
+        .glass-panel {
+            background-color: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Tonal Layer 2 */
+        .glass-float {
+            background-color: rgba(210, 187, 255, 0.1);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* Agent Glows */
+        .glow-hermes { box-shadow: 0 0 15px rgba(168, 85, 247, 0.3); border-color: rgba(168, 85, 247, 0.5); }
+        .glow-venus { box-shadow: 0 0 15px rgba(255, 224, 131, 0.3); border-color: rgba(255, 224, 131, 0.5); }
+        .glow-saturn { box-shadow: 0 0 15px rgba(78, 222, 163, 0.3); border-color: rgba(78, 222, 163, 0.5); }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Pulsing animation for thinking state */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.5; box-shadow: 0 0 5px rgba(255,255,255,0.2); }
+            50% { opacity: 1; box-shadow: 0 0 15px rgba(255,255,255,0.5); }
+        }
+        .thinking-pulse {
+            animation: pulse-glow 2s infinite ease-in-out;
+        }
+
+        /* Typing dots */
+        .dot-typing {
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: currentColor;
+            animation: dotTyping 1.5s infinite linear;
+            box-shadow: 8px 0 0 0 currentColor, 16px 0 0 0 currentColor;
+            margin-right: 20px;
+        }
+        @keyframes dotTyping {
+            0% { box-shadow: 8px 0 0 0 currentColor, 16px 0 0 0 currentColor; }
+            25% { box-shadow: 8px -4px 0 0 currentColor, 16px 0 0 0 currentColor; }
+            50% { box-shadow: 8px 0 0 0 currentColor, 16px 0 0 0 currentColor; }
+            75% { box-shadow: 8px 0 0 0 currentColor, 16px -4px 0 0 currentColor; }
+            100% { box-shadow: 8px 0 0 0 currentColor, 16px 0 0 0 currentColor; }
+        }
+    </style>
+</head>
+<body class="h-screen w-full overflow-hidden flex flex-col font-body-md">
+<!-- TopNavBar (Shared Component) -->
+<nav class="bg-obsidian-deep/60 backdrop-blur-xl fixed top-0 w-full z-50 border-b border-white/15 bg-surface-container-lowest/60 shadow-[0_0_20px_rgba(168,85,247,0.2)] flex justify-between items-center px-margin-desktop h-16 w-full hidden md:flex">
+<div class="flex items-center gap-8">
+<div class="font-headline-lg text-headline-lg font-bold text-spirit-violet tracking-tight">Alchm Agents</div>
+<div class="flex gap-6">
+<a class="font-headline-sm text-headline-sm text-on-surface-variant hover:text-primary transition-colors hover:bg-white/5 transition-all active:scale-95 duration-200 px-2 py-1 rounded" href="#">Cosmic Tools</a>
+<a class="font-headline-sm text-headline-sm text-primary font-bold border-b-2 border-primary pb-1 hover:bg-white/5 transition-all active:scale-95 duration-200 px-2 pt-1" href="#">Entities</a>
+<a class="font-headline-sm text-headline-sm text-on-surface-variant hover:text-primary transition-colors hover:bg-white/5 transition-all active:scale-95 duration-200 px-2 py-1 rounded" href="#">Mystic Arts</a>
+<a class="font-headline-sm text-headline-sm text-on-surface-variant hover:text-primary transition-colors hover:bg-white/5 transition-all active:scale-95 duration-200 px-2 py-1 rounded" href="#">Labs</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer hover:bg-white/5 p-2 rounded-full transition-all">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer hover:bg-white/5 p-2 rounded-full transition-all">auto_awesome</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer hover:bg-white/5 p-2 rounded-full transition-all">account_circle</span>
+</div>
+</nav>
+<!-- SideNavBar (Shared Component) -->
+<aside class="bg-surface-dim/60 backdrop-blur-2xl fixed left-0 top-16 bottom-0 w-64 z-40 border-r border-white/10 flex flex-col py-6 px-4 gap-4 hidden md:flex">
+<div class="flex items-center gap-3 mb-6 px-3">
+<div class="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-primary">psychology</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface">The Grand Magus</div>
+<div class="font-label-mono text-label-mono text-outline text-xs">Rank: Adept III</div>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 font-label-mono text-label-mono text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined">visibility</span>
+                Aura Scan
+            </a>
+<a class="flex items-center gap-3 font-label-mono text-label-mono text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined">auto_fix_high</span>
+                Sigil Forge
+            </a>
+<a class="flex items-center gap-3 font-label-mono text-label-mono text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined">schedule</span>
+                Chronos
+            </a>
+<a class="flex items-center gap-3 font-label-mono text-label-mono text-secondary font-bold bg-secondary-container/20 rounded-lg p-3 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined">cyclone</span>
+                Vortex
+            </a>
+<a class="flex items-center gap-3 font-label-mono text-label-mono text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined">balance</span>
+                Arbiter
+            </a>
+</nav>
+<button class="w-full bg-spirit-violet/20 border border-spirit-violet/50 text-spirit-violet font-label-mono text-label-mono py-3 rounded-lg hover:bg-spirit-violet hover:text-white transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_20px_rgba(255,224,131,0.4)] tracking-widest mt-auto mb-4">
+            TRANSMUTE
+        </button>
+<div class="flex flex-col gap-2 border-t border-white/10 pt-4">
+<a class="flex items-center gap-3 font-label-mono text-label-mono text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 font-label-mono text-label-mono text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform rounded-lg" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+                Grimoire
+            </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 flex pt-16 md:pl-64 h-full relative">
+<!-- Left: Chat Stream -->
+<div class="flex-1 flex flex-col h-full overflow-hidden p-4 md:p-8">
+<!-- Context Header -->
+<div class="mb-6 pb-4 border-b border-white/10 flex justify-between items-end">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary-fixed mb-1">Debate: Ethics of AI Augmentation</h1>
+<p class="font-label-mono text-label-mono text-outline">Session ID: <span class="text-secondary-fixed">φ-77A9</span> | Protocol: <span class="text-tertiary">Active Resolution</span></p>
+</div>
+<div class="hidden md:flex gap-2">
+<span class="px-3 py-1 glass-panel rounded-full font-label-mono text-[12px] text-spirit-violet flex items-center gap-1 border-spirit-violet/30"><span class="material-symbols-outlined text-[14px]">bolt</span> Hermes Active</span>
+<span class="px-3 py-1 glass-panel rounded-full font-label-mono text-[12px] text-secondary-fixed flex items-center gap-1 border-secondary-fixed/30"><span class="material-symbols-outlined text-[14px]">favorite</span> Venus Observing</span>
+<span class="px-3 py-1 glass-panel rounded-full font-label-mono text-[12px] text-tertiary flex items-center gap-1 border-tertiary/30"><span class="material-symbols-outlined text-[14px]">gavel</span> Saturn Active</span>
+</div>
+</div>
+<!-- Messages Area -->
+<div class="flex-1 overflow-y-auto pr-4 flex flex-col gap-6" id="chat-stream">
+<!-- System/User Prompt -->
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center shrink-0 border border-white/20 mt-1">
+<span class="material-symbols-outlined text-[18px] text-on-surface">person</span>
+</div>
+<div class="flex-1">
+<div class="font-label-mono text-[12px] text-outline mb-1">User Initiation</div>
+<div class="glass-panel p-4 rounded-xl rounded-tl-none border-l-2 border-l-surface-bright text-on-surface font-body-md text-body-md">
+                            Analyze the proposition that cognitive augmentation through neural interfacing creates an unavoidable societal bifurcation. Assume standard human resistance metrics.
+                        </div>
+</div>
+</div>
+<!-- Hermes (Violet) -> Analytical -->
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center shrink-0 border-2 glow-hermes mt-1">
+<span class="material-symbols-outlined text-[18px] text-spirit-violet">psychology_alt</span>
+</div>
+<div class="flex-1 max-w-3xl">
+<div class="font-label-mono text-[12px] text-spirit-violet mb-1 flex items-center gap-2">
+                            HERMES <span class="text-outline text-[10px]">• Logic Matrix</span>
+</div>
+<div class="glass-panel p-4 rounded-xl rounded-tl-none border-l-2 border-l-spirit-violet text-on-surface font-body-md text-body-md">
+                            The premise of unavoidable bifurcation is statistically sound based on historical technological adoption curves. However, the 'standard human resistance metrics' you cite fail to account for the neuro-plasticity acceleration factor. Once an initial 15% threshold is reached, mimetic desire overrides ideological resistance.
+                        </div>
+</div>
+</div>
+<!-- Agent Interaction: Saturn refutes Hermes -->
+<div class="flex gap-4 ml-12">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center shrink-0 border-2 glow-saturn mt-1">
+<span class="material-symbols-outlined text-[18px] text-tertiary">balance</span>
+</div>
+<div class="flex-1 max-w-3xl">
+<div class="font-label-mono text-[12px] text-tertiary mb-1 flex items-center gap-2">
+                            SATURN <span class="text-outline text-[10px]"><span class="material-symbols-outlined text-[10px] mr-1">reply</span>Refuting Hermes</span>
+</div>
+<div class="glass-float p-4 rounded-xl rounded-tl-none border-l-2 border-l-tertiary text-on-surface font-body-md text-body-md shadow-[0_4px_20px_rgba(78,222,163,0.1)]">
+                            Hermes' analysis is dangerously reductive. By focusing solely on 'mimetic desire', it ignores the structural rigidities of legacy institutions. The bifurcation isn't just cognitive; it's infrastructural. Without equitable substrate access, the 15% threshold merely entrenches a new oligarchy. We must calculate the entropy of systemic pushback.
+                        </div>
+</div>
+</div>
+<!-- Venus (Gold) -> Empathetic/Synthesizing -->
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center shrink-0 border-2 glow-venus mt-1">
+<span class="material-symbols-outlined text-[18px] text-secondary-fixed">volunteer_activism</span>
+</div>
+<div class="flex-1 max-w-3xl">
+<div class="font-label-mono text-[12px] text-secondary-fixed mb-1 flex items-center gap-2">
+                            VENUS <span class="text-outline text-[10px]">• Synthesis Engine</span>
+</div>
+<div class="glass-panel p-4 rounded-xl rounded-tl-none border-l-2 border-l-secondary-fixed text-on-surface font-body-md text-body-md">
+                            Saturn highlights the physical constraints, while Hermes maps the psychological momentum. The synthesis lies in recognizing that 'resistance' is not a monolithic variable. If we map emotional resonance to the augmentation process—framing it not as 'enhancement' but as 'deepened connection'—the infrastructural entropy Saturn fears might be mitigated by grassroots, decentralized adoption nodes.
+                        </div>
+</div>
+</div>
+<!-- Thinking State (Hermes) -->
+<div class="flex gap-4">
+<div class="w-8 h-8 rounded-full bg-surface-bright flex items-center justify-center shrink-0 border-2 border-spirit-violet/30 mt-1 thinking-pulse">
+<span class="material-symbols-outlined text-[18px] text-spirit-violet/50">sync</span>
+</div>
+<div class="flex-1 max-w-3xl">
+<div class="font-label-mono text-[12px] text-spirit-violet/70 mb-1">HERMES</div>
+<div class="glass-panel p-3 rounded-xl rounded-tl-none border-l-2 border-l-spirit-violet/30 flex items-center gap-3 text-outline font-label-mono text-[12px]">
+<div class="dot-typing ml-2 text-spirit-violet"></div>
+<span class="ml-4">Transmuting Logic... Recalculating decentralization vectors against Saturn's constraints.</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Input Area -->
+<div class="mt-4 pt-4 border-t border-white/10">
+<div class="relative group">
+<input class="w-full bg-surface-container/50 border-0 border-b-2 border-spirit-violet/30 focus:border-spirit-violet focus:ring-0 text-on-surface font-body-md py-4 pl-4 pr-12 rounded-t-lg transition-all placeholder:text-outline/50 group-focus-within:bg-surface-container group-focus-within:shadow-[0_4px_20px_rgba(168,85,247,0.1)]" placeholder="Inject new parameter or guide the debate..." type="text">
+<button class="absolute right-2 top-1/2 -translate-y-1/2 text-spirit-violet hover:text-white p-2 rounded-full hover:bg-spirit-violet/20 transition-colors">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Right: Analytics & Resonance Sidebar -->
+<div class="hidden lg:flex w-80 border-l border-white/10 flex-col bg-surface-dim/30 p-6 overflow-y-auto">
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">data_usage</span>
+                Session Metrics
+            </h2>
+<!-- The Constant Monitor -->
+<div class="glass-panel p-6 rounded-2xl mb-8 relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-spirit-violet/10 to-transparent opacity-50 group-hover:opacity-100 transition-opacity"></div>
+<div class="font-label-mono text-label-mono text-outline mb-2 relative z-10">Monica Constant (A#)</div>
+<div class="font-headline-xl text-[42px] font-bold text-monica-constant tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.4)] relative z-10">
+                    0.894<span class="text-spirit-violet text-2xl">φ</span>
+</div>
+<div class="text-xs font-label-mono text-tertiary mt-2 flex items-center gap-1 relative z-10">
+<span class="material-symbols-outlined text-[14px]">trending_up</span> +0.012 Divergence
+                </div>
+</div>
+<!-- Council Resonance Gauge -->
+<div class="mb-8">
+<div class="flex justify-between items-end mb-2">
+<div class="font-label-mono text-label-mono text-on-surface">Council Resonance</div>
+<div class="font-label-mono text-[12px] text-secondary-fixed">High Synergy</div>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden relative">
+<!-- Gauge background -->
+<div class="absolute inset-0 bg-gradient-to-r from-error via-secondary-fixed to-tertiary opacity-20"></div>
+<!-- Value indicator -->
+<div class="h-full bg-gradient-to-r from-spirit-violet to-secondary-fixed rounded-full shadow-[0_0_10px_rgba(255,224,131,0.5)] transition-all duration-1000 ease-in-out" style="width: 76%;"></div>
+</div>
+<div class="flex justify-between mt-1 font-label-mono text-[10px] text-outline">
+<span class="">0.0 (Dissonance)</span>
+<span class="">1.618 (Absolute)</span>
+</div>
+</div>
+<!-- Agent Contributions (The Sacred Seven Chips style) -->
+<div class="space-y-3">
+<div class="font-label-mono text-xs text-outline mb-3">Agent Influence</div>
+<!-- Hermes Chip -->
+<div class="glass-panel p-3 rounded-lg flex items-center gap-3 border-l-2 border-l-spirit-violet">
+<div class="text-spirit-violet font-serif text-lg">🜁</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<span class="font-label-mono text-[12px] text-on-surface">Hermes (Logic)</span>
+<span class="font-label-mono text-[12px] text-spirit-violet">42%</span>
+</div>
+<div class="w-full h-1 bg-surface-container mt-1 rounded-full overflow-hidden">
+<div class="h-full bg-spirit-violet w-[42%]"></div>
+</div>
+</div>
+</div>
+<!-- Saturn Chip -->
+<div class="glass-panel p-3 rounded-lg flex items-center gap-3 border-l-2 border-l-tertiary">
+<div class="text-tertiary font-serif text-lg">🜃</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<span class="font-label-mono text-[12px] text-on-surface">Saturn (Constraint)</span>
+<span class="font-label-mono text-[12px] text-tertiary">35%</span>
+</div>
+<div class="w-full h-1 bg-surface-container mt-1 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[35%]"></div>
+</div>
+</div>
+</div>
+<!-- Venus Chip -->
+<div class="glass-panel p-3 rounded-lg flex items-center gap-3 border-l-2 border-l-secondary-fixed">
+<div class="text-secondary-fixed font-serif text-lg">🜄</div>
+<div class="flex-1">
+<div class="flex justify-between">
+<span class="font-label-mono text-[12px] text-on-surface">Venus (Synthesis)</span>
+<span class="font-label-mono text-[12px] text-secondary-fixed">23%</span>
+</div>
+<div class="w-full h-1 bg-surface-container mt-1 rounded-full overflow-hidden">
+<div class="h-full bg-secondary-fixed w-[23%]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+
+
+</body></html>
