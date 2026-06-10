@@ -38,6 +38,8 @@ export type BridgeUser = {
   email: string
   name: string | null
   image: string | null
+  role: string | null
+  tier: string | null
   /**
    * Whether alchm.kitchen considers this user premium (its session reports
    * tier==='premium' or an admin role). Unifies the premium role: a kitchen
@@ -118,6 +120,8 @@ export const resolveBridgeUser = perRequestCache(
         email,
         name: kitchenUser.name ?? null,
         image: kitchenUser.image ?? null,
+        role: kitchenUser.role ?? null,
+        tier: kitchenUser.tier ?? null,
         kitchenPremium,
       }
     } catch (err) {

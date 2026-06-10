@@ -44,7 +44,7 @@ interface SiteAccount {
 interface DesktopSessionResponse {
   mode: 'authenticated' | 'local-dev'
   userId: string
-  apiKey: string
+  apiKey: string | null
   balances: Balances
   accounts: SiteAccount[]
 }
@@ -134,12 +134,9 @@ export default function YieldHub({ user }: { user: YieldUser | null }) {
       setClaimStatuses(prev => prev.filter(status => status.site !== site))
 
       try {
-        const res = await fetch('/api/desktop/claim-yield', {
+        const res = await fetch('/api/profile/wallet', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.apiKey}`,
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ site }),
         })
         const data = await res.json().catch(() => ({}))
@@ -161,7 +158,7 @@ export default function YieldHub({ user }: { user: YieldUser | null }) {
             {
               site,
               kind: 'success',
-              message: `+${(data.distribution?.spirit || 0).toFixed(2)} of each token landed.`,
+              message: `+${Number(data.distribution?.spirit || 0).toFixed(2)} of each token landed.`,
             },
           ])
         }

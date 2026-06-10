@@ -34,6 +34,13 @@ export const ESMS_ABI = [
     ],
     outputs: [{ type: 'uint256[]' }],
   },
+  {
+    type: 'function',
+    name: 'claimed',
+    stateMutability: 'view',
+    inputs: [{ name: 'claimId', type: 'bytes32' }],
+    outputs: [{ type: 'bool' }],
+  },
 ] as const
 
 export function esmsChain() {
@@ -71,4 +78,13 @@ export async function readEsmsBalances(address: Address): Promise<OnchainEsms> {
     args: [accounts, [...ESMS_IDS]],
   })) as readonly bigint[]
   return { spirit: res[0], essence: res[1], matter: res[2], substance: res[3] }
+}
+
+export async function readEsmsClaimed(claimId: `0x${string}`): Promise<boolean> {
+  return esmsPublicClient().readContract({
+    address: esmsContractAddress(),
+    abi: ESMS_ABI,
+    functionName: 'claimed',
+    args: [claimId],
+  })
 }

@@ -5912,7 +5912,9 @@ function bindEvents() {
     if (action === 'claim-yield' && isSiteKey(site)) void claimDailyYield(site)
     if (action === 'refresh-accounts') void refreshAccounts()
     if (action === 'link-account-web') {
-      void openExternalUrl(`${state.account.agentsUrl.replace(/\/$/, '')}/yield?link=true`)
+      void openExternalUrl(
+        `${state.account.agentsUrl.replace(/\/$/, '')}/auth/signin?callbackUrl=%2Fprofile%3FdesktopLink%3Dtrue`
+      )
     }
     if (action === 'refresh-astrology') void refreshAstrologyConsensus()
     if (action === 'refresh-physics') void refreshAlchmPhysics()

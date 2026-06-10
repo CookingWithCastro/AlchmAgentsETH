@@ -1,4 +1,3 @@
-import { getServerSession } from 'next-auth'
 import { auth } from '@/lib/auth'
 import { getPaTier } from '@/lib/premium/entitlements'
 
@@ -7,7 +6,7 @@ import { getPaTier } from '@/lib/premium/entitlements'
  * For testing purposes, all authenticated users have full access
  */
 export async function hasFeatureAccess(feature: string): Promise<boolean> {
-  const session = await getServerSession()
+  const session = await auth()
 
   // All authenticated users have full access during testing
   if (session?.user) {
@@ -35,7 +34,7 @@ export async function getUserTier(): Promise<'master' | 'alchemist' | 'free'> {
  * Check if user is authenticated
  */
 export async function isAuthenticated(): Promise<boolean> {
-  const session = await getServerSession()
+  const session = await auth()
   return !!session?.user
 }
 

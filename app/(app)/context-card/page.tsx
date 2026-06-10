@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { getPrimaryNatalChart } from '@/lib/services/natal-chart-storage'
 import { ContextCardStudio } from '@/components/context-card/context-card-studio'
 import { DEMO_CARD_DATA } from '@/lib/context-card/demo-data'
@@ -27,8 +26,8 @@ export default async function ContextCardPage() {
   let loc: { lat?: number; lon?: number; name?: string } | null = null
 
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as { id?: string } | undefined)?.id
+    const session = await auth()
+    const userId = session?.user.id
     if (userId) {
       const chart = await getPrimaryNatalChart(userId)
       if (chart) {
