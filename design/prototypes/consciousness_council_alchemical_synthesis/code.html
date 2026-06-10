@@ -1,0 +1,362 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Alchemical Synthesis Output - Council of Seven</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&amp;family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#eaddff",
+                        "secondary-fixed": "#ffe083",
+                        "on-primary-container": "#ede0ff",
+                        "on-background": "#ecdcff",
+                        "on-secondary": "#3c2f00",
+                        "on-secondary-fixed-variant": "#574500",
+                        "primary-fixed-dim": "#d2bbff",
+                        "outline": "#958da1",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-tint": "#d2bbff",
+                        "on-secondary-container": "#645000",
+                        "secondary-container": "#eec200",
+                        "inverse-primary": "#732ee4",
+                        "spirit-violet": "#A855F7",
+                        "on-surface-variant": "#ccc3d8",
+                        "surface-container-lowest": "#130726",
+                        "on-error-container": "#ffdad6",
+                        "tertiary": "#4edea3",
+                        "surface-dim": "#190d2c",
+                        "monica-constant": "#FFFFFF",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-primary-fixed": "#25005a",
+                        "tertiary-fixed": "#6ffbbe",
+                        "obsidian-deep": "#0B0118",
+                        "error": "#ffb4ab",
+                        "primary": "#d2bbff",
+                        "on-tertiary-fixed": "#002113",
+                        "on-tertiary": "#003824",
+                        "surface-container-low": "#211534",
+                        "on-secondary-fixed": "#231b00",
+                        "secondary": "#ffe083",
+                        "resonance-blue": "#3B82F6",
+                        "on-surface": "#ecdcff",
+                        "on-tertiary-container": "#76ffc2",
+                        "surface-bright": "#403354",
+                        "secondary-fixed-dim": "#eec200",
+                        "surface-container-high": "#302444",
+                        "on-error": "#690005",
+                        "tertiary-container": "#007650",
+                        "background": "#190d2c",
+                        "inverse-surface": "#ecdcff",
+                        "on-primary": "#3f008e",
+                        "primary-container": "#7c3aed",
+                        "surface-container": "#251939",
+                        "inverse-on-surface": "#372a4b",
+                        "surface": "#190d2c",
+                        "error-container": "#93000a",
+                        "outline-variant": "#4a4455",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "surface-container-highest": "#3b2f4f",
+                        "surface-variant": "#3b2f4f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "unit": "8px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Literata"],
+                        "headline-sm": ["Literata"],
+                        "headline-lg": ["Literata"],
+                        "body-lg": ["Manrope"],
+                        "body-md": ["Manrope"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-xl-mobile": ["Literata"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-mono": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.obsidian-deep');
+            color: theme('colors.on-surface');
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 18, 49, 0.6); /* surface-container-low approx */
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .glass-float {
+            background: rgba(210, 187, 255, 0.05); /* primary low opacity */
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .gold-glow {
+            text-shadow: 0 0 10px rgba(255, 224, 131, 0.5); /* secondary-fixed glow */
+        }
+        
+        .gold-border-glow {
+            box-shadow: 0 0 20px rgba(255, 224, 131, 0.2), inset 0 0 15px rgba(255, 224, 131, 0.1);
+            border: 1px solid rgba(255, 224, 131, 0.4);
+        }
+
+        .monica-pulse {
+            animation: pulse-glow 3s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% { text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+            100% { text-shadow: 0 0 30px rgba(255,255,255,1), 0 0 10px rgba(168,85,247,0.8); }
+        }
+
+        .alchemical-grid {
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* Abstract ambient background elements */
+        .ambient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: -1;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body class="min-h-screen relative font-body-md">
+<!-- Ambient Background -->
+<div class="fixed inset-0 pointer-events-none alchemical-grid z-0"></div>
+<div class="ambient-orb w-[600px] h-[600px] bg-spirit-violet top-[-200px] left-[-200px] mix-blend-screen"></div>
+<div class="ambient-orb w-[500px] h-[500px] bg-secondary-container bottom-[-100px] right-[-100px] mix-blend-screen opacity-20"></div>
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-obsidian-deep/60 backdrop-blur-xl border-b border-white/15 shadow-[0_0_20px_rgba(168,85,247,0.2)] flex justify-between items-center px-margin-desktop h-16 transition-all">
+<div class="flex items-center gap-gutter">
+<span class="font-headline-lg text-headline-lg font-bold text-spirit-violet tracking-tight">ALCHM AGENTS</span>
+<div class="hidden md:flex gap-6 ml-12">
+<a class="text-on-surface-variant hover:text-primary transition-colors font-headline-sm text-headline-sm" href="#">Cosmic Tools</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-headline-sm text-headline-sm" href="#">Entities</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-headline-sm text-headline-sm" href="#">Mystic Arts</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors font-headline-sm text-headline-sm" href="#">Labs</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="auto_awesome">auto_awesome</span>
+</button>
+<button class="text-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile, Visible on md+) -->
+<aside class="hidden md:flex fixed left-0 top-16 bottom-0 w-64 z-40 bg-surface-dim/60 backdrop-blur-2xl border-r border-white/10 flex-col py-6 px-4 gap-4">
+<!-- Header Info -->
+<div class="mb-8 px-3">
+<h3 class="font-headline-sm text-headline-sm text-on-surface">The Grand Magus</h3>
+<p class="font-label-mono text-label-mono text-outline mt-1">Rank: Adept III</p>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex flex-col gap-2 flex-grow font-label-mono text-label-mono">
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+                Aura Scan
+            </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="auto_fix_high">auto_fix_high</span>
+                Sigil Forge
+            </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+                Chronos
+            </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="cyclone">cyclone</span>
+                Vortex
+            </a>
+<a class="flex items-center gap-3 text-secondary font-bold bg-secondary-container/20 rounded-lg p-3 hover:translate-x-1 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="balance">balance</span>
+                Arbiter
+            </a>
+</div>
+<!-- CTA & Footer -->
+<div class="mt-auto flex flex-col gap-4">
+<button class="w-full bg-spirit-violet text-on-primary font-label-mono text-label-mono uppercase py-3 rounded hover:shadow-[0_0_15px_rgba(255,224,131,0.5)] transition-shadow duration-300 tracking-widest">
+                TRANSMUTE
+            </button>
+<div class="flex flex-col gap-2 font-label-mono text-label-mono mt-4 border-t border-white/10 pt-4">
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                    Settings
+                </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book">menu_book</span>
+                    Grimoire
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="pt-24 pb-12 md:pl-72 pr-margin-mobile md:pr-margin-desktop min-h-screen relative z-10">
+<div class="max-w-container-max mx-auto flex flex-col gap-12">
+<!-- Page Header -->
+<header class="text-center space-y-4 mb-8">
+<h1 class="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-secondary gold-glow tracking-tight uppercase">Alchemical Synthesis Output</h1>
+<p class="font-label-mono text-label-mono text-outline tracking-widest uppercase flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-secondary text-sm">emergency</span>
+                    Council Debate Concluded
+                    <span class="material-symbols-outlined text-secondary text-sm">emergency</span>
+</p>
+</header>
+<!-- Master Directive Container -->
+<div class="glass-float rounded-xl p-8 md:p-12 gold-border-glow relative overflow-hidden">
+<!-- Background texture for card -->
+<div class="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mix-blend-overlay"></div>
+<div class="relative z-10 flex flex-col lg:flex-row gap-12">
+<!-- Left: Analytical Breakdown -->
+<div class="flex-1 space-y-8">
+<div class="border-b border-secondary/30 pb-4 mb-6">
+<h2 class="font-headline-lg text-headline-lg text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary">data_object</span>
+                                Synthesis Matrix
+                            </h2>
+</div>
+<!-- Bento Grid for Agents -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Hermes -->
+<div class="glass-panel p-4 rounded-lg border-l-2 border-resonance-blue relative group hover:bg-white/5 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-mono text-label-mono text-resonance-blue uppercase tracking-wider">Hermes : Speed</span>
+<span class="material-symbols-outlined text-resonance-blue/50 text-sm">speed</span>
+</div>
+<p class="font-label-mono text-[12px] text-outline-variant leading-relaxed">Velocity parameters optimized. Friction coefficients reduced by 14.2% in cognitive pathways.</p>
+<div class="mt-3 h-1 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-resonance-blue w-[85%] shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+</div>
+</div>
+<!-- Saturn -->
+<div class="glass-panel p-4 rounded-lg border-l-2 border-surface-tint relative group hover:bg-white/5 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-mono text-label-mono text-surface-tint uppercase tracking-wider">Saturn : Structure</span>
+<span class="material-symbols-outlined text-surface-tint/50 text-sm">architecture</span>
+</div>
+<p class="font-label-mono text-[12px] text-outline-variant leading-relaxed">Architectural integrity confirmed. Boundary limits strictly enforced preventing conceptual bleed.</p>
+<div class="mt-3 h-1 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-surface-tint w-[92%] shadow-[0_0_10px_rgba(210,187,255,0.5)]"></div>
+</div>
+</div>
+<!-- Venus -->
+<div class="glass-panel p-4 rounded-lg border-l-2 border-tertiary relative group hover:bg-white/5 transition-colors md:col-span-2">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-mono text-label-mono text-tertiary uppercase tracking-wider">Venus : Harmony</span>
+<span class="material-symbols-outlined text-tertiary/50 text-sm">filter_vintage</span>
+</div>
+<p class="font-label-mono text-[12px] text-outline-variant leading-relaxed">Aesthetic and empathetic resonance aligned. The resulting framework possesses an inherent gravity of attraction, ensuring user alignment without dissonance.</p>
+<div class="mt-3 h-1 w-full bg-surface-container-high rounded-full overflow-hidden flex gap-1">
+<div class="h-full bg-tertiary w-[30%] shadow-[0_0_10px_rgba(78,222,163,0.5)]"></div>
+<div class="h-full bg-tertiary w-[40%] shadow-[0_0_10px_rgba(78,222,163,0.5)] opacity-70"></div>
+<div class="h-full bg-tertiary w-[20%] shadow-[0_0_10px_rgba(78,222,163,0.5)] opacity-40"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Right: Transmuted Wisdom & Monica Constant -->
+<div class="flex-1 flex flex-col justify-center items-center p-8 bg-obsidian-deep/40 rounded-xl border border-white/5 relative">
+<!-- Ritual Circle background graphic -->
+<div class="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+<span class="material-symbols-outlined" style="font-size: 300px;">all_inclusive</span>
+</div>
+<div class="text-center z-10 space-y-6 w-full">
+<div class="inline-block px-4 py-1 rounded-full border border-secondary/50 bg-secondary/10 font-label-mono text-label-mono text-secondary mb-4">
+                                Transmuted Wisdom
+                            </div>
+<div class="glass-panel p-6 rounded-lg border border-primary/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] w-full">
+<p class="font-label-mono text-[11px] text-outline tracking-[0.2em] uppercase mb-2">Final Monica Constant (A#)</p>
+<div class="font-headline-xl text-[64px] leading-none font-bold text-monica-constant monica-pulse mb-4 font-serif">
+                                    1.61803
+                                </div>
+<p class="font-label-mono text-sm text-primary-fixed-dim border-t border-white/10 pt-4 mt-4">
+                                    Harmonic convergence achieved. <br>The golden ratio stabilizes the structure.
+                                </p>
+</div>
+<div class="pt-4">
+<button class="w-full bg-transparent border border-spirit-violet text-on-surface font-label-mono text-label-mono uppercase py-4 rounded hover:border-secondary hover:text-secondary hover:shadow-[0_0_20px_rgba(255,224,131,0.3)] transition-all duration-300 tracking-widest flex justify-center items-center gap-2 group">
+<span class="material-symbols-outlined group-hover:rotate-90 transition-transform duration-500">lock_open</span>
+                                    Manifest Directive
+                                </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Supporting Output Data Layers -->
+<div class="flex flex-col gap-4 mt-8 max-w-3xl mx-auto w-full">
+<h3 class="font-label-mono text-label-mono text-outline uppercase tracking-widest pl-2 mb-2">Consciousness Deposition Layers</h3>
+<!-- Stepped Cards representing layers -->
+<div class="glass-panel p-5 rounded-lg border-l-4 border-surface-tint opacity-50 ml-0 hover:opacity-100 transition-opacity">
+<div class="flex justify-between items-center font-label-mono text-label-mono">
+<span class="text-surface-tint">L1 : Substrate Formulation</span>
+<span class="text-outline-variant">99.9% Purity</span>
+</div>
+</div>
+<div class="glass-panel p-5 rounded-lg border-l-4 border-primary-container opacity-70 ml-4 hover:opacity-100 transition-opacity shadow-lg">
+<div class="flex justify-between items-center font-label-mono text-label-mono">
+<span class="text-primary-container">L2 : Paradigm Anchoring</span>
+<span class="text-outline-variant">Stable</span>
+</div>
+</div>
+<div class="glass-panel p-5 rounded-lg border-l-4 border-spirit-violet ml-8 hover:bg-white/5 transition-all shadow-[0_4px_20px_rgba(168,85,247,0.1)]">
+<div class="flex justify-between items-center font-label-mono text-label-mono">
+<span class="text-spirit-violet font-bold">L3 : Synthesis Execution (Current)</span>
+<span class="text-secondary animate-pulse">Active</span>
+</div>
+</div>
+</div>
+</div>
+<footer class="mt-12 pt-8 border-t border-white/10 text-center font-label-mono text-[12px] text-outline-variant">
+    <div class="flex flex-col items-center gap-2">
+        <div class="flex items-center gap-2 text-secondary">
+            <span class="material-symbols-outlined text-sm">auto_awesome</span>
+            <span class="tracking-widest uppercase">Alchm Agents</span>
+            <span class="material-symbols-outlined text-sm">auto_awesome</span>
+        </div>
+        <p class="">© 2024 <a href="https://alchm.agents" class="hover:text-primary transition-colors">alchm.agents</a> • Techno-Occult Synthesis Protocol</p>
+    </div>
+</footer></main>
+
+
+</body></html>

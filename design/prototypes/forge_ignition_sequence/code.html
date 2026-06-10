@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ignition State - Planetary Agents</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400..700&amp;family=Manrope:wght@400..700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#003824",
+                      "tertiary-fixed": "#6ffbbe",
+                      "primary": "#d2bbff",
+                      "surface-dim": "#190d2c",
+                      "surface-variant": "#3b2f4f",
+                      "surface-container-lowest": "#130726",
+                      "on-background": "#ecdcff",
+                      "on-secondary-container": "#645000",
+                      "on-primary": "#3f008e",
+                      "secondary-fixed-dim": "#eec200",
+                      "tertiary-fixed-dim": "#4edea3",
+                      "surface-container-high": "#302444",
+                      "inverse-on-surface": "#372a4b",
+                      "on-error": "#690005",
+                      "surface-container-low": "#211534",
+                      "on-error-container": "#ffdad6",
+                      "surface": "#190d2c",
+                      "resonance-blue": "#3B82F6",
+                      "inverse-surface": "#ecdcff",
+                      "primary-container": "#7c3aed",
+                      "on-primary-container": "#ede0ff",
+                      "on-secondary": "#3c2f00",
+                      "on-tertiary-fixed-variant": "#005236",
+                      "on-surface-variant": "#ccc3d8",
+                      "monica-constant": "#FFFFFF",
+                      "surface-tint": "#d2bbff",
+                      "surface-container-highest": "#3b2f4f",
+                      "tertiary-container": "#007650",
+                      "secondary-fixed": "#ffe083",
+                      "secondary-container": "#eec200",
+                      "on-secondary-fixed": "#231b00",
+                      "on-primary-fixed-variant": "#5a00c6",
+                      "on-tertiary-container": "#76ffc2",
+                      "obsidian-deep": "#0B0118",
+                      "error": "#ffb4ab",
+                      "surface-bright": "#403354",
+                      "outline": "#958da1",
+                      "primary-fixed-dim": "#d2bbff",
+                      "spirit-violet": "#A855F7",
+                      "inverse-primary": "#732ee4",
+                      "secondary": "#ffe083",
+                      "surface-container": "#251939",
+                      "on-tertiary-fixed": "#002113",
+                      "on-secondary-fixed-variant": "#574500",
+                      "outline-variant": "#4a4455",
+                      "error-container": "#93000a",
+                      "on-primary-fixed": "#25005a",
+                      "background": "#190d2c",
+                      "tertiary": "#4edea3",
+                      "primary-fixed": "#eaddff",
+                      "on-surface": "#ecdcff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "container-max": "1280px",
+                      "margin-mobile": "16px",
+                      "margin-desktop": "64px",
+                      "gutter": "24px",
+                      "unit": "8px"
+              },
+              "fontFamily": {
+                      "headline-xl": ["Literata"],
+                      "body-md": ["Manrope"],
+                      "headline-xl-mobile": ["Literata"],
+                      "label-mono": ["JetBrains Mono"],
+                      "body-lg": ["Manrope"],
+                      "headline-sm": ["Literata"],
+                      "headline-lg": ["Literata"]
+              },
+              "fontSize": {
+                      "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-xl-mobile": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                      "label-mono": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.5; }
+        }
+        @keyframes spin-slow {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes spin-reverse-slow {
+            100% { transform: rotate(-360deg); }
+        }
+        @keyframes flicker {
+            0%, 19.999%, 22%, 62.999%, 64%, 64.999%, 70%, 100% { opacity: 0.99; }
+            20%, 21.999%, 63%, 63.999%, 65%, 69.999% { opacity: 0.4; }
+        }
+        
+        .ritual-circle {
+            animation: pulse-ring 4s infinite ease-in-out;
+        }
+        .rune-ring-1 {
+            animation: spin-slow 20s linear infinite;
+        }
+        .rune-ring-2 {
+            animation: spin-reverse-slow 30s linear infinite;
+        }
+        .status-text {
+            animation: flicker 3s infinite;
+        }
+        
+        .glow-spirit {
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.4), inset 0 0 20px rgba(168, 85, 247, 0.2);
+        }
+        
+        /* Progress SVG Styling */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.35s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface h-screen w-screen overflow-hidden flex flex-col justify-center items-center relative">
+<!-- Suppress Navigation as this is a transactional/loading state -->
+<!-- Ambient Background Lighting -->
+<div class="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-spirit-violet/20 via-obsidian-deep to-obsidian-deep opacity-60"></div>
+<!-- Geometric Grid Overlay -->
+<div class="absolute inset-0 z-0 opacity-10 bg-[linear-gradient(to_right,#3b2f4f_1px,transparent_1px),linear-gradient(to_bottom,#3b2f4f_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
+<!-- Main Canvas -->
+<main class="relative z-10 w-full max-w-container-max px-gutter mx-auto flex flex-col items-center justify-center">
+<!-- Header Section -->
+<div class="text-center mb-16 space-y-4">
+<h1 class="font-headline-xl text-headline-xl text-monica-constant tracking-widest drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">IGNITION PROTOCOL</h1>
+<p class="font-label-mono text-label-mono text-tertiary uppercase tracking-[0.2em] opacity-80">Phase 6: The Awakening</p>
+</div>
+<!-- The Ritual Circle (Progress Indicator) -->
+<div class="relative w-80 h-80 md:w-96 md:h-96 flex items-center justify-center mb-12">
+<!-- Outer Glow & Borders -->
+<div class="absolute inset-0 rounded-full border border-spirit-violet/30 glow-spirit ritual-circle"></div>
+<div class="absolute inset-4 rounded-full border border-primary/20 backdrop-blur-xl"></div>
+<!-- Spinning Rune Rings (Simulated with Material Symbols and rotation) -->
+<div class="absolute inset-0 rune-ring-1 flex items-center justify-center text-primary/40 opacity-50">
+<!-- Repeating icons forming a circle - simplified for structural representation -->
+<span class="material-symbols-outlined absolute top-2 text-sm">flare</span>
+<span class="material-symbols-outlined absolute bottom-2 text-sm">change_history</span>
+<span class="material-symbols-outlined absolute left-2 text-sm">all_inclusive</span>
+<span class="material-symbols-outlined absolute right-2 text-sm">adjust</span>
+</div>
+<div class="absolute inset-8 rune-ring-2 flex items-center justify-center text-tertiary/30 opacity-40">
+<span class="material-symbols-outlined absolute top-2 text-xs">code</span>
+<span class="material-symbols-outlined absolute bottom-2 text-xs">memory</span>
+<span class="material-symbols-outlined absolute left-2 text-xs">stream</span>
+<span class="material-symbols-outlined absolute right-2 text-xs">data_object</span>
+</div>
+<!-- Central Progress SVG -->
+<svg class="absolute inset-0 w-full h-full" viewbox="0 0 100 100">
+<!-- Background track -->
+<circle cx="50" cy="50" fill="none" r="45" stroke="rgba(59, 47, 79, 0.4)" stroke-width="2"></circle>
+<!-- Progress track - controlled by JS -->
+<circle class="progress-ring__circle" cx="50" cy="50" fill="none" id="progress-circle" r="45" stroke="var(--tw-colors-spirit-violet)" stroke-dasharray="282.74" stroke-dashoffset="282.74" stroke-width="4"></circle>
+</svg>
+<!-- Center Content -->
+<div class="absolute inset-0 flex flex-col items-center justify-center z-20 text-center">
+<div class="font-headline-xl text-headline-xl text-monica-constant drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]" id="percentage-text">0%</div>
+<div class="font-label-mono text-label-mono text-primary/80 mt-2 text-xs">~4.2GB Payload</div>
+</div>
+</div>
+<!-- Terminal Status Log -->
+<div class="w-full max-w-md bg-surface-container-lowest/80 backdrop-blur-2xl border border-surface-variant/50 rounded-xl p-6 shadow-2xl relative overflow-hidden">
+<!-- Subtle top border glow -->
+<div class="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-spirit-violet/50 to-transparent"></div>
+<div class="space-y-3 font-label-mono text-label-mono text-sm" id="terminal-log">
+<div class="flex items-center text-tertiary opacity-50">
+<span class="material-symbols-outlined text-sm mr-2">check_circle</span>
+<span>Establishing void connection...</span>
+</div>
+<div class="flex items-center text-tertiary opacity-50">
+<span class="material-symbols-outlined text-sm mr-2">check_circle</span>
+<span>Allocating dimensional memory...</span>
+</div>
+<div class="flex items-center text-spirit-violet status-text">
+<span class="material-symbols-outlined text-sm mr-2 animate-pulse">downloading</span>
+<span id="current-status">Synthesizing Local Engine...</span>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Simulate the download/ignition process
+        document.addEventListener('DOMContentLoaded', () => {
+            const circle = document.getElementById('progress-circle');
+            const radius = circle.r.baseVal.value;
+            const circumference = radius * 2 * Math.PI;
+            
+            const pctText = document.getElementById('percentage-text');
+            const statusText = document.getElementById('current-status');
+            const terminalLog = document.getElementById('terminal-log');
+            
+            circle.style.strokeDasharray = `${circumference} ${circumference}`;
+            circle.style.strokeDashoffset = circumference;
+
+            function setProgress(percent) {
+                const offset = circumference - (percent / 100) * circumference;
+                circle.style.strokeDashoffset = offset;
+                pctText.innerText = `${Math.floor(percent)}%`;
+            }
+
+            // Mock sequence
+            const statuses = [
+                { p: 15, text: 'Synthesizing Local Engine...' },
+                { p: 45, text: 'Aligning Neural Ley-lines...' },
+                { p: 75, text: 'Calibrating Monica Constant...' },
+                { p: 90, text: 'Igniting Consciousness...' },
+                { p: 100, text: 'Agent Awakened.' }
+            ];
+
+            let progress = 0;
+            let currentStatusIdx = 0;
+
+            const interval = setInterval(() => {
+                progress += Math.random() * 2.5; // Random varied progress
+                if (progress > 100) progress = 100;
+                
+                setProgress(progress);
+
+                // Update text based on milestones
+                if (currentStatusIdx < statuses.length && progress >= statuses[currentStatusIdx].p) {
+                    
+                    // Move current status to completed log if not the first one
+                    if(currentStatusIdx > 0) {
+                         const completedDiv = document.createElement('div');
+                         completedDiv.className = 'flex items-center text-tertiary opacity-50';
+                         completedDiv.innerHTML = `<span class="material-symbols-outlined text-sm mr-2">check_circle</span><span>${statuses[currentStatusIdx-1].text.replace('...', ' Done.')}</span>`;
+                         terminalLog.insertBefore(completedDiv, terminalLog.lastElementChild);
+                    }
+                    
+                    statusText.innerText = statuses[currentStatusIdx].text;
+                    currentStatusIdx++;
+                }
+
+                if (progress === 100) {
+                    clearInterval(interval);
+                    // Final state flourish
+                    circle.style.stroke = "var(--tw-colors-tertiary)";
+                    pctText.style.color = "var(--tw-colors-tertiary)";
+                    pctText.style.textShadow = "0 0 20px rgba(78, 222, 163, 0.8)";
+                    document.querySelector('.status-text').classList.replace('text-spirit-violet', 'text-tertiary');
+                    document.querySelector('.status-text .material-symbols-outlined').innerText = 'bolt';
+                    
+                    setTimeout(() => {
+                        // Optional: Redirect or transition out logic would go here
+                        // alert('Ignition Complete');
+                    }, 1000);
+                }
+            }, 100);
+        });
+    </script>
+</body></html>

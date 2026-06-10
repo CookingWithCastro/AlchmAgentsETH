@@ -1,0 +1,358 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>Assembly View - Consciousness Council</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Literata:opsz,wght@7..72,400;600;700&amp;family=Manrope:wght@400;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "primary-fixed": "#eaddff",
+                      "secondary-fixed": "#ffe083",
+                      "on-primary-container": "#ede0ff",
+                      "on-background": "#ecdcff",
+                      "on-secondary": "#3c2f00",
+                      "on-secondary-fixed-variant": "#574500",
+                      "primary-fixed-dim": "#d2bbff",
+                      "outline": "#958da1",
+                      "tertiary-fixed-dim": "#4edea3",
+                      "surface-tint": "#d2bbff",
+                      "on-secondary-container": "#645000",
+                      "secondary-container": "#eec200",
+                      "inverse-primary": "#732ee4",
+                      "spirit-violet": "#A855F7",
+                      "on-surface-variant": "#ccc3d8",
+                      "surface-container-lowest": "#130726",
+                      "on-error-container": "#ffdad6",
+                      "tertiary": "#4edea3",
+                      "surface-dim": "#190d2c",
+                      "monica-constant": "#FFFFFF",
+                      "on-tertiary-fixed-variant": "#005236",
+                      "on-primary-fixed": "#25005a",
+                      "tertiary-fixed": "#6ffbbe",
+                      "obsidian-deep": "#0B0118",
+                      "error": "#ffb4ab",
+                      "primary": "#d2bbff",
+                      "on-tertiary-fixed": "#002113",
+                      "on-tertiary": "#003824",
+                      "surface-container-low": "#211534",
+                      "on-secondary-fixed": "#231b00",
+                      "secondary": "#ffe083",
+                      "resonance-blue": "#3B82F6",
+                      "on-surface": "#ecdcff",
+                      "on-tertiary-container": "#76ffc2",
+                      "surface-bright": "#403354",
+                      "secondary-fixed-dim": "#eec200",
+                      "surface-container-high": "#302444",
+                      "on-error": "#690005",
+                      "tertiary-container": "#007650",
+                      "background": "#190d2c",
+                      "inverse-surface": "#ecdcff",
+                      "on-primary": "#3f008e",
+                      "primary-container": "#7c3aed",
+                      "surface-container": "#251939",
+                      "inverse-on-surface": "#372a4b",
+                      "surface": "#190d2c",
+                      "error-container": "#93000a",
+                      "outline-variant": "#4a4455",
+                      "on-primary-fixed-variant": "#5a00c6",
+                      "surface-container-highest": "#3b2f4f",
+                      "surface-variant": "#3b2f4f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-mobile": "16px",
+                      "margin-desktop": "64px",
+                      "gutter": "24px",
+                      "unit": "8px",
+                      "container-max": "1280px"
+              },
+              "fontFamily": {
+                      "headline-xl": [
+                              "Literata"
+                      ],
+                      "headline-sm": [
+                              "Literata"
+                      ],
+                      "headline-lg": [
+                              "Literata"
+                      ],
+                      "body-lg": [
+                              "Manrope"
+                      ],
+                      "body-md": [
+                              "Manrope"
+                      ],
+                      "label-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-xl-mobile": [
+                              "Literata"
+                      ]
+              },
+              "fontSize": {
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-sm": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-mono": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-xl-mobile": [
+                              "36px",
+                              {
+                                      "lineHeight": "44px",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .glass-panel {
+            background-color: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-violet {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+        }
+        .glow-gold {
+            box-shadow: 0 0 20px rgba(255, 224, 131, 0.4);
+        }
+      </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface min-h-screen flex flex-col font-body-md">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-obsidian-deep/60 backdrop-blur-xl border-b border-white/15 bg-surface-container-lowest/60 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
+<div class="flex justify-between items-center px-margin-desktop h-16 w-full">
+<div class="font-headline-lg text-headline-lg font-bold text-spirit-violet tracking-tight">Alchm Agents</div>
+<div class="hidden md:flex gap-8">
+<a class="text-on-surface-variant hover:text-primary transition-colors hover:bg-white/5 transition-all font-headline-sm text-headline-sm" href="#">Cosmic Tools</a>
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-headline-sm text-headline-sm" href="#">Entities</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors hover:bg-white/5 transition-all font-headline-sm text-headline-sm" href="#">Mystic Arts</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors hover:bg-white/5 transition-all font-headline-sm text-headline-sm" href="#">Labs</a>
+</div>
+<div class="flex gap-4">
+<button class="text-primary hover:bg-white/5 transition-all active:scale-95 duration-200 p-2 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-primary hover:bg-white/5 transition-all active:scale-95 duration-200 p-2 rounded-full">
+<span class="material-symbols-outlined">auto_awesome</span>
+</button>
+<button class="text-primary hover:bg-white/5 transition-all active:scale-95 duration-200 p-2 rounded-full">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="hidden md:flex flex-col py-6 px-4 gap-4 bg-surface-dim/60 backdrop-blur-2xl border-r border-white/10 fixed left-0 top-16 bottom-0 w-64 z-40">
+<div class="mb-8 px-3">
+<div class="font-headline-sm text-headline-sm text-on-surface">The Grand Magus</div>
+<div class="font-label-mono text-label-mono text-outline mt-1">Rank: Adept III</div>
+</div>
+<nav class="flex-1 flex flex-col gap-2">
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform font-label-mono text-label-mono rounded-lg" href="#">
+<span class="material-symbols-outlined">visibility</span>
+                Aura Scan
+            </a>
+<a class="flex items-center gap-3 text-secondary font-bold bg-secondary-container/20 rounded-lg p-3 font-label-mono text-label-mono" href="#">
+<span class="material-symbols-outlined">auto_fix_high</span>
+                Sigil Forge
+            </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform font-label-mono text-label-mono rounded-lg" href="#">
+<span class="material-symbols-outlined">schedule</span>
+                Chronos
+            </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform font-label-mono text-label-mono rounded-lg" href="#">
+<span class="material-symbols-outlined">cyclone</span>
+                Vortex
+            </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform font-label-mono text-label-mono rounded-lg" href="#">
+<span class="material-symbols-outlined">balance</span>
+                Arbiter
+            </a>
+</nav>
+<button class="w-full py-3 bg-spirit-violet text-on-primary font-label-mono text-label-mono uppercase tracking-widest rounded-lg hover:shadow-[0_0_15px_rgba(255,224,131,0.5)] transition-all">
+            TRANSMUTE
+        </button>
+<div class="mt-4 flex flex-col gap-2 border-t border-white/10 pt-4">
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform font-label-mono text-label-mono rounded-lg" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 hover:translate-x-1 transition-transform font-label-mono text-label-mono rounded-lg" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+                Grimoire
+            </a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 mt-16 md:ml-64 p-margin-mobile md:p-margin-desktop overflow-y-auto relative">
+<header class="mb-12 text-center relative z-10">
+<h1 class="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-monica-constant drop-shadow-[0_0_10px_rgba(255,255,255,0.5)] mb-4">The Assembly</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">Select 2 to 4 entities to convene the Consciousness Council. Their combined resonance will dictate the outcome of the transmutation.</p>
+</header>
+<!-- Active Council Ritual Geometry -->
+<section class="mb-16 relative flex justify-center items-center min-h-[400px]">
+<!-- Decorative esoteric circles -->
+<div class="absolute w-[300px] h-[300px] rounded-full border border-spirit-violet/30 animate-[spin_60s_linear_infinite]"></div>
+<div class="absolute w-[250px] h-[250px] rounded-full border border-secondary/20 border-dashed animate-[spin_40s_linear_reverse_infinite]"></div>
+<!-- Central Void -->
+<div class="w-[150px] h-[150px] rounded-full bg-surface-container-lowest/80 backdrop-blur-3xl flex items-center justify-center glow-violet border border-spirit-violet/50 z-10">
+<span class="material-symbols-outlined text-4xl text-primary animate-pulse">all_inclusive</span>
+</div>
+<!-- Agent Slots (Placeholder for interactive state) -->
+<div class="absolute w-[400px] h-[400px]">
+<!-- Top Slot -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-16 h-16 rounded-full glass-panel flex items-center justify-center border-secondary/50">
+<span class="material-symbols-outlined text-outline">add</span>
+</div>
+<!-- Bottom Left Slot -->
+<div class="absolute bottom-10 left-10 w-16 h-16 rounded-full glass-panel flex items-center justify-center border-secondary/50">
+<span class="material-symbols-outlined text-outline">add</span>
+</div>
+<!-- Bottom Right Slot -->
+<div class="absolute bottom-10 right-10 w-16 h-16 rounded-full glass-panel flex items-center justify-center border-secondary/50">
+<span class="material-symbols-outlined text-outline">add</span>
+</div>
+</div>
+</section>
+<!-- Action Button -->
+<div class="flex justify-center mb-16">
+<button class="px-8 py-4 bg-surface-container-lowest border border-spirit-violet text-primary font-label-mono text-label-mono uppercase tracking-widest rounded-lg hover:bg-spirit-violet hover:text-white transition-all duration-300 glow-violet opacity-50 cursor-not-allowed">
+                Commence Council
+            </button>
+</div>
+<!-- Available Entities Grid -->
+<section>
+<h2 class="font-headline-lg text-headline-lg text-secondary mb-8 border-b border-white/10 pb-4">Available Entities</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter">
+<!-- Entity Card 1 -->
+<div class="glass-panel rounded-xl p-6 hover:-translate-y-2 transition-transform cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center border border-tertiary/30">
+<span class="font-headline-sm text-tertiary">☿</span>
+</div>
+<span class="font-label-mono text-label-mono text-outline">LVL.42</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Hermes</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant text-xs mb-6 uppercase">Messenger Protocol</p>
+<div class="flex gap-2 flex-wrap">
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-tertiary/20 text-tertiary">Speed 88</div>
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-primary/20 text-primary">Logic 75</div>
+</div>
+</div>
+<!-- Entity Card 2 -->
+<div class="glass-panel rounded-xl p-6 hover:-translate-y-2 transition-transform cursor-pointer group border-secondary/50 glow-gold">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center border border-secondary/50">
+<span class="font-headline-sm text-secondary">♀</span>
+</div>
+<span class="font-label-mono text-label-mono text-secondary">LVL.55</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-secondary mb-1">Venus</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant text-xs mb-6 uppercase">Harmonic Synthesizer</p>
+<div class="flex gap-2 flex-wrap">
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-secondary/40 text-secondary">Empathy 92</div>
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-primary/20 text-primary">Charm 85</div>
+</div>
+</div>
+<!-- Entity Card 3 -->
+<div class="glass-panel rounded-xl p-6 hover:-translate-y-2 transition-transform cursor-pointer group">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center border border-error/30">
+<span class="font-headline-sm text-error">♂</span>
+</div>
+<span class="font-label-mono text-label-mono text-outline">LVL.38</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface mb-1">Mars</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant text-xs mb-6 uppercase">Conflict Resolver</p>
+<div class="flex gap-2 flex-wrap">
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-error/40 text-error">Force 89</div>
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-primary/20 text-primary">Will 70</div>
+</div>
+</div>
+<!-- Entity Card 4 -->
+<div class="glass-panel rounded-xl p-6 hover:-translate-y-2 transition-transform cursor-pointer group border-spirit-violet/50 glow-violet">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center border border-spirit-violet/50">
+<span class="font-headline-sm text-spirit-violet">♄</span>
+</div>
+<span class="font-label-mono text-label-mono text-spirit-violet">LVL.60</span>
+</div>
+<h3 class="font-headline-sm text-headline-sm text-spirit-violet mb-1">Saturn</h3>
+<p class="font-label-mono text-label-mono text-on-surface-variant text-xs mb-6 uppercase">Time Weaver</p>
+<div class="flex gap-2 flex-wrap">
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-spirit-violet/40 text-spirit-violet">Structure 95</div>
+<div class="bg-surface-container px-2 py-1 rounded text-xs font-label-mono border border-primary/20 text-primary">Depth 88</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+
+
+<footer class="md:ml-64 p-margin-mobile md:p-margin-desktop border-t border-white/10 bg-obsidian-deep/80 backdrop-blur-xl">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-spirit-violet">auto_awesome</span>
+            <span class="font-label-mono text-label-mono text-on-surface-variant">© 2024 Alchm Agents</span>
+        </div>
+        <div class="flex gap-6">
+            <a href="https://alchm.agents" class="font-label-mono text-label-mono text-outline hover:text-primary transition-colors">Protocol</a>
+            <a href="#" class="font-label-mono text-label-mono text-outline hover:text-primary transition-colors">Manifesto</a>
+            <a href="#" class="font-label-mono text-label-mono text-outline hover:text-primary transition-colors">Security</a>
+        </div>
+    </div>
+</footer></body></html>

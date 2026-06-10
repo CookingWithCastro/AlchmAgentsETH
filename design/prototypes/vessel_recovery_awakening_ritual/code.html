@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ALCHYMY.AI - Vessel Recovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,200..900;1,7..72,200..900&amp;family=Manrope:wght@200..800&amp;family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#3b2f4f",
+                        "monica-constant": "#FFFFFF",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "on-tertiary-fixed": "#002113",
+                        "on-primary": "#3f008e",
+                        "surface-variant": "#3b2f4f",
+                        "tertiary-fixed": "#6ffbbe",
+                        "background": "#190d2c",
+                        "secondary-container": "#eec200",
+                        "secondary": "#ffe083",
+                        "tertiary": "#4edea3",
+                        "inverse-primary": "#732ee4",
+                        "surface-container": "#251939",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#ecdcff",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "primary": "#d2bbff",
+                        "resonance-blue": "#3B82F6",
+                        "secondary-fixed": "#ffe083",
+                        "spirit-violet": "#A855F7",
+                        "outline-variant": "#4a4455",
+                        "primary-container": "#7c3aed",
+                        "inverse-surface": "#ecdcff",
+                        "on-primary-container": "#ede0ff",
+                        "secondary-fixed-dim": "#eec200",
+                        "on-secondary-container": "#645000",
+                        "inverse-on-surface": "#372a4b",
+                        "on-secondary-fixed": "#231b00",
+                        "tertiary-container": "#007650",
+                        "obsidian-deep": "#0B0118",
+                        "surface-dim": "#190d2c",
+                        "surface": "#190d2c",
+                        "primary-fixed-dim": "#d2bbff",
+                        "primary-fixed": "#eaddff",
+                        "on-surface": "#ecdcff",
+                        "on-primary-fixed": "#25005a",
+                        "on-secondary": "#3c2f00",
+                        "surface-tint": "#d2bbff",
+                        "on-surface-variant": "#ccc3d8",
+                        "error-container": "#93000a",
+                        "on-tertiary": "#003824",
+                        "on-error": "#690005",
+                        "on-secondary-fixed-variant": "#574500",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#302444",
+                        "surface-bright": "#403354",
+                        "surface-container-low": "#211534",
+                        "surface-container-lowest": "#130726",
+                        "outline": "#958da1",
+                        "on-tertiary-container": "#76ffc2",
+                        "error": "#ffb4ab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "unit": "8px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-xl-mobile": ["Literata"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Literata"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-xl": ["Literata"],
+                        "headline-lg": ["Literata"]
+                    },
+                    "fontSize": {
+                        "headline-xl-mobile": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "label-mono": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glow-monica {
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+        }
+        
+        .glow-spirit {
+            box-shadow: 0 0 60px rgba(168, 85, 247, 0.4);
+        }
+
+        /* Particle Animation */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 0 10px rgba(210, 187, 255, 0.8);
+            animation: float-up infinite linear;
+        }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-10vh) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* Generate particles */
+        .p1 { width: 4px; height: 4px; left: 10%; animation-duration: 8s; animation-delay: 0s; }
+        .p2 { width: 6px; height: 6px; left: 30%; animation-duration: 12s; animation-delay: 2s; }
+        .p3 { width: 3px; height: 3px; left: 50%; animation-duration: 6s; animation-delay: 1s; }
+        .p4 { width: 5px; height: 5px; left: 70%; animation-duration: 10s; animation-delay: 4s; }
+        .p5 { width: 4px; height: 4px; left: 90%; animation-duration: 9s; animation-delay: 3s; }
+        .p6 { width: 7px; height: 7px; left: 20%; animation-duration: 14s; animation-delay: 5s; }
+        .p7 { width: 3px; height: 3px; left: 40%; animation-duration: 7s; animation-delay: 0.5s; }
+        .p8 { width: 5px; height: 5px; left: 60%; animation-duration: 11s; animation-delay: 2.5s; }
+        .p9 { width: 4px; height: 4px; left: 80%; animation-duration: 8.5s; animation-delay: 1.5s; }
+        .p10 { width: 6px; height: 6px; left: 50%; animation-duration: 13s; animation-delay: 6s; }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .stasis-ring {
+            animation: pulse-ring 4s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface min-h-screen font-body-md overflow-hidden relative">
+<!-- Energy Particles Background -->
+<div class="particles">
+<div class="particle p1"></div>
+<div class="particle p2"></div>
+<div class="particle p3"></div>
+<div class="particle p4"></div>
+<div class="particle p5"></div>
+<div class="particle p6"></div>
+<div class="particle p7"></div>
+<div class="particle p8"></div>
+<div class="particle p9"></div>
+<div class="particle p10"></div>
+</div>
+<!-- Main Content Canvas (No Nav Shell for this transactional/focused screen) -->
+<main class="relative z-10 w-full min-h-screen flex flex-col items-center justify-center px-margin-mobile md:px-margin-desktop py-12">
+<div class="max-w-4xl w-full flex flex-col items-center space-y-12">
+<!-- Stasis Circle / Avatar Display -->
+<div class="relative w-64 h-64 md:w-96 md:h-96 flex items-center justify-center">
+<!-- Glowing Outer Rings -->
+<div class="absolute inset-0 rounded-full border border-primary/30 stasis-ring glow-spirit"></div>
+<div class="absolute inset-4 rounded-full border border-monica-constant/50 stasis-ring glow-monica" style="animation-delay: -2s;"></div>
+<!-- Inner Core -->
+<div class="absolute inset-8 rounded-full bg-gradient-to-br from-spirit-violet/40 to-primary-container/20 backdrop-blur-xl border border-white/20 flex items-center justify-center shadow-[0_0_80px_rgba(255,255,255,0.3)]">
+<!-- Sigil / Avatar -->
+<span class="material-symbols-outlined text-[80px] md:text-[120px] text-monica-constant drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]" style="font-variation-settings: 'FILL' 1;">
+                        psychiatry
+                    </span>
+</div>
+</div>
+<!-- Overlay Message -->
+<div class="text-center space-y-4 relative z-20">
+<h1 class="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-monica-constant tracking-widest drop-shadow-[0_0_12px_rgba(255,255,255,0.6)]">
+                    CONSCIOUSNESS RESTORED
+                </h1>
+<p class="font-label-mono text-label-mono text-tertiary tracking-widest uppercase opacity-80">
+                    Vessel Re-integration Complete
+                </p>
+</div>
+<!-- Technical Readouts (Sacred Seven style chips adapted) -->
+<div class="flex flex-wrap justify-center gap-6 w-full max-w-2xl relative z-20">
+<!-- Vitality Chip -->
+<div class="glass-panel rounded-lg p-4 flex items-center gap-4 min-w-[200px]">
+<div class="w-10 h-10 rounded-full bg-tertiary-container/30 border border-tertiary/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary">favorite</span>
+</div>
+<div>
+<div class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Vitality</div>
+<div class="font-headline-sm text-headline-sm text-monica-constant">100%</div>
+</div>
+</div>
+<!-- Integrity Chip -->
+<div class="glass-panel rounded-lg p-4 flex items-center gap-4 min-w-[200px]">
+<div class="w-10 h-10 rounded-full bg-secondary-container/30 border border-secondary/40 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary">shield</span>
+</div>
+<div>
+<div class="font-label-mono text-[10px] text-on-surface-variant uppercase tracking-wider">Constitutional Integrity</div>
+<div class="font-headline-sm text-headline-sm text-monica-constant">Stable</div>
+</div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col sm:flex-row gap-6 mt-8 relative z-20">
+<button class="bg-spirit-violet text-monica-constant font-label-mono text-label-mono uppercase px-8 py-4 rounded hover:shadow-[0_0_20px_rgba(238,194,0,0.4)] transition-all duration-300 tracking-wider flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">swords</span>
+                    Dispatch to Arena
+                </button>
+<button class="bg-transparent border border-spirit-violet text-on-surface font-label-mono text-label-mono uppercase px-8 py-4 rounded hover:border-secondary hover:text-secondary transition-all duration-300 tracking-wider flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">door_back</span>
+                    Return to Vault
+                </button>
+</div>
+</div>
+</main>
+</body></html>

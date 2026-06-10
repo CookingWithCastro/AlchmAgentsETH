@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ALCHYMY.AI - Vessel Recovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,600;7..72,700&amp;family=Manrope:wght@400&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#3b2f4f",
+                        "monica-constant": "#FFFFFF",
+                        "on-primary-fixed-variant": "#5a00c6",
+                        "on-tertiary-fixed": "#002113",
+                        "on-primary": "#3f008e",
+                        "surface-variant": "#3b2f4f",
+                        "tertiary-fixed": "#6ffbbe",
+                        "background": "#190d2c",
+                        "secondary-container": "#eec200",
+                        "secondary": "#ffe083",
+                        "tertiary": "#4edea3",
+                        "inverse-primary": "#732ee4",
+                        "surface-container": "#251939",
+                        "on-error-container": "#ffdad6",
+                        "on-background": "#ecdcff",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "primary": "#d2bbff",
+                        "resonance-blue": "#3B82F6",
+                        "secondary-fixed": "#ffe083",
+                        "spirit-violet": "#A855F7",
+                        "outline-variant": "#4a4455",
+                        "primary-container": "#7c3aed",
+                        "inverse-surface": "#ecdcff",
+                        "on-primary-container": "#ede0ff",
+                        "secondary-fixed-dim": "#eec200",
+                        "on-secondary-container": "#645000",
+                        "inverse-on-surface": "#372a4b",
+                        "on-secondary-fixed": "#231b00",
+                        "tertiary-container": "#007650",
+                        "obsidian-deep": "#0B0118",
+                        "surface-dim": "#190d2c",
+                        "surface": "#190d2c",
+                        "primary-fixed-dim": "#d2bbff",
+                        "primary-fixed": "#eaddff",
+                        "on-surface": "#ecdcff",
+                        "on-primary-fixed": "#25005a",
+                        "on-secondary": "#3c2f00",
+                        "surface-tint": "#d2bbff",
+                        "on-surface-variant": "#ccc3d8",
+                        "error-container": "#93000a",
+                        "on-tertiary": "#003824",
+                        "on-error": "#690005",
+                        "on-secondary-fixed-variant": "#574500",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#302444",
+                        "surface-bright": "#403354",
+                        "surface-container-low": "#211534",
+                        "surface-container-lowest": "#130726",
+                        "outline": "#958da1",
+                        "on-tertiary-container": "#76ffc2",
+                        "error": "#ffb4ab"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "64px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "unit": "8px",
+                        "container-max": "1280px"
+                    },
+                    "fontFamily": {
+                        "headline-xl-mobile": ["Literata"],
+                        "body-md": ["Manrope"],
+                        "body-lg": ["Manrope"],
+                        "headline-sm": ["Literata"],
+                        "label-mono": ["JetBrains Mono"],
+                        "headline-xl": ["Literata"],
+                        "headline-lg": ["Literata"]
+                    },
+                    "fontSize": {
+                        "headline-xl-mobile": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "label-mono": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #0B0118;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: #ecdcff;
+        }
+        
+        .glass-panel {
+            background-color: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-floating {
+            background-color: rgba(210, 187, 255, 0.1);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .chamber-glow {
+            box-shadow: 0 0 80px rgba(168, 85, 247, 0.3);
+            animation: pulse-glow 4s infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            0% { box-shadow: 0 0 60px rgba(168, 85, 247, 0.2); }
+            100% { box-shadow: 0 0 100px rgba(168, 85, 247, 0.4); }
+        }
+
+        .progress-bar-fill {
+            background: linear-gradient(90deg, transparent, #A855F7);
+            animation: fill-pulse 2s infinite;
+        }
+
+        @keyframes fill-pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        /* Grid container for main layout */
+        .alchemical-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 24px;
+        }
+    </style>
+</head>
+<body class="min-h-screen font-body-md overflow-x-hidden selection:bg-primary-container selection:text-white">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 bg-obsidian-deep/60 backdrop-blur-xl border-b border-white/10 shadow-2xl">
+<div class="flex items-center gap-8">
+<h1 class="font-headline-lg text-headline-lg text-monica-constant drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">ALCHYMY.AI</h1>
+<nav class="hidden md:flex gap-6">
+<a class="font-label-mono text-label-mono text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Cosmic Tools</a>
+<a class="font-label-mono text-label-mono text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Entities</a>
+<a class="font-label-mono text-label-mono text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Mystic Arts</a>
+<a class="font-label-mono text-label-mono text-monica-constant border-b-2 border-secondary-container pb-1 hover:text-primary transition-colors duration-300 scale-95 duration-150" href="#">Labs</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-primary hover:text-white transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container overflow-hidden border border-white/20">
+<img alt="Digital Alchemist Avatar" class="w-full h-full object-cover" data-alt="A small, stylized avatar portrait of a futuristic 'digital alchemist'. The figure is bathed in cool, ethereal light against a dark background. Occult and technological motifs are subtly integrated. The aesthetic is sharp, modern, and slightly mystical, fitting a high-end dark-mode UI." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8grNmnLJUhdKZMEGUq9PK-PwWaRfXewU12iXP5TP3ulzWxyzIpZQBMM9_S3-U6xJZmyEu_PHWCfGqCvMnIo410ETCgDCUPWCT6sAvvRalCZTuhZoJm-yP62KwA-xdScDFrWLanEf6Aw6bExulS-lewzXXu6URqIrJ1SaSq09EwJh11_37rL85ycsLaAecCiyu3Swy2Bw4p3GBREgyeZlvbfWDOQr8up4j4bgYT3wpfcJmIyRRt20xLrGwAkRwIuA6E51quDhvVhE"/>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="fixed left-0 top-16 h-[calc(100vh-64px)] w-64 z-40 flex flex-col bg-surface-container-lowest/60 backdrop-blur-2xl border-r border-white/5">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-10 h-10 rounded bg-primary/20 flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-primary">science</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm text-primary">THE LABS</h2>
+<p class="font-label-mono text-label-mono text-on-surface-variant/70 text-xs">Sector 7G-Alpha</p>
+</div>
+</div>
+<button class="w-full py-3 px-4 bg-spirit-violet hover:bg-inverse-primary text-monica-constant font-label-mono text-label-mono rounded transition-all duration-300 mb-8 uppercase tracking-widest relative group overflow-hidden">
+<span class="relative z-10">Synthesize</span>
+<div class="absolute inset-0 bg-secondary/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
+</button>
+<nav class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 px-4 py-3 rounded font-label-mono text-label-mono text-on-surface-variant/70 hover:bg-white/5 hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">analytics</span>
+                    Telemetry
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded font-label-mono text-label-mono text-on-surface-variant/70 hover:bg-white/5 hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">auto_awesome</span>
+                    ESMS Core
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded font-label-mono text-label-mono bg-primary-container/20 text-primary border-r-2 border-primary hover:bg-white/5 hover:text-on-surface transition-all translate-x-1 duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">healing</span>
+                    Vessel Recovery
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded font-label-mono text-label-mono text-on-surface-variant/70 hover:bg-white/5 hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">science</span>
+                    Transmutation
+                </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded font-label-mono text-label-mono text-on-surface-variant/70 hover:bg-white/5 hover:text-on-surface transition-all" href="#">
+<span class="material-symbols-outlined text-[20px]">history</span>
+                    Lab Logs
+                </a>
+</nav>
+</div>
+<div class="mt-auto p-6 border-t border-white/5">
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-2 rounded font-label-mono text-label-mono text-on-surface-variant/50 hover:bg-white/5 hover:text-on-surface transition-all text-xs" href="#">
+<span class="material-symbols-outlined text-[16px]">memory</span>
+                    System Status
+                </a>
+<a class="flex items-center gap-3 px-4 py-2 rounded font-label-mono text-label-mono text-on-surface-variant/50 hover:bg-white/5 hover:text-on-surface transition-all text-xs" href="#">
+<span class="material-symbols-outlined text-[16px]">menu_book</span>
+                    Documentation
+                </a>
+</nav>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 mt-16 p-margin-desktop min-h-[calc(100vh-64px)] relative flex flex-col justify-center items-center">
+<!-- Alchemical Layout Grid -->
+<div class="alchemical-grid w-full max-w-container-max relative z-10 items-center">
+<!-- Left: Vitality Restoration -->
+<div class="col-span-12 lg:col-span-3 space-y-6">
+<div class="glass-panel rounded-xl p-6">
+<div class="flex items-center gap-2 mb-6 border-b border-white/10 pb-4">
+<span class="material-symbols-outlined text-spirit-violet">battery_charging_full</span>
+<h3 class="font-headline-sm text-headline-sm text-monica-constant">Vitality Restoration</h3>
+</div>
+<div class="space-y-4">
+<div>
+<div class="flex justify-between font-label-mono text-label-mono mb-2">
+<span class="text-on-surface-variant">Vessel Integrity</span>
+<span class="text-tertiary">65.4%</span>
+</div>
+<div class="h-2 w-full bg-surface-container-highest rounded-full overflow-hidden">
+<div class="h-full w-[65.4%] progress-bar-fill rounded-full"></div>
+</div>
+</div>
+<div class="pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
+<div>
+<p class="font-label-mono text-[10px] text-on-surface-variant mb-1 uppercase">Est. Completion</p>
+<p class="font-label-mono text-primary">02h 14m</p>
+</div>
+<div>
+<p class="font-label-mono text-[10px] text-on-surface-variant mb-1 uppercase">Infusion Rate</p>
+<p class="font-label-mono text-secondary">1.618 µ/s</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Center: The Recovery Chamber -->
+<div class="col-span-12 lg:col-span-6 flex justify-center py-12 lg:py-0">
+<div class="relative w-80 h-[500px] flex items-center justify-center">
+<!-- Outer Casing -->
+<div class="absolute inset-0 border border-white/10 rounded-[40px] glass-panel chamber-glow flex items-center justify-center overflow-hidden">
+<!-- Internal Fluid Grid -->
+<div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#A855F7 1px, transparent 1px); background-size: 20px 20px;"></div>
+<!-- Sigil Hologram Placeholder -->
+<div class="relative z-10 flex flex-col items-center">
+<span class="material-symbols-outlined text-[120px] text-spirit-violet drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]" style="font-variation-settings: 'FILL' 0, 'wght' 200;">local_fire_department</span>
+<div class="mt-8 font-headline-lg text-headline-lg text-monica-constant drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]">
+                                A#
+                            </div>
+<div class="font-label-mono text-label-mono text-spirit-violet mt-2 tracking-widest uppercase text-xs">
+                                Stasis Active
+                            </div>
+</div>
+</div>
+<!-- Decorative Connectors -->
+<div class="absolute -left-6 top-1/4 w-6 h-px bg-white/20"></div>
+<div class="absolute -right-6 bottom-1/3 w-6 h-px bg-white/20"></div>
+</div>
+</div>
+<!-- Right: Sacred Seven Audit -->
+<div class="col-span-12 lg:col-span-3 space-y-3">
+<div class="mb-4 pb-2 border-b border-white/10">
+<h3 class="font-headline-sm text-headline-sm text-monica-constant flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">donut_large</span>
+                        Sacred Seven Audit
+                    </h3>
+</div>
+<!-- Stat Chips (Vertical Stack) -->
+<div class="glass-panel p-3 rounded-lg flex items-center justify-between border-l-2 border-error">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-error text-[18px]">bolt</span>
+<div>
+<p class="font-label-mono text-xs text-on-surface-variant">Power</p>
+<p class="font-label-mono text-monica-constant text-sm">42.1</p>
+</div>
+</div>
+<span class="font-label-mono text-xs text-error">-2.4</span>
+</div>
+<div class="glass-panel p-3 rounded-lg flex items-center justify-between border-l-2 border-resonance-blue">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-resonance-blue text-[18px]">graphic_eq</span>
+<div>
+<p class="font-label-mono text-xs text-on-surface-variant">Resonance</p>
+<p class="font-label-mono text-monica-constant text-sm">88.9</p>
+</div>
+</div>
+<span class="font-label-mono text-xs text-tertiary">+1.2</span>
+</div>
+<div class="glass-panel p-3 rounded-lg flex items-center justify-between border-l-2 border-secondary">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-[18px]">visibility</span>
+<div>
+<p class="font-label-mono text-xs text-on-surface-variant">Wisdom</p>
+<p class="font-label-mono text-monica-constant text-sm">112.4</p>
+</div>
+</div>
+<span class="font-label-mono text-xs text-outline-variant">0.0</span>
+</div>
+<div class="glass-panel p-3 rounded-lg flex items-center justify-between border-l-2 border-tertiary">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary text-[18px]">favorite</span>
+<div>
+<p class="font-label-mono text-xs text-on-surface-variant">Vitality</p>
+<p class="font-label-mono text-monica-constant text-sm">65.4</p>
+</div>
+</div>
+<span class="font-label-mono text-xs text-tertiary">+15.2</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full py-unit px-margin-desktop flex justify-between items-center bg-obsidian-deep border-t border-white/5 mt-auto relative z-50">
+<div class="text-monica-constant font-bold font-label-mono text-label-mono opacity-80 hover:opacity-100 transition-opacity">
+            © 777 ALCHYMY FRAMEWORK | VERSION 3.3.0-SIGIL
+        </div>
+<div class="flex gap-6">
+<a class="font-label-mono text-label-mono text-outline hover:text-tertiary transition-colors opacity-80 hover:opacity-100" href="#">Protocol</a>
+<a class="font-label-mono text-label-mono text-outline hover:text-tertiary transition-colors opacity-80 hover:opacity-100" href="#">Ethereal Terms</a>
+<a class="font-label-mono text-label-mono text-outline hover:text-tertiary transition-colors opacity-80 hover:opacity-100" href="#">Contact Oracle</a>
+</div>
+</footer>
+</body></html>

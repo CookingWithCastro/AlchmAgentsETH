@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Alchemical UI Feedback &amp; Error States</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Literata:opsz,wght@7..72,400..900&amp;family=Manrope:wght@200..800&amp;family=JetBrains+Mono:wght@100..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#003824",
+                    "tertiary-fixed": "#6ffbbe",
+                    "primary": "#d2bbff",
+                    "surface-dim": "#190d2c",
+                    "surface-variant": "#3b2f4f",
+                    "surface-container-lowest": "#130726",
+                    "on-background": "#ecdcff",
+                    "on-secondary-container": "#645000",
+                    "on-primary": "#3f008e",
+                    "secondary-fixed-dim": "#eec200",
+                    "tertiary-fixed-dim": "#4edea3",
+                    "surface-container-high": "#302444",
+                    "inverse-on-surface": "#372a4b",
+                    "on-error": "#690005",
+                    "surface-container-low": "#211534",
+                    "on-error-container": "#ffdad6",
+                    "surface": "#190d2c",
+                    "resonance-blue": "#3B82F6",
+                    "inverse-surface": "#ecdcff",
+                    "primary-container": "#7c3aed",
+                    "on-primary-container": "#ede0ff",
+                    "on-secondary": "#3c2f00",
+                    "on-tertiary-fixed-variant": "#005236",
+                    "on-surface-variant": "#ccc3d8",
+                    "monica-constant": "#FFFFFF",
+                    "surface-tint": "#d2bbff",
+                    "surface-container-highest": "#3b2f4f",
+                    "tertiary-container": "#007650",
+                    "secondary-fixed": "#ffe083",
+                    "secondary-container": "#eec200",
+                    "on-secondary-fixed": "#231b00",
+                    "on-primary-fixed-variant": "#5a00c6",
+                    "on-tertiary-container": "#76ffc2",
+                    "obsidian-deep": "#0B0118",
+                    "error": "#ffb4ab",
+                    "surface-bright": "#403354",
+                    "outline": "#958da1",
+                    "primary-fixed-dim": "#d2bbff",
+                    "spirit-violet": "#A855F7",
+                    "inverse-primary": "#732ee4",
+                    "secondary": "#ffe083",
+                    "surface-container": "#251939",
+                    "on-tertiary-fixed": "#002113",
+                    "on-secondary-fixed-variant": "#574500",
+                    "outline-variant": "#4a4455",
+                    "error-container": "#93000a",
+                    "on-primary-fixed": "#25005a",
+                    "background": "#190d2c",
+                    "tertiary": "#4edea3",
+                    "primary-fixed": "#eaddff",
+                    "on-surface": "#ecdcff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-max": "1280px",
+                    "margin-mobile": "16px",
+                    "margin-desktop": "64px",
+                    "gutter": "24px",
+                    "unit": "8px"
+            },
+            "fontFamily": {
+                    "headline-xl": ["Literata"],
+                    "body-md": ["Manrope"],
+                    "headline-xl-mobile": ["Literata"],
+                    "label-mono": ["JetBrains Mono"],
+                    "body-lg": ["Manrope"],
+                    "headline-sm": ["Literata"],
+                    "headline-lg": ["Literata"]
+            },
+            "fontSize": {
+                    "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-xl-mobile": ["36px", {"lineHeight": "44px", "fontWeight": "700"}],
+                    "label-mono": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-sm": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .glass-panel {
+            background-color: rgba(30, 18, 49, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .error-glow {
+            box-shadow: 0 0 20px rgba(255, 180, 171, 0.2), inset 0 0 10px rgba(255, 180, 171, 0.1);
+            border: 1px solid rgba(255, 180, 171, 0.3);
+        }
+
+        @keyframes glitch-border {
+            0% { border-color: rgba(255, 180, 171, 0.1); }
+            10% { border-color: rgba(255, 180, 171, 0.8); }
+            20% { border-color: rgba(255, 180, 171, 0.1); }
+            30% { border-color: rgba(255, 180, 171, 0.4); }
+            40% { border-color: rgba(255, 180, 171, 0.1); }
+            50% { border-color: rgba(255, 180, 171, 0.9); }
+            60% { border-color: rgba(255, 180, 171, 0.1); }
+            100% { border-color: rgba(255, 180, 171, 0.1); }
+        }
+
+        .glitch-effect {
+            animation: glitch-border 3s infinite;
+        }
+
+        .bg-grid-pattern {
+            background-image: 
+                linear-gradient(to right, rgba(210, 187, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(210, 187, 255, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+    </style>
+</head>
+<body class="bg-obsidian-deep text-on-surface min-h-screen flex flex-col font-body-md bg-grid-pattern relative overflow-x-hidden">
+<!-- Top Navigation Placeholder (Hidden for this specific showcase context, but maintaining structure if needed) -->
+<!-- Floating Error Toast -->
+<div class="fixed top-6 right-6 z-50 animate-fade-in-down">
+<div class="glass-panel error-glow rounded-lg p-4 flex items-start gap-4 max-w-sm relative overflow-hidden group">
+<!-- Subtle corruption texture overlay -->
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0JyBoZWlnaHQ9JzQnPgo8cmVjdCB3aWR0aD0nNCcgaGVpZ2h0PSc0JyBmaWxsPSdub25lJy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9J3JnYmEoMjU1LCAxODAsIDE3MSwgMC4wNSknLz4KPC9zdmc+')] opacity-50 mix-blend-overlay"></div>
+<div class="text-error mt-1 relative z-10">
+<span class="material-symbols-outlined" data-icon="error" data-weight="fill" style="font-variation-settings: 'FILL' 1;">error</span>
+</div>
+<div class="flex-1 relative z-10">
+<h4 class="font-headline-sm text-headline-sm text-error mb-1">Insufficient ESMS Balance</h4>
+<p class="font-label-mono text-label-mono text-on-surface-variant">Transmutation process halted. Requires 450 ESMS.</p>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors relative z-10">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+<!-- Bottom progress/timeout bar -->
+<div class="absolute bottom-0 left-0 h-0.5 bg-error/20 w-full">
+<div class="h-full bg-error w-3/4 shadow-[0_0_8px_rgba(255,180,171,0.8)]"></div>
+</div>
+</div>
+</div>
+<!-- Main Content Canvas -->
+<main class="flex-grow flex flex-col items-center justify-center p-margin-mobile md:p-margin-desktop z-10 relative">
+<!-- Header for context -->
+<header class="text-center mb-16 max-w-2xl">
+<h1 class="font-headline-xl text-headline-xl text-primary mb-4">Feedback Resonance</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Observing alchemical anomalies and system disruptions within the agent framework.</p>
+</header>
+<!-- Inline Alert Container -->
+<div class="w-full max-w-3xl glass-panel rounded-xl p-8 relative overflow-hidden">
+<!-- Background ambient glow for container -->
+<div class="absolute -top-24 -right-24 w-64 h-64 bg-primary-container/10 rounded-full blur-[80px]"></div>
+<div class="mb-8 border-b border-outline-variant/30 pb-4">
+<h2 class="font-headline-sm text-headline-sm text-on-surface">Active Terminal</h2>
+</div>
+<!-- The Disconnected State Alert -->
+<div class="bg-surface-container-low/80 border rounded-lg p-6 flex flex-col md:flex-row items-center gap-6 glitch-effect relative">
+<div class="h-16 w-16 rounded-full bg-error-container/20 flex items-center justify-center border border-error/30 shrink-0 shadow-[0_0_15px_rgba(255,180,171,0.15)]">
+<span class="material-symbols-outlined text-3xl text-error animate-pulse" data-icon="power_off">power_off</span>
+</div>
+<div class="flex-1 text-center md:text-left">
+<h3 class="font-headline-lg text-headline-lg text-on-surface mb-2 tracking-tight">Desktop Sandbox Disconnected</h3>
+<div class="font-label-mono text-label-mono text-error/80 flex items-center justify-center md:justify-start gap-2 mb-4">
+<span class="inline-block w-2 h-2 rounded-full bg-error animate-ping"></span>
+                        ERR_CONNECTION_LOST [0x4F2A]
+                    </div>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-lg">
+                        The temporal link to your local environment has severed. Alchemical processes in this sector are suspended until the connection is re-established.
+                    </p>
+</div>
+<div class="shrink-0 w-full md:w-auto flex flex-col gap-3">
+<button class="w-full bg-surface-variant border border-outline-variant/50 hover:border-primary text-primary font-label-mono text-label-mono uppercase px-6 py-3 rounded transition-all duration-300 hover:shadow-[0_0_15px_rgba(210,187,255,0.2)]">
+                        Retry Link
+                    </button>
+<button class="w-full text-on-surface-variant font-label-mono text-label-mono uppercase px-6 py-3 rounded hover:text-on-surface transition-colors">
+                        View Logs
+                    </button>
+</div>
+</div>
+<!-- Simulated underlying content to show it's "in-context" -->
+<div class="mt-8 opacity-30 pointer-events-none">
+<div class="flex items-center gap-4 mb-4">
+<div class="h-10 w-10 rounded bg-surface-variant"></div>
+<div class="h-4 w-48 rounded bg-surface-variant"></div>
+</div>
+<div class="h-24 w-full rounded border border-outline-variant/20 bg-surface-container-lowest/50"></div>
+</div>
+</div>
+</main>
+</body></html>
