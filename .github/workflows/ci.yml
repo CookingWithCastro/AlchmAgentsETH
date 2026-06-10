@@ -23,6 +23,8 @@ jobs:
         run: bun run typecheck
       - name: Build application
         run: bun run build
+        env:
+          AUTH_SECRET: ci-build-only-auth-secret
 
   backend:
     runs-on: ubuntu-latest

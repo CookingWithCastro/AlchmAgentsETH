@@ -76,12 +76,90 @@ const config: Config = {
           matter: '#3b82f6', // blue-500
           substance: '#f59e0b', // amber-500
         },
+        /* ── Techno-Occult v2 palette (Stitch prototypes) ─────────────────
+           Source: design/prototypes/celestial_alchemist/DESIGN.md + the
+           inline tailwind config shared by every design/stitch-exports
+           code.html. Four names (primary/secondary/background/surface)
+           collide with the live shadcn tokens above, so those four are
+           exposed as st-* and scripts/convert-stitch.cjs rewrites them
+           during conversion. Everything else keeps its prototype name. */
+        'st-primary': '#d2bbff',
+        'st-secondary': '#ffe083',
+        'st-background': '#190d2c',
+        'st-surface': '#190d2c',
+        'spirit-violet': '#A855F7',
+        'monica-constant': '#FFFFFF',
+        'resonance-blue': '#3B82F6',
+        'obsidian-deep': '#0B0118',
+        'surface-dim': '#190d2c',
+        'surface-bright': '#403354',
+        'surface-container': '#251939',
+        'surface-container-low': '#211534',
+        'surface-container-lowest': '#130726',
+        'surface-container-high': '#302444',
+        'surface-container-highest': '#3b2f4f',
+        'surface-variant': '#3b2f4f',
+        'surface-tint': '#d2bbff',
+        'on-surface': '#ecdcff',
+        'on-surface-variant': '#ccc3d8',
+        'on-background': '#ecdcff',
+        'inverse-surface': '#ecdcff',
+        'inverse-on-surface': '#372a4b',
+        'primary-container': '#7c3aed',
+        'primary-fixed': '#eaddff',
+        'primary-fixed-dim': '#d2bbff',
+        'on-primary': '#3f008e',
+        'on-primary-container': '#ede0ff',
+        'on-primary-fixed': '#25005a',
+        'on-primary-fixed-variant': '#5a00c6',
+        'inverse-primary': '#732ee4',
+        'secondary-container': '#eec200',
+        'secondary-fixed': '#ffe083',
+        'secondary-fixed-dim': '#eec200',
+        'on-secondary': '#3c2f00',
+        'on-secondary-container': '#645000',
+        'on-secondary-fixed': '#231b00',
+        'on-secondary-fixed-variant': '#574500',
+        tertiary: '#4edea3',
+        'tertiary-container': '#007650',
+        'tertiary-fixed': '#6ffbbe',
+        'tertiary-fixed-dim': '#4edea3',
+        'on-tertiary': '#003824',
+        'on-tertiary-container': '#76ffc2',
+        'on-tertiary-fixed': '#002113',
+        'on-tertiary-fixed-variant': '#005236',
+        error: '#ffb4ab',
+        'error-container': '#93000a',
+        'on-error': '#690005',
+        'on-error-container': '#ffdad6',
+        outline: '#958da1',
+        'outline-variant': '#4a4455',
+      },
+      spacing: {
+        // Techno-Occult v2 layout scale (Stitch prototypes)
+        unit: '8px',
+        gutter: '24px',
+        'margin-mobile': '16px',
+        'margin-desktop': '64px',
+        safe: 'env(safe-area-inset-bottom)',
+      },
+      maxWidth: {
+        'container-max': '1280px',
       },
       fontFamily: {
         display: 'var(--ff-display)',
         ui: 'var(--ff-ui)',
         sans: 'var(--ff-ui)',
         mono: 'var(--ff-mono)',
+        // Techno-Occult v2 type roles (Stitch prototypes). Families load via
+        // next/font in app/layout.tsx (--font-literata / --font-jetbrains-mono).
+        'headline-xl': ['var(--font-literata)', 'Literata', 'Georgia', 'serif'],
+        'headline-xl-mobile': ['var(--font-literata)', 'Literata', 'Georgia', 'serif'],
+        'headline-lg': ['var(--font-literata)', 'Literata', 'Georgia', 'serif'],
+        'headline-sm': ['var(--font-literata)', 'Literata', 'Georgia', 'serif'],
+        'body-lg': ['var(--font-manrope)', 'Manrope', 'system-ui', 'sans-serif'],
+        'body-md': ['var(--font-manrope)', 'Manrope', 'system-ui', 'sans-serif'],
+        'label-mono': ['var(--font-jetbrains-mono)', 'JetBrains Mono', 'monospace'],
       },
       // Canonical shadcn radius mapping (drives Button/Card/Input via --radius).
       // xs/pill are additive (no Tailwind default to override).
@@ -98,6 +176,17 @@ const config: Config = {
         'fluid-xl': 'var(--text-xl)',
         'fluid-2xl': 'var(--text-2xl)',
         'fluid-3xl': 'var(--text-3xl)',
+        // Techno-Occult v2 type scale (pairs with the font-headline-* families)
+        'headline-xl': [
+          '48px',
+          { lineHeight: '56px', letterSpacing: '-0.02em', fontWeight: '700' },
+        ],
+        'headline-xl-mobile': ['36px', { lineHeight: '44px', fontWeight: '700' }],
+        'headline-lg': ['32px', { lineHeight: '40px', fontWeight: '600' }],
+        'headline-sm': ['20px', { lineHeight: '28px', fontWeight: '600' }],
+        'body-lg': ['18px', { lineHeight: '28px', fontWeight: '400' }],
+        'body-md': ['16px', { lineHeight: '24px', fontWeight: '400' }],
+        'label-mono': ['14px', { lineHeight: '20px', letterSpacing: '0.05em', fontWeight: '500' }],
       },
       boxShadow: {
         e1: 'var(--e-1)',
@@ -113,6 +202,20 @@ const config: Config = {
       },
       transitionTimingFunction: {
         smooth: 'var(--ease)',
+      },
+      // Techno-Occult v2 motion. Keyframes live in app/techno-occult.css —
+      // animation entries here only emit the shorthand, so the names resolve
+      // against that stylesheet at runtime.
+      animation: {
+        'pulse-ring': 'pulse-ring 3s infinite',
+        'pulse-glow': 'pulse-glow 2s infinite alternate',
+        'spin-slow': 'spin-slow 20s linear infinite',
+        'spin-slow-reverse': 'spin-reverse-slow 30s linear infinite',
+        shimmer: 'shimmer 1.5s infinite',
+        'fade-in-down': 'fade-in-down 0.5s ease-out both',
+        'float-soft': 'float 6s ease-in-out infinite',
+        'float-rune': 'float-rune 3s ease-in infinite',
+        ticker: 'ticker 30s linear infinite',
       },
     },
   },

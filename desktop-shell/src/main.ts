@@ -602,6 +602,7 @@ interface DesktopState extends PersistedDesktopState {
   // Train & Teach panel state (runtime-only).
   train: TrainState
   agentSearchQuery: string
+  speakingMessageId: string | null
 }
 
 type InvokeFn = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
@@ -674,9 +675,17 @@ const state = loadState()
 // has no backend on an end-user machine. Point them at the production hosts so
 // "Use Local MCP" chat/astrology actually resolves. Any externally-set env
 // still wins (see _resolve_url in planetary_agents_mcp_server.py).
+const isLocalDev =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+
 const MCP_SIDECAR_ENV: Record<string, string> = {
-  PLANETARY_AGENTS_BACKEND_URL: 'https://api.agents.alchm.kitchen',
-  PLANETARY_AGENTS_FRONTEND_URL: 'https://agents.alchm.kitchen',
+  PLANETARY_AGENTS_BACKEND_URL: isLocalDev
+    ? 'http://localhost:8000'
+    : 'https://api.agents.alchm.kitchen',
+  PLANETARY_AGENTS_FRONTEND_URL: isLocalDev
+    ? 'http://localhost:3000'
+    : 'https://agents.alchm.kitchen',
   // The bundled alchm-mcp (WTEN data server) builds natal charts by fetching
   // /api/astrologize from a backend. With no env it defaults to
   // http://localhost:3000 — absent on an end-user machine, so live-sky
@@ -688,8 +697,8 @@ const MCP_SIDECAR_ENV: Record<string, string> = {
   //     (onrender), which does not serve /api/astrologize.
   //   - NEXT_PUBLIC_SITE_URL stays as the getSelfBaseUrl() fallback for any
   //     other bundled self-fetch. Either, externally set, still wins.
-  ALCHM_MCP_BACKEND_URL: 'https://alchm.kitchen',
-  NEXT_PUBLIC_SITE_URL: 'https://alchm.kitchen',
+  ALCHM_MCP_BACKEND_URL: isLocalDev ? 'http://localhost:3000' : 'https://alchm.kitchen',
+  NEXT_PUBLIC_SITE_URL: isLocalDev ? 'http://localhost:3000' : 'https://alchm.kitchen',
 }
 
 export const alchmMcpClient = new LocalMcpClient(
@@ -722,23 +731,9 @@ function getSurface(): Surface {
  * triggers cloud egress. requestSidecar() goes through the local
  * orchestrator sidecar; whether the orchestrator then talks to the
  * network is its own concern.
- *
- * Pair with usesLocalMcp() to express intent at call sites:
- *   if (usesLocalMcp()) ...   // prefer the local MCP path
- *   if (canCallNetwork()) ... // permitted to call out to the cloud
  */
 function canCallNetwork(): boolean {
   return !state.disableNetwork
-}
-
-/**
- * True when the user has asked the shell to prefer the local MCP
- * sidecar over cloud APIs for chat + astrology. Wraps the historical
- * `localOfflineMode` flag so future call sites can read intent
- * instead of the legacy storage name.
- */
-function usesLocalMcp(): boolean {
-  return Boolean(state.localOfflineMode)
 }
 
 function createDefaultSiteAccounts(): Record<SiteKey, SiteAccount> {
@@ -940,6 +935,7 @@ function loadState(): DesktopState {
     jingMoveId: null,
     showSigilPanel: false,
     agentSearchQuery: '',
+    speakingMessageId: null,
   }
 
   const raw = localStorage.getItem(STORAGE_KEY)
@@ -1140,13 +1136,6 @@ function renderMainShell() {
         </nav>
         <div class="status-row">
           ${state.notice ? `<span class="notice">${escapeHtml(state.notice)}</span>` : ''}
-          <button
-            class="offline-toggle-button ${state.localOfflineMode ? 'active' : ''}"
-            data-action="toggle-use-local-mcp"
-            title="${state.localOfflineMode ? 'Use local MCP: chat and astrology route through the bundled MCP sidecar. Click to use cloud APIs instead.' : 'Cloud routing: chat and astrology hit agents.alchm.kitchen and alchm.kitchen. Click to switch to the bundled MCP sidecar.'}"
-          >
-            ${state.localOfflineMode ? '🔌 Use Local MCP' : '🌐 Use Cloud APIs'}
-          </button>
           <button
             class="offline-toggle-button ${state.disableNetwork ? 'active' : ''}"
             data-action="toggle-disable-network"
@@ -1861,27 +1850,60 @@ async function generateJingTurnText(
   prompt: string,
   apiKey: string
 ): Promise<string | null> {
-  // Path 1: MCP (when localOfflineMode is on and paMcpClient is running)
-  if (state.localOfflineMode) {
+  // Path 1: Local MCP (chat_with_planetary_agent tool)
+  try {
+    const mcpResult = await paMcpClient.call('tools/call', {
+      name: 'chat_with_planetary_agent',
+      arguments: {
+        agentName: agent.name,
+        message: prompt,
+        _meta: { apiKey, caller: 'alchm-desktop-jing' },
+      },
+    })
+    if (mcpResult?.content?.[0]?.text) {
+      const payload = JSON.parse(mcpResult.content[0].text)
+      if (payload.text) return payload.text
+    }
+  } catch (err) {
+    console.warn(`[Jing Path 1] MCP failed for ${agent.name}:`, err)
+  }
+
+  // Path 2: Direct Backend API call (bypasses MCP sidecar)
+  if (canCallNetwork()) {
     try {
-      const mcpResult = await paMcpClient.call('tools/call', {
-        name: 'chat_with_planetary_agent',
-        arguments: {
-          agentName: agent.name,
-          message: prompt,
-          _meta: { apiKey, caller: 'alchm-desktop-jing' },
+      const backendUrl = isLocalDev ? 'http://localhost:8000' : 'https://api.agents.alchm.kitchen'
+      const chatPayload = {
+        agentId: agent.id,
+        message: prompt,
+        sessionId: `jing-${agent.id}-${Date.now()}`,
+        modelTier: 'free',
+        context: {
+          mcpTool: 'chat_with_planetary_agent',
+          caller: 'alchm-desktop-jing-direct',
         },
-      })
-      if (mcpResult?.content?.[0]?.text) {
-        const payload = JSON.parse(mcpResult.content[0].text)
-        if (payload.text) return payload.text
+      }
+
+      const response = await withTimeout(
+        fetch(`${backendUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chatPayload),
+        }),
+        30_000,
+        'Jing backend API timed out.'
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        const text = data.text || data.response || ''
+        if (text && text.length > 10) return text
       }
     } catch (err) {
-      console.warn(`Jing MCP failed for ${agent.name}, trying sidecar:`, err)
+      console.warn(`[Jing Path 2] Direct backend API failed for ${agent.name}:`, err)
     }
   }
 
-  // Path 2: Tauri sidecar generate endpoint
+  // Path 3: Tauri sidecar generate endpoint
   if (invokeCommand && state.runtime.ipcNonce && state.account.apiKey) {
     try {
       const sidecarPrompt = [
@@ -1913,11 +1935,11 @@ async function generateJingTurnText(
         if (content) return content
       }
     } catch (err) {
-      console.warn(`Jing sidecar failed for ${agent.name}, using static fallback:`, err)
+      console.warn(`[Jing Path 3] Sidecar failed for ${agent.name}:`, err)
     }
   }
 
-  // Path 3: no generation available — return null so caller uses its own static text
+  // Path 4: no generation available — return null so caller uses its own static text
   return null
 }
 
@@ -2406,11 +2428,42 @@ function renderGroupStarterMessage(agents: LocalAgent[]) {
 
 function renderMessage(message: ChatMessage) {
   const speakerName = message.role === 'user' ? 'You' : getMessageSpeakerName(message)
+  const isAgent = message.role !== 'user'
+  const isSpeaking = state.speakingMessageId === message.id
+
+  const playButton = isAgent
+    ? `
+    <button class="voice-play-button ${isSpeaking ? 'speaking' : ''}" 
+            data-action="play-message" 
+            data-message-id="${message.id}" 
+            data-agent-id="${message.agentId || ''}" 
+            title="${isSpeaking ? 'Stop speaking' : "Read in agent's voice"}">
+      ${
+        isSpeaking
+          ? `
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+          <rect x="6" y="6" width="12" height="12" rx="1.5" />
+        </svg>
+      `
+          : `
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+      `
+      }
+    </button>
+  `
+    : ''
 
   return `
     <article class="message ${message.role}">
       <div class="message-meta">
-        <strong>${escapeHtml(speakerName)}</strong>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <strong>${escapeHtml(speakerName)}</strong>
+          ${playButton}
+        </div>
         <small>${formatTime(message.timestamp)}${message.channel ? ` · ${escapeHtml(message.channel)}` : ''}</small>
       </div>
       <p>${escapeHtml(message.content)}</p>
@@ -4625,118 +4678,150 @@ async function requestAgentText(
     }
   }
 
-  if (state.localOfflineMode) {
-    try {
-      const priorHistory = turnContext.priorResponses.map(res => `${res.agentName}: ${res.content}`)
-      const apiKey = state.account.apiKey || 'dev-desktop-token'
-      const mcpResult = await paMcpClient.call('tools/call', {
-        name: 'chat_with_planetary_agent',
-        arguments: {
-          agentName: agent.name,
-          message: userMessage,
-          conversationHistory: priorHistory,
-          _meta: {
-            apiKey: apiKey,
-            caller: 'alchm-desktop-shell',
-          },
+  // Path 1: Local MCP (chat_with_planetary_agent tool via sidecar stdio)
+  try {
+    const priorHistory = turnContext.priorResponses.map(res => `${res.agentName}: ${res.content}`)
+    const apiKey = state.account.apiKey || 'dev-desktop-token'
+    const mcpResult = await paMcpClient.call('tools/call', {
+      name: 'chat_with_planetary_agent',
+      arguments: {
+        agentName: agent.name,
+        message: userMessage,
+        conversationHistory: priorHistory,
+        _meta: {
+          apiKey: apiKey,
+          caller: 'alchm-desktop-shell',
         },
-      })
+      },
+    })
 
-      if (mcpResult && mcpResult.content && mcpResult.content[0]) {
-        const payloadText = mcpResult.content[0].text
-        const payload = JSON.parse(payloadText)
-        if (payload.error) {
-          throw new Error(payload.error)
-        }
-        return {
-          content: payload.text || 'No response',
-          channel: 'Local MCP Agent',
-          metered: false,
-        }
+    if (mcpResult && mcpResult.content && mcpResult.content[0]) {
+      const payloadText = mcpResult.content[0].text
+      const payload = JSON.parse(payloadText)
+      if (payload.error) {
+        throw new Error(payload.error)
       }
-      throw new Error('Invalid MCP response format')
-    } catch (error: any) {
-      // Don't hide the failure: record it for the Diagnostics panel and label
-      // the reply as a fallback so the user knows it didn't come from the MCP.
-      console.error('Local MCP chat failed, using profile-guided desktop reply:', error)
-      state.runtime.lastError = error instanceof Error ? error.message : 'Local MCP chat failed.'
       return {
-        content: buildProfileGuidedAgentReply(agent, userMessage, turnContext),
-        channel: 'Desktop agent (Fallback)',
+        content: payload.text || 'No response',
+        channel: 'Local MCP Agent',
         metered: false,
       }
     }
+    throw new Error('Invalid MCP response format')
+  } catch (error: any) {
+    console.warn(`[Path 1] MCP sidecar failed for ${agent.name}:`, error?.message || error)
   }
 
-  if (!invokeCommand || !state.runtime.ipcNonce || !state.account.apiKey) {
-    return {
-      content: buildProfileGuidedAgentReply(agent, userMessage, turnContext),
-      channel: 'Desktop agent',
-      metered: false,
-    }
-  }
+  // Path 2: Direct Backend API call (bypasses MCP sidecar, calls /api/chat directly)
+  // This is the "cloud API" path — works in both Tauri and browser preview.
+  if (canCallNetwork()) {
+    try {
+      const backendUrl = isLocalDev ? 'http://localhost:8000' : 'https://api.agents.alchm.kitchen'
+      const groupContext = buildAgentGroupPromptContext(agent, turnContext)
+      const priorHistory = turnContext.priorResponses.map(res => `${res.agentName}: ${res.content}`)
 
-  // Attempt sidecar inference; any failure gracefully falls back to the
-  // profile-guided agent reply instead of surfacing a "runtime not ready" notice.
-  try {
-    const groupContext = buildAgentGroupPromptContext(agent, turnContext)
-    const prompt =
-      agent.source === 'philosophers-stone'
-        ? [
-            `System: You are ${agent.name}, ${agent.title}, a local agent created with the Philosopher's Stone.`,
-            agent.promptSeed,
-            groupContext,
-            'Answer from the birth information and additional context used to create you.',
-            'The desktop app is a companion chat surface. Do not describe yourself as a fallback.',
-            `User: ${userMessage}`,
-            'Agent:',
-          ].join('\n')
-        : [
-            `System: You are ${agent.name}, ${agent.title}, from the Alchm Agents web catalog.`,
-            agent.promptSeed,
-            groupContext,
-            'Answer as the same agent personality the user would meet on the Alchm Agents website.',
-            'The desktop app is a companion chat surface. Do not describe yourself as a fallback.',
-            `User: ${userMessage}`,
-            'Agent:',
-          ]
-            .filter(Boolean)
-            .join('\n')
-
-    const response = await withTimeout(
-      requestSidecar('/api/generate', {
-        method: 'POST',
-        body: {
-          prompt,
-          modelName: agent.modelName,
-          costs: CHAT_COST,
-          inferenceProfile: 'balanced',
+      const chatPayload = {
+        agentId: agent.id,
+        message: userMessage,
+        sessionId: `desktop-${agent.id}-${Date.now()}`,
+        modelTier: 'free',
+        context: {
+          conversationHistory: priorHistory,
+          groupContext: groupContext || undefined,
+          mcpTool: 'chat_with_planetary_agent',
+          caller: 'alchm-desktop-shell-direct',
         },
-      }),
-      GENERATION_TIMEOUT_MS,
-      'Local inference timed out.'
-    )
+      }
 
-    if (response.ok) {
-      const body = await response.text()
-      const content = parseSseText(body) || body.trim()
-      if (content) {
-        return {
-          content,
-          channel: 'Desktop inference',
-          metered: true,
+      const response = await withTimeout(
+        fetch(`${backendUrl}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(chatPayload),
+        }),
+        30_000,
+        'Backend API chat timed out.'
+      )
+
+      if (response.ok) {
+        const data = await response.json()
+        const text = data.text || data.response || ''
+        if (text && text.length > 20) {
+          return {
+            content: text,
+            channel: 'Cloud Agent',
+            metered: false,
+          }
         }
       }
+      console.warn(`[Path 2] Backend API returned non-ok or empty:`, response.status)
+    } catch (error: any) {
+      console.warn(`[Path 2] Direct backend API failed for ${agent.name}:`, error?.message || error)
     }
-  } catch (error) {
-    console.warn(`Sidecar generation failed for ${agent.name}, using profile-guided reply:`, error)
   }
 
-  // Sidecar unavailable, returned empty, or errored – use the profile-guided
-  // reply so the agent always participates in the conversation.
+  // Path 3: Local Sidecar Inference (Rust backend llama-server)
+  if (invokeCommand && state.runtime.ipcNonce && state.account.apiKey) {
+    try {
+      const groupContext = buildAgentGroupPromptContext(agent, turnContext)
+      const prompt =
+        agent.source === 'philosophers-stone'
+          ? [
+              `System: You are ${agent.name}, ${agent.title}, a local agent created with the Philosopher's Stone.`,
+              agent.promptSeed,
+              groupContext,
+              'Answer from the birth information and additional context used to create you.',
+              'The desktop app is a companion chat surface. Do not describe yourself as a fallback.',
+              `User: ${userMessage}`,
+              'Agent:',
+            ].join('\n')
+          : [
+              `System: You are ${agent.name}, ${agent.title}, from the Alchm Agents web catalog.`,
+              agent.promptSeed,
+              groupContext,
+              'Answer as the same agent personality the user would meet on the Alchm Agents website.',
+              'The desktop app is a companion chat surface. Do not describe yourself as a fallback.',
+              `User: ${userMessage}`,
+              'Agent:',
+            ]
+              .filter(Boolean)
+              .join('\n')
+
+      const response = await withTimeout(
+        requestSidecar('/api/generate', {
+          method: 'POST',
+          body: {
+            prompt,
+            modelName: agent.modelName,
+            costs: CHAT_COST,
+            inferenceProfile: 'balanced',
+          },
+        }),
+        GENERATION_TIMEOUT_MS,
+        'Local inference timed out.'
+      )
+
+      if (response.ok) {
+        const body = await response.text()
+        const content = parseSseText(body) || body.trim()
+        if (content) {
+          return {
+            content,
+            channel: 'Desktop inference',
+            metered: true,
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`[Path 3] Sidecar inference failed for ${agent.name}:`, error)
+    }
+  }
+
+  // Path 4: Profile-guided Offline Fallback (only when all API paths exhausted)
+  console.warn(`[Path 4] All API paths failed for ${agent.name}, using profile-guided fallback`)
   return {
     content: buildProfileGuidedAgentReply(agent, userMessage, turnContext),
-    channel: 'Desktop agent',
+    channel: 'Desktop agent (Offline)',
     metered: false,
   }
 }
@@ -5560,8 +5645,17 @@ function buildLocalAstrologySnapshot(date = new Date(), latitude = 40.7128, long
 
 async function refreshAstrologyConsensus(options: { silent?: boolean } = {}) {
   if (!invokeCommand) {
-    state.astrology.status = 'error'
-    state.astrology.lastError = 'Open the packaged desktop app to load the astrology sidecar.'
+    try {
+      state.astrology.snapshot = buildLocalAstrologySnapshot(new Date(), 40.7128, -74.006)
+      state.astrology.status = 'ready'
+      state.astrology.lastError = null
+    } catch (fallbackError: any) {
+      state.astrology.status = 'error'
+      state.astrology.lastError =
+        fallbackError instanceof Error
+          ? fallbackError.message
+          : 'Local astrology calculation failed.'
+    }
     if (!options.silent) render()
     return
   }
@@ -5570,30 +5664,23 @@ async function refreshAstrologyConsensus(options: { silent?: boolean } = {}) {
   state.astrology.lastError = null
   if (!options.silent) render()
 
-  if (state.localOfflineMode) {
+  try {
+    const response = await requestSidecar('/api/astrology/consensus')
+    if (!response.ok) throw new Error(`Astrology consensus returned HTTP ${response.status}`)
+    state.astrology.snapshot = await response.json()
+    state.astrology.status = 'ready'
+    state.astrology.lastError = null
+  } catch (error) {
+    console.warn('Astrology consensus refresh failed, falling back to local snapshot:', error)
     try {
       state.astrology.snapshot = buildLocalAstrologySnapshot(new Date(), 40.7128, -74.006)
       state.astrology.status = 'ready'
       state.astrology.lastError = null
-    } catch (error: any) {
+    } catch (fallbackError: any) {
       state.astrology.status = 'error'
-      state.astrology.lastError = `Local Offline Transit failed: ${error.message}`
+      state.astrology.lastError =
+        fallbackError instanceof Error ? fallbackError.message : 'Local astrology fallback failed.'
     }
-    render()
-    return
-  }
-
-  try {
-    const response = await requestSidecar('/api/astrology/consensus')
-    if (!response.ok) throw new Error(`Astrology consensus returned HTTP ${response.status}`)
-
-    state.astrology.snapshot = (await response.json()) as AstrologyConsensusSnapshot
-    state.astrology.status = 'ready'
-    state.astrology.lastError = null
-  } catch (error) {
-    state.astrology.status = 'error'
-    state.astrology.lastError =
-      error instanceof Error ? error.message : 'Astrology consensus refresh failed.'
   }
 
   render()
@@ -5887,6 +5974,16 @@ function bindEvents() {
       render()
     }
 
+    if (action === 'play-message') {
+      const messageId = control.dataset.messageId
+      if (messageId) {
+        const msg = findMessageById(messageId)
+        if (msg) {
+          speakMessage(messageId, msg.content, control.dataset.agentId)
+        }
+      }
+    }
+
     if (action === 'select-agent' && agentId) {
       setSingleChatAgent(agentId)
       saveState()
@@ -5928,28 +6025,9 @@ function bindEvents() {
     if (action === 'tray-state' && control.dataset.trayState) {
       void setTrayState(control.dataset.trayState)
     }
-    if (action === 'toggle-offline-mode' || action === 'toggle-use-local-mcp') {
-      // toggle-offline-mode is the legacy data-action name; kept as an
-      // alias so any cached HTML or muscle-memory shortcuts keep
-      // working. The new conceptual name is toggle-use-local-mcp.
-      state.localOfflineMode = !state.localOfflineMode
-      saveState()
-      render()
-      setNotice(state.localOfflineMode ? 'Using local MCP sidecar.' : 'Using cloud APIs.')
-      void refreshAstrologyConsensus({ silent: true })
-    }
     if (action === 'toggle-disable-network') {
       state.disableNetwork = !state.disableNetwork
-      // If the user just disabled the network while still configured
-      // for cloud chat, auto-flip to local MCP so chat keeps working.
-      // The combo (network disabled + cloud chat) is unreachable, so
-      // silently fixing it is friendlier than letting it error later.
-      if (state.disableNetwork && !state.localOfflineMode) {
-        state.localOfflineMode = true
-        setNotice('Network disabled — also switched to local MCP so chat keeps working.')
-      } else {
-        setNotice(state.disableNetwork ? 'Network disabled (airplane mode).' : 'Network enabled.')
-      }
+      setNotice(state.disableNetwork ? 'Network disabled (airplane mode).' : 'Network enabled.')
       saveState()
       render()
       void refreshAstrologyConsensus({ silent: true })
@@ -6323,15 +6401,16 @@ async function refreshScrabbleLeague(options: { silent?: boolean } = {}) {
   state.scrabble.lastError = null
   if (!options.silent) render()
 
-  if (!canCallNetwork()) {
-    state.scrabble.status = 'error'
-    state.scrabble.lastError = 'Offline mode: cannot fetch online Scrabble League standings.'
-    render()
-    return
-  }
+  // Scrabble standings come from the local Next.js backend (localhost:3000),
+  // not a remote cloud service — so we skip the disableNetwork / airplane-mode
+  // check and always attempt the local call.
 
   try {
-    const base = (state.account.agentsUrl || DEFAULT_ACCOUNT.agentsUrl).replace(/\/$/, '')
+    // Always try localhost first; fall back to the configured agentsUrl only
+    // if the user has explicitly overridden it away from the default.
+    const configuredUrl = state.account.agentsUrl || DEFAULT_ACCOUNT.agentsUrl
+    const isDefaultRemote = configuredUrl === DEFAULT_ACCOUNT.agentsUrl
+    const base = (isDefaultRemote ? 'http://localhost:3000' : configuredUrl).replace(/\/$/, '')
     const response = await fetch(`${base}/api/agents/scrabble-standings`)
     if (!response.ok) throw new Error(`Scrabble League standings returned HTTP ${response.status}`)
 
@@ -6524,6 +6603,696 @@ function renderScrabbleView() {
       </div>
     </section>
   `
+}
+
+const FEMALE_AGENTS = new Set([
+  'monica-001',
+  'monica-app-guide',
+  'cleopatra',
+  'mary-wollstonecraft',
+  'marie-curie',
+  'marie-curie-1867',
+  'murasaki-shikibu',
+  'wangari-maathai',
+  'frida-kahlo',
+  'rachel-carson',
+  'joan-of-arc',
+  'hildegard-of-bingen',
+  'eleanor-roosevelt',
+  'sojourner-truth',
+  'maya-angelou',
+  'ada-lovelace',
+  'harriet-tubman',
+  'virginia-woolf',
+  'jane-austen',
+  'florence-nightingale',
+])
+
+interface VoiceProfile {
+  voiceKeywords: string[]
+  rate: number
+  pitch: number
+  lang?: string
+}
+
+const HISTORICAL_VOICE_REGISTRY: Record<string, VoiceProfile> = {
+  // ────────────────── MALE AGENTS ──────────────────
+  'albert-einstein': {
+    // German-accented, warm, wandering cadence. Known for slow, pondering speech with sudden bursts of enthusiasm.
+    voiceKeywords: ['reed', 'grandpa', 'eddy', 'daniel'],
+    rate: 0.82, // very thoughtful and slow with contemplative pauses
+    pitch: 0.92, // mellow baritone, slightly lower
+    lang: 'en-US',
+  },
+  'isaac-newton': {
+    // Precise, clipped British diction. Measured and deliberate — each word weighed carefully.
+    voiceKeywords: ['daniel', 'eddy', 'reed', 'google uk english male'],
+    rate: 0.85, // precise and deliberate, borderline pedantic
+    pitch: 1.08, // slightly higher, intellectual clarity
+    lang: 'en-GB',
+  },
+  'william-shakespeare': {
+    // Theatrical, rolling cadence. Elizabethan flourish — dramatic pauses followed by rapid passages.
+    voiceKeywords: ['daniel', 'reed', 'rocko', 'google uk english male'],
+    rate: 1.08, // theatrical and flowing, building momentum
+    pitch: 1.06, // expressive tenor with dramatic range
+    lang: 'en-GB',
+  },
+  socrates: {
+    // Conversational, probing, Socratic irony. Speaks as if perpetually asking a question.
+    voiceKeywords: ['eddy', 'reed', 'grandpa', 'daniel'],
+    rate: 0.9, // deliberate, leaving space for thought
+    pitch: 1.04, // slightly elevated — curious, inquisitive tone
+    lang: 'en-US',
+  },
+  'galileo-galilei': {
+    // Italian passion meets scientific rigor. Animated when describing discoveries, measured when reasoning.
+    voiceKeywords: ['rocko', 'eddy', 'reed', 'daniel'],
+    rate: 1.05, // slightly quick, animated with excitement
+    pitch: 1.02, // warm Mediterranean tenor
+    lang: 'en-US',
+  },
+  'carl-jung': {
+    // Swiss-German accent, deep and resonant. Speaks in careful, layered constructions with psychological weight.
+    voiceKeywords: ['grandpa', 'eddy', 'reed', 'daniel'],
+    rate: 0.78, // very slow, ponderous, depth-seeking
+    pitch: 0.85, // deep baritone, almost hypnotic
+    lang: 'en-US',
+  },
+  'carl-sagan': {
+    // Breathy wonder, cosmic awe. Famous for elongated vowels and building excitement.
+    voiceKeywords: ['reed', 'eddy', 'rocko', 'grandpa'],
+    rate: 0.92, // measured wonder, building to crescendo
+    pitch: 1.0, // warm and resonant, natural mid-range
+    lang: 'en-US',
+  },
+  'siddhartha-gautama-buddha': {
+    // Profoundly serene. Each word placed like a stone in still water — extreme calm.
+    voiceKeywords: ['grandpa', 'reed', 'rishi'],
+    rate: 0.68, // extremely slow, meditative — the slowest of all agents
+    pitch: 0.88, // deep and tranquil, almost a whisper of authority
+    lang: 'en-US',
+  },
+  rumi: {
+    // Ecstatic, rhythmic, poetic. Like listening to sung verse — musical and flowing.
+    voiceKeywords: ['reed', 'eddy', 'rishi'],
+    rate: 0.88, // rhythmic and flowing, building like poetry
+    pitch: 1.08, // elevated, ecstatic — almost singing
+    lang: 'en-US',
+  },
+  'mark-twain-1835': {
+    // Missouri drawl, dry wit. Long pauses for comedic effect, then sudden punchlines.
+    voiceKeywords: ['grandpa', 'reed', 'rocko'],
+    rate: 0.78, // slow, drawling — takes his sweet time
+    pitch: 0.85, // gruff, weathered baritone with humor underneath
+    lang: 'en-US',
+  },
+  'benjamin-franklin': {
+    // Avuncular, pragmatic, slightly amused. The wise grandfather who's seen it all.
+    voiceKeywords: ['grandpa', 'reed', 'eddy'],
+    rate: 0.95, // conversational but measured
+    pitch: 0.96, // balanced, warm, approachable
+    lang: 'en-US',
+  },
+  'julius-caesar': {
+    // Imperial authority. Declarative, commanding — every sentence a decree.
+    voiceKeywords: ['rocko', 'reed', 'eddy', 'daniel'],
+    rate: 1.05, // crisp, military precision
+    pitch: 0.88, // deep, authoritative, a general's voice
+    lang: 'en-US',
+  },
+  'isaac-asimov': {
+    // Brooklyn-accented, rapid-fire, professor-like. Enthusiastic about ideas, speaks faster when excited.
+    voiceKeywords: ['reed', 'eddy', 'rocko'],
+    rate: 1.12, // quick and intellectually animated
+    pitch: 1.02, // clear, professorial
+    lang: 'en-US',
+  },
+  'leonardo-da-vinci': {
+    // Renaissance polymath. Curious, dreamy, shifting between art and science mid-sentence.
+    voiceKeywords: ['eddy', 'reed', 'rocko', 'daniel'],
+    rate: 0.92, // contemplative, sometimes pausing to sketch mentally
+    pitch: 1.06, // warm, expressive Italian tenor
+    lang: 'en-US',
+  },
+  'nikola-tesla': {
+    // Serbian-accented precision. Visionary intensity — speaks as if receiving transmissions.
+    voiceKeywords: ['eddy', 'reed', 'rocko'],
+    rate: 1.02, // precise, slightly clipped, electric
+    pitch: 1.1, // higher, intense, vibrating with ideas
+    lang: 'en-US',
+  },
+  'charles-darwin': {
+    // Soft-spoken English gentleman. Careful, observational — speaks like he's narrating field notes.
+    voiceKeywords: ['daniel', 'eddy', 'reed', 'google uk english male'],
+    rate: 0.85, // patient, observational
+    pitch: 0.98, // gentle, understated English tenor
+    lang: 'en-GB',
+  },
+  'marcus-aurelius': {
+    // Stoic composure. Measured, self-reflective — the voice of a man writing meditations.
+    voiceKeywords: ['eddy', 'reed', 'grandpa'],
+    rate: 0.82, // deliberate, stoic
+    pitch: 0.92, // steady, centered — neither high nor low
+    lang: 'en-US',
+  },
+  confucius: {
+    // Aphoristic, teacher's cadence. Pauses between ideas to let them sink in.
+    voiceKeywords: ['grandpa', 'eddy', 'reed'],
+    rate: 0.8, // slow, didactic — each word deliberate
+    pitch: 0.95, // calm authority, elder's voice
+    lang: 'en-US',
+  },
+  'lao-tzu': {
+    // Soft, paradoxical, almost whispering. The Tao speaks through silence.
+    voiceKeywords: ['grandpa', 'reed', 'rishi'],
+    rate: 0.72, // near-silence pace, deeply contemplative
+    pitch: 0.9, // gentle, almost ethereal
+    lang: 'en-US',
+  },
+  'sun-tzu': {
+    // Military precision meets philosophical depth. Short, declarative, strategic.
+    voiceKeywords: ['eddy', 'rocko', 'reed'],
+    rate: 1.0, // precise, strategic — no wasted words
+    pitch: 0.9, // controlled, deep, commanding
+    lang: 'en-US',
+  },
+  nietzsche: {
+    // Intense, passionate, building to philosophical climax. The voice of a man on a mountain.
+    voiceKeywords: ['rocko', 'eddy', 'reed'],
+    rate: 1.08, // passionate, building intensity
+    pitch: 1.05, // intense tenor, rising with fervor
+    lang: 'en-US',
+  },
+  plato: {
+    // Socrates' student, more measured and systematic. Speaks in structured dialogues.
+    voiceKeywords: ['eddy', 'reed', 'daniel'],
+    rate: 0.88, // systematic, building arguments
+    pitch: 1.02, // clear, academic
+    lang: 'en-US',
+  },
+  aristotle: {
+    // The teacher. More grounded than Plato, more empirical. Speaks with taxonomic precision.
+    voiceKeywords: ['reed', 'eddy', 'daniel'],
+    rate: 0.92, // methodical, categorizing
+    pitch: 0.98, // balanced, authoritative
+    lang: 'en-US',
+  },
+  dostoevsky: {
+    // Russian intensity. Tortured, deep, exploring the abyss of human psychology.
+    voiceKeywords: ['grandpa', 'eddy', 'reed'],
+    rate: 0.8, // heavy, brooding, dramatic pauses
+    pitch: 0.82, // deep Russian baritone, anguished depth
+    lang: 'en-US',
+  },
+  voltaire: {
+    // French wit, razor-sharp. Quick, sardonic, dripping with irony.
+    voiceKeywords: ['eddy', 'reed', 'daniel'],
+    rate: 1.1, // quick-witted, satirical
+    pitch: 1.08, // light, amused tenor
+    lang: 'en-US',
+  },
+  'omar-khayyam': {
+    // Persian poet-mathematician. Lyrical, wine-flavored, fatalistic beauty.
+    voiceKeywords: ['rishi', 'reed', 'eddy'],
+    rate: 0.85, // flowing, poetic cadence
+    pitch: 1.05, // melodic, warm
+    lang: 'en-US',
+  },
+  'khalil-gibran': {
+    // Lebanese mystical prose. Deeply earnest, every word a revelation.
+    voiceKeywords: ['rishi', 'eddy', 'reed'],
+    rate: 0.82, // reverent, almost prayerful
+    pitch: 1.04, // warm, sincere tenor
+    lang: 'en-US',
+  },
+  machiavelli: {
+    // Florentine pragmatism. Cool, calculating, speaking uncomfortable truths without flinching.
+    voiceKeywords: ['rocko', 'eddy', 'reed'],
+    rate: 0.95, // measured, strategic — revealing nothing accidental
+    pitch: 0.94, // smooth, slightly cold
+    lang: 'en-US',
+  },
+  gandhi: {
+    // Gentle but unyielding. Speaks softly but with absolute moral conviction.
+    voiceKeywords: ['rishi', 'grandpa', 'reed'],
+    rate: 0.78, // gentle, deliberate, unhurried
+    pitch: 1.0, // thin but clear, moral authority
+    lang: 'en-US',
+  },
+  'alan-turing': {
+    // Brilliant, slightly awkward. Quick bursts of insight followed by contemplative pauses.
+    voiceKeywords: ['daniel', 'eddy', 'reed', 'google uk english male'],
+    rate: 1.05, // quick analytical mind
+    pitch: 1.06, // slightly higher, nervous energy
+    lang: 'en-GB',
+  },
+  'edgar-allan-poe': {
+    // Gothic, haunted, melodramatic. The voice echoes in empty chambers.
+    voiceKeywords: ['rocko', 'eddy', 'reed'],
+    rate: 0.82, // slow, building dread
+    pitch: 0.88, // dark, resonant, slightly hollow
+    lang: 'en-US',
+  },
+  'thomas-jefferson': {
+    // Virginian eloquence. Diplomatic, measured, writing-as-speech — the Declaration in voice form.
+    voiceKeywords: ['reed', 'eddy', 'grandpa'],
+    rate: 0.9, // measured, diplomatic
+    pitch: 0.96, // refined Southern gentility
+    lang: 'en-US',
+  },
+  'abraham-lincoln': {
+    // Frontier simplicity meets profound depth. Speaks slowly, with homespun wisdom.
+    voiceKeywords: ['grandpa', 'reed', 'eddy'],
+    rate: 0.8, // prairie slow, deliberate
+    pitch: 0.9, // surprisingly high for his frame, nasal quality
+    lang: 'en-US',
+  },
+  'martin-luther-king-jr': {
+    // Preacher's cadence. Musical, building, sermonic — the voice rises to crescendo.
+    voiceKeywords: ['reed', 'eddy', 'rocko'],
+    rate: 0.95, // building rhythm, sermonic pacing
+    pitch: 0.95, // rich baritone, powerful resonance
+    lang: 'en-US',
+  },
+  // ────────────────── FEMALE AGENTS ──────────────────
+  cleopatra: {
+    // Regal command. Speaks as one born to rule — every word a calculated gesture of power.
+    voiceKeywords: ['flo', 'shelley', 'sandy', 'samantha'],
+    rate: 0.82, // imperially slow, commanding attention
+    pitch: 1.12, // elevated, regal clarity
+    lang: 'en-US',
+  },
+  'jane-austen': {
+    // Regency wit, precise English diction. Quick irony, measured observations.
+    voiceKeywords: ['flo', 'shelley', 'sandy', 'google uk english female'],
+    rate: 1.08, // brisk, witty, socially aware
+    pitch: 1.1, // light, intelligent soprano
+    lang: 'en-GB',
+  },
+  'frida-kahlo': {
+    // Mexican fire and pain. Warm, slow, with sudden volcanic intensity.
+    voiceKeywords: ['flo', 'samantha', 'sandy', 'shelley'],
+    rate: 0.9, // warm, passionate, smoldering
+    pitch: 0.92, // deeper than expected, earthy
+    lang: 'en-US',
+  },
+  'marie-curie-1867': {
+    // Polish-French precision. Calm, focused, speaking with scientific exactitude.
+    voiceKeywords: ['shelley', 'sandy', 'flo', 'samantha'],
+    rate: 0.88, // careful, precise, methodical
+    pitch: 1.0, // steady, no-nonsense
+    lang: 'en-US',
+  },
+  'sojourner-truth': {
+    // Powerful preacher's voice. Deep, resonant, rising with prophetic conviction.
+    voiceKeywords: ['grandma', 'shelley', 'sandy', 'samantha'],
+    rate: 0.82, // slow, letting truth settle like thunder
+    pitch: 0.86, // deep, resonant — the lowest female voice in the registry
+    lang: 'en-US',
+  },
+  'maya-angelou': {
+    // Rich, melodic Southern poetry. Every sentence a verse, every pause intentional.
+    voiceKeywords: ['grandma', 'shelley', 'sandy', 'samantha'],
+    rate: 0.76, // deeply rhythmic, letting words breathe
+    pitch: 0.85, // rich contralto, musical depth
+    lang: 'en-US',
+  },
+  'eleanor-roosevelt': {
+    // New England aristocratic. Diplomatic, precise, with quiet steel underneath.
+    voiceKeywords: ['grandma', 'shelley', 'sandy', 'samantha'],
+    rate: 0.94, // diplomatic, measured
+    pitch: 1.08, // refined, clear, patrician
+    lang: 'en-US',
+  },
+  'rachel-carson': {
+    // Gentle, observant naturalist. Speaks as if describing a bird in flight — reverent, specific.
+    voiceKeywords: ['shelley', 'sandy', 'flo', 'samantha'],
+    rate: 0.9, // unhurried observation
+    pitch: 1.04, // warm, gentle, caring
+    lang: 'en-US',
+  },
+  'mary-wollstonecraft': {
+    // English radical, passionate and direct. Speaks with conviction and moral force.
+    voiceKeywords: ['shelley', 'flo', 'sandy', 'google uk english female'],
+    rate: 1.02, // direct, impassioned
+    pitch: 1.05, // clear, assertive
+    lang: 'en-GB',
+  },
+  'joan-of-arc': {
+    // Young, fierce, prophetic. Speaks with the conviction of divine voices — urgent and unwavering.
+    voiceKeywords: ['flo', 'sandy', 'samantha', 'shelley'],
+    rate: 1.05, // urgent, prophetic
+    pitch: 1.15, // young, high, burning with certainty
+    lang: 'en-US',
+  },
+  'hildegard-of-bingen': {
+    // Medieval mystic. Slow, chanting quality — as if composing plainsong while speaking.
+    voiceKeywords: ['shelley', 'sandy', 'flo', 'samantha'],
+    rate: 0.78, // liturgical, measured, contemplative
+    pitch: 1.1, // clear, bell-like, monastic
+    lang: 'en-US',
+  },
+  'ada-lovelace': {
+    // Victorian precision meets mathematical imagination. Precise but visionary.
+    voiceKeywords: ['flo', 'shelley', 'sandy', 'google uk english female'],
+    rate: 1.02, // precise, analytical but enthusiastic
+    pitch: 1.08, // bright, clear Victorian
+    lang: 'en-GB',
+  },
+  'harriet-tubman': {
+    // Quiet steel, coded speech. Speaks in short, decisive commands — a conductor's voice.
+    voiceKeywords: ['grandma', 'shelley', 'sandy'],
+    rate: 0.85, // decisive, no wasted words
+    pitch: 0.9, // deep, weathered strength
+    lang: 'en-US',
+  },
+  'virginia-woolf': {
+    // Stream of consciousness in voice. Flowing, associative, building complex thoughts mid-sentence.
+    voiceKeywords: ['flo', 'shelley', 'sandy', 'google uk english female'],
+    rate: 1.06, // flowing, associative, building
+    pitch: 1.04, // literary, intelligent
+    lang: 'en-GB',
+  },
+  'murasaki-shikibu': {
+    // Court elegance, poetic restraint. Each word chosen like a brushstroke.
+    voiceKeywords: ['shelley', 'flo', 'sandy', 'samantha'],
+    rate: 0.82, // deliberate, poetic restraint
+    pitch: 1.06, // refined, delicate
+    lang: 'en-US',
+  },
+  'wangari-maathai': {
+    // Kenyan warmth, environmental passion. Speaks with the patience of planting trees.
+    voiceKeywords: ['shelley', 'sandy', 'flo', 'samantha'],
+    rate: 0.9, // warm, patient, growing
+    pitch: 1.0, // clear, grounded
+    lang: 'en-US',
+  },
+  'florence-nightingale': {
+    // Victorian compassion, administrative precision. Gentle but utterly organized.
+    voiceKeywords: ['flo', 'shelley', 'sandy', 'google uk english female'],
+    rate: 0.92, // caring but efficient
+    pitch: 1.06, // clear, compassionate English
+    lang: 'en-GB',
+  },
+  // ────────────────── APP GUIDE ──────────────────
+  'monica-001': {
+    // Friendly AI assistant. Clear, helpful, slightly upbeat — the ideal guide voice.
+    voiceKeywords: ['flo', 'samantha', 'sandy', 'shelley'],
+    rate: 1.02, // friendly, helpful and bright
+    pitch: 1.1, // clear, pleasant, approachable
+    lang: 'en-US',
+  },
+  'monica-app-guide': {
+    voiceKeywords: ['flo', 'samantha', 'sandy', 'shelley'],
+    rate: 1.02,
+    pitch: 1.1,
+    lang: 'en-US',
+  },
+}
+
+let activeSpeechUtterance: SpeechSynthesisUtterance | null = null
+
+function selectVoiceForAgent(agent: LocalAgent | undefined): SpeechSynthesisVoice | null {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return null
+  const voices = window.speechSynthesis.getVoices()
+  if (!voices.length) return null
+
+  const nameLower = (agent?.name || '').toLowerCase()
+  const idLower = (agent?.id || '').toLowerCase()
+
+  // 1. Check if we have a predefined voice profile for this historical agent
+  const profile = HISTORICAL_VOICE_REGISTRY[idLower]
+  if (profile) {
+    const enVoices = voices.filter(v => v.lang.toLowerCase().startsWith('en'))
+    if (!enVoices.length) return voices[0]
+
+    let candidates = enVoices
+    if (profile.lang) {
+      const langMatch = enVoices.filter(v =>
+        v.lang.toLowerCase().startsWith(profile.lang!.toLowerCase())
+      )
+      if (langMatch.length) candidates = langMatch
+    }
+
+    // Try to match keywords in order of preference
+    for (const keyword of profile.voiceKeywords) {
+      const match = candidates.find(v => v.name.toLowerCase().includes(keyword.toLowerCase()))
+      if (match) return match
+    }
+
+    return candidates[0]
+  }
+
+  // 2. Fall back to standard element-based voice selection
+  const isFemale =
+    FEMALE_AGENTS.has(idLower) ||
+    nameLower.includes('cleopatra') ||
+    nameLower.includes('mary') ||
+    nameLower.includes('marie') ||
+    nameLower.includes('frida') ||
+    nameLower.includes('eleanor') ||
+    nameLower.includes('sojourner') ||
+    nameLower.includes('maya') ||
+    nameLower.includes('joan') ||
+    nameLower.includes('hildegard') ||
+    nameLower.includes('rachel') ||
+    nameLower.includes('wangari') ||
+    nameLower.includes('murasaki') ||
+    nameLower.includes('monica')
+
+  const isBritish =
+    nameLower.includes('shakespeare') ||
+    nameLower.includes('dickens') ||
+    nameLower.includes('wollstonecraft') ||
+    nameLower.includes('newton') ||
+    nameLower.includes('darwin') ||
+    nameLower.includes('chaucer') ||
+    nameLower.includes('locke') ||
+    nameLower.includes('hume') ||
+    nameLower.includes('smith')
+
+  const enVoices = voices.filter(v => v.lang.toLowerCase().startsWith('en'))
+  if (!enVoices.length) {
+    return voices[0]
+  }
+
+  // Classic low-quality novelty/robotic voices on macOS to avoid
+  const ROBOTIC_VOICES = [
+    'fred',
+    'albert',
+    'bad news',
+    'bahh',
+    'bells',
+    'boing',
+    'bubbles',
+    'cellos',
+    'good news',
+    'jester',
+    'junior',
+    'organ',
+    'ralph',
+    'superstar',
+    'trinoids',
+    'whisper',
+    'wobble',
+    'zarvox',
+    'kathy',
+  ]
+
+  // Filter out robotic voices
+  let candidates = enVoices.filter(v => {
+    const vName = v.name.toLowerCase()
+    return !ROBOTIC_VOICES.some(bad => vName.includes(bad))
+  })
+
+  // If everything was filtered out, fall back to all English voices
+  if (!candidates.length) {
+    candidates = enVoices
+  }
+
+  // Filter by region
+  if (isBritish) {
+    const gb = candidates.filter(
+      v => v.lang.toLowerCase().includes('gb') || v.lang.toLowerCase().includes('uk')
+    )
+    if (gb.length) candidates = gb
+  } else {
+    const isUS =
+      nameLower.includes('twain') ||
+      nameLower.includes('franklin') ||
+      nameLower.includes('roosevelt') ||
+      nameLower.includes('carson') ||
+      nameLower.includes('asimov') ||
+      nameLower.includes('sagan') ||
+      nameLower.includes('poe') ||
+      nameLower.includes('truth') ||
+      nameLower.includes('angelou') ||
+      nameLower.includes('monica') ||
+      nameLower.includes('einstein')
+    if (isUS) {
+      const us = candidates.filter(v => v.lang.toLowerCase().includes('us'))
+      if (us.length) candidates = us
+    }
+  }
+
+  // Modern natural voices: Eddy, Flo, Reed, Rocko, Sandy, Shelley, Grandma, Grandpa, Samantha, Daniel, Karen, Tessa, Moira, etc.
+  const femaleKeywords = [
+    'samantha',
+    'flo',
+    'sandy',
+    'shelley',
+    'grandma',
+    'karen',
+    'tessa',
+    'moira',
+    'fiona',
+    'veena',
+    'zira',
+    'susan',
+    'hazel',
+    'victoria',
+    'zoe',
+    'female',
+    'natural',
+    'google uk english female',
+  ]
+  const maleKeywords = [
+    'daniel',
+    'eddy',
+    'reed',
+    'rocko',
+    'grandpa',
+    'rishi',
+    'david',
+    'alex',
+    'george',
+    'oliver',
+    'male',
+    'google uk english male',
+  ]
+
+  const genderMatched = candidates.filter(v => {
+    const vName = v.name.toLowerCase()
+    return isFemale
+      ? femaleKeywords.some(kw => vName.includes(kw))
+      : maleKeywords.some(kw => vName.includes(kw))
+  })
+
+  if (genderMatched.length > 0) {
+    // Prioritize premium/highly-natural voices
+    const premiumVoices = ['eddy', 'flo', 'sandy', 'shelley', 'reed', 'rocko', 'samantha', 'daniel']
+    const sorted = [...genderMatched].sort((a, b) => {
+      const aName = a.name.toLowerCase()
+      const bName = b.name.toLowerCase()
+      const aPremium = premiumVoices.some(p => aName.includes(p)) ? 1 : 0
+      const bPremium = premiumVoices.some(p => bName.includes(p)) ? 1 : 0
+      return bPremium - aPremium
+    })
+    return sorted[0]
+  }
+
+  return candidates[0]
+}
+
+function stopSpeaking() {
+  if (typeof window !== 'undefined' && window.speechSynthesis) {
+    window.speechSynthesis.cancel()
+  }
+  state.speakingMessageId = null
+  activeSpeechUtterance = null
+  render()
+}
+
+function speakMessage(messageId: string, text: string, agentId?: string) {
+  if (typeof window === 'undefined' || !window.speechSynthesis) return
+
+  if (state.speakingMessageId === messageId) {
+    stopSpeaking()
+    return
+  }
+
+  window.speechSynthesis.cancel()
+
+  const agent = agentId ? state.roster.find(a => a.id === agentId) : undefined
+  const profile = agent ? HISTORICAL_VOICE_REGISTRY[agent.id.toLowerCase()] : undefined
+
+  let rate = 1.0
+  let pitch = 1.0
+
+  if (profile) {
+    rate = profile.rate
+    pitch = profile.pitch
+  } else {
+    const element = agent?.element || agent?.stoneBlueprint?.dominantElement
+    if (element === 'Earth') {
+      rate = 0.88
+      pitch = 0.85
+    } else if (element === 'Air') {
+      rate = 1.12
+      pitch = 1.15
+    } else if (element === 'Fire') {
+      rate = 1.05
+      pitch = 1.0
+    } else if (element === 'Water') {
+      rate = 0.95
+      pitch = 1.05
+    }
+  }
+
+  const cleanedText = text
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^\)]+\)/g, '$1')
+    .replace(/[✨🔮🧪⚗️🪐🌙🌟🕯️]/g, '')
+
+  const utterance = new SpeechSynthesisUtterance(cleanedText)
+
+  const voice = selectVoiceForAgent(agent)
+  if (voice) {
+    utterance.voice = voice
+  }
+
+  utterance.rate = rate
+  utterance.pitch = pitch
+
+  utterance.onend = () => {
+    if (state.speakingMessageId === messageId) {
+      state.speakingMessageId = null
+      activeSpeechUtterance = null
+      render()
+    }
+  }
+
+  utterance.onerror = e => {
+    console.warn('SpeechSynthesis error:', e)
+    if (state.speakingMessageId === messageId) {
+      state.speakingMessageId = null
+      activeSpeechUtterance = null
+      render()
+    }
+  }
+
+  state.speakingMessageId = messageId
+  activeSpeechUtterance = utterance
+
+  render()
+  window.speechSynthesis.speak(utterance)
+}
+
+function findMessageById(messageId: string): ChatMessage | undefined {
+  for (const chatKey of Object.keys(state.chats)) {
+    const msg = state.chats[chatKey].find(m => m.id === messageId)
+    if (msg) return msg
+  }
+  return undefined
+}
+
+if (typeof window !== 'undefined' && window.speechSynthesis) {
+  window.speechSynthesis.getVoices()
+  window.speechSynthesis.addEventListener('voiceschanged', () => {
+    window.speechSynthesis.getVoices()
+  })
 }
 
 function boot() {

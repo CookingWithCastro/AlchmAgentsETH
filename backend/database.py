@@ -111,6 +111,8 @@ engine = create_engine(
     connect_args={"check_same_thread": False}
     if SQLALCHEMY_DATABASE_URL.startswith("sqlite")
     else {},
+    pool_recycle=1800,
+    pool_pre_ping=True,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -150,13 +152,85 @@ def ensure_postgres_runtime_schema() -> None:
                             'ALTER TABLE historical_agents ADD COLUMN "updatedAt" DATETIME'
                         )
                     )
+                if "level" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "level" INTEGER DEFAULT 1'
+                        )
+                    )
+                if "xp" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "xp" INTEGER DEFAULT 0'
+                        )
+                    )
+                if "evolutionValues" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "evolutionValues" JSON'
+                        )
+                    )
+                if "evTotal" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "evTotal" INTEGER DEFAULT 0'
+                        )
+                    )
+                if "ivSnapshot" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "ivSnapshot" JSON'
+                        )
+                    )
+                if "lastTrainingPartner" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "lastTrainingPartner" TEXT'
+                        )
+                    )
+                if "lastXpGain" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "lastXpGain" DATETIME'
+                        )
+                    )
+                if "lastActive" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "lastActive" DATETIME'
+                        )
+                    )
+                if "isActive" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "isActive" BOOLEAN DEFAULT 1'
+                        )
+                    )
+                if "version" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "version" TEXT DEFAULT \'2.0.0\''
+                        )
+                    )
+                if "craftedBy" not in columns:
+                    conn.execute(
+                        text(
+                            'ALTER TABLE historical_agents ADD COLUMN "craftedBy" TEXT DEFAULT \'philosopher-stone\''
+                        )
+                    )
                 conn.execute(
                     text(
                         """
                         UPDATE historical_agents
                         SET "kalchmConstant" = COALESCE("kalchmConstant", "monicaConstant", 0.5),
                             "createdAt" = COALESCE("createdAt", CURRENT_TIMESTAMP),
-                            "updatedAt" = COALESCE("updatedAt", CURRENT_TIMESTAMP)
+                            "updatedAt" = COALESCE("updatedAt", CURRENT_TIMESTAMP),
+                            "level" = COALESCE("level", 1),
+                            "xp" = COALESCE("xp", 0),
+                            "evTotal" = COALESCE("evTotal", 0),
+                            "isActive" = COALESCE("isActive", 1),
+                            "version" = COALESCE("version", '2.0.0'),
+                            "craftedBy" = COALESCE("craftedBy", 'philosopher-stone')
                         """
                     )
                 )
@@ -186,11 +260,72 @@ def ensure_postgres_runtime_schema() -> None:
             )
             conn.execute(
                 text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "level" INTEGER DEFAULT 1'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "xp" INTEGER DEFAULT 0'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "evolutionValues" JSONB DEFAULT \'{}\'::jsonb'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "evTotal" INTEGER DEFAULT 0'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "ivSnapshot" JSONB'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "lastTrainingPartner" VARCHAR(255)'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "lastXpGain" TIMESTAMP'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "lastActive" TIMESTAMP'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "isActive" BOOLEAN DEFAULT TRUE'
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "version" VARCHAR(50) DEFAULT \'2.0.0\''
+                )
+            )
+            conn.execute(
+                text(
+                    'ALTER TABLE historical_agents ADD COLUMN IF NOT EXISTS "craftedBy" VARCHAR(100) DEFAULT \'philosopher-stone\''
+                )
+            )
+            conn.execute(
+                text(
                     """
                     UPDATE historical_agents
                     SET "kalchmConstant" = COALESCE("kalchmConstant", "monicaConstant", 0.5),
                         "createdAt" = COALESCE("createdAt", NOW()),
-                        "updatedAt" = COALESCE("updatedAt", NOW())
+                        "updatedAt" = COALESCE("updatedAt", NOW()),
+                        "level" = COALESCE("level", 1),
+                        "xp" = COALESCE("xp", 0),
+                        "evTotal" = COALESCE("evTotal", 0),
+                        "isActive" = COALESCE("isActive", TRUE),
+                        "version" = COALESCE("version", '2.0.0'),
+                        "craftedBy" = COALESCE("craftedBy", 'philosopher-stone')
                     """
                 )
             )
