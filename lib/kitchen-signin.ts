@@ -14,6 +14,31 @@
 export const ALCHM_KITCHEN_URL =
   process.env.NEXT_PUBLIC_ALCHM_KITCHEN_URL || 'https://alchm.kitchen'
 
+export const AGENTS_APP_URL =
+  process.env.NEXT_PUBLIC_AGENTS_APP_URL || 'https://agents.alchm.kitchen'
+
+export const DEFAULT_POST_LOGIN_PATH = '/profile'
+
+export function normalizeAgentsCallbackUrl(
+  callbackPath: string | null | undefined,
+  browserOrigin?: string
+): string {
+  const fallbackOrigin = browserOrigin || AGENTS_APP_URL
+  const fallback = new URL(DEFAULT_POST_LOGIN_PATH, fallbackOrigin)
+
+  if (!callbackPath) return fallback.toString()
+
+  try {
+    const callback = new URL(callbackPath, fallbackOrigin)
+    const allowedOrigins = new Set([new URL(AGENTS_APP_URL).origin, new URL(fallbackOrigin).origin])
+    if (!allowedOrigins.has(callback.origin)) return fallback.toString()
+    if (callback.protocol !== 'http:' && callback.protocol !== 'https:') return fallback.toString()
+    return callback.toString()
+  } catch {
+    return fallback.toString()
+  }
+}
+
 /**
  * Build the kitchen Google sign-in URL.
  *
@@ -22,14 +47,9 @@ export const ALCHM_KITCHEN_URL =
  *                      an absolute URL — relative paths are resolved against
  *                      `window.location.origin` when called in the browser.
  */
-export function buildKitchenSignInUrl(callbackPath: string): string {
-  const origin =
-    typeof window !== 'undefined' ? window.location.origin : 'https://agents.alchm.kitchen'
-
-  const absoluteCallback =
-    callbackPath.startsWith('http://') || callbackPath.startsWith('https://')
-      ? callbackPath
-      : origin + (callbackPath.startsWith('/') ? callbackPath : `/${callbackPath}`)
+export function buildKitchenSignInUrl(callbackPath = DEFAULT_POST_LOGIN_PATH): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : AGENTS_APP_URL
+  const absoluteCallback = normalizeAgentsCallbackUrl(callbackPath, origin)
 
   return `${ALCHM_KITCHEN_URL}/api/auth/signin/google?callbackUrl=${encodeURIComponent(
     absoluteCallback

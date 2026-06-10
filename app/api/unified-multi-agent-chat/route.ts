@@ -31,8 +31,7 @@ import {
   getRAGConfig,
   type RAGMetadata,
 } from '@/lib/rag/rag-generator'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { EconomyService } from '@/lib/services/economyService'
 import { getHistoricalAgent, getHistoricalAgentByName } from '@/lib/agents/historical'
 import { unifiedAgentFactory } from '@/lib/unified-agent-factory'
@@ -185,8 +184,8 @@ export async function POST(request: NextRequest) {
     // -----------------------------------------------------------------
     // ESMS Token Economy: Dynamic Agent Fee
     // -----------------------------------------------------------------
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as any)?.id
+    const session = await auth()
+    const userId = session?.user.id
 
     // Free-rotation waiver: skip the agent fee when EVERY agent in the room is in
     // this week's free set (featured guides + active-aspect degree sprites).

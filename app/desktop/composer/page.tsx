@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
 import { getPrimaryNatalChart } from '@/lib/services/natal-chart-storage'
 import {
@@ -15,8 +14,8 @@ import { LiveComposerClient } from './live-composer-client'
 export const dynamic = 'force-dynamic'
 
 export default async function DesktopComposerPage() {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as { id?: string } | undefined)?.id
+  const session = await auth()
+  const userId = session?.user.id
 
   let userAgent: CouncilAgent | null = null
   if (userId) {

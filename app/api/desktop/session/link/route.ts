@@ -1,9 +1,8 @@
 import { randomBytes, randomUUID } from 'crypto'
 import crypto from 'crypto'
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
 
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
@@ -16,62 +15,13 @@ function createDesktopToken() {
 }
 
 export async function POST() {
-  const session = await getServerSession(authOptions).catch(() => null)
-  const userId = (session?.user as { id?: string } | undefined)?.id
+  const session = await auth().catch(() => null)
+  const userId = session?.user.id
 
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const token = createDesktopToken()
-  const dbExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-  const desktopApiKey = (prisma as any).desktopApiKey
-
-  try {
-    if (desktopApiKey?.updateMany && desktopApiKey?.create) {
-      await desktopApiKey.updateMany({
-        where: {
-          userId,
-          label: DESKTOP_KEY_LABEL,
-          isActive: true,
-        },
-        data: { isActive: false },
-      })
-
-      await desktopApiKey.create({
-        data: {
-          token,
-          userId,
-          label: DESKTOP_KEY_LABEL,
-          expiresAt: dbExpiresAt,
-        },
-      })
-    } else {
-      await prisma.$transaction([
-        prisma.$executeRaw`
-          UPDATE desktop_api_keys
-          SET is_active = false
-          WHERE user_id = ${userId}
-            AND label = ${DESKTOP_KEY_LABEL}
-            AND is_active = true
-        `,
-        prisma.$executeRaw`
-          INSERT INTO desktop_api_keys (id, token, user_id, label, expires_at)
-          VALUES (${randomUUID()}, ${token}, ${userId}, ${DESKTOP_KEY_LABEL}, ${dbExpiresAt})
-        `,
-      ])
-    }
-  } catch (error) {
-    console.error('Failed to register desktop token in database:', error)
-    return NextResponse.json({ error: 'Database session registration failed' }, { status: 500 })
-  }
-
-  // Deep link parameters
-  const displayName = session?.user?.name || 'Alchm Operator'
-  const email = session?.user?.email || ''
-  const expiresAtMs = (Date.now() + 5 * 60 * 1000).toString() // Deep link is valid for 5 minutes
-
-  // Retrieve signing secret
   const secret =
     process.env.DEEP_LINK_SHARED_SECRET ||
     process.env.TAURI_DEEP_LINK_SECRET ||
@@ -80,6 +30,39 @@ export async function POST() {
   if (!secret) {
     return NextResponse.json({ error: 'Deep-link signing is not configured' }, { status: 503 })
   }
+
+  const token = createDesktopToken()
+  const dbExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+  try {
+    await prisma.$transaction([
+      prisma.desktopApiKey.updateMany({
+        where: {
+          userId,
+          label: DESKTOP_KEY_LABEL,
+          isActive: true,
+        },
+        data: { isActive: false },
+      }),
+      prisma.desktopApiKey.create({
+        data: {
+          id: randomUUID(),
+          token,
+          userId,
+          label: DESKTOP_KEY_LABEL,
+          expiresAt: dbExpiresAt,
+        },
+      }),
+    ])
+  } catch (error) {
+    console.error('Failed to register desktop token in database:', error)
+    return NextResponse.json({ error: 'Database session registration failed' }, { status: 500 })
+  }
+
+  // Deep link parameters
+  const displayName = session.user.name || 'Alchm Operator'
+  const email = session.user.email || ''
+  const expiresAtMs = (Date.now() + 5 * 60 * 1000).toString() // Deep link is valid for 5 minutes
 
   // Construct payload: userId:apiKey:displayName:email:expiresAt
   const payload = `${userId}:${token}:${displayName}:${email}:${expiresAtMs}`

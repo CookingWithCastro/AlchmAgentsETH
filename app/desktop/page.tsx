@@ -924,7 +924,7 @@ export default function App() {
           </span>
           {!hasTauriInvokeRuntime() && (
             <a
-              href="/yield?link=true"
+              href="/auth/signin?callbackUrl=%2Fprofile%3FdesktopLink%3Dtrue"
               className="flex items-center gap-1.5 bg-gradient-to-r from-yellow-500/80 to-amber-600/80 hover:from-yellow-400 hover:to-amber-500 text-[10px] uppercase font-bold tracking-wider px-3 py-1.5 rounded-lg border border-yellow-500/30 text-white transition-all hover:scale-105 shadow-[0_0_15px_rgba(245,158,11,0.25)] cursor-pointer"
             >
               <Link2 className="w-3.5 h-3.5" />

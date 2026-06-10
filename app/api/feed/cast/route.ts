@@ -1,5 +1,4 @@
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { buildAgentContext } from '@/lib/agents/persona/build-agent-context'
 import { feedStreamBus } from '@/lib/agents/feed-stream-bus'
 import { backend } from '@/lib/backend'
@@ -87,8 +86,8 @@ const MOVES: Record<string, MoveSpec> = {
  *     stat drain alone has been sufficient to pace casting.
  */
 export async function POST(req: Request) {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as { id?: string } | undefined)?.id
+  const session = await auth()
+  const userId = session?.user.id
 
   let body: CastRequest
   try {
