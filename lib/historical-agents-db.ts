@@ -923,6 +923,8 @@ export class HistoricalAgentsService {
     birthLocation: { lat: number; lon: number; name: string }
     consciousnessLevel: string
     kalchmConstant: number
+    /** Synonym of kalchmConstant; defaults to it when omitted (UIs read this column). */
+    monicaConstant?: number
     dominantElement: string
     dominantModality: string
     signature: string
@@ -963,6 +965,9 @@ export class HistoricalAgentsService {
           geography: 'Consciousness Realm',
           consciousnessLevel: agentData.consciousnessLevel,
           kalchmConstant: agentData.kalchmConstant,
+          // Synonym columns — without this the schema default (0) wins and
+          // galleries render crafted vessels as A#0.
+          monicaConstant: agentData.monicaConstant ?? agentData.kalchmConstant,
           dominantElement: agentData.dominantElement,
           dominantModality: agentData.dominantModality,
           signature: agentData.signature,

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { backend, BackendError } from '@/lib/backend'
 import { prisma } from '@/lib/db'
 
@@ -22,8 +21,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'API keys missing' }, { status: 500 })
     }
 
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as any)?.id
+    const session = await auth()
+    const userId = session?.user.id
 
     const body = await req.json()
     const {

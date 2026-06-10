@@ -6,6 +6,7 @@
 
 # Backend directory (built on Render separately)
 backend/
+pa-rust-backend/
 
 # Desktop app sources and local build output (distributed separately via releases)
 src-tauri/

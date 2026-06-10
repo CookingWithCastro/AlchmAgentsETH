@@ -4,17 +4,19 @@ vi.mock('@/lib/auth', () => ({ auth: vi.fn() }))
 vi.mock('@/lib/db', () => ({
   prisma: {
     users: { findUnique: vi.fn() },
-    esms_claims: { create: vi.fn(), update: vi.fn() },
+    esms_claims: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
   },
 }))
 vi.mock('@/lib/alchm-debit-sync', () => ({ syncDebitToAlchm: vi.fn() }))
 vi.mock('@/lib/esms-chain/minter', () => ({ mintEsmsClaim: vi.fn() }))
+vi.mock('@/lib/esms-chain/contract', () => ({ readEsmsClaimed: vi.fn() }))
 
 import { POST } from '@/app/api/esms/claim/route'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { syncDebitToAlchm } from '@/lib/alchm-debit-sync'
 import { mintEsmsClaim } from '@/lib/esms-chain/minter'
+import { readEsmsClaimed } from '@/lib/esms-chain/contract'
 
 const req = (body: unknown) =>
   new Request('http://localhost/api/esms/claim', {
@@ -29,6 +31,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   ;(prisma.esms_claims.create as any).mockResolvedValue({})
   ;(prisma.esms_claims.update as any).mockResolvedValue({})
+  ;(prisma.esms_claims.findUnique as any).mockResolvedValue(null)
+  ;(readEsmsClaimed as any).mockResolvedValue(false)
 })
 
 describe('POST /api/esms/claim', () => {
@@ -94,5 +98,61 @@ describe('POST /api/esms/claim', () => {
     ;(mintEsmsClaim as any).mockResolvedValue('0xhash')
     expect((await POST(req({ amounts: { spirit: 2 } }))).status).toBe(200)
     expect(mintEsmsClaim).toHaveBeenCalledTimes(1)
+  })
+
+  it('retries a debited claim without debiting again', async () => {
+    authed()
+    ;(prisma.users.findUnique as any).mockResolvedValue({ walletAddress: '0xabc' })
+    ;(prisma.esms_claims.findUnique as any).mockResolvedValue({
+      id: `0x${'a'.repeat(64)}`,
+      userId: 'u1',
+      walletAddress: '0xabc',
+      spirit: 2,
+      essence: 1,
+      matter: 0,
+      substance: 0,
+      status: 'debited',
+      network: 'base-sepolia',
+      txHash: null,
+    })
+    ;(mintEsmsClaim as any).mockResolvedValue('0xretry')
+
+    const res = await POST(req({ claimId: `0x${'a'.repeat(64)}` }))
+
+    expect(res.status).toBe(200)
+    expect(syncDebitToAlchm).not.toHaveBeenCalled()
+    expect(mintEsmsClaim).toHaveBeenCalledTimes(1)
+    expect(await res.json()).toMatchObject({ txHash: '0xretry' })
+  })
+
+  it('returns an already minted claim idempotently', async () => {
+    authed()
+    ;(prisma.users.findUnique as any).mockResolvedValue({ walletAddress: '0xabc' })
+    ;(prisma.esms_claims.findUnique as any).mockResolvedValue({
+      id: `0x${'b'.repeat(64)}`,
+      userId: 'u1',
+      status: 'minted',
+      txHash: '0xexisting',
+    })
+
+    const res = await POST(req({ claimId: `0x${'b'.repeat(64)}` }))
+
+    expect(res.status).toBe(200)
+    expect(syncDebitToAlchm).not.toHaveBeenCalled()
+    expect(mintEsmsClaim).not.toHaveBeenCalled()
+    expect(await res.json()).toMatchObject({ txHash: '0xexisting' })
+  })
+
+  it('reconciles a claim that minted before the database status update failed', async () => {
+    authed()
+    ;(prisma.users.findUnique as any).mockResolvedValue({ walletAddress: '0xabc' })
+    ;(syncDebitToAlchm as any).mockResolvedValue({ ok: true })
+    ;(mintEsmsClaim as any).mockRejectedValue(new Error('already processed'))
+    ;(readEsmsClaimed as any).mockResolvedValue(true)
+
+    const res = await POST(req({ amounts: { spirit: 2 } }))
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toMatchObject({ ok: true, txHash: null })
   })
 })

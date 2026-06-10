@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { syncDebitToAlchm } from '@/lib/alchm-debit-sync'
 import { markCardUnlocked } from '@/lib/context-card/entitlement'
 
@@ -65,9 +64,9 @@ async function fetchBalances(cookie: string): Promise<Record<TokenType, number> 
  * Degrades to a no-charge unlock when economy sync isn't configured.
  */
 export async function POST(request: Request) {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as { id?: string } | undefined)?.id
-  const email = (session?.user as { email?: string } | undefined)?.email
+  const session = await auth()
+  const userId = session?.user.id
+  const email = session?.user.email
 
   if (!userId) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })

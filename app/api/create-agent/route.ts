@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { generateId } from '@/lib/utils'
 import { HistoricalAgentsService } from '@/lib/historical-agents-db'
 import { calculateMonicaConstant } from '@/lib/monica/monica-constant'
@@ -279,7 +278,7 @@ function enhancePersonalityWithParameters(
 
 export async function POST(request: NextRequest): Promise<NextResponse<CreateAgentResponse>> {
   try {
-    const session = await getServerSession(authOptions)
+    const session = await auth()
     const body: CreateAgentRequest = await request.json()
 
     // Enhanced validation
@@ -357,11 +356,54 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
       additionalCharts: [],
     })
 
-    const backendBlueprint = await consciousnessClient.createAgentOfMoment(
-      synthesis.baseChart,
-      synthesis.momentChart,
-      []
-    )
+    // The consciousness-crafting backend endpoint is optional — when it is
+    // unreachable (404s on both local and prod as of Jun 2026), derive the
+    // blueprint locally from the synthesis using the canonical Monica formula
+    // so the Forge keeps working on chart math alone.
+    let backendBlueprint: Awaited<ReturnType<typeof consciousnessClient.createAgentOfMoment>>
+    try {
+      backendBlueprint = await consciousnessClient.createAgentOfMoment(
+        synthesis.baseChart,
+        synthesis.momentChart,
+        []
+      )
+    } catch (blueprintError) {
+      console.warn(
+        'Consciousness backend unavailable — deriving blueprint locally:',
+        blueprintError instanceof Error ? blueprintError.message : blueprintError
+      )
+      const local = calculateMonicaConstant({
+        spirit: synthesis.consciousness?.spirit ?? 0.5,
+        essence: synthesis.consciousness?.essence ?? 0.5,
+        matter: synthesis.consciousness?.matter ?? 0.5,
+        substance: synthesis.consciousness?.substance ?? 0.5,
+      } as Parameters<typeof calculateMonicaConstant>[0])
+      const levelMap: Record<string, string> = {
+        dormant: 'Dormant',
+        awakening: 'Awakening',
+        active: 'Active',
+        elevated: 'Elevated',
+        transcendent: 'Transcendent',
+      }
+      backendBlueprint = {
+        identity: {
+          name: body.name,
+          title: body.purpose || 'Crafted Vessel',
+          creator: 'philosopher-stone-local',
+          sourceCharts: synthesis.sourceCharts,
+        },
+        personality: {},
+        consciousness: {
+          monicaConstant: body.monicaConstant ?? local.value,
+          level: levelMap[local.consciousnessState.level] ?? 'Active',
+          velocity: 0.5,
+          resonance: 0.5,
+        },
+        aiParams: { temperature: 0.7, topP: 0.9, systemPrompt: '' },
+        synthesis,
+        createdAt: new Date().toISOString(),
+      }
+    }
 
     const generatedAgent = generator.generateFromSynthesis(
       {

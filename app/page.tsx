@@ -354,7 +354,7 @@ export default function LandingPage() {
               className="landing-primary-btn"
               onClick={() => {
                 setLoading(true)
-                window.location.href = buildKitchenSignInUrl('/')
+                window.location.href = buildKitchenSignInUrl('/profile')
               }}
               disabled={loading}
             >
@@ -692,7 +692,7 @@ export default function LandingPage() {
               className="landing-primary-btn"
               onClick={() => {
                 setLoading(true)
-                window.location.href = buildKitchenSignInUrl('/')
+                window.location.href = buildKitchenSignInUrl('/profile')
               }}
               disabled={loading}
             >

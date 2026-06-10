@@ -4,6 +4,16 @@ import { provisionPaUser } from '@/lib/user-provisioning'
 import { getPaTier } from '@/lib/premium/entitlements'
 
 const DB_TIMEOUT_MS = 5000
+const DEV_AUTH_SECRET = 'consciousness-evolution-secret-dev-only'
+
+function getAuthSecret(): string {
+  const configured = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
+  if (configured) return configured
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('AUTH_SECRET or NEXTAUTH_SECRET is required in production')
+  }
+  return DEV_AUTH_SECRET
+}
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -23,10 +33,7 @@ export const authOptions: import('next-auth').NextAuthOptions = {
     strategy: 'jwt',
     maxAge: 7 * 24 * 60 * 60,
   },
-  secret:
-    process.env.AUTH_SECRET ||
-    process.env.NEXTAUTH_SECRET ||
-    'consciousness-evolution-secret-dev-only',
+  secret: getAuthSecret(),
   jwt: {
     maxAge: 7 * 24 * 60 * 60,
   },

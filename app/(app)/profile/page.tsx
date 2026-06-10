@@ -9,12 +9,18 @@ import { fetchRenderSupplementalData } from '@/lib/agents/render-supplemental'
 import { getProfileYieldState, type ProfileYieldState } from '@/lib/profile-yield'
 import { ProfileYieldPanel } from '@/components/profile/ProfileYieldPanel'
 import { MeClient } from '../me/MeClient'
+import { DesktopLinkBridge } from '@/components/auth/DesktopLinkBridge'
 import '../me/me.css'
 
 export const dynamic = 'force-dynamic'
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ desktopLink?: string }>
+}) {
   const session = await auth()
+  const shouldLinkDesktop = (await searchParams)?.desktopLink === 'true'
 
   // Guest view.
   if (!session?.user?.id) {
@@ -47,7 +53,14 @@ export default async function ProfilePage() {
               <Link href="/auth/signup" className="btn-primary">
                 Create Account
               </Link>
-              <Link href="/auth/signin?callbackUrl=/profile" className="btn-secondary">
+              <Link
+                href={
+                  shouldLinkDesktop
+                    ? '/auth/signin?callbackUrl=%2Fprofile%3FdesktopLink%3Dtrue'
+                    : '/auth/signin?callbackUrl=/profile'
+                }
+                className="btn-secondary"
+              >
                 Sign In
               </Link>
             </div>
@@ -68,29 +81,32 @@ export default async function ProfilePage() {
 
   if (!profile?.birthInfo) {
     return (
-      <div className="me-page">
-        <div className="me-starfield" />
-        <div style={{ maxWidth: '36rem', margin: '3rem auto', padding: '0 1rem' }}>
-          <div className="me-glass-card" style={{ textAlign: 'center', marginBottom: '2rem' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🌟</div>
-            <h1
-              style={{
-                fontSize: '1.75rem',
-                fontWeight: 800,
-                color: '#fff',
-                marginBottom: '0.5rem',
-              }}
-            >
-              Welcome, {session.user.name || 'Explorer'}
-            </h1>
-            <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.95rem' }}>
-              Let&apos;s personalize your Alchm experience with your birth details.
-            </p>
+      <>
+        {shouldLinkDesktop ? <DesktopLinkBridge /> : null}
+        <div className="me-page">
+          <div className="me-starfield" />
+          <div style={{ maxWidth: '36rem', margin: '3rem auto', padding: '0 1rem' }}>
+            <div className="me-glass-card" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🌟</div>
+              <h1
+                style={{
+                  fontSize: '1.75rem',
+                  fontWeight: 800,
+                  color: '#fff',
+                  marginBottom: '0.5rem',
+                }}
+              >
+                Welcome, {session.user.name || 'Explorer'}
+              </h1>
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.95rem' }}>
+                Let&apos;s personalize your Alchm experience with your birth details.
+              </p>
+            </div>
+            <ProfileYieldPanel initialWallet={wallet} />
+            <ProfileOnboardingForm />
           </div>
-          <ProfileYieldPanel initialWallet={wallet} />
-          <ProfileOnboardingForm />
         </div>
-      </div>
+      </>
     )
   }
 
@@ -206,43 +222,46 @@ export default async function ProfilePage() {
   const zodiacTheme = getZodiacTheme(sunSign)
 
   return (
-    <MeClient
-      user={{
-        name: session.user.name,
-        image: session.user.image,
-      }}
-      sunSign={sunSign}
-      zodiacTheme={zodiacTheme}
-      monicaConstant={monicaConstant}
-      dominantElement={dominantElement}
-      modality={modality}
-      spirit={spirit}
-      essence={essence}
-      matter={matter}
-      substance={substance}
-      fire={fire}
-      water={water}
-      air={air}
-      earth={earth}
-      Heat={Heat}
-      Entropy={Entropy}
-      Reactivity={Reactivity}
-      EnergyValue={EnergyValue}
-      computationError={computationError}
-      birthInfo={{
-        year: birthInfo.year ?? 1990,
-        month: birthInfo.month ?? 0,
-        day: birthInfo.day ?? 1,
-        hour: birthInfo.hour ?? 12,
-        minute: birthInfo.minute ?? 0,
-        latitude: birthInfo.latitude,
-        longitude: birthInfo.longitude,
-      }}
-      profileName={profile.name}
-      renderAstrologize={renderSupplemental?.raw?.astrology_info}
-      renderAlchemize={renderSupplemental?.raw?.alchemy_info}
-      renderImaginizer={renderSupplemental?.raw?.imaginizer_info}
-      wallet={wallet}
-    />
+    <>
+      {shouldLinkDesktop ? <DesktopLinkBridge /> : null}
+      <MeClient
+        user={{
+          name: session.user.name,
+          image: session.user.image,
+        }}
+        sunSign={sunSign}
+        zodiacTheme={zodiacTheme}
+        monicaConstant={monicaConstant}
+        dominantElement={dominantElement}
+        modality={modality}
+        spirit={spirit}
+        essence={essence}
+        matter={matter}
+        substance={substance}
+        fire={fire}
+        water={water}
+        air={air}
+        earth={earth}
+        Heat={Heat}
+        Entropy={Entropy}
+        Reactivity={Reactivity}
+        EnergyValue={EnergyValue}
+        computationError={computationError}
+        birthInfo={{
+          year: birthInfo.year ?? 1990,
+          month: birthInfo.month ?? 0,
+          day: birthInfo.day ?? 1,
+          hour: birthInfo.hour ?? 12,
+          minute: birthInfo.minute ?? 0,
+          latitude: birthInfo.latitude,
+          longitude: birthInfo.longitude,
+        }}
+        profileName={profile.name}
+        renderAstrologize={renderSupplemental?.raw?.astrology_info}
+        renderAlchemize={renderSupplemental?.raw?.alchemy_info}
+        renderImaginizer={renderSupplemental?.raw?.imaginizer_info}
+        wallet={wallet}
+      />
+    </>
   )
 }

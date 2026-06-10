@@ -85,6 +85,21 @@ export function normalizeDbActionToFeedEvent(row: any): FeedEvent {
     } as InsightEvent
   }
 
+  // Agent Scrabble League — render as an insight card (no new public card type).
+  if (row.eventType === 'word_duel') {
+    return {
+      ...baseEvent,
+      type: 'insight',
+      agentId,
+      title:
+        metadata.insightTitle ||
+        `${agentName}faced ${metadata.opponentName || 'a rival'} in the Agent Scrabble League`,
+      body: metadata.insightContent || metadata.message || metadata.summary || '',
+      confidence: metadata.internalConfidence || row.score || 0.85,
+      trigger: row.triggerSummary || undefined,
+    } as InsightEvent
+  }
+
   // Fallback to a generalized insight card
   return {
     ...baseEvent,

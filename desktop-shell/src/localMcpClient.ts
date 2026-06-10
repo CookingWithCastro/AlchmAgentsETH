@@ -64,6 +64,7 @@ const RECONNECT_INTERVAL_MS = 30_000
 
 export class LocalMcpClient {
   private commandName: string
+  private env?: Record<string, string>
   private child: any = null
   private pendingRequests = new Map<
     string | number,
@@ -91,8 +92,16 @@ export class LocalMcpClient {
    */
   private stopped = false
 
-  constructor(commandName: string, onStatusChange?: (status: LocalMcpStatus) => void) {
+  constructor(
+    commandName: string,
+    onStatusChange?: (status: LocalMcpStatus) => void,
+    env?: Record<string, string>
+  ) {
     this.commandName = commandName
+    // Extra env merged into the sidecar process (clearEnv stays false, so the
+    // parent env — PATH etc. — is preserved). Used to point the bundled MCP
+    // servers at the production backend instead of their localhost defaults.
+    this.env = env
     if (onStatusChange) {
       // Bridge old-style callback into the new subscribe API so legacy
       // call sites (main.ts) keep working without changes.
@@ -180,7 +189,9 @@ export class LocalMcpClient {
       }
 
       console.log(`Spawning local MCP sidecar: ${this.commandName}`)
-      const command = Command.sidecar(this.commandName)
+      const command = this.env
+        ? Command.sidecar(this.commandName, [], { env: this.env })
+        : Command.sidecar(this.commandName)
 
       command.stdout.on('data', (data: string) => {
         this.handleStdout(data)

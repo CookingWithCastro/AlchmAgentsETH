@@ -66,12 +66,20 @@ login keychain; the `.p8` file isn't read again after this command.
 
 ### 3. Set the environment variables
 
-The release script reads two env vars:
+The release script reads the signing variables below. The Tauri build also
+embeds the desktop account-link signing secret.
 
-| Variable                       | What it is                                                 | Example                                             |
-| ------------------------------ | ---------------------------------------------------------- | --------------------------------------------------- |
-| `ALCHM_MACOS_SIGNING_IDENTITY` | The quoted identity string from `security find-identity`.  | `"Developer ID Application: Your Name (TEAM12345)"` |
-| `ALCHM_NOTARY_PROFILE`         | The profile name passed to `notarytool store-credentials`. | `alchm-notary`                                      |
+| Variable                       | What it is                                                      | Example                                             |
+| ------------------------------ | --------------------------------------------------------------- | --------------------------------------------------- |
+| `ALCHM_MACOS_SIGNING_IDENTITY` | The quoted identity string from `security find-identity`.       | `"Developer ID Application: Your Name (TEAM12345)"` |
+| `ALCHM_NOTARY_PROFILE`         | The profile name passed to `notarytool store-credentials`.      | `alchm-notary`                                      |
+| `DEEP_LINK_SHARED_SECRET`      | HMAC secret shared by the Agents web app and the desktop build. | Generate with `openssl rand -hex 32`                |
+
+`DEEP_LINK_SHARED_SECRET` must be identical in the production web deployment
+and in the environment that runs `bun run release:desktop:mac`. The web app
+uses it to sign the five-minute `alchm://link-account` handoff; Tauri embeds it
+at build time and rejects links signed with any other value. The legacy
+`TAURI_DEEP_LINK_SECRET` name remains supported as an alias.
 
 Add them to your shell init (`.zshrc` / `.bashrc`) so every release
 inherits them automatically. **Do not commit them** — they're machine-
@@ -100,7 +108,7 @@ bun run build:sidecar
 bun run build:sidecar:mac-universal
 
 # 2. Build the Tauri app, sign, and notarize.
-#    Reads ALCHM_MACOS_SIGNING_IDENTITY and ALCHM_NOTARY_PROFILE.
+#    Also reads DEEP_LINK_SHARED_SECRET for account-link verification.
 bun run release:desktop:mac
 ```
 

@@ -51,7 +51,13 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "externalBin": ["bin/orchestrator", "bin/llama-server", "bin/alchm-mcp", "bin/pa-mcp"]
+    "externalBin": [
+      "bin/orchestrator",
+      "bin/llama-server",
+      "bin/alchm-mcp",
+      "bin/pa-mcp",
+      "bin/pa-rust-backend"
+    ]
   },
   "plugins": {
     "deep-link": {

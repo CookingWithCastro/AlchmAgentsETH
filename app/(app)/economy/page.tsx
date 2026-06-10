@@ -1,11 +1,10 @@
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { EconomyService } from '@/lib/services/economyService'
 import EconomyDashboard from './EconomyDashboard'
 
 export default async function EconomyPage() {
-  const session = await getServerSession(authOptions)
-  const userId = (session?.user as any)?.id
+  const session = await auth()
+  const userId = session?.user.id
 
   // If no user, show guest view or prompt login
   // For the dashboard, we want to at least fetch balances if user is logged in

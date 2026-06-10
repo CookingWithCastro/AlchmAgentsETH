@@ -15,8 +15,7 @@
  */
 
 import { NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth/next'
-import { authOptions } from '@/lib/auth-options'
+import { auth } from '@/lib/auth'
 import { grantWeeklyAttunementReward } from '@/lib/agents/chat-quest-reward'
 import { runTransitAttunements } from '@/lib/agents/transit-attunement'
 import { CHAT_QUEST_REWARD } from '@/lib/economy-config'
@@ -25,9 +24,9 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions)
-    const userId = (session?.user as any)?.id
-    const email = (session?.user as any)?.email
+    const session = await auth()
+    const userId = session?.user.id
+    const email = session?.user.email
     if (!userId || !email) {
       return NextResponse.json({ ok: false, error: 'auth_required' }, { status: 401 })
     }

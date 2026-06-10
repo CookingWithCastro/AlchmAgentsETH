@@ -94,6 +94,7 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
 }))
 
 import { LocalMcpClient } from '../../desktop-shell/src/localMcpClient'
+import { Command } from '@tauri-apps/plugin-shell'
 
 beforeEach(() => {
   children.length = 0
@@ -217,5 +218,28 @@ describe('LocalMcpClient — reconnect cycle (D7)', () => {
 
     // Only the original spawn — stop() cancels the reconnect path.
     expect(spawnMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('LocalMcpClient — sidecar env injection', () => {
+  it('passes the provided env to Command.sidecar so the sidecar hits prod, not localhost', async () => {
+    const sidecarMock = vi.mocked(Command.sidecar)
+    sidecarMock.mockClear()
+    const env = { PLANETARY_AGENTS_BACKEND_URL: 'https://api.agents.alchm.kitchen' }
+
+    const client = new LocalMcpClient('bin/pa-mcp', undefined, env)
+    await client.start()
+
+    expect(sidecarMock).toHaveBeenCalledWith('bin/pa-mcp', [], { env })
+  })
+
+  it('spawns with no options when no env is given (back-compat)', async () => {
+    const sidecarMock = vi.mocked(Command.sidecar)
+    sidecarMock.mockClear()
+
+    const client = new LocalMcpClient('bin/pa-mcp')
+    await client.start()
+
+    expect(sidecarMock).toHaveBeenCalledWith('bin/pa-mcp')
   })
 })
