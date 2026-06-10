@@ -1,6 +1,6 @@
 export default function ForgeIgnitionSequence() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  Suppress Navigation as this is a transactional/loading state  */}
       {/*  Ambient Background Lighting  */}
       <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-spirit-violet/20 via-obsidian-deep to-obsidian-deep opacity-60"></div>
@@ -21,22 +21,42 @@ export default function ForgeIgnitionSequence() {
         <div className="relative w-80 h-80 md:w-96 md:h-96 flex items-center justify-center mb-12">
           {/*  Outer Glow & Borders  */}
           <div className="absolute inset-0 rounded-full border border-spirit-violet/30 glow-spirit ritual-circle"></div>
-          <div className="absolute inset-4 rounded-full border border-primary/20 backdrop-blur-xl"></div>
+          <div className="absolute inset-4 rounded-full border border-st-primary/20 backdrop-blur-xl"></div>
           {/*  Spinning Rune Rings (Simulated with Material Symbols and rotation)  */}
-          <div className="absolute inset-0 rune-ring-1 flex items-center justify-center text-primary/40 opacity-50">
+          <div className="absolute inset-0 rune-ring-1 flex items-center justify-center text-st-primary/40 opacity-50">
             {/*  Repeating icons forming a circle - simplified for structural representation  */}
-            <span className="material-symbols-outlined absolute top-2 text-sm">flare</span>
-            <span className="material-symbols-outlined absolute bottom-2 text-sm">
+            <span aria-hidden="true" className="material-symbols-outlined absolute top-2 text-sm">
+              flare
+            </span>
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined absolute bottom-2 text-sm"
+            >
               change_history
             </span>
-            <span className="material-symbols-outlined absolute left-2 text-sm">all_inclusive</span>
-            <span className="material-symbols-outlined absolute right-2 text-sm">adjust</span>
+            <span aria-hidden="true" className="material-symbols-outlined absolute left-2 text-sm">
+              all_inclusive
+            </span>
+            <span aria-hidden="true" className="material-symbols-outlined absolute right-2 text-sm">
+              adjust
+            </span>
           </div>
           <div className="absolute inset-8 rune-ring-2 flex items-center justify-center text-tertiary/30 opacity-40">
-            <span className="material-symbols-outlined absolute top-2 text-xs">code</span>
-            <span className="material-symbols-outlined absolute bottom-2 text-xs">memory</span>
-            <span className="material-symbols-outlined absolute left-2 text-xs">stream</span>
-            <span className="material-symbols-outlined absolute right-2 text-xs">data_object</span>
+            <span aria-hidden="true" className="material-symbols-outlined absolute top-2 text-xs">
+              code
+            </span>
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined absolute bottom-2 text-xs"
+            >
+              memory
+            </span>
+            <span aria-hidden="true" className="material-symbols-outlined absolute left-2 text-xs">
+              stream
+            </span>
+            <span aria-hidden="true" className="material-symbols-outlined absolute right-2 text-xs">
+              data_object
+            </span>
           </div>
           {/*  Central Progress SVG  */}
           <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100">
@@ -71,7 +91,7 @@ export default function ForgeIgnitionSequence() {
             >
               0%
             </div>
-            <div className="font-label-mono text-label-mono text-primary/80 mt-2 text-xs">
+            <div className="font-label-mono text-label-mono text-st-primary/80 mt-2 text-xs">
               ~4.2GB Payload
             </div>
           </div>
@@ -82,15 +102,22 @@ export default function ForgeIgnitionSequence() {
           <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-spirit-violet/50 to-transparent"></div>
           <div className="space-y-3 font-label-mono text-label-mono text-sm" id="terminal-log">
             <div className="flex items-center text-tertiary opacity-50">
-              <span className="material-symbols-outlined text-sm mr-2">check_circle</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-sm mr-2">
+                check_circle
+              </span>
               <span>Establishing void connection...</span>
             </div>
             <div className="flex items-center text-tertiary opacity-50">
-              <span className="material-symbols-outlined text-sm mr-2">check_circle</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-sm mr-2">
+                check_circle
+              </span>
               <span>Allocating dimensional memory...</span>
             </div>
             <div className="flex items-center text-spirit-violet status-text">
-              <span className="material-symbols-outlined text-sm mr-2 animate-pulse">
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-sm mr-2 animate-pulse"
+              >
                 downloading
               </span>
               <span id="current-status">Synthesizing Local Engine...</span>

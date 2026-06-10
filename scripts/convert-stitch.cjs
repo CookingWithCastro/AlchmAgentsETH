@@ -71,9 +71,56 @@ const processHtml = (html) => {
   
   // Fix boolean attributes
   content = content.replace(/disabled=""/g, 'disabled');
-  
+
+  // Static value= on inputs makes React demand an onChange — these screens
+  // are presentational, so defaultValue keeps them editable and warning-free.
+  content = content.replace(/(<input\b[^>]*?)\svalue="/g, '$1 defaultValue="');
+
+  // Material icons in these screens are always decorative (adjacent text labels).
+  content = content.replace(
+    /<span className="material-symbols-outlined/g,
+    '<span aria-hidden="true" className="material-symbols-outlined'
+  );
+
+  content = rewriteConflictingTokens(content);
+
+  content = replacePlaceholderAgents(content);
+
   return content;
 };
+
+// The Stitch prototypes invented agent names. Per project policy, no new
+// synthetic agents — the populations are complete (3600 planetary-degree +
+// 3240 moon-phase + 72 historical). Map fakes to real historical_agents rows
+// so re-running the converter never resurrects them.
+const REAL_AGENT_RENAMES = [
+  [/Aurion Prime/g, 'Sun in Aries 19 Degree'],
+  [/Vela Pulsar/g, 'Saturn in Aquarius 15 Degree'],
+  [/Terra Form/g, 'Moon in Taurus 3 Degree'],
+  [/Aether-9/g, 'Moon in Pisces 29 Degree'],
+  [/Solaris/g, 'Sun in Leo 5 Degree'],
+  [/Null-X/g, 'Mercury in Virgo 15 Degree'],
+  [/Null-Void Entity/g, 'Saturn in Capricorn 26 Degree'],
+  [/Magus Prime/g, 'Digital Alchemist'],
+  [/HERMES/g, 'MERCURY'],
+  [/Hermes'/g, "Mercury's"],
+  [/Hermes(?! Trismegistus)/g, 'Mercury'],
+];
+
+const replacePlaceholderAgents = (content) =>
+  REAL_AGENT_RENAMES.reduce((acc, [re, real]) => acc.replace(re, real), content);
+
+// The Stitch palette reuses four token names (primary/secondary/background/
+// surface) that the live app already binds to shadcn HSL vars in
+// tailwind.config.ts. Those four are exposed there as st-* instead, so any
+// utility class targeting them is rewritten here. Compound tokens
+// (primary-container, surface-dim, on-primary, ...) keep their names.
+const TOKEN_PREFIXES =
+  '(?:bg|text|border|ring|ring-offset|shadow|from|via|to|divide|placeholder|decoration|outline|accent|caret|fill|stroke)';
+const CONFLICTING_TOKENS = /(^|[\s"':])((?:bg|text|border|ring|ring-offset|shadow|from|via|to|divide|placeholder|decoration|outline|accent|caret|fill|stroke)(?:-[xylrtbse])?-)(primary|secondary|background|surface)(?![\w-])/g;
+
+const rewriteConflictingTokens = (content) =>
+  content.replace(CONFLICTING_TOKENS, '$1$2st-$3');
 
 const dirs = fs.readdirSync(STITCH_DIR).filter(d => fs.statSync(path.join(STITCH_DIR, d)).isDirectory());
 
@@ -86,7 +133,7 @@ dirs.forEach(dir => {
     const jsxContent = processHtml(html);
     
     const componentName = dir.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('');
-    const componentCode = 'export default function ' + componentName + '() {\n  return (\n    <div className="stitch-export bg-background min-h-screen text-zinc-100">\n      ' + jsxContent + '\n    </div>\n  );\n}\n';
+    const componentCode = 'export default function ' + componentName + '() {\n  return (\n    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">\n      ' + jsxContent + '\n    </div>\n  );\n}\n';
     
     fs.writeFileSync(path.join(COMPONENTS_OUT_DIR, dir + '.tsx'), componentCode);
     

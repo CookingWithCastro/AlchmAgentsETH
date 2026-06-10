@@ -1,6 +1,6 @@
 export default function AlchemicalUiFeedbackErrorStates() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  Top Navigation Placeholder (Hidden for this specific showcase context, but maintaining structure if needed)  */}
       {/*  Floating Error Toast  */}
       <div className="fixed top-6 right-6 z-50 animate-fade-in-down">
@@ -26,7 +26,7 @@ export default function AlchemicalUiFeedbackErrorStates() {
             </p>
           </div>
           <button className="text-on-surface-variant hover:text-error transition-colors relative z-10">
-            <span className="material-symbols-outlined" data-icon="close">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="close">
               close
             </span>
           </button>
@@ -40,7 +40,7 @@ export default function AlchemicalUiFeedbackErrorStates() {
       <main className="flex-grow flex flex-col items-center justify-center p-margin-mobile md:p-margin-desktop z-10 relative">
         {/*  Header for context  */}
         <header className="text-center mb-16 max-w-2xl">
-          <h1 className="font-headline-xl text-headline-xl text-primary mb-4">
+          <h1 className="font-headline-xl text-headline-xl text-st-primary mb-4">
             Feedback Resonance
           </h1>
           <p className="font-body-lg text-body-lg text-on-surface-variant">
@@ -78,7 +78,7 @@ export default function AlchemicalUiFeedbackErrorStates() {
               </p>
             </div>
             <div className="shrink-0 w-full md:w-auto flex flex-col gap-3">
-              <button className="w-full bg-surface-variant border border-outline-variant/50 hover:border-primary text-primary font-label-mono text-label-mono uppercase px-6 py-3 rounded transition-all duration-300 hover:shadow-[0_0_15px_rgba(210,187,255,0.2)]">
+              <button className="w-full bg-surface-variant border border-outline-variant/50 hover:border-st-primary text-st-primary font-label-mono text-label-mono uppercase px-6 py-3 rounded transition-all duration-300 hover:shadow-[0_0_15px_rgba(210,187,255,0.2)]">
                 Retry Link
               </button>
               <button className="w-full text-on-surface-variant font-label-mono text-label-mono uppercase px-6 py-3 rounded hover:text-on-surface transition-colors">

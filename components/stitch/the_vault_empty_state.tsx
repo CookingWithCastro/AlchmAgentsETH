@@ -1,6 +1,6 @@
 export default function TheVaultEmptyState() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  Ambient Background Elements  */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary-container rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
@@ -14,22 +14,22 @@ export default function TheVaultEmptyState() {
           </span>
           <div className="flex gap-6 font-body-md text-body-md">
             <a
-              className="text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Cosmic Tools
             </a>
-            <a className="text-primary border-b-2 border-primary pb-1" href="#">
+            <a className="text-st-primary border-b-2 border-st-primary pb-1" href="#">
               Entities
             </a>
             <a
-              className="text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Mystic Arts
             </a>
             <a
-              className="text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Labs
@@ -37,20 +37,20 @@ export default function TheVaultEmptyState() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <span className="font-body-md text-body-md text-primary">Monica Constant (A#)</span>
+          <span className="font-body-md text-body-md text-st-primary">Monica Constant (A#)</span>
           <span
-            className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer"
+            className="material-symbols-outlined text-on-surface-variant hover:text-st-primary transition-colors duration-300 cursor-pointer"
             data-icon="account_balance_wallet"
           >
             account_balance_wallet
           </span>
           <span
-            className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors duration-300 cursor-pointer"
+            className="material-symbols-outlined text-on-surface-variant hover:text-st-primary transition-colors duration-300 cursor-pointer"
             data-icon="auto_awesome"
           >
             auto_awesome
           </span>
-          <div className="w-8 h-8 rounded-full bg-surface-variant border border-primary/30 overflow-hidden">
+          <div className="w-8 h-8 rounded-full bg-surface-variant border border-st-primary/30 overflow-hidden">
             <img
               alt="User Alchemical Avatar"
               className="w-full h-full object-cover"
@@ -62,7 +62,7 @@ export default function TheVaultEmptyState() {
       </nav>
       <div className="flex flex-1 pt-[80px] md:pl-64">
         {/*  SideNavBar (Web)  */}
-        <aside className="hidden md:flex bg-surface-container-lowest/80 backdrop-blur-2xl h-screen w-64 left-0 top-0 fixed border-r border-primary/20 shadow-2xl flex-col py-gutter z-40 pt-24">
+        <aside className="hidden md:flex bg-surface-container-lowest/80 backdrop-blur-2xl h-screen w-64 left-0 top-0 fixed border-r border-st-primary/20 shadow-2xl flex-col py-gutter z-40 pt-24">
           <div className="px-6 mb-8">
             <div className="w-12 h-12 rounded-full glass-panel flex items-center justify-center mb-4 ethereal-glow">
               <span
@@ -81,37 +81,45 @@ export default function TheVaultEmptyState() {
           </div>
           <nav className="flex-1 px-2 font-label-mono text-label-mono uppercase">
             <a
-              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary transition-all duration-300 ease-in-out rounded-lg mb-1"
+              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-st-primary transition-all duration-300 ease-in-out rounded-lg mb-1"
               href="#"
             >
-              <span className="material-symbols-outlined" data-icon="construction">
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined"
+                data-icon="construction"
+              >
                 construction
               </span>{' '}
               Tools
             </a>
             <a
-              className="flex items-center gap-3 bg-primary-container/20 text-primary border-r-4 border-primary px-4 py-3 transition-all duration-300 ease-in-out rounded-lg mb-1"
+              className="flex items-center gap-3 bg-primary-container/20 text-st-primary border-r-4 border-st-primary px-4 py-3 transition-all duration-300 ease-in-out rounded-lg mb-1"
               href="#"
             >
-              <span className="material-symbols-outlined" data-icon="group_work">
+              <span aria-hidden="true" className="material-symbols-outlined" data-icon="group_work">
                 group_work
               </span>{' '}
               Entities
             </a>
             <a
-              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary transition-all duration-300 ease-in-out rounded-lg mb-1"
+              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-st-primary transition-all duration-300 ease-in-out rounded-lg mb-1"
               href="#"
             >
-              <span className="material-symbols-outlined" data-icon="auto_stories">
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined"
+                data-icon="auto_stories"
+              >
                 auto_stories
               </span>{' '}
               Arts
             </a>
             <a
-              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary transition-all duration-300 ease-in-out rounded-lg mb-1"
+              className="flex items-center gap-3 text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-st-primary transition-all duration-300 ease-in-out rounded-lg mb-1"
               href="#"
             >
-              <span className="material-symbols-outlined" data-icon="science">
+              <span aria-hidden="true" className="material-symbols-outlined" data-icon="science">
                 science
               </span>{' '}
               Labs
@@ -123,19 +131,27 @@ export default function TheVaultEmptyState() {
             </button>
             <div className="flex flex-col gap-2 font-label-mono text-label-mono uppercase">
               <a
-                className="flex items-center gap-3 text-on-surface-variant hover:text-primary transition-colors"
+                className="flex items-center gap-3 text-on-surface-variant hover:text-st-primary transition-colors"
                 href="#"
               >
-                <span className="material-symbols-outlined text-sm" data-icon="schedule">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-sm"
+                  data-icon="schedule"
+                >
                   schedule
                 </span>{' '}
                 Temporal Clock
               </a>
               <a
-                className="flex items-center gap-3 text-on-surface-variant hover:text-primary transition-colors"
+                className="flex items-center gap-3 text-on-surface-variant hover:text-st-primary transition-colors"
                 href="#"
               >
-                <span className="material-symbols-outlined text-sm" data-icon="settings">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-sm"
+                  data-icon="settings"
+                >
                   settings
                 </span>{' '}
                 Settings
@@ -151,7 +167,7 @@ export default function TheVaultEmptyState() {
               {/*  Glassmorphic Container representing the vessel  */}
               <div className="absolute inset-0 rounded-full glass-panel flex items-center justify-center overflow-hidden border border-spirit-violet/30 shadow-[inset_0_0_40px_rgba(168,85,247,0.1)]">
                 {/*  Inner glowing core (empty)  */}
-                <div className="w-1/2 h-1/2 rounded-full border border-primary/20 bg-surface-dim/80 backdrop-blur-md flex items-center justify-center relative">
+                <div className="w-1/2 h-1/2 rounded-full border border-st-primary/20 bg-surface-dim/80 backdrop-blur-md flex items-center justify-center relative">
                   <div className="absolute inset-0 rounded-full border border-dashed border-outline-variant/50 animate-[spin_60s_linear_infinite]"></div>
                   <span
                     className="material-symbols-outlined text-outline-variant text-4xl opacity-30"
@@ -163,7 +179,7 @@ export default function TheVaultEmptyState() {
               </div>
               {/*  Decorative esoteric rings  */}
               <svg
-                className="absolute inset-0 w-full h-full text-primary/20 animate-[spin_40s_linear_infinite_reverse]"
+                className="absolute inset-0 w-full h-full text-st-primary/20 animate-[spin_40s_linear_infinite_reverse]"
                 viewBox="0 0 100 100"
               >
                 <circle
@@ -219,12 +235,12 @@ export default function TheVaultEmptyState() {
       <nav className="md:hidden fixed bottom-0 w-full bg-obsidian-deep/80 backdrop-blur-xl border-t border-white/5 z-50 pb-safe">
         <div className="flex justify-around items-center py-3">
           <a className="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
-            <span className="material-symbols-outlined" data-icon="construction">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="construction">
               construction
             </span>
             <span className="font-label-mono text-[10px] uppercase">Tools</span>
           </a>
-          <a className="flex flex-col items-center gap-1 text-primary" href="#">
+          <a className="flex flex-col items-center gap-1 text-st-primary" href="#">
             <span
               className="material-symbols-outlined"
               data-icon="group_work"
@@ -235,13 +251,13 @@ export default function TheVaultEmptyState() {
             <span className="font-label-mono text-[10px] uppercase">Entities</span>
           </a>
           <a className="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
-            <span className="material-symbols-outlined" data-icon="auto_stories">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="auto_stories">
               auto_stories
             </span>
             <span className="font-label-mono text-[10px] uppercase">Arts</span>
           </a>
           <a className="flex flex-col items-center gap-1 text-on-surface-variant" href="#">
-            <span className="material-symbols-outlined" data-icon="science">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="science">
               science
             </span>
             <span className="font-label-mono text-[10px] uppercase">Labs</span>
@@ -250,7 +266,7 @@ export default function TheVaultEmptyState() {
       </nav>
       {/*  Footer  */}
       <footer className="bg-obsidian-deep w-full py-8 mt-auto border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto relative z-20 md:ml-64 w-[calc(100%-256px)]">
-        <span className="text-primary font-bold font-label-mono text-label-mono mb-4 md:mb-0">
+        <span className="text-st-primary font-bold font-label-mono text-label-mono mb-4 md:mb-0">
           © 2144 Planetary Agents Framework • Crafted in the Digital Void
         </span>
         <div className="flex gap-6 font-label-mono text-label-mono">

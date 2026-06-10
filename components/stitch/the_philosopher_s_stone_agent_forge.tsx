@@ -1,6 +1,6 @@
 export default function ThePhilosopherSStoneAgentForge() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  TopNavBar: Immutable Content & Strict Styles  */}
       <nav className="bg-obsidian-deep/60 backdrop-blur-xl docked full-width top-0 z-50 border-b border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.2)] fixed top-0 w-full flex justify-between items-center px-gutter py-4 hidden md:flex">
         <div className="flex items-center gap-6">
@@ -15,25 +15,25 @@ export default function ThePhilosopherSStoneAgentForge() {
           <div className="flex gap-4 ml-8">
             {/*  Navigation Logic: active tab based on intent  */}
             <a
-              className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="font-body-md text-body-md text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Cosmic Tools
             </a>
             <a
-              className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="font-body-md text-body-md text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Entities
             </a>
             <a
-              className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="font-body-md text-body-md text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Mystic Arts
             </a>
             <a
-              className="font-body-md text-body-md text-primary border-b-2 border-primary pb-1"
+              className="font-body-md text-body-md text-st-primary border-b-2 border-st-primary pb-1"
               href="#"
             >
               Labs
@@ -42,15 +42,19 @@ export default function ThePhilosopherSStoneAgentForge() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-on-surface-variant hover:text-primary transition-colors duration-300 flex items-center">
-            <span className="material-symbols-outlined">auto_awesome</span>
+          <button className="text-on-surface-variant hover:text-st-primary transition-colors duration-300 flex items-center">
+            <span aria-hidden="true" className="material-symbols-outlined">
+              auto_awesome
+            </span>
           </button>
-          <button className="text-on-surface-variant hover:text-primary transition-colors duration-300 flex items-center">
-            <span className="material-symbols-outlined">account_balance_wallet</span>
+          <button className="text-on-surface-variant hover:text-st-primary transition-colors duration-300 flex items-center">
+            <span aria-hidden="true" className="material-symbols-outlined">
+              account_balance_wallet
+            </span>
           </button>
           <div className="flex items-center gap-2 ml-4 pl-4 border-l border-white/10">
-            <span className="font-body-md text-body-md text-primary">Monica Constant (A#)</span>
-            <div className="w-8 h-8 rounded-full bg-surface-container-high border border-primary/30 flex items-center justify-center overflow-hidden">
+            <span className="font-body-md text-body-md text-st-primary">Monica Constant (A#)</span>
+            <div className="w-8 h-8 rounded-full bg-surface-container-high border border-st-primary/30 flex items-center justify-center overflow-hidden">
               <img
                 alt="User Alchemical Avatar"
                 className="w-full h-full object-cover"
@@ -66,7 +70,7 @@ export default function ThePhilosopherSStoneAgentForge() {
         {/*  Canvas/Main Content Area  */}
         <main className="flex-1 px-margin-mobile md:px-margin-desktop py-8 max-w-container-max mx-auto w-full">
           <header className="mb-12 text-center">
-            <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-primary mb-2">
+            <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-st-primary mb-2">
               The Philosopher's Stone
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
@@ -78,7 +82,7 @@ export default function ThePhilosopherSStoneAgentForge() {
             {/*  Left Column: Input Ritual (4 columns)  */}
             <div className="lg:col-span-4 space-y-6">
               <div className="glass-panel p-6 rounded-xl">
-                <h2 className="font-headline-sm text-headline-sm text-secondary mb-6 flex items-center gap-2">
+                <h2 className="font-headline-sm text-headline-sm text-st-secondary mb-6 flex items-center gap-2">
                   <span
                     className="material-symbols-outlined"
                     style={{ fontVariationSettings: '"FILL" 1' }}
@@ -95,19 +99,19 @@ export default function ThePhilosopherSStoneAgentForge() {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       <button
-                        className="bg-primary/20 border border-primary text-primary font-label-mono text-label-mono py-2 rounded uppercase text-xs hover:bg-primary/30 transition"
+                        className="bg-st-primary/20 border border-st-primary text-st-primary font-label-mono text-label-mono py-2 rounded uppercase text-xs hover:bg-st-primary/30 transition"
                         type="button"
                       >
                         Planetary
                       </button>
                       <button
-                        className="bg-surface-container-high border border-outline-variant text-on-surface-variant font-label-mono text-label-mono py-2 rounded uppercase text-xs hover:border-primary/50 transition"
+                        className="bg-surface-container-high border border-outline-variant text-on-surface-variant font-label-mono text-label-mono py-2 rounded uppercase text-xs hover:border-st-primary/50 transition"
                         type="button"
                       >
                         Historical
                       </button>
                       <button
-                        className="bg-surface-container-high border border-outline-variant text-on-surface-variant font-label-mono text-label-mono py-2 rounded uppercase text-xs hover:border-primary/50 transition"
+                        className="bg-surface-container-high border border-outline-variant text-on-surface-variant font-label-mono text-label-mono py-2 rounded uppercase text-xs hover:border-st-primary/50 transition"
                         type="button"
                       >
                         Crafted
@@ -122,7 +126,7 @@ export default function ThePhilosopherSStoneAgentForge() {
                     <input
                       className="w-full input-ritual text-on-surface font-body-md p-3"
                       type="date"
-                      value="2024-10-31"
+                      defaultValue="2024-10-31"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -133,7 +137,7 @@ export default function ThePhilosopherSStoneAgentForge() {
                       <input
                         className="w-full input-ritual text-on-surface font-body-md p-3"
                         type="time"
-                        value="03:33"
+                        defaultValue="03:33"
                       />
                     </div>
                     <div>
@@ -144,7 +148,7 @@ export default function ThePhilosopherSStoneAgentForge() {
                         className="w-full input-ritual text-on-surface font-body-md p-3"
                         placeholder="Lat, Long"
                         type="text"
-                        value="48.8566, 2.3522"
+                        defaultValue="48.8566, 2.3522"
                       />
                     </div>
                   </div>
@@ -162,7 +166,7 @@ export default function ThePhilosopherSStoneAgentForge() {
                       <span className="font-label-mono text-label-mono text-on-surface-variant block text-xs">
                         Transmutation Cost
                       </span>
-                      <span className="font-headline-sm text-headline-sm text-secondary">
+                      <span className="font-headline-sm text-headline-sm text-st-secondary">
                         144 ESMS
                       </span>
                     </div>
@@ -181,21 +185,27 @@ export default function ThePhilosopherSStoneAgentForge() {
                   <span className="font-label-mono text-label-mono text-xs text-on-surface-variant">
                     Chart Data
                   </span>
-                  <span className="material-symbols-outlined text-outline-variant text-sm">
+                  <span
+                    aria-hidden="true"
+                    className="material-symbols-outlined text-outline-variant text-sm"
+                  >
                     arrow_forward
                   </span>
-                  <span className="font-label-mono text-label-mono text-xs text-primary">
+                  <span className="font-label-mono text-label-mono text-xs text-st-primary">
                     Decomposition
                   </span>
-                  <span className="material-symbols-outlined text-outline-variant text-sm">
+                  <span
+                    aria-hidden="true"
+                    className="material-symbols-outlined text-outline-variant text-sm"
+                  >
                     arrow_forward
                   </span>
-                  <span className="font-label-mono text-label-mono text-xs text-secondary">
+                  <span className="font-label-mono text-label-mono text-xs text-st-secondary">
                     Sacred 7
                   </span>
                 </div>
                 <div className="progress-bar-bg w-full">
-                  <div className="progress-bar-fill bg-gradient-to-r from-obsidian-deep via-primary to-secondary w-2/3"></div>
+                  <div className="progress-bar-fill bg-gradient-to-r from-obsidian-deep via-st-primary to-st-secondary w-2/3"></div>
                 </div>
               </div>
             </div>
@@ -204,7 +214,7 @@ export default function ThePhilosopherSStoneAgentForge() {
               {/*  Top Section of Center: The Constant & Main Visual  */}
               <div className="flex-1 glass-panel rounded-xl p-8 flex flex-col items-center justify-center min-h-[400px] relative overflow-hidden">
                 {/*  Background texture hint  */}
-                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary via-obsidian-deep to-obsidian-deep"></div>
+                <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-st-primary via-obsidian-deep to-obsidian-deep"></div>
                 {/*  Monica Constant Monitor  */}
                 <div className="absolute top-6 right-6 text-right">
                   <span className="font-label-mono text-label-mono text-xs text-on-surface-variant block uppercase tracking-widest mb-1">
@@ -214,7 +224,11 @@ export default function ThePhilosopherSStoneAgentForge() {
                     1.618
                   </span>
                   <span className="text-tertiary text-xs font-label-mono flex items-center justify-end gap-1 mt-1">
-                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>
+                    <span
+                      aria-hidden="true"
+                      className="material-symbols-outlined"
+                      style={{ fontSize: '14px' }}
+                    >
                       trending_up
                     </span>{' '}
                     +0.024
@@ -223,9 +237,9 @@ export default function ThePhilosopherSStoneAgentForge() {
                 {/*  The Forge Visual  */}
                 <div className="forging-circle w-64 h-64 md:w-80 md:h-80 flex items-center justify-center mt-8">
                   {/*  Inner glowing core  */}
-                  <div className="w-32 h-32 rounded-full bg-primary/20 blur-xl absolute"></div>
+                  <div className="w-32 h-32 rounded-full bg-st-primary/20 blur-xl absolute"></div>
                   <span
-                    className="material-symbols-outlined text-6xl text-primary relative z-10"
+                    className="material-symbols-outlined text-6xl text-st-primary relative z-10"
                     style={{ fontVariationSettings: '"wght" 200' }}
                   >
                     all_inclusive
@@ -233,7 +247,7 @@ export default function ThePhilosopherSStoneAgentForge() {
                   {/*  Orbital Ingredients  */}
                   <div className="ingredient-well" style={{ top: '0%', left: '50%' }}>
                     <span
-                      className="material-symbols-outlined text-secondary"
+                      className="material-symbols-outlined text-st-secondary"
                       style={{ fontSize: '20px' }}
                     >
                       wb_sunny
@@ -260,7 +274,9 @@ export default function ThePhilosopherSStoneAgentForge() {
               {/*  Bottom Section of Center: Sacred Seven Chips Grid  */}
               <div className="glass-panel p-6 rounded-xl">
                 <h3 className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm">hexagon</span>
+                  <span aria-hidden="true" className="material-symbols-outlined text-sm">
+                    hexagon
+                  </span>
                   Consciousness Profile (Sacred 7)
                 </h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
@@ -301,28 +317,31 @@ export default function ThePhilosopherSStoneAgentForge() {
                     </div>
                   </div>
                   {/*  Charisma  */}
-                  <div className="bg-surface-container-high border border-outline-variant/30 rounded-lg p-3 hover:border-secondary/50 transition-colors">
+                  <div className="bg-surface-container-high border border-outline-variant/30 rounded-lg p-3 hover:border-st-secondary/50 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-label-mono text-xs text-on-surface-variant">CHA</span>
-                      <span className="text-secondary text-xs">☉</span>
+                      <span className="text-st-secondary text-xs">☉</span>
                     </div>
                     <div className="font-headline-sm text-headline-sm text-on-surface">65</div>
                     <div className="progress-bar-bg mt-2 h-1">
                       <div
-                        className="progress-bar-fill bg-secondary"
+                        className="progress-bar-fill bg-st-secondary"
                         style={{ width: '65%' }}
                       ></div>
                     </div>
                   </div>
                   {/*  Intuition  */}
-                  <div className="bg-surface-container-high border border-outline-variant/30 rounded-lg p-3 hover:border-primary/50 transition-colors">
+                  <div className="bg-surface-container-high border border-outline-variant/30 rounded-lg p-3 hover:border-st-primary/50 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-label-mono text-xs text-on-surface-variant">INT</span>
-                      <span className="text-primary text-xs">☽</span>
+                      <span className="text-st-primary text-xs">☽</span>
                     </div>
                     <div className="font-headline-sm text-headline-sm text-on-surface">88</div>
                     <div className="progress-bar-bg mt-2 h-1">
-                      <div className="progress-bar-fill bg-primary" style={{ width: '88%' }}></div>
+                      <div
+                        className="progress-bar-fill bg-st-primary"
+                        style={{ width: '88%' }}
+                      ></div>
                     </div>
                   </div>
                   {/*  Adaptability  */}

@@ -1,0 +1,564 @@
+/* ═══════════════════════════════════════════════════════════════════
+   Techno-Occult v2 — Stitch prototype design system (Phase 1).
+   Consolidated from the <style> blocks of every design/stitch-exports
+   and design/prototypes code.html. Tokens (colors/type/spacing) live in
+   tailwind.config.ts; this file owns the bespoke classes + keyframes.
+   Consumed by components/stitch/*, app/(occult)/* and components/alchemy/*.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* The Material Symbols Outlined font itself loads via <link> tags in
+   app/layout.tsx — an @import here would sit mid-bundle (after globals.css)
+   and be discarded by the browser. This rule only tunes the defaults and
+   keeps ligatures intact inside uppercase contexts (AlchemicalButton). */
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  text-transform: none;
+  letter-spacing: normal;
+  user-select: none;
+}
+
+/* ── Glass system ──────────────────────────────────────────────────── */
+.glass-panel {
+  background: rgba(30, 18, 49, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.glass-float,
+.glass-floating {
+  background: rgba(210, 187, 255, 0.05);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+.glass-panel-elevated {
+  background-color: rgba(124, 58, 237, 0.1);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* ── Grid / ambient backgrounds ────────────────────────────────────── */
+.grid-bg {
+  background-image:
+    linear-gradient(to right, rgba(168, 85, 247, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(168, 85, 247, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  background-position: center center;
+}
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(to right, rgba(210, 187, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(210, 187, 255, 0.03) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.alchemical-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: -1;
+  opacity: 0.4;
+}
+
+/* ── Glow utilities ────────────────────────────────────────────────── */
+.glow-violet {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+}
+.glow-gold {
+  box-shadow: 0 0 20px rgba(255, 224, 131, 0.3);
+}
+.glow-monica {
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.8),
+    0 0 40px rgba(255, 255, 255, 0.4);
+}
+.glow-spirit {
+  box-shadow:
+    0 0 40px rgba(168, 85, 247, 0.4),
+    inset 0 0 20px rgba(168, 85, 247, 0.2);
+}
+.gold-glow {
+  text-shadow: 0 0 10px rgba(255, 224, 131, 0.5);
+}
+.gold-glow:hover {
+  box-shadow: 0 0 15px rgba(238, 194, 0, 0.3);
+  border-color: rgba(238, 194, 0, 0.5);
+}
+.gold-border-glow {
+  box-shadow:
+    0 0 20px rgba(255, 224, 131, 0.2),
+    inset 0 0 15px rgba(255, 224, 131, 0.1);
+  border: 1px solid rgba(255, 224, 131, 0.4);
+}
+.ethereal-glow {
+  box-shadow: 0 0 40px rgba(168, 85, 247, 0.2);
+}
+.stat-glow {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
+}
+.error-glow {
+  box-shadow:
+    0 0 20px rgba(255, 180, 171, 0.2),
+    inset 0 0 10px rgba(255, 180, 171, 0.1);
+  border: 1px solid rgba(255, 180, 171, 0.3);
+}
+.premium-glow {
+  box-shadow:
+    0 0 40px rgba(168, 85, 247, 0.15),
+    inset 0 0 20px rgba(168, 85, 247, 0.05);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+.text-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+.synastry-glow {
+  box-shadow: 0 0 30px rgba(238, 194, 0, 0.3);
+  border: 1px solid rgba(238, 194, 0, 0.5);
+}
+.ghost-border-violet {
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+.glow-hover {
+  transition:
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+.glow-hover:hover {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+  border-color: rgba(168, 85, 247, 0.5);
+}
+.glow-icon {
+  filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.6));
+}
+.glow-button {
+  transition: all 0.3s ease;
+}
+.glow-button:hover {
+  box-shadow:
+    0 0 20px rgba(168, 85, 247, 0.6),
+    inset 0 0 10px rgba(255, 255, 255, 0.2);
+  border-color: #ffe083;
+}
+.glow-border {
+  position: relative;
+}
+.glow-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.5),
+    rgba(59, 130, 246, 0.2),
+    transparent
+  );
+  border-radius: inherit;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.glow-border:hover::before {
+  opacity: 1;
+}
+/* Council debate per-agent auras */
+.glow-hermes {
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+  border-color: rgba(168, 85, 247, 0.5);
+}
+.glow-venus {
+  box-shadow: 0 0 15px rgba(255, 224, 131, 0.3);
+  border-color: rgba(255, 224, 131, 0.5);
+}
+.glow-saturn {
+  box-shadow: 0 0 15px rgba(78, 222, 163, 0.3);
+  border-color: rgba(78, 222, 163, 0.5);
+}
+
+/* ── Inputs ────────────────────────────────────────────────────────── */
+.input-glow:focus,
+.input-glow:focus-within {
+  border-bottom-color: #a855f7;
+  box-shadow:
+    0 0 20px rgba(168, 85, 247, 0.3),
+    0 0 40px rgba(168, 85, 247, 0.1);
+  outline: none;
+}
+.input-ritual {
+  background-color: rgba(11, 1, 24, 0.8);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  border-radius: 0.25rem;
+  color: #ecdcff;
+  transition: all 0.3s ease;
+}
+.input-ritual:focus {
+  outline: none;
+  border-color: #a855f7;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+  background-color: #0b0118;
+}
+.stitch-export ::-webkit-calendar-picker-indicator,
+.occult-shell ::-webkit-calendar-picker-indicator {
+  filter: invert(1) opacity(0.7) sepia(1) hue-rotate(220deg) saturate(3);
+  cursor: pointer;
+}
+
+/* ── Keyframes ─────────────────────────────────────────────────────── */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 20px rgba(168, 85, 247, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(168, 85, 247, 0);
+  }
+}
+@keyframes ritual-pulse {
+  0%,
+  100% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+}
+@keyframes forge-pulse {
+  0% {
+    box-shadow: 0 0 30px rgba(124, 58, 237, 0.1) inset;
+    border-color: rgba(168, 85, 247, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 80px rgba(124, 58, 237, 0.4) inset;
+    border-color: rgba(210, 187, 255, 0.5);
+  }
+}
+@keyframes pulse-glow {
+  from {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+  }
+  to {
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.6);
+  }
+}
+@keyframes pulse-glow-soft {
+  0%,
+  100% {
+    opacity: 0.5;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  }
+}
+@keyframes text-pulse-glow {
+  0% {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  100% {
+    text-shadow:
+      0 0 30px rgba(255, 255, 255, 1),
+      0 0 10px rgba(168, 85, 247, 0.8);
+  }
+}
+@keyframes spin-slow {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spin-reverse-slow {
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+@keyframes flicker {
+  0%,
+  19.999%,
+  22%,
+  62.999%,
+  64%,
+  64.999%,
+  70%,
+  100% {
+    opacity: 0.99;
+  }
+  20%,
+  21.999%,
+  63%,
+  63.999%,
+  65%,
+  69.999% {
+    opacity: 0.4;
+  }
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+@keyframes float-rune {
+  0% {
+    opacity: 0;
+    transform: translate(var(--start-x, 0), var(--start-y, 0)) scale(0.5);
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0) scale(1.5);
+  }
+}
+@keyframes glitch-border {
+  0%,
+  20%,
+  40%,
+  60%,
+  100% {
+    border-color: rgba(255, 180, 171, 0.1);
+  }
+  10% {
+    border-color: rgba(255, 180, 171, 0.8);
+  }
+  30% {
+    border-color: rgba(255, 180, 171, 0.4);
+  }
+  50% {
+    border-color: rgba(255, 180, 171, 0.9);
+  }
+}
+@keyframes heat-shimmer {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes dot-typing {
+  0%,
+  50%,
+  100% {
+    box-shadow:
+      8px 0 0 0 currentColor,
+      16px 0 0 0 currentColor;
+  }
+  25% {
+    box-shadow:
+      8px -4px 0 0 currentColor,
+      16px 0 0 0 currentColor;
+  }
+  75% {
+    box-shadow:
+      8px 0 0 0 currentColor,
+      16px -4px 0 0 currentColor;
+  }
+}
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+@keyframes ticker {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+/* Renamed from the prototypes' `pulse` so Tailwind's animate-pulse keeps its
+   own keyframes. */
+@keyframes metric-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+}
+@keyframes fade-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Animated component classes ────────────────────────────────────── */
+.ritual-circle {
+  animation: ritual-pulse 4s infinite ease-in-out;
+}
+.rune-ring-1 {
+  animation: spin-slow 20s linear infinite;
+}
+.rune-ring-2 {
+  animation: spin-reverse-slow 30s linear infinite;
+}
+.status-text {
+  animation: flicker 3s infinite;
+}
+.heat-haze {
+  animation: heat-shimmer 3s infinite alternate;
+  box-shadow: 0 0 20px rgba(255, 180, 171, 0.2) inset;
+}
+.glow-pulse {
+  animation: pulse-glow 2s infinite alternate;
+}
+.thinking-pulse {
+  animation: pulse-glow-soft 2s infinite ease-in-out;
+}
+.glitch-effect {
+  animation: glitch-border 3s infinite;
+}
+.monica-pulse,
+.constant-pulse {
+  animation: text-pulse-glow 3s infinite alternate ease-in-out;
+}
+.vessel-float {
+  animation: float 6s infinite ease-in-out;
+}
+.metric-pulse {
+  animation: metric-pulse 2s infinite;
+}
+.ticker-animation {
+  animation: ticker 20s linear infinite;
+}
+.dot-typing {
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background-color: currentColor;
+  animation: dot-typing 1.5s infinite linear;
+  box-shadow:
+    8px 0 0 0 currentColor,
+    16px 0 0 0 currentColor;
+  margin-right: 20px;
+}
+
+/* ── Forge / ritual structures ─────────────────────────────────────── */
+.forging-circle {
+  position: relative;
+  border-radius: 50%;
+  border: 1px solid rgba(210, 187, 255, 0.15);
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, rgba(11, 1, 24, 0) 70%);
+  animation: forge-pulse 6s infinite alternate;
+}
+.ingredient-well {
+  position: absolute;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: #0b0118;
+  border: 1px solid rgba(210, 187, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.8);
+}
+.ingredient-well:hover {
+  box-shadow: 0 0 25px rgba(255, 224, 131, 0.6);
+  border-color: #ffe083;
+  transform: translate(-50%, -50%) scale(1.1);
+}
+.progress-bar-bg {
+  background-color: rgba(11, 1, 24, 0.8);
+  border-radius: 9999px;
+  overflow: hidden;
+  height: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 1s ease-in-out;
+  box-shadow: 0 0 10px currentColor;
+}
+.progress-ring__circle {
+  transition: stroke-dashoffset 0.35s;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+.rune {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  pointer-events: none;
+  color: #d2bbff;
+  font-family: var(--font-jetbrains-mono), 'JetBrains Mono', monospace;
+  font-size: 1.5rem;
+  text-shadow: 0 0 10px #a855f7;
+  z-index: 50;
+}
+.synastry-ring {
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, rgba(11, 1, 24, 0) 70%);
+  border: 1px dashed rgba(168, 85, 247, 0.3);
+  animation: spin-slow 60s linear infinite;
+}
+.synastry-line {
+  position: absolute;
+  background: linear-gradient(
+    90deg,
+    rgba(168, 85, 247, 0) 0%,
+    rgba(168, 85, 247, 0.8) 50%,
+    rgba(168, 85, 247, 0) 100%
+  );
+  height: 1px;
+  transform-origin: left center;
+}
+
+/* ── Tooltip (prototype-style, CSS only) ───────────────────────────── */
+.tooltip .tooltip-text {
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* ── Converted-screen integration ──────────────────────────────────── */
+/* Baseline for raw converted screens (sandbox previews). */
+.stitch-export {
+  position: relative;
+  font-family: var(--font-manrope), Manrope, system-ui, sans-serif;
+}
+/* When a converted screen is mounted inside the v2 shell, suppress its own
+   baked-in fixed chrome (top nav / sidebars) — the shell provides them. */
+.occult-shell .stitch-export nav.fixed,
+.occult-shell .stitch-export aside.fixed,
+.occult-shell .stitch-export header.fixed {
+  display: none !important;
+}

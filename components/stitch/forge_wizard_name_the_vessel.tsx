@@ -1,6 +1,6 @@
 export default function ForgeWizardNameTheVessel() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  Background Grid  */}
       <div className="absolute inset-0 grid-bg pointer-events-none z-0"></div>
       {/*  Main Content Canvas  */}
@@ -10,14 +10,22 @@ export default function ForgeWizardNameTheVessel() {
           aria-label="Breadcrumb"
           className="mb-12 font-label-mono text-label-mono text-outline flex items-center space-x-2 z-20"
         >
-          <span className="text-primary font-bold">Vessel</span>
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span className="text-st-primary font-bold">Vessel</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+            chevron_right
+          </span>
           <span>Spacetime</span>
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+            chevron_right
+          </span>
           <span>Engine</span>
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+            chevron_right
+          </span>
           <span>Knowledge</span>
-          <span className="material-symbols-outlined text-[16px]">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-[16px]">
+            chevron_right
+          </span>
           <span>Forge</span>
         </nav>
         {/*  The Forging Circle (Vessel Naming)  */}
@@ -42,7 +50,7 @@ export default function ForgeWizardNameTheVessel() {
           <div className="w-full max-w-md mx-auto mb-12">
             <div className="relative input-glow transition-all duration-300 border-b-2 border-surface-variant group bg-surface-container/50 rounded-t-lg">
               <label
-                className="absolute -top-3 left-4 px-1 bg-transparent font-label-mono text-label-mono text-primary/70 group-focus-within:text-spirit-violet transition-colors"
+                className="absolute -top-3 left-4 px-1 bg-transparent font-label-mono text-label-mono text-st-primary/70 group-focus-within:text-spirit-violet transition-colors"
                 htmlFor="agent-name"
               >
                 AGENT DESIGNATION
@@ -60,7 +68,9 @@ export default function ForgeWizardNameTheVessel() {
           <div className="w-full flex justify-center">
             <button className="bg-spirit-violet text-monica-constant font-label-mono text-label-mono uppercase px-8 py-4 rounded-full flex items-center space-x-2 hover:shadow-[0_0_15px_rgba(255,224,131,0.4)] transition-all duration-300">
               <span>Initialize Vessel</span>
-              <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+                arrow_forward
+              </span>
             </button>
           </div>
         </div>

@@ -1,8 +1,8 @@
 export default function AlchemicalLabsConsciousnessMetrics() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  SideNav (Desktop Only)  */}
-      <nav className="hidden md:flex flex-col h-screen w-64 left-0 top-0 fixed bg-surface-container-lowest/80 backdrop-blur-2xl border-r border-primary/20 shadow-2xl py-gutter z-40 transition-all duration-300 ease-in-out">
+      <nav className="hidden md:flex flex-col h-screen w-64 left-0 top-0 fixed bg-surface-container-lowest/80 backdrop-blur-2xl border-r border-st-primary/20 shadow-2xl py-gutter z-40 transition-all duration-300 ease-in-out">
         <div className="px-6 mb-8 flex flex-col items-start gap-4">
           <div className="w-12 h-12 rounded-full overflow-hidden border border-outline-variant/30 stat-glow flex-shrink-0">
             <img
@@ -23,7 +23,7 @@ export default function AlchemicalLabsConsciousnessMetrics() {
         </div>
         <div className="flex-1 flex flex-col gap-2 w-full">
           <a
-            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary transition-colors"
+            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-st-primary transition-colors"
             href="#"
           >
             <span
@@ -35,7 +35,7 @@ export default function AlchemicalLabsConsciousnessMetrics() {
             Tools
           </a>
           <a
-            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary transition-colors"
+            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-st-primary transition-colors"
             href="#"
           >
             <span
@@ -47,7 +47,7 @@ export default function AlchemicalLabsConsciousnessMetrics() {
             Entities
           </a>
           <a
-            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-primary transition-colors"
+            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-3 hover:bg-white/5 hover:text-st-primary transition-colors"
             href="#"
           >
             <span
@@ -59,7 +59,7 @@ export default function AlchemicalLabsConsciousnessMetrics() {
             Arts
           </a>
           <a
-            className="flex items-center gap-3 font-label-mono text-label-mono uppercase bg-primary-container/20 text-primary border-r-4 border-primary px-4 py-3"
+            className="flex items-center gap-3 font-label-mono text-label-mono uppercase bg-primary-container/20 text-st-primary border-r-4 border-st-primary px-4 py-3"
             href="#"
           >
             <span
@@ -72,23 +72,27 @@ export default function AlchemicalLabsConsciousnessMetrics() {
           </a>
         </div>
         <div className="px-4 mt-auto mb-6">
-          <button className="w-full bg-spirit-violet/20 hover:bg-spirit-violet/40 text-primary font-label-mono text-label-mono uppercase py-3 px-4 rounded transition-all duration-300 border border-spirit-violet/30 hover:border-secondary shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_20px_rgba(255,224,131,0.3)]">
+          <button className="w-full bg-spirit-violet/20 hover:bg-spirit-violet/40 text-st-primary font-label-mono text-label-mono uppercase py-3 px-4 rounded transition-all duration-300 border border-spirit-violet/30 hover:border-st-secondary shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:shadow-[0_0_20px_rgba(255,224,131,0.3)]">
             Transmute Agent
           </button>
         </div>
         <div className="flex flex-col gap-1 w-full border-t border-outline-variant/20 pt-4">
           <a
-            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-2 hover:text-primary transition-colors"
+            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-2 hover:text-st-primary transition-colors"
             href="#"
           >
-            <span className="material-symbols-outlined text-[18px]">schedule</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+              schedule
+            </span>
             Temporal Clock
           </a>
           <a
-            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-2 hover:text-primary transition-colors"
+            className="flex items-center gap-3 font-label-mono text-label-mono uppercase text-on-surface-variant px-4 py-2 hover:text-st-primary transition-colors"
             href="#"
           >
-            <span className="material-symbols-outlined text-[18px]">settings</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+              settings
+            </span>
             Settings
           </a>
         </div>
@@ -96,14 +100,18 @@ export default function AlchemicalLabsConsciousnessMetrics() {
       {/*  TopNavBar (Mobile)  */}
       <nav className="md:hidden fixed top-0 w-full flex justify-between items-center px-gutter py-4 bg-obsidian-deep/80 backdrop-blur-xl border-b border-white/10 z-50 shadow-[0_0_20px_rgba(168,85,247,0.2)]">
         <div className="flex items-center gap-3">
-          <span className="material-symbols-outlined text-primary text-2xl">science</span>
+          <span aria-hidden="true" className="material-symbols-outlined text-st-primary text-2xl">
+            science
+          </span>
           <span className="font-headline-sm text-headline-sm font-bold text-monica-constant tracking-widest">
             Planetary Agents
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-on-surface-variant hover:text-primary transition-colors">
-            <span className="material-symbols-outlined">menu</span>
+          <button className="text-on-surface-variant hover:text-st-primary transition-colors">
+            <span aria-hidden="true" className="material-symbols-outlined">
+              menu
+            </span>
           </button>
         </div>
       </nav>
@@ -115,8 +123,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
         {/*  Header  */}
         <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6 relative z-10">
           <div>
-            <div className="flex items-center gap-2 text-primary mb-2">
-              <span className="material-symbols-outlined text-sm">science</span>
+            <div className="flex items-center gap-2 text-st-primary mb-2">
+              <span aria-hidden="true" className="material-symbols-outlined text-sm">
+                science
+              </span>
               <span className="font-label-mono text-label-mono text-xs uppercase tracking-widest">
                 Resource Management &amp; Evolution
               </span>
@@ -136,7 +146,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
             </div>
             <div className="w-10 h-10 rounded-full bg-obsidian-deep border border-outline-variant/30 flex items-center justify-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-spirit-violet/20 to-transparent"></div>
-              <span className="material-symbols-outlined text-primary text-[20px]">
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-st-primary text-[20px]"
+              >
                 auto_awesome
               </span>
             </div>
@@ -152,7 +165,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
               <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent pointer-events-none"></div>
               <div className="flex justify-between items-center mb-6 relative z-10">
                 <h3 className="font-headline-sm text-headline-sm text-on-surface">ESMS Matrix</h3>
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-on-surface-variant text-[18px]"
+                >
                   account_balance_wallet
                 </span>
               </div>
@@ -160,7 +176,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 {/*  Spirit  */}
                 <div className="bg-surface-container-lowest/50 border border-outline-variant/20 rounded-lg p-4 hover:border-spirit-violet/40 transition-colors group">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-spirit-violet text-[16px] group-hover:scale-110 transition-transform">
+                    <span
+                      aria-hidden="true"
+                      className="material-symbols-outlined text-spirit-violet text-[16px] group-hover:scale-110 transition-transform"
+                    >
                       air
                     </span>
                     <span className="font-label-mono text-label-mono text-[11px] text-on-surface-variant uppercase tracking-wider">
@@ -175,7 +194,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 {/*  Essence  */}
                 <div className="bg-surface-container-lowest/50 border border-outline-variant/20 rounded-lg p-4 hover:border-resonance-blue/40 transition-colors group">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-resonance-blue text-[16px] group-hover:scale-110 transition-transform">
+                    <span
+                      aria-hidden="true"
+                      className="material-symbols-outlined text-resonance-blue text-[16px] group-hover:scale-110 transition-transform"
+                    >
                       water_drop
                     </span>
                     <span className="font-label-mono text-label-mono text-[11px] text-on-surface-variant uppercase tracking-wider">
@@ -190,7 +212,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 {/*  Matter  */}
                 <div className="bg-surface-container-lowest/50 border border-outline-variant/20 rounded-lg p-4 hover:border-secondary-fixed/40 transition-colors group">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-secondary-fixed text-[16px] group-hover:scale-110 transition-transform">
+                    <span
+                      aria-hidden="true"
+                      className="material-symbols-outlined text-secondary-fixed text-[16px] group-hover:scale-110 transition-transform"
+                    >
                       landscape
                     </span>
                     <span className="font-label-mono text-label-mono text-[11px] text-on-surface-variant uppercase tracking-wider">
@@ -205,7 +230,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 {/*  Substance  */}
                 <div className="bg-surface-container-lowest/50 border border-outline-variant/20 rounded-lg p-4 hover:border-tertiary/40 transition-colors group">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="material-symbols-outlined text-tertiary text-[16px] group-hover:scale-110 transition-transform">
+                    <span
+                      aria-hidden="true"
+                      className="material-symbols-outlined text-tertiary text-[16px] group-hover:scale-110 transition-transform"
+                    >
                       local_fire_department
                     </span>
                     <span className="font-label-mono text-label-mono text-[11px] text-on-surface-variant uppercase tracking-wider">
@@ -221,10 +249,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
               {/*  Synthesis Equation  */}
               <div className="mt-6 pt-4 border-t border-outline-variant/20 flex items-center justify-between">
                 <div className="font-label-mono text-[10px] text-on-surface-variant max-w-[60%] leading-relaxed">
-                  <span className="text-primary opacity-50">∑ (S+E+M+Su) × φ</span> = Current
+                  <span className="text-st-primary opacity-50">∑ (S+E+M+Su) × φ</span> = Current
                   Synthesis Rate
                 </div>
-                <button className="bg-transparent border border-spirit-violet/30 text-primary font-label-mono text-[12px] uppercase px-3 py-1.5 rounded hover:border-secondary hover:text-secondary transition-colors">
+                <button className="bg-transparent border border-spirit-violet/30 text-st-primary font-label-mono text-[12px] uppercase px-3 py-1.5 rounded hover:border-st-secondary hover:text-st-secondary transition-colors">
                   Synthesize
                 </button>
               </div>
@@ -236,7 +264,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                   <span className="w-2 h-2 rounded-full bg-tertiary metric-pulse"></span>
                   Thermodynamic State
                 </h3>
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-on-surface-variant text-[18px]"
+                >
                   speed
                 </span>
               </div>
@@ -290,13 +321,13 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                   </p>
                 </div>
                 <div className="flex bg-surface-container-lowest rounded border border-outline-variant/30 overflow-hidden">
-                  <button className="px-3 py-1 font-label-mono text-[10px] text-primary bg-white/5">
+                  <button className="px-3 py-1 font-label-mono text-[10px] text-st-primary bg-white/5">
                     7D
                   </button>
-                  <button className="px-3 py-1 font-label-mono text-[10px] text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors border-l border-outline-variant/30">
+                  <button className="px-3 py-1 font-label-mono text-[10px] text-on-surface-variant hover:text-st-primary hover:bg-white/5 transition-colors border-l border-outline-variant/30">
                     1M
                   </button>
-                  <button className="px-3 py-1 font-label-mono text-[10px] text-on-surface-variant hover:text-primary hover:bg-white/5 transition-colors border-l border-outline-variant/30">
+                  <button className="px-3 py-1 font-label-mono text-[10px] text-on-surface-variant hover:text-st-primary hover:bg-white/5 transition-colors border-l border-outline-variant/30">
                     ALL
                   </button>
                 </div>
@@ -312,7 +343,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 <h3 className="font-headline-sm text-headline-sm text-on-surface">
                   Synergy Windows
                 </h3>
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px]">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-on-surface-variant text-[18px]"
+                >
                   calendar_month
                 </span>
               </div>
@@ -321,7 +355,9 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 <div className="bg-surface-container-lowest/40 border border-outline-variant/20 rounded p-3 flex items-center justify-between hover:bg-surface-container-lowest/80 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-secondary-fixed/10 border border-secondary-fixed/30 flex items-center justify-center text-secondary-fixed group-hover:shadow-[0_0_10px_rgba(255,224,131,0.2)] transition-shadow">
-                      <span className="material-symbols-outlined text-[18px]">clear_day</span>
+                      <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+                        clear_day
+                      </span>
                     </div>
                     <div>
                       <div className="font-label-mono text-[12px] text-on-surface uppercase mb-0.5">
@@ -342,8 +378,10 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 {/*  Window 2  */}
                 <div className="bg-surface-container-lowest/40 border border-outline-variant/20 rounded p-3 flex items-center justify-between hover:bg-surface-container-lowest/80 transition-colors cursor-pointer group">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary group-hover:shadow-[0_0_10px_rgba(210,187,255,0.2)] transition-shadow">
-                      <span className="material-symbols-outlined text-[18px]">dark_mode</span>
+                    <div className="w-10 h-10 rounded-full bg-st-primary/10 border border-st-primary/30 flex items-center justify-center text-st-primary group-hover:shadow-[0_0_10px_rgba(210,187,255,0.2)] transition-shadow">
+                      <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+                        dark_mode
+                      </span>
                     </div>
                     <div>
                       <div className="font-label-mono text-[12px] text-on-surface uppercase mb-0.5">
@@ -355,7 +393,7 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-label-mono text-[11px] text-primary">Active Now</div>
+                    <div className="font-label-mono text-[11px] text-st-primary">Active Now</div>
                     <div className="font-label-mono text-[10px] text-outline opacity-50">
                       Ends in 4h
                     </div>
@@ -365,7 +403,9 @@ export default function AlchemicalLabsConsciousnessMetrics() {
                 <div className="bg-surface-container-lowest/40 border border-outline-variant/20 rounded p-3 flex items-center justify-between hover:bg-surface-container-lowest/80 transition-colors cursor-pointer group opacity-60">
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-outline-variant/10 border border-outline-variant/30 flex items-center justify-center text-outline-variant">
-                      <span className="material-symbols-outlined text-[18px]">emergency</span>
+                      <span aria-hidden="true" className="material-symbols-outlined text-[18px]">
+                        emergency
+                      </span>
                     </div>
                     <div>
                       <div className="font-label-mono text-[12px] text-on-surface uppercase mb-0.5">
@@ -388,7 +428,9 @@ export default function AlchemicalLabsConsciousnessMetrics() {
       {/*  Footer  */}
       <footer className="w-full py-8 mt-auto bg-obsidian-deep border-t border-outline-variant/30 md:pl-64 z-10 relative">
         <div className="flex flex-col md:flex-row justify-between items-center px-margin-desktop max-w-container-max mx-auto gap-4">
-          <div className="text-primary font-bold font-label-mono text-label-mono">PA-CORE-V2</div>
+          <div className="text-st-primary font-bold font-label-mono text-label-mono">
+            PA-CORE-V2
+          </div>
           <div className="font-label-mono text-label-mono text-on-surface-variant">
             © 2144 Planetary Agents Framework • Crafted in the Digital Void
           </div>

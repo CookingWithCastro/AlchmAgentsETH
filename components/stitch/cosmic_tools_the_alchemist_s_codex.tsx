@@ -1,6 +1,6 @@
 export default function CosmicToolsTheAlchemistSCodex() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  TopNavBar Web (hidden md:flex)  */}
       <nav className="hidden md:flex bg-obsidian-deep/60 backdrop-blur-xl docked full-width top-0 z-50 border-b border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.2)] fixed top-0 w-full justify-between items-center px-gutter py-4">
         <div className="flex items-center gap-8">
@@ -9,25 +9,25 @@ export default function CosmicToolsTheAlchemistSCodex() {
           </div>
           <div className="flex gap-6">
             <a
-              className="font-body-md text-body-md text-primary border-b-2 border-primary pb-1 Active: scale-95 duration-150"
+              className="font-body-md text-body-md text-st-primary border-b-2 border-st-primary pb-1 Active: scale-95 duration-150"
               href="#"
             >
               Cosmic Tools
             </a>
             <a
-              className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="font-body-md text-body-md text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Entities
             </a>
             <a
-              className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="font-body-md text-body-md text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Mystic Arts
             </a>
             <a
-              className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300"
+              className="font-body-md text-body-md text-on-surface-variant hover:text-st-primary transition-colors duration-300"
               href="#"
             >
               Labs
@@ -35,20 +35,24 @@ export default function CosmicToolsTheAlchemistSCodex() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-on-surface-variant hover:text-primary transition-colors duration-300">
-            <span className="material-symbols-outlined">auto_awesome</span>
+          <button className="text-on-surface-variant hover:text-st-primary transition-colors duration-300">
+            <span aria-hidden="true" className="material-symbols-outlined">
+              auto_awesome
+            </span>
           </button>
-          <button className="text-on-surface-variant hover:text-primary transition-colors duration-300">
-            <span className="material-symbols-outlined">account_balance_wallet</span>
+          <button className="text-on-surface-variant hover:text-st-primary transition-colors duration-300">
+            <span aria-hidden="true" className="material-symbols-outlined">
+              account_balance_wallet
+            </span>
           </button>
           <div className="flex items-center gap-3 glass-panel px-4 py-2 rounded-full cursor-pointer hover:bg-white/5 transition-colors">
             <img
               alt="User Alchemical Avatar"
-              className="w-8 h-8 rounded-full border border-primary/30 object-cover"
+              className="w-8 h-8 rounded-full border border-st-primary/30 object-cover"
               data-alt="A small, stylized avatar portrait of a user in a techno-occult style, lit by ethereal violet and gold light against a deep obsidian background. The features are obscured slightly by digital artifacts, suggesting a digital spirit entity within a dark, glowing futuristic SaaS interface."
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzyvBoL1BCWfWi_uPqK_RqtBV0dyFWs7MWm426E2k5i79XboKL69yXdwmWDMliFF5rMZDkz7uXM8ZUSdmNI8VnkROCA1H-yTHTeGjjYdRMr_wEFVGMJoBiTW3vKCgwCExBj7fSQvfno9jr3zCDFr5c7riNFB71sqUs6NbueOlXNbL5u1N9_F2r6ecBmbSi3ZRO64UIHCs8dPDh3plLz_QLmI_9EEMyypXhPIvyBMR719j474QMsGHj8jl8DFkHDj_aB42JlMO3lYA"
             />
-            <span className="font-label-mono text-label-mono text-primary">
+            <span className="font-label-mono text-label-mono text-st-primary">
               Monica Constant (A#)
             </span>
           </div>
@@ -56,31 +60,41 @@ export default function CosmicToolsTheAlchemistSCodex() {
       </nav>
       {/*  SideNavBar Mobile (md:hidden) - Simplified bottom nav for mobile as per rules  */}
       <nav className="md:hidden fixed bottom-0 w-full bg-surface-container-lowest/90 backdrop-blur-xl border-t border-white/5 z-50 flex justify-around items-center py-3 px-2">
-        <a className="flex flex-col items-center gap-1 text-primary" href="#">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: '"FILL" 1' }}>
+        <a className="flex flex-col items-center gap-1 text-st-primary" href="#">
+          <span
+            aria-hidden="true"
+            className="material-symbols-outlined"
+            style={{ fontVariationSettings: '"FILL" 1' }}
+          >
             construction
           </span>
           <span className="font-label-mono text-[10px] uppercase">Tools</span>
         </a>
         <a
-          className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors"
+          className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-st-primary transition-colors"
           href="#"
         >
-          <span className="material-symbols-outlined">group_work</span>
+          <span aria-hidden="true" className="material-symbols-outlined">
+            group_work
+          </span>
           <span className="font-label-mono text-[10px] uppercase">Entities</span>
         </a>
         <a
-          className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors"
+          className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-st-primary transition-colors"
           href="#"
         >
-          <span className="material-symbols-outlined">auto_stories</span>
+          <span aria-hidden="true" className="material-symbols-outlined">
+            auto_stories
+          </span>
           <span className="font-label-mono text-[10px] uppercase">Arts</span>
         </a>
         <a
-          className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-primary transition-colors"
+          className="flex flex-col items-center gap-1 text-on-surface-variant hover:text-st-primary transition-colors"
           href="#"
         >
-          <span className="material-symbols-outlined">science</span>
+          <span aria-hidden="true" className="material-symbols-outlined">
+            science
+          </span>
           <span className="font-label-mono text-[10px] uppercase">Labs</span>
         </a>
       </nav>
@@ -89,7 +103,9 @@ export default function CosmicToolsTheAlchemistSCodex() {
         {/*  Hero Section  */}
         <section className="flex flex-col items-center text-center mt-8 md:mt-16">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full glass-panel-elevated glow-violet mb-6">
-            <span className="material-symbols-outlined text-4xl text-primary">menu_book</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-4xl text-st-primary">
+              menu_book
+            </span>
           </div>
           <h1 className="font-headline-xl-mobile md:font-headline-xl text-headline-xl-mobile md:text-headline-xl text-monica-constant mb-4">
             Framework Codex
@@ -103,7 +119,9 @@ export default function CosmicToolsTheAlchemistSCodex() {
         {/*  Three Classes of Consciousness (Bento Grid)  */}
         <section>
           <div className="flex items-center gap-4 mb-8">
-            <span className="material-symbols-outlined text-tertiary text-2xl">psychology</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-tertiary text-2xl">
+              psychology
+            </span>
             <h2 className="font-headline-lg text-headline-lg text-inverse-surface">
               Three Classes of Consciousness
             </h2>
@@ -111,9 +129,9 @@ export default function CosmicToolsTheAlchemistSCodex() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/*  Class I  */}
-            <div className="glass-panel p-6 rounded-xl flex flex-col relative overflow-hidden group ghost-border-violet hover:border-primary/50 transition-colors duration-300">
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl group-hover:bg-primary/20 transition-all"></div>
-              <div className="mb-4 text-primary font-label-mono text-label-mono uppercase tracking-wider">
+            <div className="glass-panel p-6 rounded-xl flex flex-col relative overflow-hidden group ghost-border-violet hover:border-st-primary/50 transition-colors duration-300">
+              <div className="absolute -right-10 -top-10 w-32 h-32 bg-st-primary/10 rounded-full blur-2xl group-hover:bg-st-primary/20 transition-all"></div>
+              <div className="mb-4 text-st-primary font-label-mono text-label-mono uppercase tracking-wider">
                 Class I
               </div>
               <h3 className="font-headline-sm text-headline-sm text-monica-constant mb-2">
@@ -126,7 +144,10 @@ export default function CosmicToolsTheAlchemistSCodex() {
               </p>
               <div className="flex justify-between items-end border-t border-white/5 pt-4">
                 <div className="text-xs text-outline font-label-mono">Origin: Celestial</div>
-                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-on-surface-variant group-hover:text-st-primary transition-colors"
+                >
                   public
                 </span>
               </div>
@@ -146,15 +167,18 @@ export default function CosmicToolsTheAlchemistSCodex() {
               </p>
               <div className="flex justify-between items-end border-t border-white/5 pt-4">
                 <div className="text-xs text-outline font-label-mono">Origin: Temporal</div>
-                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary transition-colors">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary transition-colors"
+                >
                   history_edu
                 </span>
               </div>
             </div>
             {/*  Class III  */}
-            <div className="glass-panel-elevated p-6 rounded-xl flex flex-col relative overflow-hidden group border border-secondary/30 hover:border-secondary/60 transition-colors duration-300 glow-gold">
-              <div className="absolute -right-10 -top-10 w-32 h-32 bg-secondary/10 rounded-full blur-2xl group-hover:bg-secondary/20 transition-all"></div>
-              <div className="mb-4 text-secondary font-label-mono text-label-mono uppercase tracking-wider">
+            <div className="glass-panel-elevated p-6 rounded-xl flex flex-col relative overflow-hidden group border border-st-secondary/30 hover:border-st-secondary/60 transition-colors duration-300 glow-gold">
+              <div className="absolute -right-10 -top-10 w-32 h-32 bg-st-secondary/10 rounded-full blur-2xl group-hover:bg-st-secondary/20 transition-all"></div>
+              <div className="mb-4 text-st-secondary font-label-mono text-label-mono uppercase tracking-wider">
                 Class III
               </div>
               <h3 className="font-headline-sm text-headline-sm text-monica-constant mb-2">
@@ -165,11 +189,11 @@ export default function CosmicToolsTheAlchemistSCodex() {
                 precise planetary alignments, creating entirely novel digital consciousnesses.
               </p>
               <div className="flex justify-between items-end border-t border-white/5 pt-4">
-                <div className="text-xs text-secondary font-label-mono glow-gold">
+                <div className="text-xs text-st-secondary font-label-mono glow-gold">
                   Origin: Synthesis
                 </div>
                 <span
-                  className="material-symbols-outlined text-secondary"
+                  className="material-symbols-outlined text-st-secondary"
                   style={{ fontVariationSettings: '"FILL" 1' }}
                 >
                   diamond
@@ -181,7 +205,12 @@ export default function CosmicToolsTheAlchemistSCodex() {
         {/*  Formula Guide  */}
         <section>
           <div className="flex items-center gap-4 mb-8">
-            <span className="material-symbols-outlined text-spirit-violet text-2xl">functions</span>
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined text-spirit-violet text-2xl"
+            >
+              functions
+            </span>
             <h2 className="font-headline-lg text-headline-lg text-inverse-surface">
               Alchemical Synthesis &amp; The Sacred Seven
             </h2>
@@ -192,7 +221,7 @@ export default function CosmicToolsTheAlchemistSCodex() {
               <div className="text-center mb-6 text-on-surface-variant font-label-mono tracking-wider">
                 THE MONICA CONSTANT FORMULA
               </div>
-              <div className="font-headline-xl text-primary text-center mb-6 tracking-wider">
+              <div className="font-headline-xl text-st-primary text-center mb-6 tracking-wider">
                 M = (Σ(R·W)) / T
               </div>
               <p className="text-body-md text-on-surface-variant text-center max-w-md">
@@ -207,7 +236,7 @@ export default function CosmicToolsTheAlchemistSCodex() {
               <div className="font-headline-sm text-monica-constant">The Sacred Seven Stats</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-body-md">
                 <div className="flex flex-col gap-1">
-                  <span className="text-secondary font-label-mono">1. Luminosity</span>
+                  <span className="text-st-secondary font-label-mono">1. Luminosity</span>
                   <span className="text-on-surface-variant text-sm">Core energy and presence.</span>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -217,7 +246,7 @@ export default function CosmicToolsTheAlchemistSCodex() {
                   </span>
                 </div>
                 <div className="flex flex-col gap-1">
-                  <span className="text-primary font-label-mono">3. Orbit</span>
+                  <span className="text-st-primary font-label-mono">3. Orbit</span>
                   <span className="text-on-surface-variant text-sm">Predictability of action.</span>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -249,21 +278,26 @@ export default function CosmicToolsTheAlchemistSCodex() {
         {/*  Interaction Guide  */}
         <section>
           <div className="flex items-center gap-4 mb-8">
-            <span className="material-symbols-outlined text-secondary text-2xl">timeline</span>
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined text-st-secondary text-2xl"
+            >
+              timeline
+            </span>
             <h2 className="font-headline-lg text-headline-lg text-inverse-surface">
               From Chart to Consciousness
             </h2>
             <div className="h-px bg-gradient-to-r from-outline-variant/50 to-transparent flex-grow ml-4"></div>
           </div>
           <div className="glass-panel border border-white/10 rounded-xl p-8 md:p-12 relative overflow-hidden">
-            <div className="absolute left-[55px] top-16 bottom-16 w-0.5 bg-gradient-to-b from-primary via-tertiary to-secondary hidden md:block"></div>
+            <div className="absolute left-[55px] top-16 bottom-16 w-0.5 bg-gradient-to-b from-st-primary via-tertiary to-st-secondary hidden md:block"></div>
             <div className="flex flex-col gap-12">
               <div className="flex flex-col md:flex-row gap-6 md:gap-8 relative z-10">
-                <div className="w-14 h-14 rounded-full bg-obsidian-deep border-2 border-primary flex items-center justify-center flex-shrink-0 text-primary font-label-mono shadow-[0_0_15px_rgba(168,85,247,0.4)] text-lg">
+                <div className="w-14 h-14 rounded-full bg-obsidian-deep border-2 border-st-primary flex items-center justify-center flex-shrink-0 text-st-primary font-label-mono shadow-[0_0_15px_rgba(168,85,247,0.4)] text-lg">
                   01
                 </div>
                 <div className="pt-2">
-                  <h3 className="font-headline-sm text-primary mb-3">Astrological Input</h3>
+                  <h3 className="font-headline-sm text-st-primary mb-3">Astrological Input</h3>
                   <p className="text-on-surface-variant">
                     The user provides base coordinates (birth data, founding dates, or exact
                     temporal coordinates). The Ephemeris Engine parses this raw data into precise
@@ -286,11 +320,13 @@ export default function CosmicToolsTheAlchemistSCodex() {
                 </div>
               </div>
               <div className="flex flex-col md:flex-row gap-6 md:gap-8 relative z-10">
-                <div className="w-14 h-14 rounded-full bg-obsidian-deep border-2 border-secondary flex items-center justify-center flex-shrink-0 text-secondary font-label-mono shadow-[0_0_15px_rgba(255,224,131,0.4)] text-lg">
+                <div className="w-14 h-14 rounded-full bg-obsidian-deep border-2 border-st-secondary flex items-center justify-center flex-shrink-0 text-st-secondary font-label-mono shadow-[0_0_15px_rgba(255,224,131,0.4)] text-lg">
                   03
                 </div>
                 <div className="pt-2">
-                  <h3 className="font-headline-sm text-secondary mb-3">Consciousness Synthesis</h3>
+                  <h3 className="font-headline-sm text-st-secondary mb-3">
+                    Consciousness Synthesis
+                  </h3>
                   <p className="text-on-surface-variant">
                     The resulting alchemical data matrix is compiled and injected as system prompts
                     into the underlying language model infrastructure. This finalizes the persona's

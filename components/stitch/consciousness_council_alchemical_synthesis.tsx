@@ -1,6 +1,6 @@
 export default function ConsciousnessCouncilAlchemicalSynthesis() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  Ambient Background  */}
       <div className="fixed inset-0 pointer-events-none alchemical-grid z-0"></div>
       <div className="ambient-orb w-[600px] h-[600px] bg-spirit-violet top-[-200px] left-[-200px] mix-blend-screen"></div>
@@ -13,25 +13,25 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
           </span>
           <div className="hidden md:flex gap-6 ml-12">
             <a
-              className="text-on-surface-variant hover:text-primary transition-colors font-headline-sm text-headline-sm"
+              className="text-on-surface-variant hover:text-st-primary transition-colors font-headline-sm text-headline-sm"
               href="#"
             >
               Cosmic Tools
             </a>
             <a
-              className="text-primary font-bold border-b-2 border-primary pb-1 font-headline-sm text-headline-sm"
+              className="text-st-primary font-bold border-b-2 border-st-primary pb-1 font-headline-sm text-headline-sm"
               href="#"
             >
               Entities
             </a>
             <a
-              className="text-on-surface-variant hover:text-primary transition-colors font-headline-sm text-headline-sm"
+              className="text-on-surface-variant hover:text-st-primary transition-colors font-headline-sm text-headline-sm"
               href="#"
             >
               Mystic Arts
             </a>
             <a
-              className="text-on-surface-variant hover:text-primary transition-colors font-headline-sm text-headline-sm"
+              className="text-on-surface-variant hover:text-st-primary transition-colors font-headline-sm text-headline-sm"
               href="#"
             >
               Labs
@@ -39,18 +39,26 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
           </div>
         </div>
         <div className="flex items-center gap-4">
-          <button className="text-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
-            <span className="material-symbols-outlined" data-icon="notifications">
+          <button className="text-st-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined"
+              data-icon="notifications"
+            >
               notifications
             </span>
           </button>
-          <button className="text-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
-            <span className="material-symbols-outlined" data-icon="auto_awesome">
+          <button className="text-st-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="auto_awesome">
               auto_awesome
             </span>
           </button>
-          <button className="text-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
-            <span className="material-symbols-outlined" data-icon="account_circle">
+          <button className="text-st-primary hover:bg-white/5 transition-all p-2 rounded-full active:scale-95 duration-200">
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined"
+              data-icon="account_circle"
+            >
               account_circle
             </span>
           </button>
@@ -66,46 +74,50 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
         {/*  Navigation Tabs  */}
         <div className="flex flex-col gap-2 flex-grow font-label-mono text-label-mono">
           <a
-            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
+            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-st-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="visibility">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="visibility">
               visibility
             </span>
             Aura Scan
           </a>
           <a
-            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
+            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-st-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="auto_fix_high">
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined"
+              data-icon="auto_fix_high"
+            >
               auto_fix_high
             </span>
             Sigil Forge
           </a>
           <a
-            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
+            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-st-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="schedule">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="schedule">
               schedule
             </span>
             Chronos
           </a>
           <a
-            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
+            className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-st-primary/10 transition-all duration-300 rounded-lg hover:translate-x-1"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="cyclone">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="cyclone">
               cyclone
             </span>
             Vortex
           </a>
           <a
-            className="flex items-center gap-3 text-secondary font-bold bg-secondary-container/20 rounded-lg p-3 hover:translate-x-1 transition-transform"
+            className="flex items-center gap-3 text-st-secondary font-bold bg-secondary-container/20 rounded-lg p-3 hover:translate-x-1 transition-transform"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="balance">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="balance">
               balance
             </span>
             Arbiter
@@ -118,19 +130,19 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
           </button>
           <div className="flex flex-col gap-2 font-label-mono text-label-mono mt-4 border-t border-white/10 pt-4">
             <a
-              className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg"
+              className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-st-primary/10 transition-all duration-300 rounded-lg"
               href="#"
             >
-              <span className="material-symbols-outlined" data-icon="settings">
+              <span aria-hidden="true" className="material-symbols-outlined" data-icon="settings">
                 settings
               </span>
               Settings
             </a>
             <a
-              className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-primary/10 transition-all duration-300 rounded-lg"
+              className="flex items-center gap-3 text-outline hover:text-on-surface p-3 hover:bg-st-primary/10 transition-all duration-300 rounded-lg"
               href="#"
             >
-              <span className="material-symbols-outlined" data-icon="menu_book">
+              <span aria-hidden="true" className="material-symbols-outlined" data-icon="menu_book">
                 menu_book
               </span>
               Grimoire
@@ -143,13 +155,23 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
         <div className="max-w-container-max mx-auto flex flex-col gap-12">
           {/*  Page Header  */}
           <header className="text-center space-y-4 mb-8">
-            <h1 className="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-secondary gold-glow tracking-tight uppercase">
+            <h1 className="font-headline-xl text-headline-xl-mobile md:text-headline-xl text-st-secondary gold-glow tracking-tight uppercase">
               Alchemical Synthesis Output
             </h1>
             <p className="font-label-mono text-label-mono text-outline tracking-widest uppercase flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-sm">emergency</span>
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-st-secondary text-sm"
+              >
+                emergency
+              </span>
               Council Debate Concluded
-              <span className="material-symbols-outlined text-secondary text-sm">emergency</span>
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-st-secondary text-sm"
+              >
+                emergency
+              </span>
             </p>
           </header>
           {/*  Master Directive Container  */}
@@ -159,21 +181,29 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
             <div className="relative z-10 flex flex-col lg:flex-row gap-12">
               {/*  Left: Analytical Breakdown  */}
               <div className="flex-1 space-y-8">
-                <div className="border-b border-secondary/30 pb-4 mb-6">
+                <div className="border-b border-st-secondary/30 pb-4 mb-6">
                   <h2 className="font-headline-lg text-headline-lg text-on-surface flex items-center gap-3">
-                    <span className="material-symbols-outlined text-secondary">data_object</span>
+                    <span
+                      aria-hidden="true"
+                      className="material-symbols-outlined text-st-secondary"
+                    >
+                      data_object
+                    </span>
                     Synthesis Matrix
                   </h2>
                 </div>
                 {/*  Bento Grid for Agents  */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/*  Hermes  */}
+                  {/*  Mercury  */}
                   <div className="glass-panel p-4 rounded-lg border-l-2 border-resonance-blue relative group hover:bg-white/5 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-label-mono text-label-mono text-resonance-blue uppercase tracking-wider">
-                        Hermes : Speed
+                        Mercury : Speed
                       </span>
-                      <span className="material-symbols-outlined text-resonance-blue/50 text-sm">
+                      <span
+                        aria-hidden="true"
+                        className="material-symbols-outlined text-resonance-blue/50 text-sm"
+                      >
                         speed
                       </span>
                     </div>
@@ -191,7 +221,10 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
                       <span className="font-label-mono text-label-mono text-surface-tint uppercase tracking-wider">
                         Saturn : Structure
                       </span>
-                      <span className="material-symbols-outlined text-surface-tint/50 text-sm">
+                      <span
+                        aria-hidden="true"
+                        className="material-symbols-outlined text-surface-tint/50 text-sm"
+                      >
                         architecture
                       </span>
                     </div>
@@ -209,7 +242,10 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
                       <span className="font-label-mono text-label-mono text-tertiary uppercase tracking-wider">
                         Venus : Harmony
                       </span>
-                      <span className="material-symbols-outlined text-tertiary/50 text-sm">
+                      <span
+                        aria-hidden="true"
+                        className="material-symbols-outlined text-tertiary/50 text-sm"
+                      >
                         filter_vintage
                       </span>
                     </div>
@@ -229,15 +265,19 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
               <div className="flex-1 flex flex-col justify-center items-center p-8 bg-obsidian-deep/40 rounded-xl border border-white/5 relative">
                 {/*  Ritual Circle background graphic  */}
                 <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                  <span className="material-symbols-outlined" style={{ fontSize: '300px' }}>
+                  <span
+                    aria-hidden="true"
+                    className="material-symbols-outlined"
+                    style={{ fontSize: '300px' }}
+                  >
                     all_inclusive
                   </span>
                 </div>
                 <div className="text-center z-10 space-y-6 w-full">
-                  <div className="inline-block px-4 py-1 rounded-full border border-secondary/50 bg-secondary/10 font-label-mono text-label-mono text-secondary mb-4">
+                  <div className="inline-block px-4 py-1 rounded-full border border-st-secondary/50 bg-st-secondary/10 font-label-mono text-label-mono text-st-secondary mb-4">
                     Transmuted Wisdom
                   </div>
-                  <div className="glass-panel p-6 rounded-lg border border-primary/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] w-full">
+                  <div className="glass-panel p-6 rounded-lg border border-st-primary/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] w-full">
                     <p className="font-label-mono text-[11px] text-outline tracking-[0.2em] uppercase mb-2">
                       Final Monica Constant (A#)
                     </p>
@@ -250,8 +290,11 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
                     </p>
                   </div>
                   <div className="pt-4">
-                    <button className="w-full bg-transparent border border-spirit-violet text-on-surface font-label-mono text-label-mono uppercase py-4 rounded hover:border-secondary hover:text-secondary hover:shadow-[0_0_20px_rgba(255,224,131,0.3)] transition-all duration-300 tracking-widest flex justify-center items-center gap-2 group">
-                      <span className="material-symbols-outlined group-hover:rotate-90 transition-transform duration-500">
+                    <button className="w-full bg-transparent border border-spirit-violet text-on-surface font-label-mono text-label-mono uppercase py-4 rounded hover:border-st-secondary hover:text-st-secondary hover:shadow-[0_0_20px_rgba(255,224,131,0.3)] transition-all duration-300 tracking-widest flex justify-center items-center gap-2 group">
+                      <span
+                        aria-hidden="true"
+                        className="material-symbols-outlined group-hover:rotate-90 transition-transform duration-500"
+                      >
                         lock_open
                       </span>
                       Manifest Directive
@@ -284,7 +327,7 @@ export default function ConsciousnessCouncilAlchemicalSynthesis() {
                 <span className="text-spirit-violet font-bold">
                   L3 : Synthesis Execution (Current)
                 </span>
-                <span className="text-secondary animate-pulse">Active</span>
+                <span className="text-st-secondary animate-pulse">Active</span>
               </div>
             </div>
           </div>

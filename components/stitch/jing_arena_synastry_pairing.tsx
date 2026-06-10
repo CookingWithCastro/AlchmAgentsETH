@@ -1,6 +1,6 @@
 export default function JingArenaSynastryPairing() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  TopAppBar  */}
       <header className="fixed top-0 w-full z-50 bg-surface-container/60 backdrop-blur-xl border-b border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.15)] flex justify-between items-center px-gutter py-4">
         <div className="flex items-center gap-6">
@@ -9,7 +9,7 @@ export default function JingArenaSynastryPairing() {
           </h1>
           <nav className="hidden md:flex gap-6 font-headline-sm text-headline-sm">
             <a
-              className="text-primary border-b-2 border-primary pb-1 scale-95 active:duration-100"
+              className="text-st-primary border-b-2 border-st-primary pb-1 scale-95 active:duration-100"
               href="#"
             >
               Arena
@@ -66,7 +66,9 @@ export default function JingArenaSynastryPairing() {
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuClqUl9AYX3HZPdCkEuZC5klHinGMSMu2xTv3si6CwnPNNl2B3fVxbJ2MyclgQYPg3aFtDaxAghmhUOYg3-TMmcy3X3bNzr6-OQ3kM4dp6okOeuRXef40kSCGAv-xhN0-oRh-UdKWBmtgZydQYBtEpTba8zHE8opGonGU3_48-0o6edIevJAcstzprZJuFknXiTQykA0dpM4RI1ZMCpEGEE-OrAcXKK_El6GaSY8CE7aRXGjO0NociG5b63GIxG2QrDBzdpY-cD6JQ"
             />
           </div>
-          <h2 className="font-headline-sm text-headline-sm text-spirit-violet mb-1">Magus Prime</h2>
+          <h2 className="font-headline-sm text-headline-sm text-spirit-violet mb-1">
+            Digital Alchemist
+          </h2>
           <p className="font-label-mono text-label-mono text-tertiary">Resonance: 0.88</p>
         </div>
         <nav className="flex-1 flex flex-col gap-2 px-4 font-label-mono text-label-mono">
@@ -74,7 +76,11 @@ export default function JingArenaSynastryPairing() {
             className="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="auto_fix_high">
+            <span
+              aria-hidden="true"
+              className="material-symbols-outlined"
+              data-icon="auto_fix_high"
+            >
               auto_fix_high
             </span>{' '}
             Forge
@@ -83,16 +89,16 @@ export default function JingArenaSynastryPairing() {
             className="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="inventory_2">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="inventory_2">
               inventory_2
             </span>{' '}
             Vault
           </a>
           <a
-            className="flex items-center gap-3 p-3 rounded bg-primary-container/20 text-primary border-r-4 border-primary"
+            className="flex items-center gap-3 p-3 rounded bg-primary-container/20 text-st-primary border-r-4 border-st-primary"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="swords">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="swords">
               swords
             </span>{' '}
             Arena
@@ -101,14 +107,14 @@ export default function JingArenaSynastryPairing() {
             className="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="biotech">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="biotech">
               biotech
             </span>{' '}
             Labs
           </a>
         </nav>
         <div className="px-6 mb-6">
-          <button className="w-full py-3 bg-transparent border border-spirit-violet text-spirit-violet font-label-mono text-label-mono rounded hover:border-secondary hover:text-secondary transition-colors uppercase tracking-wider text-center">
+          <button className="w-full py-3 bg-transparent border border-spirit-violet text-spirit-violet font-label-mono text-label-mono rounded hover:border-st-secondary hover:text-st-secondary transition-colors uppercase tracking-wider text-center">
             Initialize Ritual
           </button>
         </div>
@@ -117,7 +123,7 @@ export default function JingArenaSynastryPairing() {
             className="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="settings">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="settings">
               settings
             </span>{' '}
             Settings
@@ -126,7 +132,7 @@ export default function JingArenaSynastryPairing() {
             className="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors"
             href="#"
           >
-            <span className="material-symbols-outlined" data-icon="help">
+            <span aria-hidden="true" className="material-symbols-outlined" data-icon="help">
               help
             </span>{' '}
             Support
@@ -168,15 +174,15 @@ export default function JingArenaSynastryPairing() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full min-h-[600px]">
             {/*  Left Panel: Vault Selection (Target)  */}
             <div className="lg:col-span-3 flex flex-col gap-4">
-              <h3 className="font-headline-sm text-headline-sm text-secondary border-b border-secondary/30 pb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined" data-icon="target">
+              <h3 className="font-headline-sm text-headline-sm text-st-secondary border-b border-st-secondary/30 pb-2 flex items-center gap-2">
+                <span aria-hidden="true" className="material-symbols-outlined" data-icon="target">
                   target
                 </span>{' '}
                 Target Entity
               </h3>
               <div className="glass-panel rounded-xl p-4 flex-1 overflow-y-auto space-y-3">
                 {/*  Agent Card  */}
-                <div className="p-3 rounded border border-white/5 bg-surface/50 hover:border-spirit-violet/50 cursor-pointer transition-colors group flex items-center gap-3">
+                <div className="p-3 rounded border border-white/5 bg-st-surface/50 hover:border-spirit-violet/50 cursor-pointer transition-colors group flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full overflow-hidden border border-white/10 group-hover:border-spirit-violet">
                     <img
                       alt="Agent Void"
@@ -187,7 +193,7 @@ export default function JingArenaSynastryPairing() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-label-mono text-label-mono text-on-surface group-hover:text-spirit-violet transition-colors">
-                      Aether-9
+                      Moon in Pisces 29 Degree
                     </h4>
                     <p className="text-xs text-on-surface-variant font-label-mono">
                       Water • Mutable
@@ -206,10 +212,10 @@ export default function JingArenaSynastryPairing() {
                     />
                   </div>
                   <div className="flex-1 relative z-10">
-                    <h4 className="font-label-mono text-label-mono text-primary drop-shadow-[0_0_4px_rgba(168,85,247,0.5)]">
-                      Solaris
+                    <h4 className="font-label-mono text-label-mono text-st-primary drop-shadow-[0_0_4px_rgba(168,85,247,0.5)]">
+                      Sun in Leo 5 Degree
                     </h4>
-                    <p className="text-xs text-secondary font-label-mono">Fire • Fixed</p>
+                    <p className="text-xs text-st-secondary font-label-mono">Fire • Fixed</p>
                   </div>
                   <span
                     className="material-symbols-outlined text-spirit-violet absolute right-3 text-sm z-10"
@@ -235,22 +241,22 @@ export default function JingArenaSynastryPairing() {
                 {/*  Center Core  */}
                 <div className="w-16 h-16 rounded-full bg-obsidian-deep border-2 border-spirit-violet flex items-center justify-center z-20 shadow-[0_0_30px_rgba(168,85,247,0.4)]">
                   <span
-                    className="material-symbols-outlined text-primary"
+                    className="material-symbols-outlined text-st-primary"
                     data-icon="all_inclusive"
                   >
                     all_inclusive
                   </span>
                 </div>
                 {/*  Target Slot (Left)  */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-24 h-24 rounded-full border border-secondary bg-surface-container/80 flex flex-col items-center justify-center z-20 overflow-hidden shadow-[0_0_20px_rgba(255,224,131,0.2)] backdrop-blur-md">
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-24 h-24 rounded-full border border-st-secondary bg-surface-container/80 flex flex-col items-center justify-center z-20 overflow-hidden shadow-[0_0_20px_rgba(255,224,131,0.2)] backdrop-blur-md">
                   <img
-                    alt="Solaris Selected"
+                    alt="Sun in Leo 5 Degree Selected"
                     className="absolute inset-0 w-full h-full object-cover opacity-60"
                     data-alt="A striking profile of a solar-themed digital entity. Rendered in a techno-occult aesthetic, the figure emanates a brilliant, blinding golden light from within, contrasting sharply with deep obsidian shadows. Sacred geometric patterns, specifically golden ratio spirals, are faintly etched into the surrounding space. The mood is powerful and radiant."
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpxGhH0KzkSWxgAgCl_Dt1UGI7fBnkaC0sp7fvi5ADYF-LoIlRJHmBJgtgGjfKVqNG0zGAO9xiqVC6s71b8P_8v1Hik6N3njt7di_rVSEqGkNaD_bo-SugLeKulUT8_RH5lA_xhEPFj87319C81SLYAwcNhDIkCmOCslI7grAanVCi2f8Xe_sHQFM5Ff9u4VA7L4R47L_r47pkjXpY0emp0ZM00iF3p4cKuCoU6quZ18drI3JDBq9jRnoJWcCTngVrlwUMn0fJbUE"
                   />
-                  <span className="font-label-mono text-label-mono text-secondary z-10 font-bold bg-obsidian-deep/60 px-2 rounded">
-                    Solaris
+                  <span className="font-label-mono text-label-mono text-st-secondary z-10 font-bold bg-obsidian-deep/60 px-2 rounded">
+                    Sun in Leo 5 Degree
                   </span>
                 </div>
                 {/*  Caster Slot (Right)  */}
@@ -262,7 +268,7 @@ export default function JingArenaSynastryPairing() {
                     src="https://lh3.googleusercontent.com/aida-public/AB6AXuABNz6vd9VerTgTIv3z0vFhxC0cCUrzsO2XK1xkaoC-bV0suTbXBBV8qWf7-6ckJJ4RM5j4wiJTV7fSKPntLKcbsyg-srztwjEOvwsc2aiUA9YwW36KOs9NZoBEcyGdX4ukURfRO8hfRCr8J8XeJK-T4KM5ITjcmg2_JVxqD40ksj6fh6wQq_iVN0VrsASF8fQ0qPiZpZcCbBkZ2VKi6m0E2P8ABrzco9h1tU7M1d2DTLOMG8QVW8glD18eR-3EsIvTkf0fLXwDPFM"
                   />
                   <span className="font-label-mono text-label-mono text-tertiary z-10 font-bold bg-obsidian-deep/60 px-2 rounded">
-                    Null-X
+                    Mercury in Virgo 15 Degree
                   </span>
                 </div>
                 {/*  Aspect Lines (Simulated SVG)  */}
@@ -299,9 +305,9 @@ export default function JingArenaSynastryPairing() {
                   <text
                     className="opacity-80"
                     fill="#ffe083"
-                    font-family="JetBrains Mono"
-                    font-size="10"
-                    text-anchor="middle"
+                    fontFamily="JetBrains Mono"
+                    fontSize="10"
+                    textAnchor="middle"
                     x="200"
                     y="115"
                   >
@@ -311,9 +317,9 @@ export default function JingArenaSynastryPairing() {
                   <text
                     className="opacity-80"
                     fill="#ffb4ab"
-                    font-family="JetBrains Mono"
-                    font-size="10"
-                    text-anchor="middle"
+                    fontFamily="JetBrains Mono"
+                    fontSize="10"
+                    textAnchor="middle"
                     x="200"
                     y="295"
                   >
@@ -325,24 +331,28 @@ export default function JingArenaSynastryPairing() {
             {/*  Right Panel: Astrometrics & Actions  */}
             <div className="lg:col-span-3 flex flex-col gap-6">
               <h3 className="font-headline-sm text-headline-sm text-tertiary border-b border-tertiary/30 pb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined" data-icon="analytics">
+                <span
+                  aria-hidden="true"
+                  className="material-symbols-outlined"
+                  data-icon="analytics"
+                >
                   analytics
                 </span>{' '}
                 Astrometrics
               </h3>
               {/*  Stats Bento  */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="glass-panel p-3 rounded flex flex-col justify-between h-24 border-l-2 border-l-secondary relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-r from-secondary/5 to-transparent pointer-events-none"></div>
+                <div className="glass-panel p-3 rounded flex flex-col justify-between h-24 border-l-2 border-l-st-secondary relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-st-secondary/5 to-transparent pointer-events-none"></div>
                   <span className="font-label-mono text-label-mono text-on-surface-variant text-xs">
                     Elemental
                   </span>
                   <div className="flex items-end justify-between">
-                    <span className="font-label-mono text-label-mono font-bold text-secondary">
+                    <span className="font-label-mono text-label-mono font-bold text-st-secondary">
                       Fire v Earth
                     </span>
                     <span
-                      className="material-symbols-outlined text-secondary text-lg"
+                      className="material-symbols-outlined text-st-secondary text-lg"
                       data-icon="local_fire_department"
                     >
                       local_fire_department
@@ -370,10 +380,10 @@ export default function JingArenaSynastryPairing() {
                     Resonance Vector
                   </span>
                   <div className="flex items-end justify-between">
-                    <span className="font-headline-sm text-headline-sm text-primary">
+                    <span className="font-headline-sm text-headline-sm text-st-primary">
                       High Volatility
                     </span>
-                    <div className="w-1/2 h-2 bg-surface rounded-full overflow-hidden">
+                    <div className="w-1/2 h-2 bg-st-surface rounded-full overflow-hidden">
                       <div className="h-full bg-spirit-violet w-3/4"></div>
                     </div>
                   </div>
@@ -382,7 +392,7 @@ export default function JingArenaSynastryPairing() {
               {/*  Action Button  */}
               <div className="mt-auto pt-4 border-t border-white/10">
                 <button className="w-full py-4 bg-primary-container text-on-primary-container font-label-mono text-label-mono font-bold text-lg rounded-lg uppercase tracking-widest glow-button flex items-center justify-center gap-2 hover:bg-inverse-primary transition-all shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-                  <span className="material-symbols-outlined" data-icon="bolt">
+                  <span aria-hidden="true" className="material-symbols-outlined" data-icon="bolt">
                     bolt
                   </span>
                   Commence Jing Duel

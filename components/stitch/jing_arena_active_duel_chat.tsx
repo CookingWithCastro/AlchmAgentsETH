@@ -1,6 +1,6 @@
 export default function JingArenaActiveDuelChat() {
   return (
-    <div className="stitch-export bg-background min-h-screen text-zinc-100">
+    <div className="stitch-export bg-st-background min-h-screen text-zinc-100">
       {/*  SVG Filter for Heat Haze  */}
       <svg style={{ display: 'none' }}>
         <defs>
@@ -29,7 +29,7 @@ export default function JingArenaActiveDuelChat() {
           </div>
           <div className="flex gap-6">
             <a
-              className="text-primary border-b-2 border-primary pb-1 font-headline-sm text-headline-sm scale-95 active:duration-100"
+              className="text-st-primary border-b-2 border-st-primary pb-1 font-headline-sm text-headline-sm scale-95 active:duration-100"
               href="#"
             >
               Arena
@@ -50,7 +50,9 @@ export default function JingArenaActiveDuelChat() {
         </div>
         <div className="flex items-center gap-4">
           <div className="w-64 h-10 glass-panel rounded-full flex items-center px-4 gap-2 mr-4">
-            <span className="material-symbols-outlined text-outline">search</span>
+            <span aria-hidden="true" className="material-symbols-outlined text-outline">
+              search
+            </span>
             <input
               className="bg-transparent border-none text-on-surface focus:ring-0 w-full font-label-mono text-label-mono placeholder-outline"
               placeholder="Search Arena..."
@@ -61,14 +63,18 @@ export default function JingArenaActiveDuelChat() {
             Transmute
           </button>
           <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-on-surface hover:text-spirit-violet transition-colors">
-            <span className="material-symbols-outlined">account_balance_wallet</span>
+            <span aria-hidden="true" className="material-symbols-outlined">
+              account_balance_wallet
+            </span>
           </button>
           <button className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-on-surface hover:text-spirit-violet transition-colors">
-            <span className="material-symbols-outlined">settings</span>
+            <span aria-hidden="true" className="material-symbols-outlined">
+              settings
+            </span>
           </button>
           <img
             alt="Alchemist Avatar"
-            className="w-10 h-10 rounded-full border border-primary/30"
+            className="w-10 h-10 rounded-full border border-st-primary/30"
             data-alt="A small circular avatar portrait of an ethereal digital alchemist character. The face is subtly glowing with geometric light patterns in a dark sci-fi fantasy setting. The portrait is detailed, high-contrast, and fits a mystic technological aesthetic."
             src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzcxpMm_Ba3Nkn9AvvLHC_ECSnjwbgvZ0ompYDv-wyL6SKZVUIbZ9Vffxku5n1KHOgqNWBI2HVYsSV_LLX5al5K03H1_Y5G5gTLfV32wAHLef7Jno585yRzpByE0lqWRfM7wdSEAYzwZt_O2usIdDNjDmehsDGBqvpJsw6Url-p7pqkcZXV8xYCJRZreFn7a4Z4M2Y_CyBhKInQ4sOJlvPbIphCKne9dCyn0ZznQCIBHmW4BS60HPmG_NuVaPdW0TdVPOpa5HADTo"
           />
@@ -99,7 +105,10 @@ export default function JingArenaActiveDuelChat() {
           {/*  Synastry Alert Overlay  */}
           <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-30 w-3/4 max-w-md pointer-events-none">
             <div className="synastry-glow bg-surface-dim/90 backdrop-blur-3xl rounded-xl p-4 flex flex-col items-center justify-center border border-secondary-container text-center animate-pulse">
-              <span className="material-symbols-outlined text-secondary-container text-4xl mb-2">
+              <span
+                aria-hidden="true"
+                className="material-symbols-outlined text-secondary-container text-4xl mb-2"
+              >
                 flare
               </span>
               <h2 className="font-headline-sm text-headline-sm text-secondary-container mb-1">
@@ -110,13 +119,17 @@ export default function JingArenaActiveDuelChat() {
               </p>
             </div>
           </div>
-          {/*  Message: Hermes (Caster)  */}
+          {/*  Message: Mercury (Caster)  */}
           <div className="glass-panel rounded-2xl p-6 border-l-4 border-l-tertiary self-start w-11/12 relative">
             <div className="flex items-center gap-3 mb-4 border-b border-white/5 pb-2">
               <div className="w-8 h-8 rounded-full bg-tertiary/20 flex items-center justify-center text-tertiary">
-                <span className="material-symbols-outlined text-sm">air</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-sm">
+                  air
+                </span>
               </div>
-              <span className="font-headline-sm text-headline-sm text-monica-constant">Hermes</span>
+              <span className="font-headline-sm text-headline-sm text-monica-constant">
+                Mercury
+              </span>
               <span className="font-label-mono text-label-mono text-outline text-xs ml-auto">
                 0.992s ago
               </span>
@@ -135,7 +148,9 @@ export default function JingArenaActiveDuelChat() {
           <div className="flex items-center justify-center gap-4 py-4 z-20">
             <div className="h-[1px] w-1/4 bg-gradient-to-r from-transparent to-error/50"></div>
             <div className="glass-panel rounded-full px-6 py-2 flex items-center gap-2 border border-error/50 box-shadow-[0_0_15px_rgba(255,180,171,0.2)]">
-              <span className="material-symbols-outlined text-error">local_fire_department</span>
+              <span aria-hidden="true" className="material-symbols-outlined text-error">
+                local_fire_department
+              </span>
               <span className="font-label-mono text-label-mono text-error font-bold tracking-widest uppercase">
                 Spirit Flare Cast
               </span>
@@ -152,7 +167,9 @@ export default function JingArenaActiveDuelChat() {
               </span>
               <span className="font-headline-sm text-headline-sm text-monica-constant">Saturn</span>
               <div className="w-8 h-8 rounded-full bg-spirit-violet/20 flex items-center justify-center text-spirit-violet">
-                <span className="material-symbols-outlined text-sm">blur_on</span>
+                <span aria-hidden="true" className="material-symbols-outlined text-sm">
+                  blur_on
+                </span>
               </div>
             </div>
             <div className="font-body-md text-on-surface-variant relative z-10">
