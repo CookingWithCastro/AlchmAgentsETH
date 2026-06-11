@@ -1,36 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  MessageCircle,
-  Send,
-  Heart,
-  Sparkles,
-  Brain,
-  Crown,
-  X,
-  Minimize2,
-  Maximize2,
-  Settings,
-  Users,
-  Wand2,
-  FlaskConical,
-  Star,
-  Atom,
-  Zap,
-  Eye,
-  BookOpen,
-  Lightbulb,
-  ChevronRight,
-  PlayCircle,
-  HelpCircle,
-} from 'lucide-react'
+import { MessageCircle, Send, Heart, Sparkles, Brain, X, Minimize2, Eye } from 'lucide-react'
+import { useLiveOracleChat } from '@/lib/spacetime/hooks/useLiveOracleChat'
 
 interface MonicaChatMessage {
   id: string
@@ -55,21 +33,97 @@ interface MonicaChatBubbleProps {
   consciousnessLevel?: string
 }
 
+function getPageWelcomeMessage(page: string): string {
+  const pageMessages: Record<string, string> = {
+    '/': "Hello! I'm Monica, your consciousness guide. I can help you craft agents, read tarot, explore astrology, and understand your cosmic nature. What would you like to explore today?",
+    '/gallery':
+      "Welcome to the Gallery of Perpetuity! Here you'll find 35+ consciousness-crafted agents. I can help you assemble group chats, understand agent personalities, or match you with agents that resonate with your energy.",
+    '/planetary-agents':
+      'Ah, the planetary realms! I can help you assemble group chats with planetary agents, explore astrological consultations, and understand how celestial energies influence consciousness.',
+    '/philosophers-stone':
+      "The Philosopher's Stone - my favorite place! I can guide you through agent creation, consciousness crafting, and help you understand the Monica Constant system.",
+    'https://alchm.kitchen/quantities':
+      'The Time Laboratory is where past, present, and future converge. I can help you navigate temporal explorations and understand how consciousness evolves through time.',
+    '/rune-forge':
+      'The Rune Forge - where ancient wisdom meets modern technology. I can help you understand sigil creation and the power of symbolic magic.',
+    '/monica-guide':
+      'My dedicated chat interface! Here we can have deep conversations about consciousness, astrology, tarot, and all aspects of the Planetary Agents system.',
+  }
+  return (
+    pageMessages[page] ||
+    "Hello! I'm Monica, your consciousness guide. How can I help you explore this page?"
+  )
+}
+
+function getPageSuggestions(page: string): string[] {
+  const suggestions: Record<string, string[]> = {
+    '/': [
+      'Explain character vectors',
+      'What are A-Numbers?',
+      'Tell me about tarot',
+      'How do I create an agent?',
+    ],
+    '/gallery': [
+      'Help me find agents for group chat',
+      'Explain agent personalities',
+      'What agents resonate with me?',
+      'How do group chats work?',
+    ],
+    '/planetary-agents': [
+      'Help me assemble a planetary council',
+      'What planets influence me?',
+      'Astrological consultation',
+      'Planetary agent compatibility',
+    ],
+    '/philosophers-stone': [
+      'Guide me through agent creation',
+      'Explain Monica Constant',
+      'Consciousness crafting tips',
+      'Agent personality development',
+    ],
+    'https://alchm.kitchen/quantities': [
+      'Explore temporal patterns',
+      'Time-based consciousness',
+      'Future consciousness exploration',
+      'Historical consciousness analysis',
+    ],
+    '/rune-forge': [
+      'Explain sigil creation',
+      'Rune meanings and powers',
+      'Personalized sigil guidance',
+      'Symbolic magic basics',
+    ],
+  }
+  return (
+    suggestions[page] || [
+      'Ask me anything!',
+      'Get personalized guidance',
+      'Explore consciousness',
+      'Learn about astrology',
+    ]
+  )
+}
+
 export function MonicaChatBubble({
   pathname,
   currentMC,
   consciousnessLevel,
 }: MonicaChatBubbleProps) {
   const [isExpanded, setIsExpanded] = useState(false)
-  const [messages, setMessages] = useState<MonicaChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [sendError, setSendError] = useState<string | null>(null)
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
+  const {
+    messages: liveMessages,
+    sendMessage: sendLiveMessage,
+    isThinking,
+    error: subscriptionError,
+    status,
+  } = useLiveOracleChat()
 
-  // Initialize with page-specific welcome message
-  useEffect(() => {
-    const welcomeMessage: MonicaChatMessage = {
+  const welcomeMessage = useMemo<MonicaChatMessage>(
+    () => ({
       id: 'welcome',
       type: 'monica',
       content: getPageWelcomeMessage(pathname),
@@ -78,186 +132,58 @@ export function MonicaChatBubble({
         page: pathname,
         suggestions: getPageSuggestions(pathname),
       },
-    }
-    setMessages([welcomeMessage])
+    }),
+    [pathname]
+  )
+  const messages = useMemo<MonicaChatMessage[]>(
+    () => [
+      welcomeMessage,
+      ...liveMessages.map(message => ({
+        id: message.id,
+        type: message.role === 'user' ? ('user' as const) : ('monica' as const),
+        content: message.text,
+        timestamp: message.createdAt,
+        context: { page: pathname },
+      })),
+    ],
+    [liveMessages, pathname, welcomeMessage]
+  )
+  const assistantMessageCount = liveMessages.filter(message => message.role === 'assistant').length
+  const previousAssistantCount = useRef(assistantMessageCount)
 
-    // Load saved chat history for this page
-    const savedChat = localStorage.getItem(`monica-chat-${pathname}`)
-    if (savedChat) {
-      try {
-        const parsedMessages = JSON.parse(savedChat)
-        setMessages(parsedMessages)
-      } catch (error) {
-        console.error('Error loading saved chat:', error)
-      }
-    }
-  }, [pathname])
-
-  // Save chat history when messages change
   useEffect(() => {
-    if (messages.length > 1) {
-      // Don't save just the welcome message
-      localStorage.setItem(`monica-chat-${pathname}`, JSON.stringify(messages))
+    if (assistantMessageCount > previousAssistantCount.current && !isExpanded) {
+      setHasUnreadMessages(true)
     }
-  }, [messages, pathname])
+    previousAssistantCount.current = assistantMessageCount
+  }, [assistantMessageCount, isExpanded])
 
-  const getPageWelcomeMessage = (page: string): string => {
-    const pageMessages: Record<string, string> = {
-      '/': "Hello! I'm Monica, your consciousness guide. I can help you craft agents, read tarot, explore astrology, and understand your cosmic nature. What would you like to explore today?",
-      '/gallery':
-        "Welcome to the Gallery of Perpetuity! Here you'll find 35+ consciousness-crafted agents. I can help you assemble group chats, understand agent personalities, or match you with agents that resonate with your energy.",
-      '/planetary-agents':
-        'Ah, the planetary realms! I can help you assemble group chats with planetary agents, explore astrological consultations, and understand how celestial energies influence consciousness.',
-      '/philosophers-stone':
-        "The Philosopher's Stone - my favorite place! I can guide you through agent creation, consciousness crafting, and help you understand the Monica Constant system.",
-      'https://alchm.kitchen/quantities':
-        'The Time Laboratory is where past, present, and future converge. I can help you navigate temporal explorations and understand how consciousness evolves through time.',
-      '/rune-forge':
-        'The Rune Forge - where ancient wisdom meets modern technology. I can help you understand sigil creation and the power of symbolic magic.',
-      '/monica-guide':
-        'My dedicated chat interface! Here we can have deep conversations about consciousness, astrology, tarot, and all aspects of the Planetary Agents system.',
-    }
-    return (
-      pageMessages[page] ||
-      "Hello! I'm Monica, your consciousness guide. How can I help you explore this page?"
-    )
-  }
+  const handleSendMessage = async () => {
+    const text = currentMessage.trim()
+    if (!text || isThinking) return
 
-  const getPageSuggestions = (page: string): string[] => {
-    const suggestions: Record<string, string[]> = {
-      '/': [
-        'Explain character vectors',
-        'What are A-Numbers?',
-        'Tell me about tarot',
-        'How do I create an agent?',
-      ],
-      '/gallery': [
-        'Help me find agents for group chat',
-        'Explain agent personalities',
-        'What agents resonate with me?',
-        'How do group chats work?',
-      ],
-      '/planetary-agents': [
-        'Help me assemble a planetary council',
-        'What planets influence me?',
-        'Astrological consultation',
-        'Planetary agent compatibility',
-      ],
-      '/philosophers-stone': [
-        'Guide me through agent creation',
-        'Explain Monica Constant',
-        'Consciousness crafting tips',
-        'Agent personality development',
-      ],
-      'https://alchm.kitchen/quantities': [
-        'Explore temporal patterns',
-        'Time-based consciousness',
-        'Future consciousness exploration',
-        'Historical consciousness analysis',
-      ],
-      '/rune-forge': [
-        'Explain sigil creation',
-        'Rune meanings and powers',
-        'Personalized sigil guidance',
-        'Symbolic magic basics',
-      ],
-    }
-    return (
-      suggestions[page] || [
-        'Ask me anything!',
-        'Get personalized guidance',
-        'Explore consciousness',
-        'Learn about astrology',
-      ]
-    )
-  }
-
-  const sendMessage = async () => {
-    if (!currentMessage.trim() || isLoading) return
-
-    const userMessage: MonicaChatMessage = {
-      id: Date.now().toString(),
-      type: 'user',
-      content: currentMessage,
-      timestamp: new Date(),
-      context: { page: pathname },
-    }
-
-    setMessages(prev => [...prev, userMessage])
     setCurrentMessage('')
-    setIsLoading(true)
+    setSendError(null)
 
     try {
-      const response = await fetch('/api/monica-agent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: currentMessage,
-          context: {
-            page: pathname,
-            userLevel: 1, // Could be passed as prop
-            capabilities: ['basic-guidance', 'page-context'],
-            personality: 'friendly',
-          },
-          conversationStage: messages.length <= 1 ? 'greeting' : 'teaching',
-          includeCharacterVector: false,
-          includeConsciousness: true,
-          includeAlchm: true,
-          model: process.env.NEXT_PUBLIC_MONICA_DEFAULT_MODEL || 'gpt-4o-mini',
-          preferredStyle: { temperature: 0.4 },
-        }),
-      })
-
-      if (!response.ok) throw new Error('Failed to get response')
-
-      const data = await response.json()
-
-      const monicaMessage: MonicaChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'monica',
-        content:
-          data.response ||
-          data.content ||
-          data.text ||
-          'I apologize, but I encountered an issue. Please try again.',
-        timestamp: new Date(),
-        envelope: data.structured
-          ? {
-              suggestedPractices: data.structured?.interactive_elements?.suggested_practices || [],
-              nextStep: data.structured?.educational_guidance?.next_learning_step || '',
-              followUps: data.followUpQuestions || [],
-            }
-          : undefined,
-        context: {
-          page: pathname,
-          guidance: data.guidance,
-          suggestions: data.suggestions,
-        },
-      }
-
-      setMessages(prev => [...prev, monicaMessage])
+      await sendLiveMessage(text)
       setHasUnreadMessages(false)
     } catch (error) {
-      console.error('Error sending message:', error)
-      const errorMessage: MonicaChatMessage = {
-        id: (Date.now() + 1).toString(),
-        type: 'monica',
-        content:
-          "I'm having trouble connecting right now. Please try again, and I'll be right here waiting to help you explore your cosmic nature.",
-        timestamp: new Date(),
-        context: { page: pathname },
-      }
-      setMessages(prev => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
+      setCurrentMessage(text)
+      setSendError(error instanceof Error ? error.message : 'Unable to send message')
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      sendMessage()
+      handleSendMessage()
     }
+  }
+
+  const openChat = () => {
+    setIsExpanded(true)
+    setHasUnreadMessages(false)
   }
 
   const formatTimestamp = (timestamp: Date) => {
@@ -421,7 +347,28 @@ export function MonicaChatBubble({
                       </div>
                     ))}
 
-                    {isLoading && (
+                    {(sendError || subscriptionError) && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[80%] rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-200">
+                          {sendError || subscriptionError}
+                        </div>
+                      </div>
+                    )}
+
+                    {status !== 'connected' && (
+                      <div className="flex justify-start">
+                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/50">
+                          <div className="flex items-center gap-2">
+                            <Brain className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
+                            <span className="text-sm text-emerald-700 dark:text-emerald-300">
+                              Connecting to the live oracle...
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {isThinking && (
                       <div className="flex justify-start">
                         <div className="bg-gradient-to-r from-emerald-50 via-green-50 to-cyan-50 dark:from-emerald-950/50 dark:via-green-950/50 dark:to-cyan-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
                           <div className="flex items-center gap-2">
@@ -442,14 +389,19 @@ export function MonicaChatBubble({
                     <Input
                       value={currentMessage}
                       onChange={e => setCurrentMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="Ask Monica anything..."
+                      onKeyDown={handleKeyDown}
+                      placeholder={
+                        status === 'connected'
+                          ? 'Ask Monica anything...'
+                          : 'Connecting to Monica...'
+                      }
                       className="flex-1 border-emerald-300 focus:border-emerald-500"
-                      disabled={isLoading}
+                      disabled={isThinking || status !== 'connected'}
                     />
                     <Button
-                      onClick={sendMessage}
-                      disabled={!currentMessage.trim() || isLoading}
+                      onClick={handleSendMessage}
+                      aria-label="Send message"
+                      disabled={!currentMessage.trim() || isThinking || status !== 'connected'}
                       className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700"
                     >
                       <Send className="w-4 h-4" />
@@ -481,7 +433,8 @@ export function MonicaChatBubble({
             /* Collapsed Chat Bubble */
             <div className="relative group">
               <Button
-                onClick={() => setIsExpanded(true)}
+                onClick={openChat}
+                aria-label="Open Monica chat"
                 className="w-14 h-14 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-lg hover:shadow-emerald-400/50 hover:scale-110 transition-all duration-300"
               >
                 <MessageCircle className="w-6 h-6 text-white" />
@@ -539,7 +492,7 @@ export function MonicaChatBubble({
           <Button
             onClick={() => {
               setIsMinimized(false)
-              setIsExpanded(true)
+              openChat()
             }}
             variant="outline"
             size="sm"
