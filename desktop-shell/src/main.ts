@@ -8,6 +8,7 @@ import { detectPatternsStatic } from '../../lib/astrological-pattern-recognition
 import { ChartGeometryExtractor } from '../../lib/chart-geometry-extractor'
 import { createNatalSigilRune } from '../../lib/runes/natal-sigil-runes'
 import { createSigilSvg, sigilSvgToDataUrl } from '../../lib/sigil-download'
+import { buildLocalAstrologyMetrics } from './localAstrologyMetrics'
 import type { NatalSigilRune } from '../../lib/runes/natal-sigil-runes'
 import type { PlanetPosition, Aspect } from '../../lib/astrological-pattern-recognition'
 
@@ -3921,7 +3922,14 @@ function renderAccountView() {
             </label>
             <label class="field">
               <span>Desktop API key</span>
-              <input class="input" id="account-api-key" value="${escapeHtml(state.account.apiKey)}" />
+              <input
+                class="input"
+                id="account-api-key"
+                type="password"
+                autocomplete="off"
+                spellcheck="false"
+                value="${escapeHtml(state.account.apiKey)}"
+              />
             </label>
             <label class="field">
               <span>Agents web URL</span>
@@ -5567,7 +5575,11 @@ const ZODIAC_RULERS: Record<string, string> = {
   Aquarius: 'Saturn',
 }
 
-function buildLocalAstrologySnapshot(date = new Date(), latitude = 40.7128, longitude = -74.006) {
+function buildLocalAstrologySnapshot(
+  date = new Date(),
+  latitude = 40.7128,
+  longitude = -74.006
+): AstrologyConsensusSnapshot {
   const birthInfo = {
     year: date.getUTCFullYear(),
     month: date.getUTCMonth() + 1,
@@ -5665,7 +5677,6 @@ function buildLocalAstrologySnapshot(date = new Date(), latitude = 40.7128, long
   const waterCount = planets.filter(p => p.element === 'Water').length
   const airCount = planets.filter(p => p.element === 'Air').length
   const earthCount = planets.filter(p => p.element === 'Earth').length
-  const totalCounts = planets.length || 1
 
   const dominantElement = [
     { name: 'Fire', count: fireCount },
@@ -5673,6 +5684,12 @@ function buildLocalAstrologySnapshot(date = new Date(), latitude = 40.7128, long
     { name: 'Air', count: airCount },
     { name: 'Earth', count: earthCount },
   ].sort((a, b) => b.count - a.count)[0].name
+  const fallbackMetrics = buildLocalAstrologyMetrics(
+    date,
+    dominantElement,
+    { Fire: fireCount, Water: waterCount, Air: airCount, Earth: earthCount },
+    aspects.length
+  )
 
   const moon = planets.find(p => p.planet === 'Moon')
   const sun = planets.find(p => p.planet === 'Sun')
@@ -5707,29 +5724,18 @@ function buildLocalAstrologySnapshot(date = new Date(), latitude = 40.7128, long
       planets,
       aspects,
     },
-    quantities: {
-      dominantElement,
-      ANumber: 100,
-      elements: {
-        Fire: Math.round((fireCount / totalCounts) * 100),
-        Water: Math.round((waterCount / totalCounts) * 100),
-        Air: Math.round((airCount / totalCounts) * 100),
-        Earth: Math.round((earthCount / totalCounts) * 100),
-      },
-    },
+    quantities: fallbackMetrics.quantities,
     moonPhase: {
       name: phase.name,
       angle: phaseAngle,
       illumination: Math.round(((1 - Math.cos((phaseAngle * Math.PI) / 180)) / 2) * 100),
       instruction: '',
     },
-    planetaryHour: {
-      current: 'Sun',
-    },
+    planetaryHour: fallbackMetrics.planetaryHour,
     activeAgents: [],
     layers: [],
     recommendations: [],
-  } as any
+  }
 }
 
 async function refreshAstrologyConsensus(options: { silent?: boolean } = {}) {
