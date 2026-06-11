@@ -4,14 +4,14 @@ import { SessionProvider } from 'next-auth/react'
 import { Toaster } from '@/components/ui/toaster'
 import { usePathname } from 'next/navigation'
 import { MonicaChatBubble } from '@/components/monica/monica-chat-bubble'
-import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
 import { FloatingAdminPanel } from '@/components/admin/FloatingAdminPanel'
+import { SpacetimeProvider } from '@/lib/spacetime/SpacetimeContext'
+import { useLiveEphemeris } from '@/lib/spacetime/hooks/useLiveEphemeris'
 
 function MonicaWrapper() {
   const pathname = usePathname()
   const disabledForDesktopSurface = pathname?.startsWith('/desktop')
-  const { alchmQuantities, monicaConstant } = usePlanetaryPositions({
-    refreshInterval: 60000,
+  const { monicaConstant } = useLiveEphemeris({
     enabled: !disabledForDesktopSurface,
   })
 
@@ -35,10 +35,12 @@ function DesktopAwareAdminPanel() {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <SessionProvider>
-      {children}
-      <Toaster />
-      <DesktopAwareAdminPanel />
-      <MonicaWrapper />
+      <SpacetimeProvider>
+        {children}
+        <Toaster />
+        <DesktopAwareAdminPanel />
+        <MonicaWrapper />
+      </SpacetimeProvider>
     </SessionProvider>
   )
 }
