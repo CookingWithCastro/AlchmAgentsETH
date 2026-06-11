@@ -2622,6 +2622,20 @@ button {
 }
 
 @media (max-width: 900px) {
+  .app-shell {
+    grid-template-rows: auto minmax(0, 1fr);
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  .titlebar,
+  .workspace,
+  .content,
+  .view {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .titlebar {
     align-items: stretch;
     flex-direction: column;
@@ -2635,8 +2649,15 @@ button {
     min-width: 0;
   }
 
+  .status-row {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
   .title-tabs {
     width: 100%;
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
   }
 
@@ -2709,6 +2730,50 @@ button {
     margin: -22px 0 0 -22px;
     transform: rotate(var(--planet-angle)) translateX(min(158px, 29vw))
       rotate(var(--planet-counter));
+  }
+}
+
+@media (max-width: 700px) {
+  .scrabble-controls,
+  .scrabble-scoreboard {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scrabble-round-control,
+  .scrabble-simulate-button {
+    grid-column: auto;
+  }
+
+  .scrabble-control,
+  .scrabble-control .input {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .scrabble-versus {
+    width: 100%;
+    height: 30px;
+    margin: 0;
+    border-radius: 8px;
+  }
+
+  .scrabble-simulate-button {
+    width: 100%;
+  }
+
+  .scrabble-final-score {
+    justify-content: center;
+  }
+
+  .scrabble-replay-header,
+  .scrabble-league-notice,
+  .scrabble-match-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .scrabble-match-actions {
+    align-items: stretch;
   }
 }
 
