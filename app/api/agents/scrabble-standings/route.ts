@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getHistoricalAgent } from '@/lib/agents/historical'
+import { listScrabbleArenaAgents } from '@/lib/agents/duel/scrabble-arena'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,12 +15,16 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
 }
 
-const UNAVAILABLE = {
-  success: true,
-  available: false,
-  aggregates: null,
-  standings: [] as unknown[],
-  recentMatches: [] as unknown[],
+function unavailable(reason: string) {
+  return {
+    success: true,
+    available: false,
+    reason,
+    aggregates: null,
+    standings: [] as unknown[],
+    recentMatches: [] as unknown[],
+    availableAgents: listScrabbleArenaAgents(),
+  }
 }
 
 export async function GET(_req: NextRequest) {
@@ -27,10 +32,7 @@ export async function GET(_req: NextRequest) {
     const matchClient = (prisma as any).agentScrabbleMatch
     const standingClient = (prisma as any).agentScrabbleStanding
     if (!matchClient || !standingClient) {
-      return NextResponse.json(
-        { ...UNAVAILABLE, reason: 'tables_not_migrated' },
-        { headers: CORS_HEADERS }
-      )
+      return NextResponse.json(unavailable('tables_not_migrated'), { headers: CORS_HEADERS })
     }
 
     const name = (id: string | null | undefined): string =>
@@ -71,7 +73,9 @@ export async function GET(_req: NextRequest) {
       id: m.id,
       seasonId: m.seasonId,
       agentA: name(m.agentAId),
+      agentAId: m.agentAId,
       agentB: name(m.agentBId),
+      agentBId: m.agentBId,
       winner: m.winnerId ? name(m.winnerId) : null,
       scoreA: m.scoreA,
       scoreB: m.scoreB,
@@ -94,11 +98,12 @@ export async function GET(_req: NextRequest) {
         },
         standings,
         recentMatches,
+        availableAgents: listScrabbleArenaAgents(),
       },
       { headers: CORS_HEADERS }
     )
   } catch (error) {
     console.error('[agents/scrabble-standings] error:', error)
-    return NextResponse.json({ ...UNAVAILABLE, reason: 'query_failed' }, { headers: CORS_HEADERS })
+    return NextResponse.json(unavailable('query_failed'), { headers: CORS_HEADERS })
   }
 }

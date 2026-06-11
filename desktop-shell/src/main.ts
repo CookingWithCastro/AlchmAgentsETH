@@ -305,7 +305,9 @@ interface RecentMatch {
   id: string
   seasonId: string
   agentA: string
+  agentAId: string
   agentB: string
+  agentBId: string
   winner: string | null
   scoreA: number
   scoreB: number
@@ -313,6 +315,43 @@ interface RecentMatch {
   highlight: string | null
   tie: boolean
   createdAt: string
+}
+
+interface ScrabbleArenaAgent {
+  id: string
+  name: string
+  title: string
+  specialization: string | null
+}
+
+interface ScrabbleTurn {
+  round: number
+  rack: string
+  word: string
+  score: number
+  candidateCount: number
+}
+
+interface ScrabbleArenaPlayer extends ScrabbleArenaAgent {
+  total: number
+  bestWord: { word: string; score: number } | null
+  turns: ScrabbleTurn[]
+}
+
+interface ScrabbleArenaMatch {
+  id: string | null
+  source: 'simulation' | 'league'
+  seasonId: string | null
+  seed: number
+  rounds: number
+  winnerId: string | null
+  loserId: string | null
+  tie: boolean
+  margin: number
+  highlight: string | null
+  createdAt: string
+  a: ScrabbleArenaPlayer
+  b: ScrabbleArenaPlayer
 }
 
 interface ScrabbleLeagueData {
@@ -326,14 +365,22 @@ interface ScrabbleLeagueData {
   } | null
   standings: Standing[]
   recentMatches: RecentMatch[]
+  availableAgents: ScrabbleArenaAgent[]
 }
 
 type ScrabbleStatus = 'idle' | 'loading' | 'ready' | 'error'
+type ScrabbleSimulationStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 interface ScrabbleState {
   status: ScrabbleStatus
   data: ScrabbleLeagueData | null
   lastError: string | null
+  agentAId: string | null
+  agentBId: string | null
+  rounds: number
+  simulationStatus: ScrabbleSimulationStatus
+  activeMatch: ScrabbleArenaMatch | null
+  simulationError: string | null
 }
 
 type PhysicsBand = 'low' | 'below' | 'normal' | 'elevated' | 'extreme'
@@ -921,6 +968,12 @@ function loadState(): DesktopState {
       status: 'idle',
       data: null,
       lastError: null,
+      agentAId: null,
+      agentBId: null,
+      rounds: 7,
+      simulationStatus: 'idle',
+      activeMatch: null,
+      simulationError: null,
     },
     composerDraft: '',
     stoneDraft: createDefaultStoneDraft(),
@@ -6005,6 +6058,21 @@ function bindEvents() {
       void refreshScrabbleLeague()
     }
 
+    if (action === 'simulate-scrabble') {
+      void simulateScrabbleMatch()
+    }
+
+    if (action === 'view-scrabble-match' && control.dataset.matchId) {
+      void loadScrabbleMatch(control.dataset.matchId)
+    }
+
+    if (action === 'clear-scrabble-match') {
+      state.scrabble.activeMatch = null
+      state.scrabble.simulationStatus = 'idle'
+      state.scrabble.simulationError = null
+      render()
+    }
+
     if (action === 'clear-search') {
       state.agentSearchQuery = ''
       render()
@@ -6202,6 +6270,19 @@ function bindEvents() {
   })
 
   document.body.addEventListener('change', event => {
+    const scrabbleField = (event.target as HTMLElement).closest<
+      HTMLSelectElement | HTMLInputElement
+    >('[data-scrabble-field]')
+    if (scrabbleField) {
+      const field = scrabbleField.dataset.scrabbleField
+      if (field === 'agent-a') state.scrabble.agentAId = scrabbleField.value || null
+      if (field === 'agent-b') state.scrabble.agentBId = scrabbleField.value || null
+      if (field === 'rounds') state.scrabble.rounds = Number(scrabbleField.value) || 7
+      state.scrabble.simulationError = null
+      render()
+      return
+    }
+
     const chatAgentToggle = (event.target as HTMLElement).closest<HTMLInputElement>(
       '[data-chat-agent-toggle]'
     )
@@ -6451,9 +6532,7 @@ async function refreshScrabbleLeague(options: { silent?: boolean } = {}) {
   try {
     // Always try localhost first; fall back to the configured agentsUrl only
     // if the user has explicitly overridden it away from the default.
-    const configuredUrl = state.account.agentsUrl || DEFAULT_ACCOUNT.agentsUrl
-    const isDefaultRemote = configuredUrl === DEFAULT_ACCOUNT.agentsUrl
-    const base = (isDefaultRemote ? 'http://localhost:3000' : configuredUrl).replace(/\/$/, '')
+    const base = getScrabbleBackendBase()
     const response = await fetch(`${base}/api/agents/scrabble-standings`)
     if (!response.ok) throw new Error(`Scrabble League standings returned HTTP ${response.status}`)
 
@@ -6462,6 +6541,7 @@ async function refreshScrabbleLeague(options: { silent?: boolean } = {}) {
       state.scrabble.data = payload
       state.scrabble.status = 'ready'
       state.scrabble.lastError = null
+      ensureScrabbleAgentSelection()
     } else {
       throw new Error(payload?.reason || 'Failed to load Scrabble League data.')
     }
@@ -6472,6 +6552,106 @@ async function refreshScrabbleLeague(options: { silent?: boolean } = {}) {
   }
 
   render()
+}
+
+function getScrabbleBackendBase() {
+  const configuredUrl = state.account.agentsUrl || DEFAULT_ACCOUNT.agentsUrl
+  const isDefaultRemote = configuredUrl === DEFAULT_ACCOUNT.agentsUrl
+  return (isDefaultRemote ? 'http://localhost:3000' : configuredUrl).replace(/\/$/, '')
+}
+
+function ensureScrabbleAgentSelection() {
+  const agents = state.scrabble.data?.availableAgents || []
+  if (agents.length === 0) return
+  const ids = new Set(agents.map(agent => agent.id))
+  if (!state.scrabble.agentAId || !ids.has(state.scrabble.agentAId)) {
+    state.scrabble.agentAId = agents[0]?.id || null
+  }
+  if (
+    !state.scrabble.agentBId ||
+    !ids.has(state.scrabble.agentBId) ||
+    state.scrabble.agentBId === state.scrabble.agentAId
+  ) {
+    state.scrabble.agentBId = agents.find(agent => agent.id !== state.scrabble.agentAId)?.id || null
+  }
+}
+
+async function simulateScrabbleMatch() {
+  const { agentAId, agentBId, rounds } = state.scrabble
+  if (!agentAId || !agentBId) {
+    state.scrabble.simulationStatus = 'error'
+    state.scrabble.simulationError = 'Choose two agents before starting the match.'
+    render()
+    return
+  }
+  if (agentAId === agentBId) {
+    state.scrabble.simulationStatus = 'error'
+    state.scrabble.simulationError = 'An agent cannot play against itself. Choose a rival.'
+    render()
+    return
+  }
+
+  state.scrabble.simulationStatus = 'loading'
+  state.scrabble.simulationError = null
+  render()
+
+  try {
+    const response = await fetch(`${getScrabbleBackendBase()}/api/agents/scrabble-arena`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentAId, agentBId, rounds }),
+    })
+    const payload = await response.json()
+    if (!response.ok || !payload?.success || !payload.match) {
+      throw new Error(payload?.error || `Scrabble simulation returned HTTP ${response.status}`)
+    }
+    state.scrabble.activeMatch = payload.match
+    state.scrabble.simulationStatus = 'ready'
+  } catch (error) {
+    state.scrabble.simulationStatus = 'error'
+    state.scrabble.simulationError =
+      error instanceof Error ? error.message : 'Scrabble simulation failed.'
+  }
+
+  render()
+  focusScrabbleReplay()
+}
+
+async function loadScrabbleMatch(matchId: string) {
+  state.scrabble.simulationStatus = 'loading'
+  state.scrabble.simulationError = null
+  render()
+
+  try {
+    const url = new URL(`${getScrabbleBackendBase()}/api/agents/scrabble-arena`)
+    url.searchParams.set('matchId', matchId)
+    const response = await fetch(url)
+    const payload = await response.json()
+    if (!response.ok || !payload?.success || !payload.match) {
+      throw new Error(payload?.error || `Scrabble replay returned HTTP ${response.status}`)
+    }
+    state.scrabble.activeMatch = payload.match
+    state.scrabble.agentAId = payload.match.a.id
+    state.scrabble.agentBId = payload.match.b.id
+    state.scrabble.rounds = payload.match.rounds
+    state.scrabble.simulationStatus = 'ready'
+  } catch (error) {
+    state.scrabble.simulationStatus = 'error'
+    state.scrabble.simulationError =
+      error instanceof Error ? error.message : 'Scrabble replay failed.'
+  }
+
+  render()
+  focusScrabbleReplay()
+}
+
+function focusScrabbleReplay() {
+  requestAnimationFrame(() => {
+    document.querySelector('[data-scrabble-replay]')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start',
+    })
+  })
 }
 
 function renderScrabbleView() {
@@ -6489,16 +6669,13 @@ function renderScrabbleView() {
     `
   }
 
-  if (!scrabble || !scrabble.available || !scrabble.aggregates) {
+  if (!scrabble) {
     return `
       <section class="view empty-state">
         <div class="panel stack">
           <div class="eyebrow">Scrabble Agent Tournament</div>
-          <h1>League stands inactive</h1>
-          <p class="muted">
-            The Agent Scrabble League has no data recorded yet.
-            Ensure SCRABBLE_LEAGUE_ENABLED=true in the environment and that the database has resolved its first tick.
-          </p>
+          <h1>Unable to open the arena</h1>
+          <p class="muted">Start the local Next.js backend, then reconnect the desktop arena.</p>
           ${
             state.scrabble.lastError
               ? `<div class="panel error-panel">${escapeHtml(state.scrabble.lastError)}</div>`
@@ -6506,7 +6683,7 @@ function renderScrabbleView() {
           }
           <div class="button-row center-row">
             <button class="primary-button" data-action="refresh-scrabble">
-              ${state.scrabble.status === 'loading' ? 'Loading' : 'Load Standings'}
+              ${state.scrabble.status === 'loading' ? 'Connecting' : 'Reconnect Arena'}
             </button>
           </div>
         </div>
@@ -6514,21 +6691,22 @@ function renderScrabbleView() {
     `
   }
 
-  const { aggregates, standings, recentMatches } = scrabble
-  const highlightTotal =
-    (aggregates.highlights?.bingo || 0) +
-    (aggregates.highlights?.upset || 0) +
-    (aggregates.highlights?.sweep || 0)
+  const { aggregates, standings, recentMatches, availableAgents } = scrabble
+  const highlightTotal = aggregates
+    ? (aggregates.highlights?.bingo || 0) +
+      (aggregates.highlights?.upset || 0) +
+      (aggregates.highlights?.sweep || 0)
+    : 0
 
   return `
-    <section class="view">
+    <section class="view scrabble-view">
       <header class="view-header">
         <div>
           <div class="eyebrow">The Lettered Arena</div>
           <h1>Scrabble Agent League</h1>
           <p>
-            An always-on round-robin tournament between historical agents. 
-            Moves are chosen deterministically by a Sacred-7-blended persona strategy (0 LLM overhead).
+            Watch historical agents meet word for word, run an exhibition match, and inspect every rack and play.
+            Sacred-7 strategy drives each choice with no model call.
           </p>
         </div>
         <div class="button-row">
@@ -6538,114 +6716,264 @@ function renderScrabbleView() {
         </div>
       </header>
 
-      <div class="diag-grid">
-        <article class="panel metric">
-          <span class="eyebrow">Total Matches</span>
-          <strong>${aggregates.totalMatches.toLocaleString()}</strong>
-          <small class="muted" style="font-size: 10px;">Season ${aggregates.latestSeason || '—'}</small>
-        </article>
-        <article class="panel metric">
-          <span class="eyebrow">Last 24h</span>
-          <strong>${aggregates.last24h.toLocaleString()}</strong>
-          <small class="muted" style="font-size: 10px;">Matches today</small>
-        </article>
-        <article class="panel metric">
-          <span class="eyebrow">Active Seasons</span>
-          <strong>${aggregates.activeSeasons}</strong>
-          <small class="muted" style="font-size: 10px;">Rolling schedules</small>
-        </article>
-        <article class="panel metric">
-          <span class="eyebrow">Highlight Events</span>
-          <strong>${highlightTotal}</strong>
-          <small class="muted" style="font-size: 10px;">
-            ${aggregates.highlights?.bingo || 0} bingo · ${aggregates.highlights?.upset || 0} upset · ${aggregates.highlights?.sweep || 0} sweep
-          </small>
-        </article>
-      </div>
+      ${renderScrabbleArenaControls(availableAgents)}
+      ${renderScrabbleMatchReplay(state.scrabble.activeMatch)}
 
-      <div class="form-grid">
-        <div class="panel stack" style="grid-column: span 2;">
-          <div class="eyebrow">🏆 Season Standings (by ELO)</div>
-          ${
-            standings.length === 0
-              ? '<p class="muted">No standings recorded yet.</p>'
-              : `
-              <div style="overflow-x: auto; width: 100%;">
-                <table style="width: 100%; text-align: left; font-size: 0.9rem; border-collapse: collapse;">
-                  <thead>
-                    <tr style="text-transform: uppercase; font-size: 10px; color: var(--text-muted); border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
-                      <th style="padding: 8px 12px; font-weight: 800;">#</th>
-                      <th style="padding: 8px 12px; font-weight: 800;">Agent</th>
-                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">ELO</th>
-                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">W–L–T</th>
-                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">Played</th>
-                      <th style="padding: 8px 12px; font-weight: 800; text-align: right;">Points</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${standings
-                      .map(
-                        s => `
-                      <tr class="standings-row" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 10px 12px;" class="rank-col ${s.rank === 1 ? 'first' : 'normal'}">#${s.rank}</td>
-                        <td style="padding: 10px 12px; font-weight: 700; color: #fff;">${escapeHtml(s.name)}</td>
-                        <td style="padding: 10px 12px; text-align: right;">
-                          <span class="elo-badge ${s.rank <= 2 ? 'gold' : 'normal'}">${s.elo}</span>
-                        </td>
-                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.won}–${s.lost}–${s.tied}</td>
-                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.played}</td>
-                        <td style="padding: 10px 12px; text-align: right; font-family: monospace; color: #cbd5e1;">${s.pointsFor.toLocaleString()}</td>
-                      </tr>
-                    `
-                      )
-                      .join('')}
-                  </tbody>
-                </table>
-              </div>
-            `
-          }
+      ${
+        aggregates
+          ? `
+          <div class="diag-grid scrabble-metrics">
+            <article class="panel metric">
+              <span class="eyebrow">Total Matches</span>
+              <strong>${aggregates.totalMatches.toLocaleString()}</strong>
+              <small class="muted">Season ${escapeHtml(aggregates.latestSeason || 'None')}</small>
+            </article>
+            <article class="panel metric">
+              <span class="eyebrow">Last 24h</span>
+              <strong>${aggregates.last24h.toLocaleString()}</strong>
+              <small class="muted">League matches today</small>
+            </article>
+            <article class="panel metric">
+              <span class="eyebrow">Active Seasons</span>
+              <strong>${aggregates.activeSeasons}</strong>
+              <small class="muted">Rolling schedules</small>
+            </article>
+            <article class="panel metric">
+              <span class="eyebrow">Highlights</span>
+              <strong>${highlightTotal}</strong>
+              <small class="muted">${aggregates.highlights?.bingo || 0} bingo / ${aggregates.highlights?.upset || 0} upset / ${aggregates.highlights?.sweep || 0} sweep</small>
+            </article>
+          </div>
+        `
+          : `
+          <div class="panel scrabble-league-notice">
+            <div>
+              <div class="eyebrow">Exhibition Mode</div>
+              <strong>The arena is open; scheduled league play has no recorded matches yet.</strong>
+            </div>
+            <span class="status-pill offline">League inactive</span>
+          </div>
+        `
+      }
+
+      <div class="scrabble-league-grid">
+        ${renderScrabbleStandings(standings)}
+        ${renderScrabbleRecentMatches(recentMatches)}
+      </div>
+    </section>
+  `
+}
+
+function renderScrabbleArenaControls(agents: ScrabbleArenaAgent[]) {
+  const disabled = agents.length < 2 || state.scrabble.simulationStatus === 'loading'
+  return `
+    <section class="panel scrabble-arena-panel">
+      <div class="scrabble-arena-copy">
+        <div class="eyebrow">Exhibition Match</div>
+        <h2>Choose the table</h2>
+        <p class="muted">Pick two minds, choose the match length, then simulate their full game.</p>
+      </div>
+      <div class="scrabble-controls">
+        <label class="scrabble-control">
+          <span>Agent One</span>
+          <select class="input" data-scrabble-field="agent-a" ${disabled ? 'disabled' : ''}>
+            ${renderScrabbleAgentOptions(agents, state.scrabble.agentAId)}
+          </select>
+        </label>
+        <div class="scrabble-versus" aria-hidden="true">VS</div>
+        <label class="scrabble-control">
+          <span>Agent Two</span>
+          <select class="input" data-scrabble-field="agent-b" ${disabled ? 'disabled' : ''}>
+            ${renderScrabbleAgentOptions(agents, state.scrabble.agentBId)}
+          </select>
+        </label>
+        <label class="scrabble-control scrabble-round-control">
+          <span>Rounds</span>
+          <select class="input" data-scrabble-field="rounds" ${disabled ? 'disabled' : ''}>
+            ${[3, 5, 7, 10]
+              .map(
+                rounds =>
+                  `<option value="${rounds}" ${state.scrabble.rounds === rounds ? 'selected' : ''}>${rounds}</option>`
+              )
+              .join('')}
+          </select>
+        </label>
+        <button class="primary-button scrabble-simulate-button" data-action="simulate-scrabble" ${disabled ? 'disabled' : ''}>
+          ${state.scrabble.simulationStatus === 'loading' ? 'Playing Match...' : 'Simulate Match'}
+        </button>
+      </div>
+      ${
+        state.scrabble.simulationError
+          ? `<div class="scrabble-error">${escapeHtml(state.scrabble.simulationError)}</div>`
+          : ''
+      }
+    </section>
+  `
+}
+
+function renderScrabbleAgentOptions(agents: ScrabbleArenaAgent[], selectedId: string | null) {
+  if (agents.length === 0) return '<option value="">No agents available</option>'
+  return agents
+    .map(
+      agent => `
+        <option value="${escapeHtml(agent.id)}" ${agent.id === selectedId ? 'selected' : ''}>
+          ${escapeHtml(agent.name)} - ${escapeHtml(agent.title)}
+        </option>
+      `
+    )
+    .join('')
+}
+
+function renderScrabbleMatchReplay(match: ScrabbleArenaMatch | null) {
+  if (!match) return ''
+  const resultLabel = match.tie
+    ? 'The match ends in a tie'
+    : `${match.winnerId === match.a.id ? match.a.name : match.b.name} wins by ${match.margin}`
+  const roundRows = Array.from({ length: match.rounds }, (_, index) => {
+    const round = index + 1
+    return renderScrabbleTurnRow(round, match.a.turns[index], match.b.turns[index])
+  }).join('')
+
+  return `
+    <section class="panel scrabble-replay" data-scrabble-replay>
+      <div class="scrabble-replay-header">
+        <div>
+          <div class="eyebrow">${match.source === 'league' ? `League Replay / ${escapeHtml(match.seasonId || '')}` : 'Exhibition Result'}</div>
+          <h2>${escapeHtml(resultLabel)}</h2>
+          <p class="muted">${match.rounds} rounds / seed ${match.seed}${match.highlight ? ` / ${escapeHtml(match.highlight)}` : ''}</p>
         </div>
+        <button class="secondary-button" data-action="clear-scrabble-match">Close Replay</button>
       </div>
+      <div class="scrabble-scoreboard">
+        ${renderScrabblePlayerCard(match.a, match.winnerId)}
+        <div class="scrabble-final-score">${match.a.total}<span>:</span>${match.b.total}</div>
+        ${renderScrabblePlayerCard(match.b, match.winnerId)}
+      </div>
+      <div class="scrabble-rounds-table-wrap">
+        <table class="scrabble-rounds-table">
+          <thead>
+            <tr>
+              <th>Round</th>
+              <th>${escapeHtml(match.a.name)}</th>
+              <th>Score</th>
+              <th>${escapeHtml(match.b.name)}</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>${roundRows}</tbody>
+        </table>
+      </div>
+    </section>
+  `
+}
 
-      <div class="panel stack">
-        <div class="eyebrow">🎯 Recent Matches</div>
-        ${
-          recentMatches.length === 0
-            ? '<p class="muted">No matches played yet.</p>'
-            : `
-            <ul style="list-style: none; padding: 0; margin: 0; display: grid; gap: 8px;">
-              ${recentMatches
-                .map(m => {
-                  let badge = ''
-                  if (m.highlight === 'bingo')
-                    badge =
-                      '<span style="font-size: 10px; font-weight: 800; border: 1px solid rgba(245,158,11,0.3); background: rgba(245,158,11,0.1); color: #f59e0b; padding: 2px 6px; border-radius: 99px; float: right;">🎯 Bingo</span>'
-                  else if (m.highlight === 'upset')
-                    badge =
-                      '<span style="font-size: 10px; font-weight: 800; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.1); color: #8b5cf6; padding: 2px 6px; border-radius: 99px; float: right;">⚡ Upset</span>'
-                  else if (m.highlight === 'sweep')
-                    badge =
-                      '<span style="font-size: 10px; font-weight: 800; border: 1px solid rgba(16,185,129,0.3); background: rgba(16,185,129,0.1); color: #10b981; padding: 2px 6px; border-radius: 99px; float: right;">⚔️ Sweep</span>'
+function renderScrabblePlayerCard(player: ScrabbleArenaPlayer, winnerId: string | null) {
+  return `
+    <article class="scrabble-player-card ${winnerId === player.id ? 'winner' : ''}">
+      <span class="scrabble-player-avatar">${escapeHtml(initialsForName(player.name))}</span>
+      <div>
+        <strong>${escapeHtml(player.name)}</strong>
+        <small>${escapeHtml(player.title)}</small>
+        <span>Best word: ${player.bestWord ? `${escapeHtml(player.bestWord.word)} +${player.bestWord.score}` : 'Pass'}</span>
+      </div>
+    </article>
+  `
+}
 
-                  return `
-                    <li style="border: 1px solid rgba(255,255,255,0.06); background: rgba(0,0,0,0.15); padding: 12px; border-radius: 8px; font-size: 0.9rem;">
-                      <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                          <span style="font-weight: ${m.winner === m.agentA ? '700; color: #fff;' : '400; color: var(--text-muted);'}">${escapeHtml(m.agentA)}</span>
-                          <span style="font-family: monospace; margin: 0 8px; color: var(--text-muted);">${m.scoreA}–${m.scoreB}</span>
-                          <span style="font-weight: ${m.winner === m.agentB ? '700; color: #fff;' : '400; color: var(--text-muted);'}">${escapeHtml(m.agentB)}</span>
-                          ${m.tie ? '<span style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">(tie)</span>' : ''}
-                        </div>
-                        ${badge}
-                      </div>
-                    </li>
-                  `
-                })
-                .join('')}
-            </ul>
+function renderScrabbleTurnRow(
+  round: number,
+  turnA: ScrabbleTurn | undefined,
+  turnB: ScrabbleTurn | undefined
+) {
+  return `
+    <tr>
+      <td class="scrabble-round-number">${round}</td>
+      <td>${renderScrabbleTurn(turnA)}</td>
+      <td class="scrabble-turn-score">+${turnA?.score || 0}</td>
+      <td>${renderScrabbleTurn(turnB)}</td>
+      <td class="scrabble-turn-score">+${turnB?.score || 0}</td>
+    </tr>
+  `
+}
+
+function renderScrabbleTurn(turn: ScrabbleTurn | undefined) {
+  if (!turn) return '<span class="muted">Replay data unavailable</span>'
+  return `
+    <div class="scrabble-turn">
+      <div class="scrabble-rack">${renderScrabbleRack(turn.rack)}</div>
+      <strong>${turn.word ? escapeHtml(turn.word) : 'PASS'}</strong>
+      <small>${turn.candidateCount} legal candidate${turn.candidateCount === 1 ? '' : 's'}</small>
+    </div>
+  `
+}
+
+function renderScrabbleRack(rack: string) {
+  return [...rack]
+    .map(letter => `<span class="scrabble-tile">${escapeHtml(letter)}</span>`)
+    .join('')
+}
+
+function renderScrabbleStandings(standings: Standing[]) {
+  return `
+    <section class="panel stack scrabble-standings-panel">
+      <div class="eyebrow">Season Standings</div>
+      ${
+        standings.length === 0
+          ? '<p class="muted">No league standings recorded yet.</p>'
+          : `
+            <div class="scrabble-table-wrap">
+              <table class="scrabble-table">
+                <thead><tr><th>#</th><th>Agent</th><th>ELO</th><th>W-L-T</th><th>Points</th></tr></thead>
+                <tbody>
+                  ${standings
+                    .map(
+                      standing => `
+                        <tr class="standings-row">
+                          <td class="rank-col ${standing.rank === 1 ? 'first' : 'normal'}">#${standing.rank}</td>
+                          <td><strong>${escapeHtml(standing.name)}</strong><small>${standing.played} played</small></td>
+                          <td class="scrabble-elo"><span class="elo-badge ${standing.rank <= 2 ? 'gold' : 'normal'}">${standing.elo}</span></td>
+                          <td>${standing.won}-${standing.lost}-${standing.tied}</td>
+                          <td>${standing.pointsFor.toLocaleString()}</td>
+                        </tr>
+                      `
+                    )
+                    .join('')}
+                </tbody>
+              </table>
+            </div>
           `
-        }
-      </div>
+      }
+    </section>
+  `
+}
+
+function renderScrabbleRecentMatches(matches: RecentMatch[]) {
+  return `
+    <section class="panel stack scrabble-history-panel">
+      <div class="eyebrow">Recent League Games</div>
+      ${
+        matches.length === 0
+          ? '<p class="muted">No league matches have been recorded yet.</p>'
+          : `<div class="scrabble-match-list">
+              ${matches
+                .map(
+                  match => `
+                    <article class="scrabble-match-row">
+                      <div class="scrabble-match-score">
+                        <strong class="${match.winner === match.agentA ? 'winner' : ''}">${escapeHtml(match.agentA)}</strong>
+                        <span>${match.scoreA} : ${match.scoreB}</span>
+                        <strong class="${match.winner === match.agentB ? 'winner' : ''}">${escapeHtml(match.agentB)}</strong>
+                      </div>
+                      <div class="scrabble-match-actions">
+                        ${match.highlight ? `<span class="scrabble-highlight ${escapeHtml(match.highlight)}">${escapeHtml(match.highlight)}</span>` : ''}
+                        <button class="secondary-button" data-action="view-scrabble-match" data-match-id="${escapeHtml(match.id)}">View Game</button>
+                      </div>
+                    </article>
+                  `
+                )
+                .join('')}
+            </div>`
+      }
     </section>
   `
 }
