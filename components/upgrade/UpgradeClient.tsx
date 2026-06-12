@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { PrivyConnect } from '@/components/account/PrivyConnect'
+import dynamic from 'next/dynamic'
 import {
   Sparkles,
   Crown,
@@ -17,6 +17,18 @@ import {
   TrendingUp,
   Wallet,
 } from 'lucide-react'
+
+// Privy's SDK is a ~1.4MB client chunk — load it only when this panel
+// actually renders, never in the route's first-load bundle.
+const PrivyConnect = dynamic(
+  () => import('@/components/account/PrivyConnect').then(m => m.PrivyConnect),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="text-sm text-muted-foreground animate-pulse">Loading identity panel…</div>
+    ),
+  }
+)
 
 type Props = {
   tier: 'free' | 'alchemist' | 'master'

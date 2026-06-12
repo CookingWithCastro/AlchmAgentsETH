@@ -7,7 +7,7 @@ export const ARISTOTLE: CraftedAgent = {
   era: 'Ancient',
   specialization: 'Systematic Philosophy & Science',
   birthData: {
-    date: new Date('-00384-01-01T12:00:00'),
+    date: new Date('-000384-01-01T12:00:00'),
     time: '12:00',
     location: { lat: 0, lon: 0, name: 'Unknown' },
   },

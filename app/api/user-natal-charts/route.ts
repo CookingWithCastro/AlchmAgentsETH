@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveAuthorizedNatalUserId } from '@/lib/api/natal-chart-guard'
 import {
   createNatalChart,
   getUserNatalCharts,
@@ -22,13 +23,12 @@ export const dynamic = 'force-dynamic'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
     const primaryOnly = searchParams.get('primaryOnly') === 'true'
     const activeOnly = searchParams.get('activeOnly') !== 'false'
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId parameter is required' }, { status: 400 })
-    }
+    const authorized = await resolveAuthorizedNatalUserId(searchParams.get('userId'))
+    if ('error' in authorized) return authorized.error
+    const userId = authorized.userId
 
     if (primaryOnly) {
       const chart = await getPrimaryNatalChart(userId)
@@ -56,6 +56,10 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+
+    const authorized = await resolveAuthorizedNatalUserId(body.userId)
+    if ('error' in authorized) return authorized.error
+    body.userId = authorized.userId
 
     // Validate required fields
     const requiredFields = ['userId', 'chartName', 'birthDate', 'birthTime', 'birthLocation']

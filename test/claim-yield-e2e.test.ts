@@ -15,6 +15,13 @@ describe('Claim Yield E2E Test', () => {
         eventType: 'yield_claim',
       },
     })
+    // The claim is idempotent per agent-pair per UTC day, so also clear
+    // today's transfer rows or a same-day re-run is (correctly) a no-op.
+    await prisma.tokenTransaction.deleteMany({
+      where: {
+        idempotencyKey: { startsWith: `claim:yield:${historicalAgentId}:${planetaryAgentId}:` },
+      },
+    })
 
     // Construct NextJS Request object
     const req = new Request('http://localhost/api/economy/claim-yield', {

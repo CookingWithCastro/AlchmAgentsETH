@@ -278,13 +278,15 @@ function GalleryPageContent() {
   useEffect(() => {
     let filtered = agents
 
-    // Search filter
+    // Search filter — DB-sourced agents can miss title/abilities, so guard
+    // every field or one malformed row crashes the whole gallery.
     if (searchQuery) {
+      const q = searchQuery.toLowerCase()
       filtered = filtered.filter(
         agent =>
-          agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          agent.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          agent.abilities.specialty.toLowerCase().includes(searchQuery.toLowerCase())
+          (agent.name ?? '').toLowerCase().includes(q) ||
+          (agent.title ?? '').toLowerCase().includes(q) ||
+          (agent.abilities?.specialty ?? '').toLowerCase().includes(q)
       )
     }
 
@@ -308,7 +310,7 @@ function GalleryPageContent() {
     // Specialty filter
     if (filters.specialty) {
       filtered = filtered.filter(agent =>
-        agent.abilities.specialty.toLowerCase().includes(filters.specialty!.toLowerCase())
+        (agent.abilities?.specialty ?? '').toLowerCase().includes(filters.specialty!.toLowerCase())
       )
     }
 
@@ -779,7 +781,9 @@ function GalleryPageContent() {
               </div>
               <div className="text-center p-3 bg-black/40 backdrop-blur rounded-lg border border-white/10 mt-6">
                 <div className="text-2xl font-bold text-amber-600">
-                  {agents.reduce((sum, a) => sum + a.stats.conversations, 0).toLocaleString()}
+                  {agents
+                    .reduce((sum, a) => sum + (a.stats?.conversations ?? 0), 0)
+                    .toLocaleString()}
                 </div>
                 <div className="text-xs text-muted-foreground">Chats</div>
               </div>
@@ -882,8 +886,10 @@ function GalleryPageContent() {
                   <SelectContent>
                     <SelectItem value="all">All Eras</SelectItem>
                     <SelectItem value="Ancient">Ancient</SelectItem>
+                    <SelectItem value="Medieval">Medieval</SelectItem>
                     <SelectItem value="Renaissance">Renaissance</SelectItem>
                     <SelectItem value="Enlightenment">Enlightenment</SelectItem>
+                    <SelectItem value="Industrial">Industrial</SelectItem>
                     <SelectItem value="Modern">Modern</SelectItem>
                   </SelectContent>
                 </Select>

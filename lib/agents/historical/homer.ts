@@ -7,7 +7,7 @@ export const HOMER: CraftedAgent = {
   era: 'Ancient',
   specialization: 'Epic Poetry & Storytelling',
   birthData: {
-    date: new Date('-00750-01-01T12:00:00'),
+    date: new Date('-000750-01-01T12:00:00'),
     time: '12:00',
     location: { lat: 0, lon: 0, name: 'Unknown' },
   },

@@ -59,7 +59,7 @@ export default function ThePhilosopherSStoneAgentForge() {
                 alt="User Alchemical Avatar"
                 className="w-full h-full object-cover"
                 data-alt="A highly abstract, ethereal digital portrait of an alchemical avatar. The figure is composed of swirling nebulae, glowing violet energy lines, and subtle gold geometries against an obsidian void. The lighting is mystical and deep, emphasizing a high-tech techno-occult aesthetic."
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL0CeuaKtQqCFTwObo6IMwt78Nl79Eto6UGTGi9clpUh-kjRKueW2wKbULUadI_XEbeLe5u4uDHPrJH1M2Ofi1zoJmSXU7zfHUPmRVjVwnxw1zglzXu1mFu2GpdStd52HE5jmTCt8vhxmj0-_yUFnqty3RytI7kz1fHnINd7u7lES1nkLmwWmw0e8vIbS8eoWclUDQvhuhKDuMe2t7z0sCw_sezAy4tD1HBJioqC095ai-syuJqmA-Hk0M__HeahedPg_ICRNPVpE"
+                src="/stitch/stitch-18a03b34e1.png"
               />
             </div>
           </div>

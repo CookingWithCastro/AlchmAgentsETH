@@ -50,7 +50,7 @@ export default function JingArenaSynastryPairing() {
             alt="Alchemist Avatar"
             className="w-10 h-10 rounded-full border border-white/20"
             data-alt="A highly detailed close-up portrait of a digital alchemist avatar in a Techno-Occult style. The subject has glowing, etheric violet eyes and subtle sacred geometry tattoos illuminating on dark skin. The lighting is low-key, dramatic, with deep shadows and rim lighting from an unseen magical source. Set against an obsidian background, the mood is mysterious, ancient, yet undeniably cybernetic."
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0RByQ_6OQZIB9zn_yNMNVgNoFyuGSUfJplLPeLAiNvxRRd_NZrzUEGyrgoaf2bLzVTaayQdpWZAU0QAH5xlwE8LiarTXlk9QAMFaOuOtLUVpuAoAiVpVCIKwGxZRav9Ltx2yolwUUGb6A3pp6Etv5SgmR1jDUvRhO3P2B3bH1iFavgpXaRCfy1gNdSVx6RGO32MKScF7k5ZzAu5SigcTKhmI9_Gz_E-qx-xoMhv-RZtF2I_ck9yU_aNHXS00IfpWBOaEKvqN-dE8"
+            src="/stitch/stitch-5156f309ad.png"
           />
         </div>
       </header>
@@ -63,7 +63,7 @@ export default function JingArenaSynastryPairing() {
               alt="Digital Alchemist"
               className="w-full h-full object-cover"
               data-alt="A highly detailed close-up portrait of a digital alchemist avatar in a Techno-Occult style. The subject has glowing, etheric violet eyes and subtle sacred geometry tattoos illuminating on dark skin. The lighting is low-key, dramatic, with deep shadows and rim lighting from an unseen magical source. Set against an obsidian background, the mood is mysterious, ancient, yet undeniably cybernetic."
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuClqUl9AYX3HZPdCkEuZC5klHinGMSMu2xTv3si6CwnPNNl2B3fVxbJ2MyclgQYPg3aFtDaxAghmhUOYg3-TMmcy3X3bNzr6-OQ3kM4dp6okOeuRXef40kSCGAv-xhN0-oRh-UdKWBmtgZydQYBtEpTba8zHE8opGonGU3_48-0o6edIevJAcstzprZJuFknXiTQykA0dpM4RI1ZMCpEGEE-OrAcXKK_El6GaSY8CE7aRXGjO0NociG5b63GIxG2QrDBzdpY-cD6JQ"
+              src="/stitch/stitch-9056f3a83b.png"
             />
           </div>
           <h2 className="font-headline-sm text-headline-sm text-spirit-violet mb-1">
@@ -188,7 +188,7 @@ export default function JingArenaSynastryPairing() {
                       alt="Agent Void"
                       className="w-full h-full object-cover"
                       data-alt="A portrait of a mysterious digital entity known as Void. The image is styled as a techno-occult tarot card, featuring a shadowy figure wrapped in nebulous, dark energy against a pitch-black background. Glowing runes in ethereal blue hover faintly around the face. The lighting is minimal, relying on the internal glow of the magical elements."
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCll4N0jI3SEgjXSMcKyeSbCFCsaDm8mp4nidUmcYMPqfQV2z8np7o5ivKNsjOJx6mqNKA4qeGcZ0HtXxr4cVCnH8D_opMy11OabPy0754XKh2nnDRWEdAl6wzuH5PkdCEV9cv9MDKI5Cztcjk8h6qwWlKW14Q0PDTJJPpD3I7Iv_bjqfDoT-bDCmbPW_1seO40cFvFmU4i0ncAQPV12XPp2KYcKQH6hLDv2hqjE2GHeH2XgIKK_dR5TSCCcxBfgjxTdc_4oAxYKk"
+                      src="/stitch/stitch-0ea6a53b09.png"
                     />
                   </div>
                   <div className="flex-1">
@@ -208,7 +208,7 @@ export default function JingArenaSynastryPairing() {
                       alt="Agent Sol"
                       className="w-full h-full object-cover"
                       data-alt="A striking profile of a solar-themed digital entity. Rendered in a techno-occult aesthetic, the figure emanates a brilliant, blinding golden light from within, contrasting sharply with deep obsidian shadows. Sacred geometric patterns, specifically golden ratio spirals, are faintly etched into the surrounding space. The mood is powerful and radiant."
-                      src="https://lh3.googleusercontent.com/aida-public/AB6AXuBZmma-iybKeAQ83qzDCTX8rS5i8Va0L6vEu3z5AdwsmqkXYW7YwqjCmEaLCPDoVl3JrYjgd7EAqb0dUuyKf1Cc6sCyIXigPuW-jvYxOw6qidt_02mfBypOakXiyMnhhjuE-AsTHqqLOr3hgpwZWZc97Mn2tBsVaJF2oPuhMIg3v9zmEv7CnBGAwJu_FBuQ8_BV17qxfYe_KORxc2s6WIoxME35Pt4jhIcDmvbvVIIPRAY2h5h4-A6-gcM0XdLDKqjuglGwkKywpVE"
+                      src="/stitch/stitch-16229f4e8f.png"
                     />
                   </div>
                   <div className="flex-1 relative z-10">
@@ -253,7 +253,7 @@ export default function JingArenaSynastryPairing() {
                     alt="Sun in Leo 5 Degree Selected"
                     className="absolute inset-0 w-full h-full object-cover opacity-60"
                     data-alt="A striking profile of a solar-themed digital entity. Rendered in a techno-occult aesthetic, the figure emanates a brilliant, blinding golden light from within, contrasting sharply with deep obsidian shadows. Sacred geometric patterns, specifically golden ratio spirals, are faintly etched into the surrounding space. The mood is powerful and radiant."
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCpxGhH0KzkSWxgAgCl_Dt1UGI7fBnkaC0sp7fvi5ADYF-LoIlRJHmBJgtgGjfKVqNG0zGAO9xiqVC6s71b8P_8v1Hik6N3njt7di_rVSEqGkNaD_bo-SugLeKulUT8_RH5lA_xhEPFj87319C81SLYAwcNhDIkCmOCslI7grAanVCi2f8Xe_sHQFM5Ff9u4VA7L4R47L_r47pkjXpY0emp0ZM00iF3p4cKuCoU6quZ18drI3JDBq9jRnoJWcCTngVrlwUMn0fJbUE"
+                    src="/stitch/stitch-89573da5de.png"
                   />
                   <span className="font-label-mono text-label-mono text-st-secondary z-10 font-bold bg-obsidian-deep/60 px-2 rounded">
                     Sun in Leo 5 Degree
@@ -265,7 +265,7 @@ export default function JingArenaSynastryPairing() {
                     alt="Caster Entity"
                     className="absolute inset-0 w-full h-full object-cover opacity-60"
                     data-alt="A close-up of a cybernetic occult caster entity. The aesthetic is dark, featuring deep purples and greens against black. Intricate glowing circuitry mimics ancient astrological charts across the figure's metallic face. The lighting is harsh and directional, emphasizing the fusion of magic and cold technology. The mood is intense and calculating."
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuABNz6vd9VerTgTIv3z0vFhxC0cCUrzsO2XK1xkaoC-bV0suTbXBBV8qWf7-6ckJJ4RM5j4wiJTV7fSKPntLKcbsyg-srztwjEOvwsc2aiUA9YwW36KOs9NZoBEcyGdX4ukURfRO8hfRCr8J8XeJK-T4KM5ITjcmg2_JVxqD40ksj6fh6wQq_iVN0VrsASF8fQ0qPiZpZcCbBkZ2VKi6m0E2P8ABrzco9h1tU7M1d2DTLOMG8QVW8glD18eR-3EsIvTkf0fLXwDPFM"
+                    src="/stitch/stitch-5759fd74b7.png"
                   />
                   <span className="font-label-mono text-label-mono text-tertiary z-10 font-bold bg-obsidian-deep/60 px-2 rounded">
                     Mercury in Virgo 15 Degree

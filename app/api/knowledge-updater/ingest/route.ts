@@ -11,8 +11,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { logger } from '@/lib/structured-logger'
 import { CORS_HEADERS, corsPreflight } from '@/lib/cors'
+import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
 
 export const runtime = 'nodejs'
+
+// Ingested chunks are injected into every future chat with the target agent
+// (<reference_material> in the persona pipeline), so unauthenticated uploads
+// are a stored-prompt-injection vector — cap the rate per IP until ingestion
+// is bound to an owner identity.
+const INGEST_RATE_LIMIT = { limit: 10, windowMs: 10 * 60 * 1000 }
 
 export function OPTIONS() {
   return corsPreflight()
@@ -72,6 +79,18 @@ async function extractText(file: File, ext: SupportedExt): Promise<string> {
 export async function POST(req: NextRequest) {
   const ragDisabled = checkRagEnabled()
   if (ragDisabled) return ragDisabled
+
+  const ip = getClientIp(req.headers)
+  const limited = rateLimit(`knowledge-ingest:${ip}`, INGEST_RATE_LIMIT)
+  if (!limited.ok) {
+    return NextResponse.json(
+      { success: false, error: 'Too many ingestion requests — slow down' },
+      {
+        status: 429,
+        headers: { ...CORS_HEADERS, 'Retry-After': String(Math.ceil(limited.resetMs / 1000)) },
+      }
+    )
+  }
 
   let form: FormData
   try {

@@ -11,6 +11,7 @@ import type {
 } from '@/lib/unified-agent-types'
 import { agentCache, buildCacheContext } from '@/lib/agent-cache-system'
 import { getAlchemicalQuantitiesLegacy, backend } from '@/lib/backend'
+import { mintDuelClaimToken } from '@/lib/economy/duel-claim-token'
 import { observabilityTracker } from '@/lib/observability/tracker'
 import { v4 as uuidv4 } from 'uuid'
 import { unifiedTracker } from '@/lib/consciousness/unified-tracker'
@@ -249,6 +250,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // A duel-yield claim token is only minted for rounds that were actually
+    // billed (signed-in, 2+ agents, not the free weekly rotation) — the earn
+    // side of the arena loop must never out-mint the spend side.
+    const duelYieldEligible = Boolean(userId && !allAgentsFreeThisWeek && activeAgents.length >= 2)
+
     // Separate Monica from regular agents for special handling
     const monicaAgent = activeAgents.find(agent => agent.type === 'monica')
     const regularAgents = activeAgents.filter(agent => agent.type !== 'monica')
@@ -381,6 +387,8 @@ export async function POST(request: NextRequest) {
                 groupDynamics: updatedGroupDynamics,
                 agentEvolutions,
                 processingTime: totalProcessingTime,
+                duelClaimToken:
+                  duelYieldEligible && userId ? mintDuelClaimToken(userId) : undefined,
               })}\n\n`
             )
           )

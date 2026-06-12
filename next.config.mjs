@@ -8,11 +8,13 @@ const bundleAnalyzer =
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Both gates are real now: tsc --noEmit and eslint --quiet are at 0 errors
+  // on the maintained surface, so builds enforce them instead of masking them.
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   images: {
     unoptimized: true,
@@ -36,29 +38,22 @@ const nextConfig = {
   ],
 
   experimental: {
-    optimizePackageImports: [
-      'lucide-react',
-      '@radix-ui/react-*',
-      'recharts',
-      'react-hook-form',
-      'd3',
-      '@ai-sdk/openai',
-    ],
-    // Enable faster refresh
-    swcPlugins: [],
+    // Note: entries match import specifiers literally — globs are not expanded.
+    optimizePackageImports: ['lucide-react', 'recharts', 'react-hook-form', 'd3', '@ai-sdk/openai'],
     // Server actions configuration
     serverActions: {
       bodySizeLimit: '2mb',
     },
-    // Turbopack configuration
-    turbo: {
-      resolveAlias: {
-        // Fix react-remove-scroll module resolution issue
-        'react-remove-scroll-bar/constants': 'react-remove-scroll-bar/dist/es2015/constants',
-      },
-      // Configure module resolution for problematic packages
-      resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
+  },
+
+  // Turbopack configuration (top-level since Next 15.3; experimental.turbo is
+  // deprecated and its shim is removed in Next 16).
+  turbopack: {
+    resolveAlias: {
+      // Fix react-remove-scroll module resolution issue
+      'react-remove-scroll-bar/constants': 'react-remove-scroll-bar/dist/es2015/constants',
     },
+    resolveExtensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
   },
 
   async redirects() {

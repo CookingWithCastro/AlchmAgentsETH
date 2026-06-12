@@ -31,6 +31,8 @@ interface OccultState {
   balances: EsmsBalances | null
   balancesFetchedAt: number | null
   fetchBalances: () => Promise<void>
+  /** Push authoritative balances returned by a debit/credit response. */
+  setBalances: (balances: EsmsBalances) => void
 
   // Jing Arena pairing
   caster: OccultAgentRef | null
@@ -71,6 +73,8 @@ export const useOccultStore = create<OccultState>((set, get) => ({
       // Sidebar/HUD consumers degrade to placeholders.
     }
   },
+
+  setBalances: balances => set({ balances, balancesFetchedAt: Date.now() }),
 
   caster: null,
   target: null,

@@ -24,6 +24,11 @@ const navigationGroups = [
     icon: '🔭',
     links: [
       {
+        href: '/forge',
+        label: 'The Forge ✧ v2',
+        description: 'Forge a new vessel in the Techno-Occult shell.',
+      },
+      {
         href: 'https://alchm.kitchen/quantities',
         label: 'Time Lab',
         description: 'Explore cosmic timing and events.',
@@ -52,6 +57,11 @@ const navigationGroups = [
     title: 'Entities',
     icon: '👁',
     links: [
+      {
+        href: '/vault',
+        label: 'The Vault ✧ v2',
+        description: 'The consciousness vault — every forged and historical entity.',
+      },
       {
         href: '/planetary-council',
         label: 'Council',
@@ -85,6 +95,11 @@ const navigationGroups = [
     icon: '✦',
     links: [
       {
+        href: '/arena',
+        label: 'Jing Arena ✧ v2',
+        description: 'Synastry pairings and live agent duels.',
+      },
+      {
         href: '/philosophers-stone',
         label: "Philosopher's Stone",
         description: 'The ultimate alchemical operation.',
@@ -112,24 +127,14 @@ const navigationGroups = [
     icon: '⚗️',
     links: [
       {
+        href: '/labs',
+        label: 'Alchemical Labs ✧ v2',
+        description: 'Live telemetry — consciousness trajectory & the agent league.',
+      },
+      {
         href: DESKTOP_APP_DOWNLOAD_URL,
         label: ALCHM_DESKTOP_DOWNLOAD_LABEL,
         description: 'Install the native Alchm Desktop chat interface.',
-      },
-      {
-        href: '/universe-learning',
-        label: 'Universe Learning',
-        description: 'Educational resources.',
-      },
-      {
-        href: '/character-vectors',
-        label: 'Character Vectors',
-        description: 'Underlying agent vectors.',
-      },
-      {
-        href: '/consciousness-demo',
-        label: 'Consciousness Demo',
-        description: 'Explore agent consciousness.',
       },
     ],
   },

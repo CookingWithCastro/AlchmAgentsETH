@@ -56,8 +56,12 @@ export async function GET(request: NextRequest) {
       WHERE "timestamp" > NOW() - make_interval(days => ${days}::int)
     `) as Array<{ snapshots: number; agents: number; avgLatencyMs: number; avgOverall: number }>
 
+    // AVG() over zero rows is SQL NULL — hand the client `totals: null` (its
+    // handled empty state) instead of an object with null numeric fields.
+    const windowTotals = totals[0]?.snapshots ? totals[0] : null
+
     return NextResponse.json(
-      { success: true, days, points: rows, totals: totals[0] ?? null },
+      { success: true, days, points: rows, totals: windowTotals },
       { headers: CORS_HEADERS }
     )
   } catch (error) {

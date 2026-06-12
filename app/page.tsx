@@ -31,6 +31,10 @@ import {
   ChevronRight,
   ChevronDown,
   Monitor,
+  Hammer,
+  Archive,
+  Swords,
+  FlaskConical,
 } from 'lucide-react'
 import './landing.css'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
@@ -476,6 +480,26 @@ export default function LandingPage() {
                 Yield Claimed for Today. Return Tomorrow.
               </Button>
             )}
+
+            {/* v2 pillar shell — the core loop: forge → commune → duel → read the record */}
+            <div className="flex flex-wrap gap-3 mb-3">
+              <button className="landing-primary-btn flex-1" onClick={() => router.push('/forge')}>
+                <Hammer className="w-4 h-4 inline mr-1.5" />
+                Forge
+              </button>
+              <button className="landing-primary-btn flex-1" onClick={() => router.push('/vault')}>
+                <Archive className="w-4 h-4 inline mr-1.5" />
+                Vault
+              </button>
+              <button className="landing-primary-btn flex-1" onClick={() => router.push('/arena')}>
+                <Swords className="w-4 h-4 inline mr-1.5" />
+                Arena
+              </button>
+              <button className="landing-primary-btn flex-1" onClick={() => router.push('/labs')}>
+                <FlaskConical className="w-4 h-4 inline mr-1.5" />
+                Labs
+              </button>
+            </div>
 
             <div className="flex flex-wrap gap-3">
               <button

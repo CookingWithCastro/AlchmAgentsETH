@@ -26,13 +26,48 @@ interface DuelMessage {
 
 export function DuelChat({ onAssemble }: { onAssemble: () => void }) {
   const { caster, target } = useOccultStore()
+  const setBalances = useOccultStore(state => state.setBalances)
   const [topic, setTopic] = useState('')
   const [messages, setMessages] = useState<DuelMessage[]>([])
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [yieldNote, setYieldNote] = useState<string | null>(null)
   const idCounter = useRef(0)
 
   const nextId = () => `duel-${++idCounter.current}`
+
+  // The earn side of the loop: a PAID completed round grants a small ESMS
+  // yield (daily-capped server-side). The claim token arrives in the round's
+  // `done` SSE event; without one (signed out / free rotation) we skip silently.
+  const claimDuelYield = async (claimToken: string) => {
+    try {
+      const res = await fetch('/api/economy/duel-yield', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ claimToken }),
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      if (!data?.success) return
+      if (data.balances && typeof data.balances.spirit === 'number') {
+        setBalances({
+          spirit: Number(data.balances.spirit),
+          essence: Number(data.balances.essence),
+          matter: Number(data.balances.matter),
+          substance: Number(data.balances.substance),
+        })
+      }
+      if (data.capped) {
+        setYieldNote('The arena has yielded all it will today.')
+      } else if (data.awarded) {
+        setYieldNote(
+          `The duel yields tribute: +${data.awarded.spirit} Spirit, +${data.awarded.essence} Essence, +${data.awarded.matter} Matter, +${data.awarded.substance} Substance (${data.claimsToday}/${data.dailyCap} today).`
+        )
+      }
+    } catch {
+      // Yield is a bonus — never let it disturb the duel itself.
+    }
+  }
 
   if (!caster || !target) {
     return (
@@ -107,6 +142,7 @@ export function DuelChat({ onAssemble }: { onAssemble: () => void }) {
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
+      let duelClaimToken: string | null = null
       const liveIds: Record<string, string> = {}
 
       for (;;) {
@@ -156,10 +192,18 @@ export function DuelChat({ onAssemble }: { onAssemble: () => void }) {
                   : m
               )
             )
+          } else if (event === 'done') {
+            duelClaimToken = typeof data.duelClaimToken === 'string' ? data.duelClaimToken : null
           } else if (event === 'error') {
             throw new Error(data.error ?? 'Unknown arena disturbance')
           }
         }
+      }
+
+      // Round complete — claim the arena yield (awaited so the note lands
+      // with the round's end). No token means the round wasn't billed.
+      if (duelClaimToken) {
+        await claimDuelYield(duelClaimToken)
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'The duel channel collapsed.')
@@ -170,7 +214,7 @@ export function DuelChat({ onAssemble }: { onAssemble: () => void }) {
   }
 
   return (
-    <div className="min-h-screen bg-st-background pb-32">
+    <div className="min-h-screen bg-st-background pb-56 md:pb-40">
       {/* Versus header */}
       <header className="px-margin-mobile md:px-margin-desktop pt-10 max-w-container-max mx-auto flex items-center justify-between gap-4">
         <div className="text-left">
@@ -229,6 +273,13 @@ export function DuelChat({ onAssemble }: { onAssemble: () => void }) {
             </div>
           )
         )}
+        {yieldNote && (
+          <div className="self-center glass-panel rounded-full px-6 py-2 gold-border-glow">
+            <p className="font-label-mono text-[11px] uppercase tracking-widest text-st-secondary">
+              {yieldNote}
+            </p>
+          </div>
+        )}
         {error && (
           <div className="error-glow rounded-lg p-4 font-label-mono text-label-mono text-error">
             {error}
@@ -238,7 +289,7 @@ export function DuelChat({ onAssemble }: { onAssemble: () => void }) {
 
       {/* Composer */}
       <form
-        className="fixed bottom-20 md:bottom-6 left-0 right-0 md:left-64 px-margin-mobile md:px-margin-desktop"
+        className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-6 left-0 right-0 md:left-64 px-margin-mobile md:px-margin-desktop"
         onSubmit={e => {
           e.preventDefault()
           if (!topic.trim() || busy) return

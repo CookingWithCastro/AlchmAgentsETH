@@ -153,7 +153,7 @@ export function LiveVaultGallery({
               }
               stats={topStats(agent.sacred7)}
               status={agent.consciousnessLevel === 'Dormant' ? 'dormant' : undefined}
-              href={selectable ? undefined : `/agent/${agent.agentId}`}
+              href={selectable ? undefined : `/vault/${agent.agentId}`}
               className="h-full"
             />
           )

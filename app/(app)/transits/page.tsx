@@ -49,15 +49,15 @@ export default function TransitsPage() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
 
   useEffect(() => {
-    loadTransitsAndActivateAgents()
-    // Refresh every 5 minutes
-    const interval = setInterval(loadTransitsAndActivateAgents, 300000)
+    loadTransitsAndActivateAgents(true)
+    // Refresh every 5 minutes — silently: no loading flash, no modal re-open
+    const interval = setInterval(() => loadTransitsAndActivateAgents(false), 300000)
     return () => clearInterval(interval)
   }, [])
 
-  const loadTransitsAndActivateAgents = async () => {
+  const loadTransitsAndActivateAgents = async (initialLoad: boolean) => {
     try {
-      setLoading(true)
+      if (initialLoad) setLoading(true)
 
       // Fetch current planetary positions
       const positions = await fetchCurrentPlanetaryPositions()
@@ -172,8 +172,9 @@ export default function TransitsPage() {
       setActivatedAgentIds([...new Set(allActivatedAgents)])
       setLastUpdate(new Date())
 
-      // Auto-open group chat if we have activated agents
-      if (allActivatedAgents.length > 0) {
+      // Auto-open group chat once, on first load — refreshes must not re-open
+      // a modal the user dismissed.
+      if (initialLoad && allActivatedAgents.length > 0) {
         setShowGroupChat(true)
       }
     } catch (error) {

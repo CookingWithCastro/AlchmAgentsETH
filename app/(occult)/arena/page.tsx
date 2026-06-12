@@ -49,9 +49,18 @@ export default function ArenaPage() {
         ))}
       </div>
 
-      {tab === 'synastry' && <SynastryAssembly onCommence={() => setTab('duel')} />}
-      {tab === 'duel' && <DuelChat onAssemble={() => setTab('synastry')} />}
-      {tab === 'stats' && <JingArenaTokenEconomySacredStats />}
+      {/* Panels stay mounted and toggle visibility: unmounting DuelChat
+          mid-round destroyed the transcript while its SSE stream kept
+          writing into an unmounted component. */}
+      <div hidden={tab !== 'synastry'}>
+        <SynastryAssembly onCommence={() => setTab('duel')} />
+      </div>
+      <div hidden={tab !== 'duel'}>
+        <DuelChat onAssemble={() => setTab('synastry')} />
+      </div>
+      <div hidden={tab !== 'stats'}>
+        <JingArenaTokenEconomySacredStats />
+      </div>
     </div>
   )
 }

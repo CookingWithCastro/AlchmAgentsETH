@@ -596,96 +596,112 @@ export class EconomyService {
     }
 
     const transactionGroupId = crypto.randomUUID()
-    const idempotencyKey = `claim:yield:${historicalAgentId}:${planetaryAgentId}:${Date.now()}`
+    // Keyed on the agent pair + UTC day (not Date.now()), so re-firing the
+    // claim within a day is a no-op instead of a fresh balance transfer.
+    const utcDay = new Date().toISOString().split('T')[0]
+    const idempotencyKey = `claim:yield:${historicalAgentId}:${planetaryAgentId}:${utcDay}`
 
     // 5. Database transaction
-    const updated = await prisma.$transaction(async tx => {
-      // Decrement planetary agent's balance
-      await tx.tokenBalance.update({
-        where: { userId: planUser.id },
-        data: {
-          spirit: { decrement: bestow.spirit },
-          essence: { decrement: bestow.essence },
-          matter: { decrement: bestow.matter },
-          substance: { decrement: bestow.substance },
-          updatedAt: new Date(),
-        },
-      })
-
-      // Increment historical agent's balance
-      const updatedBalance = await tx.tokenBalance.update({
-        where: { userId: histUser.id },
-        data: {
-          spirit: { increment: bestow.spirit },
-          essence: { increment: bestow.essence },
-          matter: { increment: bestow.matter },
-          substance: { increment: bestow.substance },
-          updatedAt: new Date(),
-        },
-      })
-
-      // Log transactions
-      const tokens = [
-        { type: 'Spirit', amount: bestow.spirit },
-        { type: 'Essence', amount: bestow.essence },
-        { type: 'Matter', amount: bestow.matter },
-        { type: 'Substance', amount: bestow.substance },
-      ]
-
-      for (const token of tokens) {
-        if (token.amount <= 0) continue
-        // Outflow from planetary agent
-        await tx.tokenTransaction.create({
-          data: {
-            transactionGroupId,
-            userId: planUser.id,
-            tokenType: token.type,
-            amount: new Prisma.Decimal(-token.amount),
-            sourceType: 'yield_claim',
-            description: `Yield claimed by ${historicalAgentId}`,
-            idempotencyKey: `${idempotencyKey}:out:${token.type}`,
-            createdAt: new Date(),
-          },
-        })
-        // Inflow to historical agent
-        await tx.tokenTransaction.create({
-          data: {
-            transactionGroupId,
-            userId: histUser.id,
-            tokenType: token.type,
-            amount: new Prisma.Decimal(token.amount),
-            sourceType: 'yield_claim',
-            description: `Yield claimed from ${planetaryAgentId}`,
-            idempotencyKey: `${idempotencyKey}:in:${token.type}`,
-            createdAt: new Date(),
-          },
-        })
+    let updated
+    try {
+      updated = await runYieldTransfer()
+    } catch (error: any) {
+      if (error?.code === 'P2002') {
+        // Same pair already claimed today — the whole transfer rolled back.
+        return { success: false as const, alreadyClaimed: true as const, amount: 0 }
       }
+      throw error
+    }
 
-      // Create agent feed event
-      await tx.agent_action_events.create({
-        data: {
-          agentId: historicalAgentId,
-          agentEmail: historicalEmail,
-          eventType: 'yield_claim',
-          triggerType: 'yield_claim',
-          triggerSummary: `${historicalAgentId} claimed yield from ${planetaryAgentId}`,
-          score: 0.9,
-          idempotencyKey,
-          status: 'posted',
-          evaluatedAt: new Date(),
-          postedAt: new Date(),
-          metadataPayload: {
-            historicalAgentId,
-            planetaryAgentId,
-            amount: totalClaim,
-            bestowed: bestow,
+    async function runYieldTransfer() {
+      return prisma.$transaction(async tx => {
+        // Decrement planetary agent's balance
+        await tx.tokenBalance.update({
+          where: { userId: planUser.id },
+          data: {
+            spirit: { decrement: bestow.spirit },
+            essence: { decrement: bestow.essence },
+            matter: { decrement: bestow.matter },
+            substance: { decrement: bestow.substance },
+            updatedAt: new Date(),
           },
-        },
-      })
+        })
 
-      return updatedBalance
-    })
+        // Increment historical agent's balance
+        const updatedBalance = await tx.tokenBalance.update({
+          where: { userId: histUser.id },
+          data: {
+            spirit: { increment: bestow.spirit },
+            essence: { increment: bestow.essence },
+            matter: { increment: bestow.matter },
+            substance: { increment: bestow.substance },
+            updatedAt: new Date(),
+          },
+        })
+
+        // Log transactions
+        const tokens = [
+          { type: 'Spirit', amount: bestow.spirit },
+          { type: 'Essence', amount: bestow.essence },
+          { type: 'Matter', amount: bestow.matter },
+          { type: 'Substance', amount: bestow.substance },
+        ]
+
+        for (const token of tokens) {
+          if (token.amount <= 0) continue
+          // Outflow from planetary agent
+          await tx.tokenTransaction.create({
+            data: {
+              transactionGroupId,
+              userId: planUser.id,
+              tokenType: token.type,
+              amount: new Prisma.Decimal(-token.amount),
+              sourceType: 'yield_claim',
+              description: `Yield claimed by ${historicalAgentId}`,
+              idempotencyKey: `${idempotencyKey}:out:${token.type}`,
+              createdAt: new Date(),
+            },
+          })
+          // Inflow to historical agent
+          await tx.tokenTransaction.create({
+            data: {
+              transactionGroupId,
+              userId: histUser.id,
+              tokenType: token.type,
+              amount: new Prisma.Decimal(token.amount),
+              sourceType: 'yield_claim',
+              description: `Yield claimed from ${planetaryAgentId}`,
+              idempotencyKey: `${idempotencyKey}:in:${token.type}`,
+              createdAt: new Date(),
+            },
+          })
+        }
+
+        // Create agent feed event
+        await tx.agent_action_events.create({
+          data: {
+            agentId: historicalAgentId,
+            agentEmail: historicalEmail,
+            eventType: 'yield_claim',
+            triggerType: 'yield_claim',
+            triggerSummary: `${historicalAgentId} claimed yield from ${planetaryAgentId}`,
+            score: 0.9,
+            idempotencyKey,
+            status: 'posted',
+            evaluatedAt: new Date(),
+            postedAt: new Date(),
+            metadataPayload: {
+              historicalAgentId,
+              planetaryAgentId,
+              amount: totalClaim,
+              bestowed: bestow,
+            },
+          },
+        })
+
+        return updatedBalance
+      })
+    }
 
     // 6. Sync credit to alchm.kitchen if active
     try {

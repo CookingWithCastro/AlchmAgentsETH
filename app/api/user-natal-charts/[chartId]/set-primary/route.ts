@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveAuthorizedNatalUserId } from '@/lib/api/natal-chart-guard'
 import { setPrimaryChart } from '@/lib/services/natal-chart-storage'
 
 export const runtime = 'nodejs'
@@ -21,11 +22,10 @@ export async function PUT(
   try {
     const { chartId } = await params
     const body = await request.json()
-    const userId = body.userId
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required in request body' }, { status: 400 })
-    }
+    const authorized = await resolveAuthorizedNatalUserId(body.userId)
+    if ('error' in authorized) return authorized.error
+    const userId = authorized.userId
 
     await setPrimaryChart(chartId, userId)
 

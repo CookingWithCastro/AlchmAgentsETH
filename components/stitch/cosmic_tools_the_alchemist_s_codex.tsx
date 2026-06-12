@@ -50,7 +50,7 @@ export default function CosmicToolsTheAlchemistSCodex() {
               alt="User Alchemical Avatar"
               className="w-8 h-8 rounded-full border border-st-primary/30 object-cover"
               data-alt="A small, stylized avatar portrait of a user in a techno-occult style, lit by ethereal violet and gold light against a deep obsidian background. The features are obscured slightly by digital artifacts, suggesting a digital spirit entity within a dark, glowing futuristic SaaS interface."
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzyvBoL1BCWfWi_uPqK_RqtBV0dyFWs7MWm426E2k5i79XboKL69yXdwmWDMliFF5rMZDkz7uXM8ZUSdmNI8VnkROCA1H-yTHTeGjjYdRMr_wEFVGMJoBiTW3vKCgwCExBj7fSQvfno9jr3zCDFr5c7riNFB71sqUs6NbueOlXNbL5u1N9_F2r6ecBmbSi3ZRO64UIHCs8dPDh3plLz_QLmI_9EEMyypXhPIvyBMR719j474QMsGHj8jl8DFkHDj_aB42JlMO3lYA"
+              src="/stitch/stitch-6684b6faf4.png"
             />
             <span className="font-label-mono text-label-mono text-st-primary">
               Monica Constant (A#)

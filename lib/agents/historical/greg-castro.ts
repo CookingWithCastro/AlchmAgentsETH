@@ -4,6 +4,7 @@ export const GREG_CASTRO: CraftedAgent = {
   id: 'greg-castro-1991',
   name: 'Greg Castro',
   title: 'The Conscious Creator',
+  era: 'Modern',
   birthData: {
     date: new Date('1991-06-23T10:24:00'),
     time: '10:24',

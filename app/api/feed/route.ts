@@ -192,10 +192,17 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   try {
+    // Fail closed: this writes to agent_action_events and broadcasts to every
+    // SSE subscriber, so in production a missing INTERNAL_API_SECRET means the
+    // endpoint is unavailable — not open to the world.
     const expected = process.env.INTERNAL_API_SECRET
     const authHeader = req.headers.get('authorization') || ''
     const token = authHeader.replace(/^Bearer\s+/i, '').trim()
-    if (expected && token !== expected) {
+    if (process.env.NODE_ENV === 'production') {
+      if (!expected || token !== expected) {
+        return new Response('Unauthorized', { status: 401 })
+      }
+    } else if (expected && token !== expected) {
       return new Response('Unauthorized', { status: 401 })
     }
 

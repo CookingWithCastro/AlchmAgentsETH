@@ -436,7 +436,7 @@ export function generateAccurateHoroscope(birthInfo: BirthInfo): GeneratedHorosc
   // Clean up old cache entries (keep only last 20)
   if (planetaryCache.size > 20) {
     const oldestKey = planetaryCache.keys().next().value
-    planetaryCache.delete(oldestKey)
+    if (oldestKey !== undefined) planetaryCache.delete(oldestKey)
   }
 
   return result

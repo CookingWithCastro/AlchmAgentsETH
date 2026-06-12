@@ -7,7 +7,7 @@ export const HERODOTUS: CraftedAgent = {
   era: 'Ancient',
   specialization: 'Historical Inquiry',
   birthData: {
-    date: new Date('-00484-01-01T12:00:00'),
+    date: new Date('-000484-01-01T12:00:00'),
     time: '12:00',
     location: { lat: 0, lon: 0, name: 'Unknown' },
   },

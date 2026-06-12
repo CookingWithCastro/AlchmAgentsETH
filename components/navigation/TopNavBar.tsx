@@ -44,15 +44,15 @@ export function TopNavBar() {
         </div>
       </div>
       <div className="flex items-center gap-4">
-        <button
-          type="button"
+        <Link
+          href="/attunement-circle"
           aria-label="Attune"
           className="text-on-surface-variant hover:text-st-primary transition-colors"
         >
           <span className="material-symbols-outlined" aria-hidden>
             auto_awesome
           </span>
-        </button>
+        </Link>
         <Link
           href="/economy"
           aria-label="ESMS wallet"

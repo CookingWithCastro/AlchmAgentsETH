@@ -1,6 +1,10 @@
 import { backend } from '@/lib/backend'
 import PlanetaryAgentsClient from './planetary-agents-client'
 
+// The sky moves: without ISR this page was prerendered once at build time, so
+// positions were frozen (or permanently empty if the build-time fetch failed).
+export const revalidate = 900
+
 export default async function PlanetaryAgentsPage() {
   let initialPositions: Record<string, { sign: string; degree: number }> = {}
   try {
