@@ -16,7 +16,7 @@ bun run build    # Production build
 bun run lint     # ESLint across .js/.jsx/.ts/.tsx
 bun run lint:fix # ESLint with autofix
 bun run format   # Prettier write
-bunx tsc --noEmit  # tsc --noEmit (many existing errors; build ignores them)
+bunx tsc --noEmit  # tsc --noEmit (0 errors on the typed surface; the build enforces it)
 bun run check    # lint + format:check + typecheck combined
 ```
 

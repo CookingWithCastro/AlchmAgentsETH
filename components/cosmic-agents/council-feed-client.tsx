@@ -481,7 +481,7 @@ export function CouncilFeedClient({
       (e): e is JingDuelEvent => e.type === 'jing-duel' && e.status === 'active'
     )
     const rest = filteredEvents.filter(
-      e => !streaming.includes(e) && !(active as FeedEvent[]).includes(e)
+      e => !(streaming as FeedEvent[]).includes(e) && !(active as FeedEvent[]).includes(e)
     )
     return [...streaming, ...active, ...rest]
   }, [filteredEvents])

@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         id: sessionUser.id,
         email: sessionUser.email!,
         name: sessionUser.name || 'Explorer',
-        tier: (sessionUser.tier || 'master') as 'free' | 'alchemist' | 'master',
+        tier: (sessionUser.tier || 'free') as 'free' | 'alchemist' | 'master',
       }
     : {
         id: 'guest',

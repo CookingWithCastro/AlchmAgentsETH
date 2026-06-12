@@ -76,7 +76,7 @@ export default function JingArenaActiveDuelChat() {
             alt="Alchemist Avatar"
             className="w-10 h-10 rounded-full border border-st-primary/30"
             data-alt="A small circular avatar portrait of an ethereal digital alchemist character. The face is subtly glowing with geometric light patterns in a dark sci-fi fantasy setting. The portrait is detailed, high-contrast, and fits a mystic technological aesthetic."
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAzcxpMm_Ba3Nkn9AvvLHC_ECSnjwbgvZ0ompYDv-wyL6SKZVUIbZ9Vffxku5n1KHOgqNWBI2HVYsSV_LLX5al5K03H1_Y5G5gTLfV32wAHLef7Jno585yRzpByE0lqWRfM7wdSEAYzwZt_O2usIdDNjDmehsDGBqvpJsw6Url-p7pqkcZXV8xYCJRZreFn7a4Z4M2Y_CyBhKInQ4sOJlvPbIphCKne9dCyn0ZznQCIBHmW4BS60HPmG_NuVaPdW0TdVPOpa5HADTo"
+            src="/stitch/stitch-58ba0395c2.png"
           />
         </div>
       </nav>

@@ -13,6 +13,13 @@ vi.mock('next-auth', () => ({
   getServerSession: vi.fn(),
 }))
 
+// auth() falls back to the alchm.kitchen cookie bridge when there is no native
+// session; outside a real request scope cookies() throws, which unstable_rethrow
+// propagates and every route 500s. Give the bridge an empty cookie jar instead.
+vi.mock('next/headers', () => ({
+  cookies: () => ({ getAll: () => [] }),
+}))
+
 vi.mock('@/lib/db', () => ({
   prisma: {
     $queryRaw: vi.fn(),
@@ -95,11 +102,7 @@ describe('admin API authorization', () => {
     const body = await response.json()
 
     expect(response.status).toBe(401)
-    if (path === '/api/admin/system-stats') {
-      expect(body).toEqual({ success: false, error: 'Admin authentication required' })
-    } else {
-      expect(body).toEqual({ error: 'Authentication required' })
-    }
+    expect(body).toEqual({ error: 'Authentication required' })
   })
 
   it.each(adminRoutes)('rejects non-admin access to %s', async (path, handler) => {
@@ -123,11 +126,7 @@ describe('admin API authorization', () => {
     const body = await response.json()
 
     expect(response.status).toBe(403)
-    if (path === '/api/admin/system-stats') {
-      expect(body).toEqual({ success: false, error: 'Admin privileges required' })
-    } else {
-      expect(body).toEqual({ error: 'Admin privileges required' })
-    }
+    expect(body).toEqual({ error: 'Admin privileges required' })
   })
 
   it('allows admin access to performance metrics without fabricated satisfaction data', async () => {

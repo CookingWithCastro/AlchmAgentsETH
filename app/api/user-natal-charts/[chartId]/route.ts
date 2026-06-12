@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { resolveAuthorizedNatalUserId } from '@/lib/api/natal-chart-guard'
 import {
   getNatalChart,
   updateNatalChart,
@@ -27,11 +28,10 @@ export async function GET(
   try {
     const { chartId } = await params
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId parameter is required' }, { status: 400 })
-    }
+    const authorized = await resolveAuthorizedNatalUserId(searchParams.get('userId'))
+    if ('error' in authorized) return authorized.error
+    const userId = authorized.userId
 
     const chart = await getNatalChart(chartId, userId)
 
@@ -63,11 +63,10 @@ export async function PUT(
   try {
     const { chartId } = await params
     const body = await request.json()
-    const userId = body.userId
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId is required in request body' }, { status: 400 })
-    }
+    const authorized = await resolveAuthorizedNatalUserId(body.userId)
+    if ('error' in authorized) return authorized.error
+    const userId = authorized.userId
 
     // Handle setPrimary action separately
     if (body.action === 'setPrimary') {
@@ -113,11 +112,10 @@ export async function DELETE(
   try {
     const { chartId } = await params
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
 
-    if (!userId) {
-      return NextResponse.json({ error: 'userId parameter is required' }, { status: 400 })
-    }
+    const authorized = await resolveAuthorizedNatalUserId(searchParams.get('userId'))
+    if ('error' in authorized) return authorized.error
+    const userId = authorized.userId
 
     await deleteNatalChart(chartId, userId)
 

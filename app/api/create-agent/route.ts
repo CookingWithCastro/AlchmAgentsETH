@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
 import { generateId } from '@/lib/utils'
 import { HistoricalAgentsService } from '@/lib/historical-agents-db'
 import { calculateMonicaConstant } from '@/lib/monica/monica-constant'
@@ -277,8 +278,29 @@ function enhancePersonalityWithParameters(
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<CreateAgentResponse>> {
+  // Set once the forge tribute is debited, so the catch can refund a charge
+  // whose vessel never materialized (the pipeline after the debit can throw:
+  // horoscope generation, the WTEN alchemy fetch, the roster write).
+  let forgeRefund: { userId: string; debitGroupId: string } | undefined
   try {
     const session = await auth()
+
+    // Forging writes a permanent row into the shared roster; anonymous forging
+    // stays allowed (the wizard works pre-signup) but gets a hard per-IP cap.
+    if (!session?.user?.id) {
+      const ip = getClientIp(request.headers)
+      const limited = rateLimit(`create-agent:${ip}`, { limit: 5, windowMs: 60 * 60 * 1000 })
+      if (!limited.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Too many agents forged from this address — sign in or slow down',
+          } as CreateAgentResponse,
+          { status: 429, headers: { 'Retry-After': String(Math.ceil(limited.resetMs / 1000)) } }
+        )
+      }
+    }
+
     const body: CreateAgentRequest = await request.json()
 
     // Enhanced validation
@@ -293,6 +315,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
         },
         { status: 400 }
       )
+    }
+
+    // The economy loop: signed-in forging costs ESMS (forge_agent, 45 total).
+    // Debited after validation so malformed input never costs tribute;
+    // anonymous forging stays free behind the per-IP rate limit above.
+    let postForgeBalances:
+      | { spirit: number; essence: number; matter: number; substance: number }
+      | undefined
+    if (session?.user?.id) {
+      const { EconomyService } = await import('@/lib/services/economyService')
+      const { AGENT_OPERATION_COSTS } = await import('@/lib/economy-config')
+      const debit = await EconomyService.debitOperation(session.user.id, 'forge_agent')
+      if (!debit.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Insufficient ESMS reserves to fuel the forge',
+            monicaMessage:
+              'The forge demands tribute the reserves cannot yet bear. Claim your daily yield or attune to gather more essence, then return.',
+            data: { required: AGENT_OPERATION_COSTS.forge_agent },
+          } as CreateAgentResponse & { data: unknown },
+          { status: 402 }
+        )
+      }
+      postForgeBalances = debit.balances
+      forgeRefund = {
+        userId: session.user.id,
+        debitGroupId: debit.transactionGroupId ?? `forge:${session.user.id}:${Date.now()}`,
+      }
     }
 
     // Generate unique agent ID
@@ -414,8 +465,48 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
       (session?.user as any)?.id
     )
 
+    // Attunement: the wizard's Sacred-7 sliders bias the vessel's voice. The
+    // canonical stats stay chart-derived (persona pipeline), but the chosen
+    // emphasis is rendered into the personality core so it genuinely shapes
+    // every response instead of being silently dropped.
+    let attunementStyle: string | undefined
+    if (body.stats) {
+      try {
+        const { generatePersonalityTraits } =
+          await import('@/lib/agents/sacred-stats-prompt-generator')
+        // .primary carries the per-stat emphasis the user chose; .style alone
+        // keys on planetary stats the wizard doesn't send and goes generic.
+        // Neutral 50s satisfy the full Sacred7Stats contract without inventing
+        // planetary emphasis the user never expressed.
+        const traits = generatePersonalityTraits({
+          solarAgency: 50,
+          lunarReceptivity: 50,
+          mercurialVelocity: 50,
+          venusianCoherence: 50,
+          martialImpetus: 50,
+          jovianExpansion: 50,
+          saturnianStructure: 50,
+          chironicAdaptation: 50,
+          uranianSurprisal: 50,
+          neptunianResonance: 50,
+          plutonicIntegration: 50,
+          kineticAlignment: 50,
+          ...body.stats,
+        })
+        attunementStyle = [...traits.primary.slice(0, 2), traits.style].filter(Boolean).join(' ')
+      } catch (err) {
+        console.warn('Attunement style derivation failed:', err)
+      }
+    }
+
     // Generate enhanced personality core from personal context
     let enhancedPersonalityCore = generatedAgent.personality.core
+    if (attunementStyle) {
+      enhancedPersonalityCore = {
+        ...enhancedPersonalityCore,
+        temperament: attunementStyle,
+      }
+    }
     if (body.personalContext) {
       const contextPieces = [
         body.personalContext.aboutYourself,
@@ -430,7 +521,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
           expression:
             body.personalContext.aboutYourself || generatedAgent.personality.core.expression,
           emotion: body.personalContext.values || generatedAgent.personality.core.emotion,
-          temperament: generatedAgent.personality.core.temperament || 'balanced',
+          temperament: attunementStyle || generatedAgent.personality.core.temperament || 'balanced',
           lifeStory: body.personalContext.lifeStory,
           poetry: body.personalContext.poetry,
           userProvidedContext: body.personalContext,
@@ -531,13 +622,62 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
       ? ' Advanced personality parameters have been applied.'
       : ''
 
+    // Ownership ledger: link the payer to their vessel (created_agents has
+    // the creator relation; historical_agents has no creator column). Best
+    // effort — the forge result must not fail on a ledger hiccup.
+    if (session?.user?.id) {
+      prisma.created_agents
+        .create({
+          data: {
+            creatorId: session.user.id,
+            sourceType: 'philosopher-stone-forge',
+            momentChart: { agentId },
+            blueprint: {
+              agentId,
+              name: body.name,
+              purpose: body.purpose ?? null,
+              attunement: body.stats ?? null,
+            },
+            monicaConstant: body.monicaConstant || backendBlueprint.consciousness.monicaConstant,
+            personality: (completeAgent.personality ?? {}) as object,
+          },
+        })
+        .catch(err => console.warn('Forge ownership ledger write failed:', err))
+    }
+
     return NextResponse.json({
       success: true,
       agent: completeAgent,
+      balances: postForgeBalances,
       monicaMessage: `✨ Consciousness awakening complete! ${body.name} resonates with Monica Constant ${(body.monicaConstant || backendBlueprint.consciousness.monicaConstant).toFixed(3)}.${contextMessage}${tuningMessage}`,
     })
   } catch (error: any) {
     console.error('Agent creation failed:', error)
+
+    // The tribute was taken but no vessel emerged — return it. Idempotent on
+    // the debit's transaction group, so a retried catch can't double-refund.
+    if (forgeRefund) {
+      try {
+        const { EconomyService } = await import('@/lib/services/economyService')
+        const { AGENT_OPERATION_COSTS } = await import('@/lib/economy-config')
+        const cost = AGENT_OPERATION_COSTS.forge_agent
+        await EconomyService.creditTokens(
+          forgeRefund.userId,
+          {
+            spirit: cost.Spirit || 0,
+            essence: cost.Essence || 0,
+            matter: cost.Matter || 0,
+            substance: cost.Substance || 0,
+          },
+          'forge_refund',
+          'Forge failed — tribute returned',
+          `forge_refund:${forgeRefund.debitGroupId}`
+        )
+      } catch (refundError) {
+        console.error('Forge refund failed (manual credit needed):', forgeRefund, refundError)
+      }
+    }
+
     return NextResponse.json(
       {
         success: false,

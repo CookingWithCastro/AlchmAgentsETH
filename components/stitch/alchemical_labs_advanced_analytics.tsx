@@ -9,7 +9,7 @@ export default function AlchemicalLabsAdvancedAnalytics() {
               alt="Planetary Sigil"
               className="w-full h-full object-cover"
               data-alt="A glowing abstract fractal pattern representing a planetary sigil. The design is symmetrical and complex, resembling ancient alchemy combined with futuristic neon circuitry in deep violet and electric blue. Set against a pitch-black background, it radiates a subtle luminous aura. High contrast, precise geometric lines."
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAovcMzyYTXfShtJT5Z8cTOu5FkOHnjjiuOzbQC0xxpHt85BA-7xhTt7RQUl7xgSRe-eGrluu-ZWenOacEq0cNbsCytDDOcEwgYDWxHrZTD0l3qeq65IborcPy-fnMT_-t4iGWbYzz-3HaGOayJm2Htk9SSHlOJR-dl_P23nwJbmHQrL2_EJplj_ijHtwX1GkAlCysK6gdl5jag9dTfcMwR-RPzCekQCspcJ4tZH9_wQWOsWBoGEMQ6oEpY6ujnkTDIYBrn32W4VTE"
+              src="/stitch/stitch-b0740aa057.png"
             />
           </div>
           <div>

@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Return the file
-    return new NextResponse(cacheEntry.data, {
+    return new NextResponse(new Uint8Array(cacheEntry.data), {
       status: 200,
       headers: {
         'Content-Type': contentType,

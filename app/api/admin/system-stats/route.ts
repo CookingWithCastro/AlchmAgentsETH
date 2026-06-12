@@ -1,54 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { getCurrentUser, getUserIdFromRequest } from '@/lib/auth-helpers'
+import { adminErrorResponse, requireAdmin } from '@/lib/admin-auth'
 import { performanceMonitor } from '@/lib/performance-monitor'
 
 /**
  * Admin API for system statistics and monitoring
- * Requires admin privileges
+ * Requires admin privileges (canonical requireAdmin gate, same as the other
+ * admin routes — the previous bespoke check queried a non-existent
+ * `prisma.user` model and a divergent hardcoded email list).
  */
-
-async function isAdminUser(userId: string): Promise<boolean> {
-  try {
-    const user = await (prisma as any).user.findUnique({
-      where: { id: userId },
-      include: { subscription: true },
-    })
-
-    // Admin check: either email is admin or subscription tier is master
-    const adminEmails = ['admin@planetaryagents.com', 'support@planetaryagents.com']
-    return adminEmails.includes(user?.email || '') || user?.subscription?.tier === 'master'
-  } catch (error) {
-    return false
-  }
-}
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req)
-    const userId = (user as any)?.id || getUserIdFromRequest(req)
-
-    if (!userId || userId === 'anonymous') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Admin authentication required',
-        },
-        { status: 401 }
-      )
-    }
-
-    // Check admin privileges
-    const isAdmin = await isAdminUser(userId)
-    if (!isAdmin) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Admin privileges required',
-        },
-        { status: 403 }
-      )
+    const admin = await requireAdmin()
+    if (!admin.ok) {
+      return adminErrorResponse(admin)
     }
 
     const { searchParams } = new URL(req.url)
@@ -72,10 +38,10 @@ export async function GET(req: NextRequest) {
       popularAgents,
     ] = await Promise.all([
       // Total users
-      (prisma as any).user.count(),
+      (prisma as any).users.count(),
 
       // Active users (had interaction in timeRange)
-      (prisma as any).consciousnessInteraction
+      (prisma as any).consciousness_interactions
         .findMany({
           where: {
             timestamp: { gte: timeRangeStart },
@@ -86,27 +52,27 @@ export async function GET(req: NextRequest) {
         .then((users: any[]) => users.length),
 
       // Total interactions
-      (prisma as any).consciousnessInteraction.count(),
+      (prisma as any).consciousness_interactions.count(),
 
       // Recent interactions
-      (prisma as any).consciousnessInteraction.count({
+      (prisma as any).consciousness_interactions.count({
         where: {
           timestamp: { gte: timeRangeStart },
         },
       }),
 
       // Total agent evolutions
-      (prisma as any).agentEvolutionState.count(),
+      (prisma as any).agent_evolution_states.count(),
 
       // Recent evolutions (level changes)
-      (prisma as any).agentEvolutionState.count({
+      (prisma as any).agent_evolution_states.count({
         where: {
           lastInteraction: { gte: timeRangeStart },
         },
       }),
 
       // Error logs from Monica interactions
-      (prisma as any).monicaInteraction.findMany({
+      (prisma as any).monica_interactions.findMany({
         where: {
           createdAt: { gte: timeRangeStart },
           monicaResponse: { contains: 'error' },
@@ -122,7 +88,7 @@ export async function GET(req: NextRequest) {
       }),
 
       // Popular agents by interaction count
-      (prisma as any).consciousnessInteraction.groupBy({
+      (prisma as any).consciousness_interactions.groupBy({
         by: ['agentId'],
         where: {
           timestamp: { gte: timeRangeStart },
@@ -143,7 +109,7 @@ export async function GET(req: NextRequest) {
     const slowEndpoints = performanceMonitor.getSlowEndpoints(5)
 
     // User tier distribution
-    const tierDistribution = await (prisma as any).subscription.groupBy({
+    const tierDistribution = await (prisma as any).userSubscription.groupBy({
       by: ['tier'],
       _count: {
         tier: true,
@@ -151,7 +117,7 @@ export async function GET(req: NextRequest) {
     })
 
     // Agent evolution level distribution
-    const evolutionLevels = await (prisma as any).agentEvolutionState.groupBy({
+    const evolutionLevels = await (prisma as any).agent_evolution_states.groupBy({
       by: ['currentLevel'],
       _count: {
         currentLevel: true,
@@ -233,17 +199,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await auth()
-    const userId = session?.user?.id
-
-    if (!userId || !(await isAdminUser(userId))) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Admin privileges required',
-        },
-        { status: 403 }
-      )
+    const admin = await requireAdmin()
+    if (!admin.ok) {
+      return adminErrorResponse(admin)
     }
 
     const { action, data } = await req.json()
@@ -262,7 +220,7 @@ export async function POST(req: NextRequest) {
         const { message, type } = data
         try {
           // Get all users
-          const users = await (prisma as any).user.findMany({
+          const users = await (prisma as any).users.findMany({
             select: { id: true, email: true },
           })
 
@@ -304,7 +262,7 @@ export async function POST(req: NextRequest) {
         const exportData: any = {}
 
         if (tables?.includes('users')) {
-          exportData.users = await (prisma as any).user.findMany({
+          exportData.users = await (prisma as any).users.findMany({
             select: {
               email: true,
               name: true,
@@ -316,14 +274,14 @@ export async function POST(req: NextRequest) {
         }
 
         if (tables?.includes('interactions')) {
-          exportData.interactions = await (prisma as any).consciousnessInteraction.findMany({
+          exportData.interactions = await (prisma as any).consciousness_interactions.findMany({
             take: 1000, // Limit for demo
             orderBy: { timestamp: 'desc' },
           })
         }
 
         if (tables?.includes('evolutions')) {
-          exportData.evolutions = await (prisma as any).agentEvolutionState.findMany()
+          exportData.evolutions = await (prisma as any).agent_evolution_states.findMany()
         }
 
         return NextResponse.json({

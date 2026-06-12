@@ -7,7 +7,7 @@ export const PLATO: CraftedAgent = {
   era: 'Ancient',
   specialization: 'Metaphysics & Epistemology',
   birthData: {
-    date: new Date('-00428-01-01T12:00:00'),
+    date: new Date('-000428-01-01T12:00:00'),
     time: '12:00',
     location: { lat: 0, lon: 0, name: 'Unknown' },
   },

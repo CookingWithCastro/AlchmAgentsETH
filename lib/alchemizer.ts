@@ -954,7 +954,7 @@ export async function generateAlchmForCurrentMoment(): Promise<Record<string, an
     // Clean up old cache entries (keep only last 10)
     if (currentMomentCache.size > 10) {
       const oldestKey = currentMomentCache.keys().next().value
-      currentMomentCache.delete(oldestKey)
+      if (oldestKey !== undefined) currentMomentCache.delete(oldestKey)
     }
 
     return alchmData

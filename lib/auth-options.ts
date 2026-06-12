@@ -10,6 +10,11 @@ function getAuthSecret(): string {
   const configured = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET
   if (configured) return configured
   if (process.env.NODE_ENV === 'production') {
+    // `next build` evaluates this module while collecting page data; only a
+    // serving process must refuse to boot without a real secret.
+    if (process.env.NEXT_PHASE === 'phase-production-build') {
+      return 'build-phase-placeholder-secret-unused-at-runtime'
+    }
     throw new Error('AUTH_SECRET or NEXTAUTH_SECRET is required in production')
   }
   return DEV_AUTH_SECRET

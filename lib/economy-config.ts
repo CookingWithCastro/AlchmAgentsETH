@@ -36,6 +36,10 @@ export const CHAT_QUEST_REWARD = {
 export const AGENT_OPERATION_COSTS: Record<string, Partial<Record<TokenType, number>>> = {
   unified_chat: { Spirit: 5, Essence: 2 },
   report_generation: { Spirit: 10, Substance: 5 },
+  // The Forge — birthing a vessel into the shared roster (45 ESMS total,
+  // just under ev_reset; signed-in forging debits this, anonymous forging
+  // stays free behind its per-IP rate limit).
+  forge_agent: { Spirit: 15, Essence: 10, Matter: 10, Substance: 10 },
   // Cosmic Leveling — wipe an agent's Evolution Values to re-spec (50 ESMS total).
   ev_reset: { Spirit: 20, Essence: 10, Matter: 10, Substance: 10 },
   // Agentic action costs
@@ -47,3 +51,9 @@ export const AGENT_OPERATION_COSTS: Record<string, Partial<Record<TokenType, num
   agent_sacred_geometry_design: { Essence: 2, Substance: 3 },
   agent_energy_harmonic_calibration: { Spirit: 3, Matter: 2 },
 }
+
+// Jing Arena — completing a PAID duel round earns a small yield, capped per
+// UTC day. 7 total, strictly below the cheapest billed 2-agent round (8 at
+// full resonance discount), so even verified rounds are a net sink.
+export const DUEL_YIELD_REWARD = { spirit: 3, essence: 2, matter: 1, substance: 1 }
+export const DUEL_YIELD_DAILY_CAP = 3

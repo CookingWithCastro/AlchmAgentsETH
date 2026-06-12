@@ -45,6 +45,7 @@ interface ForgeResult {
 export function ForgeWizard() {
   const [step, setStep] = useState(0)
   const { communionTier, setCommunionTier } = useOccultStore()
+  const setBalances = useOccultStore(state => state.setBalances)
 
   // Vessel
   const [name, setName] = useState('')
@@ -127,7 +128,18 @@ export function ForgeWizard() {
       })
       const data = await res.json()
       if (!res.ok || !data.success) {
-        throw new Error(data.error ?? `The forge faltered (${res.status}).`)
+        // 402 = the forge tribute exceeded the reserves — Monica says it best.
+        const message =
+          res.status === 402 ? (data.monicaMessage ?? data.error) : (data.error ?? undefined)
+        throw new Error(message ?? `The forge faltered (${res.status}).`)
+      }
+      if (data.balances && typeof data.balances.spirit === 'number') {
+        setBalances({
+          spirit: Number(data.balances.spirit),
+          essence: Number(data.balances.essence),
+          matter: Number(data.balances.matter),
+          substance: Number(data.balances.substance),
+        })
       }
       setResult({
         agentId: data.agent?.id ?? data.agent?.agentId,
@@ -172,7 +184,7 @@ export function ForgeWizard() {
             <AlchemicalButton>Behold it in the Vault</AlchemicalButton>
           </Link>
           {result.agentId && (
-            <Link href={`/agent/${result.agentId}`}>
+            <Link href={`/vault/${result.agentId}`}>
               <AlchemicalButton variant="secondary">Commune Directly</AlchemicalButton>
             </Link>
           )}

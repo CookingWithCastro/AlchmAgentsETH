@@ -122,11 +122,11 @@ const tourCards = [
   },
   {
     icon: BrainCircuit,
-    title: 'Consciousness Lab',
+    title: 'Alchemical Labs',
     description:
-      'Explore consciousness vectors, kinetic interactions, and the alchemical underpinnings of agent intelligence.',
-    href: '/consciousness-demo',
-    cta: 'Explore Consciousness',
+      'Live telemetry — the consciousness trajectory across all communions and the agent league record.',
+    href: '/labs',
+    cta: 'Read the Record',
   },
   {
     icon: TrendingUp,

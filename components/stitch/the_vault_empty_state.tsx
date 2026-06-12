@@ -55,7 +55,7 @@ export default function TheVaultEmptyState() {
               alt="User Alchemical Avatar"
               className="w-full h-full object-cover"
               data-alt="A macro shot of swirling iridescent fluid, resembling a miniature galaxy trapped in a glass sphere. The lighting highlights the vibrant purple and gold hues, creating a mystical, techno-occult avatar image. High contrast, dark background."
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXmNXUx3AJ_5kVpCozn2fVNiRLrovNIL_nPk84Cy15ofOWy4fQVt8qZfGQZtYRu6ONIROBaE_YL-reXfLSjxz9TJRvE_k2DqO4gqrfQa24upenYNFEm-SQWEY9T4isbSJmoBYs2YvvU0oITfnqlC_xBaiTKK-LMNrlgfn93orL3EmBt7Vj6hiKakX4BqZfbkCzrpgH5NJGB9gb2TybK0TKIhLcN59LYKhxGrfm4UXKlBvD6WxpeJqGcl7HZn6JVtksMBi3zy7wuYo"
+              src="/stitch/stitch-698c27528e.png"
             />
           </div>
         </div>

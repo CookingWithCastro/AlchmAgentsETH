@@ -22,6 +22,13 @@ const PILLAR_ICON_OVERRIDES: Record<string, string> = {
   '/labs': 'biotech',
 }
 
+// Real subscription tier rendered in lore voice — no invented progression.
+const TIER_RANKS: Record<string, string> = {
+  free: 'Rank: Initiate',
+  alchemist: 'Rank: Alchemist',
+  master: 'Rank: Master',
+}
+
 /**
  * Techno-Occult v2 left sidebar (Stitch: jing_arena_synastry_pairing +
  * consciousness_council_alchemical_synthesis). User context, pillar
@@ -51,7 +58,11 @@ export function SideNavBar() {
         <h2 className="font-headline-sm text-headline-sm text-spirit-violet mb-1">
           {session?.user?.name ?? 'Digital Alchemist'}
         </h2>
-        <p className="font-label-mono text-label-mono text-tertiary">Rank: Adept III</p>
+        <p className="font-label-mono text-label-mono text-tertiary">
+          {session
+            ? (TIER_RANKS[(session.user as { tier?: string })?.tier ?? 'free'] ?? TIER_RANKS.free)
+            : 'Unattuned'}
+        </p>
       </div>
 
       {/* Pillar navigation */}

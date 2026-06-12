@@ -7,7 +7,7 @@ export const CICERO: CraftedAgent = {
   era: 'Ancient',
   specialization: 'Rhetoric & Statesmanship',
   birthData: {
-    date: new Date('-00106-01-01T12:00:00'),
+    date: new Date('-000106-01-01T12:00:00'),
     time: '12:00',
     location: { lat: 0, lon: 0, name: 'Unknown' },
   },

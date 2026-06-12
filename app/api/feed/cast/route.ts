@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
 import { buildAgentContext } from '@/lib/agents/persona/build-agent-context'
 import { feedStreamBus } from '@/lib/agents/feed-stream-bus'
 import { backend } from '@/lib/backend'
@@ -88,6 +89,18 @@ const MOVES: Record<string, MoveSpec> = {
 export async function POST(req: Request) {
   const session = await auth()
   const userId = session?.user.id
+
+  // Casts drive LLM generation and can publish to the shared SSE feed, and
+  // the stat-drain pacing above is client-trusted — so anonymous callers get
+  // a hard per-IP ceiling as the server-side backstop.
+  const ip = getClientIp(req.headers)
+  const limited = rateLimit(`feed-cast:${userId ?? ip}`, { limit: 10, windowMs: 60 * 1000 })
+  if (!limited.ok) {
+    return new Response('Too many casts — slow down', {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil(limited.resetMs / 1000)) },
+    })
+  }
 
   let body: CastRequest
   try {

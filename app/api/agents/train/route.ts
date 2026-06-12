@@ -12,12 +12,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { HistoricalAgentsService } from '@/lib/historical-agents-db'
 import { CORS_HEADERS, corsPreflight } from '@/lib/cors'
+import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
+
+// Training mutates the shared global roster without auth (the desktop
+// companion has no NextAuth session), so cap the grind rate per IP.
+const TRAIN_RATE_LIMIT = { limit: 30, windowMs: 10 * 60 * 1000 }
 
 export function OPTIONS() {
   return corsPreflight()
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req.headers)
+  const limited = rateLimit(`agents-train:${ip}`, TRAIN_RATE_LIMIT)
+  if (!limited.ok) {
+    return NextResponse.json(
+      { success: false, error: 'Too many training requests — slow down' },
+      {
+        status: 429,
+        headers: { ...CORS_HEADERS, 'Retry-After': String(Math.ceil(limited.resetMs / 1000)) },
+      }
+    )
+  }
+
   let body: { traineeAgentId?: string; mentorAgentId?: string }
   try {
     body = await req.json()
