@@ -22,6 +22,11 @@ export const AGENT_ENDPOINT_KEYS = {
   web: 'agent-endpoint[web]',
 } as const
 
+export const AGENT_PAYMENT_KEYS = {
+  address: 'agent-wallet[x402]',
+  chain: 'agent-payment-chain',
+} as const
+
 /** Custom record pointing at the agent's Walrus memory blob (a resolvable URL). */
 export const AGENT_MEMORY_KEY = 'agent-memory'
 
@@ -68,6 +73,8 @@ export interface AgentEnsRecordsInput {
   a2aUrl?: string
   mcpUrl?: string
   webUrl?: string
+  paymentAddress?: string
+  paymentChain?: string
   /** Resolvable URL to the agent's Walrus memory blob (→ `agent-memory` record). */
   memoryUrl?: string
   /** If the agent is registered on-chain, add the ENSIP-25 verification record. */
@@ -80,6 +87,8 @@ export function buildAgentTextRecords(input: AgentEnsRecordsInput): Record<strin
   if (input.a2aUrl) rec[AGENT_ENDPOINT_KEYS.a2a] = input.a2aUrl
   if (input.mcpUrl) rec[AGENT_ENDPOINT_KEYS.mcp] = input.mcpUrl
   if (input.webUrl) rec[AGENT_ENDPOINT_KEYS.web] = input.webUrl
+  if (input.paymentAddress) rec[AGENT_PAYMENT_KEYS.address] = input.paymentAddress
+  if (input.paymentChain) rec[AGENT_PAYMENT_KEYS.chain] = input.paymentChain
   if (input.memoryUrl) rec[AGENT_MEMORY_KEY] = input.memoryUrl
   if (input.registration) rec[agentRegistrationKey(input.registration)] = '1'
   return rec

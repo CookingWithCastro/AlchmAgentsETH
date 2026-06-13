@@ -110,6 +110,8 @@ function toSubname(seed: AgentSeed): NameStoneSubname {
       context: `${seed.name} — an Alchm agent.`,
       a2aUrl: a2aBase ? `${a2aBase}/a2a/${seed.label}` : undefined,
       webUrl: site ? `${site}/agents/${seed.label}` : undefined,
+      paymentAddress: address,
+      paymentChain: 'eip155:84532', // Base Sepolia CAIP-2 chain ID
     }),
   }
 }
