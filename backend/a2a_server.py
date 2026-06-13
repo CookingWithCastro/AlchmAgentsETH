@@ -17,19 +17,19 @@ the call in try/except so a missing/incompatible a2a-sdk never blocks startup.
 """
 
 import os
-from typing import Any, Awaitable, Callable, Dict, List
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Optional
 
 from a2a.types import AgentCard, AgentSkill, AgentCapabilities, AgentInterface
 from a2a.server.agent_execution import AgentExecutor, RequestContext
 from a2a.server.events import EventQueue
 from a2a.server.request_handlers import DefaultRequestHandler
-from a2a.server.tasks import InMemoryTaskStore
+from a2a.server.tasks import InMemoryTaskStore, TaskUpdater
 from a2a.server.routes import (
     create_agent_card_routes,
     create_jsonrpc_routes,
     add_a2a_routes_to_fastapi,
 )
-from a2a.helpers import new_text_message
+from a2a.helpers import new_text_message, new_text_part, new_task_from_user_message
 from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH, TransportProtocol
 
 try:  # AgentExtension may not exist on every a2a-sdk build
@@ -41,6 +41,7 @@ except Exception:  # noqa: BLE001
 X402_EXTENSION_URI = "https://github.com/google-a2a/a2a-x402/v0.1"
 
 RunChat = Callable[[str, str], Awaitable[str]]
+RunChatStream = Callable[[str, str], AsyncIterator[str]]
 
 
 def _public_base() -> str:
@@ -101,12 +102,53 @@ def _build_card(agent_id: str, name: str, description: str) -> AgentCard:
 class _ChatExecutor(AgentExecutor):
     """Wraps the in-process chat orchestration for a single agent."""
 
-    def __init__(self, agent_id: str, run_chat: RunChat) -> None:
+    def __init__(
+        self, agent_id: str, run_chat: RunChat, run_chat_stream: Optional[RunChatStream] = None
+    ) -> None:
         self._agent_id = agent_id
         self._run_chat = run_chat
+        self._run_chat_stream = run_chat_stream
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         text = context.get_user_input() or ""
+
+        # True token streaming: emit incremental artifact chunks via TaskUpdater so
+        # message/stream clients see tokens as they arrive. message/send clients get
+        # the assembled Task. Falls back to a single message if streaming can't start.
+        if self._run_chat_stream is not None and context.message is not None:
+            emitted = False
+            updater: Optional[TaskUpdater] = None
+            try:
+                # A Task must be enqueued before any status/artifact events.
+                task = context.current_task
+                if task is None:
+                    task = new_task_from_user_message(context.message)
+                    await event_queue.enqueue_event(task)
+                updater = TaskUpdater(event_queue, task.id, task.context_id)
+                await updater.start_work()
+                async for delta in self._run_chat_stream(self._agent_id, text):
+                    if not delta:
+                        continue
+                    await updater.add_artifact(
+                        [new_text_part(delta)],
+                        artifact_id="response",
+                        name="response",
+                        append=emitted,  # first chunk creates the artifact, rest append
+                        last_chunk=False,
+                    )
+                    emitted = True
+                await updater.complete()
+                return
+            except Exception as exc:  # noqa: BLE001
+                print(f"[a2a] stream failed for {self._agent_id}: {exc}", flush=True)
+                if emitted and updater is not None:
+                    try:
+                        await updater.complete()
+                    except Exception:  # noqa: BLE001
+                        pass
+                    return
+                # Nothing streamed yet → fall through to a single-message reply.
+
         try:
             reply = await self._run_chat(self._agent_id, text)
         except Exception as exc:  # noqa: BLE001 — surface a clean A2A message, never 500
@@ -117,7 +159,12 @@ class _ChatExecutor(AgentExecutor):
         raise NotImplementedError("cancellation is not supported")
 
 
-def register_a2a_routes(app, run_chat: RunChat, agents: List[Dict[str, Any]]) -> int:
+def register_a2a_routes(
+    app,
+    run_chat: RunChat,
+    agents: List[Dict[str, Any]],
+    run_chat_stream: Optional[RunChatStream] = None,
+) -> int:
     """Register A2A card + JSON-RPC routes for each agent. Returns the count mounted."""
     mounted = 0
     for agent in agents:
@@ -126,7 +173,7 @@ def register_a2a_routes(app, run_chat: RunChat, agents: List[Dict[str, Any]]) ->
         description = agent.get("description") or f"{name}, an Alchm agent."
         card = _build_card(agent_id, name, description)
         handler = DefaultRequestHandler(
-            agent_executor=_ChatExecutor(agent_id, run_chat),
+            agent_executor=_ChatExecutor(agent_id, run_chat, run_chat_stream),
             task_store=InMemoryTaskStore(),
             agent_card=card,
         )

@@ -22,6 +22,7 @@ Config (env): X402_PAY_TO (required to ENFORCE — unset = pass-through dev mode
   X402_GATE_PREFIX (/a2a/).
 """
 
+import asyncio
 import base64
 import json
 import os
@@ -29,6 +30,8 @@ from typing import Any, Dict
 
 import httpx
 from starlette.responses import JSONResponse
+
+import arc_facilitator  # local self-settle (Arc) — no external facilitator needed
 
 X402_VERSION = 1
 
@@ -109,8 +112,12 @@ def add_x402_gate(app) -> None:
         body = {"x402Version": X402_VERSION, "paymentPayload": payment_payload, "paymentRequirements": requirements}
 
         # 1) Verify the signed payment authorization (off-chain) before serving.
+        #    Self-settle mode (Arc): verify locally; else delegate to the facilitator.
         try:
-            verify = await _facilitator_post(f"{cfg['facilitator']}/verify", body)
+            if arc_facilitator.is_self_settle_enabled():
+                verify = await asyncio.to_thread(arc_facilitator.verify, payment_payload, requirements)
+            else:
+                verify = await _facilitator_post(f"{cfg['facilitator']}/verify", body)
         except Exception as exc:
             return JSONResponse(status_code=402, content={"x402Version": X402_VERSION, "accepts": [requirements], "error": f"verify failed: {exc}"})
         if not verify.get("isValid"):
@@ -122,7 +129,10 @@ def add_x402_gate(app) -> None:
 
         # 3) Settle on-chain (best-effort) and attach the receipt header.
         try:
-            settle = await _facilitator_post(f"{cfg['facilitator']}/settle", body)
+            if arc_facilitator.is_self_settle_enabled():
+                settle = await asyncio.to_thread(arc_facilitator.settle, payment_payload, requirements)
+            else:
+                settle = await _facilitator_post(f"{cfg['facilitator']}/settle", body)
             response.headers["X-PAYMENT-RESPONSE"] = base64.b64encode(json.dumps(settle).encode()).decode()
         except Exception as exc:  # noqa: BLE001 — payment verified; settlement retry is operational
             print(f"[x402] settle failed for {agent_id}: {exc}", flush=True)

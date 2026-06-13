@@ -61,12 +61,14 @@ export const ERC8004_ADDRESSES = {
   },
 } as const
 
-/** Circle Arc testnet — viem custom-chain params (gas paid in USDC-TESTNET). */
+/** Circle Arc testnet — viem custom-chain params (gas paid in USDC). Verified values. */
 export const ARC_TESTNET = {
-  id: 0, // ⚠️ confirm Arc testnet chainId before signing txs
+  id: 5042002, // eip155:5042002 (confirmed)
   name: 'Arc Testnet',
-  rpcUrl: 'https://rpc.testnet.arc.network/',
-  explorer: 'https://testnet.arcscan.app/',
+  rpcUrl: 'https://rpc.testnet.arc.network',
+  explorer: 'https://testnet.arcscan.app',
+  /** USDC on Arc (gas token). ERC-20 interface is 6-decimals — use for x402 amounts. */
+  usdc: '0x3600000000000000000000000000000000000000',
 } as const
 
 /**
@@ -346,7 +348,7 @@ export const RESERVED_METADATA_KEY_AGENT_WALLET = 'agentWallet'
 
 /** Canonical Solidity signature of an event, e.g. "Registered(uint256,string,address)". */
 export function eventSignature(ev: AbiEvent): string {
-  return `${ev.name}(${ev.inputs.map((i) => i.type).join(',')})`
+  return `${ev.name}(${ev.inputs.map(i => i.type).join(',')})`
 }
 
 function abiEvent(abi: Abi, name: string): AbiEvent {
@@ -381,7 +383,7 @@ export const TOPIC0 = {
 /** CAIP-style registry id used in the registration file's `registrations[].agentRegistry`. */
 export function agentRegistryCaip(
   registry: Address = IDENTITY_REGISTRY,
-  chainId: number = ETH_MAINNET_CHAIN_ID,
+  chainId: number = ETH_MAINNET_CHAIN_ID
 ): string {
   return `${CAIP_NAMESPACE}:${chainId}:${getAddress(registry)}`
 }
@@ -390,7 +392,7 @@ export function agentRegistryCaip(
 export function globalAgentId(
   agentId: bigint | number,
   registry: Address = IDENTITY_REGISTRY,
-  chainId: number = ETH_MAINNET_CHAIN_ID,
+  chainId: number = ETH_MAINNET_CHAIN_ID
 ): string {
   return `${agentRegistryCaip(registry, chainId)}#${agentId}`
 }

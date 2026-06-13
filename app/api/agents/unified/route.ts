@@ -92,6 +92,19 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
         }
 
         const personaCtx = parameters.agentId ? buildAgentContext(parameters.agentId) : null
+        const userMessage = parameters.message || parameters.userMessage
+
+        // Walrus memory: inject the agent's most-relevant past memories into the
+        // persona (no-op without MemWal). Never blocks chat — falls back to the raw block.
+        let personaBlock = personaCtx?.personaBlock
+        if (personaCtx && parameters.agentId && userMessage) {
+          const { augmentPersonaWithMemory } = await import('@/lib/walrus')
+          personaBlock = await augmentPersonaWithMemory(
+            personaCtx.personaBlock,
+            parameters.agentId,
+            userMessage
+          )
+        }
 
         // Premium gating: cap the requested model tier to the user's entitlement
         // (active subscription or validated BYOK key). Free users requesting a
@@ -127,7 +140,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
           sessionId: parameters.sessionId,
           userId: parameters.userId || userId,
           context: parameters.context,
-          systemPromptOverride: personaCtx?.personaBlock,
+          systemPromptOverride: personaBlock,
           personaCacheKey: personaCtx?.cacheKey,
           modelTier: effectiveTier,
           userProviderKeys,
@@ -149,6 +162,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
               },
             })
             .catch(err => console.warn('Failed to log unified agent interaction:', err))
+        }
+
+        // Walrus memory write-back: remember this exchange so future turns can recall
+        // it (MemWal-gated; fire-and-forget so it never blocks or fails the response).
+        if (chatData?.text && parameters.agentId && userMessage) {
+          import('@/lib/walrus')
+            .then(({ rememberConversation }) =>
+              rememberConversation(parameters.agentId, userMessage, chatData.text)
+            )
+            .catch(() => {})
         }
 
         // Cosmic Leveling: award XP/EVs from this conversation. Fire-and-forget

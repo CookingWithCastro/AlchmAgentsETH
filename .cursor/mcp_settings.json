@@ -21,6 +21,9 @@
       "headers": {
         "Authorization": "Bearer ${RENDER_API_KEY}"
       }
+    },
+    "world": {
+      "url": "https://docs.world.org/mcp"
     }
   }
 }

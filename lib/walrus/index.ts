@@ -7,3 +7,4 @@
 
 export * from './memory'
 export * from './persona-snapshot'
+export * from './recall'

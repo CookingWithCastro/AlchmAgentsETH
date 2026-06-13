@@ -43,6 +43,23 @@ curl -X POST http://localhost:8000/a2a/plato/ -H 'content-type: application/json
 
 If `a2a-sdk` isn't installed, the backend still boots — A2A is skipped with a log line.
 
+## Verify locally (uv — Python 3.11; a2a-sdk needs ≥3.10)
+
+System Python may be 3.9; use `uv` to get 3.11 without touching it. `smoke_test_a2a.py`
+verifies the A2A layer (card GET, `message/send`, incremental `message/stream`) without
+booting the full backend:
+
+```bash
+uv venv --python 3.11 .venv && source .venv/bin/activate
+uv pip install 'a2a-sdk[fastapi]' httpx     # isolated; or `-r backend/requirements.txt` for the full server
+cd backend && PYTHONPATH=. python smoke_test_a2a.py
+# → card status 200; message/stream → "SSE data events: 7 (artifact-update events: 4)"
+```
+
+Verified against **a2a-sdk 1.1.0**: streaming emits an initial Task, then one
+`TaskArtifactUpdateEvent` per token chunk (append), then completion — so
+`message/stream` clients get true incremental output.
+
 ## Payments (x402)
 
 - **Chain: Base Sepolia** (testnet USDC). x402 does **not** support Circle Arc — ERC-8004

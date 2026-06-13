@@ -2284,6 +2284,36 @@ async def _a2a_run_chat(agent_id: str, message: str) -> str:
     return resp.get("text", "") if isinstance(resp, dict) else getattr(resp, "text", "")
 
 
+async def _a2a_run_chat_stream(agent_id: str, message: str):
+    """Streaming in-process chat for the A2A executor — yields text deltas.
+
+    Persona-only (skips RAG/MCP hydration for low-latency token streaming); the
+    non-streaming path (_a2a_run_chat → /api/chat) keeps the full augmentation.
+    """
+    gen = database.get_db()
+    db = next(gen)
+    try:
+        db_agent = crud.get_agent(db, agent_id)
+        if not db_agent:
+            yield f"(agent {agent_id} not found)"
+            return
+        persona_block = prompts.get_agent_system_prompt(db_agent.__dict__)
+        tier = _resolve_tier(None)
+        anthropic_model = ANTHROPIC_TIER_MODEL.get(tier)
+        chain = providers.build_chain(tier, anthropic_model)
+        async for delta in providers.run_chain_stream(
+            chain=chain,
+            persona_block=persona_block,
+            rag_block="",
+            user_message=message,
+            agent_id=agent_id,
+            tier=tier,
+        ):
+            yield delta
+    finally:
+        gen.close()
+
+
 def _a2a_agent_list() -> List[Dict[str, Any]]:
     """Agents to expose over A2A. Default = a flagship set; override via A2A_AGENT_IDS."""
     ids_env = os.getenv("A2A_AGENT_IDS")
@@ -2318,7 +2348,9 @@ if os.getenv("A2A_ENABLED", "true").lower() == "true":
     try:
         from a2a_server import register_a2a_routes
 
-        _mounted = register_a2a_routes(app, _a2a_run_chat, _a2a_agent_list())
+        _mounted = register_a2a_routes(
+            app, _a2a_run_chat, _a2a_agent_list(), run_chat_stream=_a2a_run_chat_stream
+        )
         print(f"[a2a] mounted {_mounted} agent(s) at /a2a/<agentId>/.well-known/agent-card.json", flush=True)
     except Exception as exc:  # noqa: BLE001
         print(f"[a2a] A2A server not mounted ({exc}); install a2a-sdk[fastapi] to enable", flush=True)

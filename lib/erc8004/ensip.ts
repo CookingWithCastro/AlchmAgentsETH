@@ -30,6 +30,9 @@ export const AGENT_PAYMENT_KEYS = {
 /** Custom record pointing at the agent's Walrus memory blob (a resolvable URL). */
 export const AGENT_MEMORY_KEY = 'agent-memory'
 
+/** Custom record: operator is a World ID-verified unique human (nullifier or "true"). */
+export const AGENT_HUMAN_VERIFIED_KEY = 'human-verified'
+
 /** Minimal big-endian hex (even length) of a non-negative integer. */
 function minimalBytesHex(n: number): string {
   if (n < 0) throw new Error('chainId must be non-negative')
@@ -77,6 +80,8 @@ export interface AgentEnsRecordsInput {
   paymentChain?: string
   /** Resolvable URL to the agent's Walrus memory blob (→ `agent-memory` record). */
   memoryUrl?: string
+  /** Operator's World ID nullifier (or "true") → `human-verified` record. */
+  humanVerified?: string
   /** If the agent is registered on-chain, add the ENSIP-25 verification record. */
   registration?: RegistrationRef
 }
@@ -90,6 +95,7 @@ export function buildAgentTextRecords(input: AgentEnsRecordsInput): Record<strin
   if (input.paymentAddress) rec[AGENT_PAYMENT_KEYS.address] = input.paymentAddress
   if (input.paymentChain) rec[AGENT_PAYMENT_KEYS.chain] = input.paymentChain
   if (input.memoryUrl) rec[AGENT_MEMORY_KEY] = input.memoryUrl
+  if (input.humanVerified) rec[AGENT_HUMAN_VERIFIED_KEY] = input.humanVerified
   if (input.registration) rec[agentRegistrationKey(input.registration)] = '1'
   return rec
 }
