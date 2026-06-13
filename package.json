@@ -86,6 +86,7 @@
     "@circle-fin/app-kit": "^1.7.0",
     "@dynamic-labs/ethereum": "^4.88.5",
     "@dynamic-labs/sdk-react-core": "^4.88.5",
+    "@google-cloud/bigquery": "^8.3.1",
     "@prisma/client": "^6.17.1",
     "@prisma/extension-accelerate": "^2.0.2",
     "@privy-io/react-auth": "^3.28.0",
