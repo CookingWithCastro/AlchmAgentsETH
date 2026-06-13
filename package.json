@@ -82,6 +82,10 @@
     "@ai-sdk/openai": "^2.0.63",
     "@anthropic-ai/sdk": "^0.50.4",
     "@auth/prisma-adapter": "^2.10.0",
+    "@circle-fin/adapter-viem-v2": "^1.11.2",
+    "@circle-fin/app-kit": "^1.7.0",
+    "@dynamic-labs/ethereum": "^4.88.5",
+    "@dynamic-labs/sdk-react-core": "^4.88.5",
     "@prisma/client": "^6.17.1",
     "@prisma/extension-accelerate": "^2.0.2",
     "@privy-io/react-auth": "^3.28.0",
@@ -160,6 +164,7 @@
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^14.0.0",
     "vaul": "^1.1.2",
+    "viem": "^2.52.2",
     "ws": "^8.18.3",
     "zod": "^3.23.8",
     "zustand": "^5.0.13"

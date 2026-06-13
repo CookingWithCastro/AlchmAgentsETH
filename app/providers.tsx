@@ -32,15 +32,21 @@ function DesktopAwareAdminPanel() {
   return <FloatingAdminPanel />
 }
 
+import { DynamicCircleProvider } from '@/components/auth/DynamicCircleProvider'
+import { DynamicCircleHUD } from '@/components/auth/DynamicCircleHUD'
+
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider>
-      <SpacetimeProvider>
-        {children}
-        <Toaster />
-        <DesktopAwareAdminPanel />
-        <MonicaWrapper />
-      </SpacetimeProvider>
-    </SessionProvider>
+    <DynamicCircleProvider>
+      <SessionProvider>
+        <SpacetimeProvider>
+          {children}
+          <Toaster />
+          <DesktopAwareAdminPanel />
+          <MonicaWrapper />
+          <DynamicCircleHUD />
+        </SpacetimeProvider>
+      </SessionProvider>
+    </DynamicCircleProvider>
   )
 }
