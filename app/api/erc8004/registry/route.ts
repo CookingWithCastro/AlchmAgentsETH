@@ -53,21 +53,32 @@ export async function GET(req: NextRequest) {
 
     switch (type) {
       case 'registrations':
-        return NextResponse.json(jsonSafe({ type, agents: await indexer.getRegistrations({ agentId, limit }) }))
+        return NextResponse.json(
+          jsonSafe({ type, agents: await indexer.getRegistrations({ agentId, limit }) })
+        )
       case 'transfers':
-        return NextResponse.json(jsonSafe({ type, transfers: await indexer.getTransfers({ limit }) }))
+        return NextResponse.json(
+          jsonSafe({ type, transfers: await indexer.getTransfers({ limit }) })
+        )
       case 'metadata':
-        return NextResponse.json(jsonSafe({ type, metadata: await indexer.getMetadata({ agentId, key, limit }) }))
+        return NextResponse.json(
+          jsonSafe({ type, metadata: await indexer.getMetadata({ agentId, key, limit }) })
+        )
       case 'leaderboard':
       default:
-        return NextResponse.json(jsonSafe({ type: 'leaderboard', agents: await indexer.buildLeaderboard({ limit }) }))
+        return NextResponse.json(
+          jsonSafe({ type: 'leaderboard', agents: await indexer.buildLeaderboard({ limit }) })
+        )
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'BigQuery indexing failed'
     console.warn('[erc8004/registry] index failed:', message)
     return NextResponse.json(
-      { error: message, hint: 'Set GOOGLE_CLOUD_PROJECT + ADC creds and run `bun add @google-cloud/bigquery`.' },
-      { status: 503 },
+      {
+        error: message,
+        hint: 'Set GOOGLE_CLOUD_PROJECT + ADC creds and run `bun add @google-cloud/bigquery`.',
+      },
+      { status: 503 }
     )
   }
 }

@@ -31,6 +31,7 @@ contract EsmsToken is
     UUPSUpgradeable
 {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
 
@@ -80,6 +81,24 @@ contract EsmsToken is
         claimed[claimId] = true;
         _mintBatch(to, ids, amounts, "");
         emit ClaimExecuted(to, claimId, ids, amounts);
+    }
+
+    /**
+     * @notice Burn ESMS from `from`. Used by sanctioned sinks (the Constellation
+     * AMM) when a holder provides liquidity to or swaps into a pool. Soulbound is
+     * preserved: a burn sends to 0x0, which {_update} already permits — players
+     * still cannot transfer to one another, only a BURNER (a vetted pool) may
+     * debit a balance, and only inside a call the holder themselves initiated.
+     * @param from     the holder whose balance is debited
+     * @param ids      token ids (0..3)
+     * @param amounts  amounts (18-dp scaled)
+     */
+    function burn(
+        address from,
+        uint256[] calldata ids,
+        uint256[] calldata amounts
+    ) external onlyRole(BURNER_ROLE) {
+        _burnBatch(from, ids, amounts);
     }
 
     function pause() external onlyRole(PAUSER_ROLE) {

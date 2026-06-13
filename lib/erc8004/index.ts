@@ -9,5 +9,7 @@
 
 export * from './registry'
 export * from './registration-file'
+export * from './ensip'
+export * from './register-client'
 export * from './bigquery-queries'
 export * from './bigquery-indexer'

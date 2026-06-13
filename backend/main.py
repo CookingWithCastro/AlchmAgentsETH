@@ -2271,5 +2271,58 @@ async def admin_mcp_summary(
         raise HTTPException(status_code=500, detail=f"mcp-summary aggregation failed: {exc}")
 
 
+# ── A2A (Agent2Agent) server — expose agents over A2A, x402-paid (USDC) ──────
+async def _a2a_run_chat(agent_id: str, message: str) -> str:
+    """In-process chat call for the A2A executor (reuses the full orchestration)."""
+    req = schemas.ChatRequest(agentId=agent_id, message=message)
+    gen = database.get_db()
+    db = next(gen)
+    try:
+        resp = await chat(req, db)
+    finally:
+        gen.close()
+    return resp.get("text", "") if isinstance(resp, dict) else getattr(resp, "text", "")
+
+
+def _a2a_agent_list() -> List[Dict[str, Any]]:
+    """Agents to expose over A2A. Default = a flagship set; override via A2A_AGENT_IDS."""
+    ids_env = os.getenv("A2A_AGENT_IDS")
+    flagship = ["plato", "aristotle", "socrates", "homer", "marie-curie", "leonardo-da-vinci"]
+    ids = [s.strip() for s in ids_env.split(",") if s.strip()] if ids_env else flagship
+    agents: List[Dict[str, Any]] = []
+    gen = database.get_db()
+    db = next(gen)
+    try:
+        for aid in ids:
+            try:
+                row = crud.get_agent(db, aid)
+            except Exception:
+                row = None
+            name = getattr(row, "name", None) or aid.replace("-", " ").title()
+            title = getattr(row, "title", None) if row is not None else None
+            description = f"{name} — {title}" if title else f"{name}, an Alchm planetary/historical agent."
+            agents.append({"id": aid, "name": name, "description": description})
+    finally:
+        gen.close()
+    return agents
+
+
+if os.getenv("A2A_ENABLED", "true").lower() == "true":
+    try:
+        from x402_middleware import add_x402_gate
+
+        add_x402_gate(app)
+        print("[x402] payment gate active on /a2a/ (enforced when X402_PAY_TO is set)", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[x402] gate not added: {exc}", flush=True)
+    try:
+        from a2a_server import register_a2a_routes
+
+        _mounted = register_a2a_routes(app, _a2a_run_chat, _a2a_agent_list())
+        print(f"[a2a] mounted {_mounted} agent(s) at /a2a/<agentId>/.well-known/agent-card.json", flush=True)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[a2a] A2A server not mounted ({exc}); install a2a-sdk[fastapi] to enable", flush=True)
+
+
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

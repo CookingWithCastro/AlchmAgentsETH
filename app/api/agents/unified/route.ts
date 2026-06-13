@@ -39,6 +39,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
 
       case 'create': {
         const createData = await backend.agents.create(parameters)
+        // Fire-and-forget: assign the new agent its gasless ENS subname (ENSIP-26
+        // records). No-ops unless NameStone is configured; never blocks creation.
+        import('@/lib/namestone')
+          .then(({ registerAgentSubnameOnCreate }) =>
+            registerAgentSubnameOnCreate(createData as any, parameters)
+          )
+          .catch(err => console.warn('ENS subname registration skipped:', err))
         return NextResponse.json({ success: true, data: createData, timestamp })
       }
 

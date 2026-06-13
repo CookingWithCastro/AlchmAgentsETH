@@ -14,11 +14,13 @@ export function DynamicCircleHUD() {
     <Card className="fixed bottom-4 left-4 z-50 p-3 shadow-lg bg-black/80 backdrop-blur-md border border-zinc-800 text-white rounded-xl min-w-[240px]">
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between border-b border-zinc-800 pb-2 mb-1">
-          <h4 className="text-xs font-semibold tracking-wider text-zinc-300 uppercase">Operator Auth</h4>
+          <h4 className="text-xs font-semibold tracking-wider text-zinc-300 uppercase">
+            Operator Auth
+          </h4>
           {primaryWallet && (
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-6 w-6 text-zinc-500 hover:text-white"
               onClick={() => refreshBalances()}
               disabled={isInitializing}
@@ -30,14 +32,16 @@ export function DynamicCircleHUD() {
 
         <div className="flex flex-col gap-2">
           <DynamicWidget />
-          
+
           {primaryWallet && (
             <div className="mt-2 pt-2 border-t border-zinc-800/50">
               <div className="flex items-center gap-2 mb-2">
                 <Coins size={14} className="text-emerald-400" />
-                <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-tight">Unified USDC Liquidity</span>
+                <span className="text-[10px] font-medium text-zinc-400 uppercase tracking-tight">
+                  Unified USDC Liquidity
+                </span>
               </div>
-              
+
               {isInitializing ? (
                 <div className="flex items-center gap-2 text-zinc-500 py-1">
                   <Loader2 size={12} className="animate-spin" />
