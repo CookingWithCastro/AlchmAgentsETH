@@ -23,6 +23,26 @@ export const ESMS_LABEL: Record<EsmsId, string> = {
   3: 'Substance',
 }
 
+/** ESMS glyphs by id (match the Stitch designs). */
+export const ESMS_GLYPH: Record<EsmsId, string> = {
+  0: '△', // Spirit / Fire
+  1: '▽', // Essence / Water
+  2: '⬠', // Matter / Earth
+  3: '◇', // Substance / Air
+}
+
+/** ESMS color by id (Fire/Water/Earth/Air). */
+export const ESMS_COLOR: Record<EsmsId, string> = {
+  0: '#ff6b4a',
+  1: '#4aa8ff',
+  2: '#5fd08a',
+  3: '#c9a3ff',
+}
+
+/** Shared cosmic theme tokens (gold accent + glass surfaces). */
+export const GOLD = '#ffd76a'
+export const GOLD_GLOW = '#fff3b0'
+
 export const PLANET_GLYPH: Record<PlanetName, string> = {
   Sun: '☉',
   Moon: '☽',

@@ -65,6 +65,34 @@ export const ERC20_ABI = [
   },
 ] as const
 
+/** Minimal ERC-1155 read surface for the Arc ESMS token (soulbound Spirit/Essence/Matter/Substance). */
+export const ESMS_ERC1155_ABI = [
+  {
+    type: 'function',
+    name: 'balanceOfBatch',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'accounts', type: 'address[]' },
+      { name: 'ids', type: 'uint256[]' },
+    ],
+    outputs: [{ type: 'uint256[]' }],
+  },
+  {
+    type: 'function',
+    name: 'balanceOf',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'account', type: 'address' },
+      { name: 'id', type: 'uint256' },
+    ],
+    outputs: [{ type: 'uint256' }],
+  },
+] as const
+
+export function isArcEsmsConfigured(): boolean {
+  return /^0x[0-9a-fA-F]{40}$/.test(ARC_ESMS_ADDRESS)
+}
+
 const STAR_YIELD_TUPLE = {
   name: 'y',
   type: 'tuple',

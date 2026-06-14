@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
-import { createPublicClient, createWalletClient, custom, formatUnits, http, parseUnits } from 'viem'
+import { createPublicClient, formatUnits, http, parseUnits } from 'viem'
 import {
-  ARC_CHAIN_ID,
   ARC_USDC,
   ERC20_ABI,
   STAR_VAULT_ABI,
@@ -13,6 +12,7 @@ import {
   arcChain,
   isStarVaultConfigured,
 } from './arc'
+import { getArcWalletClient } from './wallet'
 import type { LivePlanet, NatalAffinity, ObserverLocation, StakeableStar } from './types'
 
 export interface StarPosition {
@@ -76,24 +76,7 @@ export function useStarStaking(star: StakeableStar | null, ctx: StakingContext =
     void refresh()
   }, [refresh])
 
-  const getWalletClient = useCallback(async () => {
-    if (!primaryWallet) throw new Error('Connect a wallet first')
-    const provider = await (
-      primaryWallet.connector as unknown as { getProvider: () => Promise<unknown> }
-    ).getProvider()
-    try {
-      await (
-        primaryWallet as unknown as { switchNetwork?: (id: number) => Promise<void> }
-      ).switchNetwork?.(ARC_CHAIN_ID)
-    } catch {
-      /* wallet may need Arc added manually; the tx will surface a clear error */
-    }
-    return createWalletClient({
-      account: primaryWallet.address as `0x${string}`,
-      chain: arcChain,
-      transport: custom(provider as Parameters<typeof custom>[0]),
-    })
-  }, [primaryWallet])
+  const getWalletClient = useCallback(() => getArcWalletClient(primaryWallet), [primaryWallet])
 
   const stake = useCallback(
     async (usdcAmount: string) => {
