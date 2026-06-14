@@ -22,6 +22,11 @@ vi.mock('@/lib/agent-cache-system', () => ({
   buildCacheContext: vi.fn(),
 }))
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(async () => null),
+  requireAuthOrRedirect: vi.fn(async () => null),
+}))
+
 vi.mock('@/lib/agents/sacred-stats-prompt-generator', () => ({
   generateConsciousnessInformedPrompt: vi.fn(() => 'Mocked historical prompt'),
 }))

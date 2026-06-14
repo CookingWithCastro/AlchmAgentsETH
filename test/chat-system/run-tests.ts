@@ -75,12 +75,7 @@ class ChatSystemTestRunner {
       )
       this.results.push(historicalResult)
 
-      // Planetary Wisdom Chat Tests
-      const planetaryResult = await this.runTestSuite(
-        'Planetary Wisdom Chat',
-        'test/chat-system/unit/planetary-wisdom-chat.test.tsx'
-      )
-      this.results.push(planetaryResult)
+      // Planetary Wisdom Chat: skipped (unit test file does not exist)
 
       // Consciousness Laboratory Chat Tests
       const labResult = await this.runTestSuite(
@@ -139,7 +134,7 @@ class ChatSystemTestRunner {
       console.log(`  Running ${suiteName}...`)
 
       // Run vitest on specific file
-      const command = `bun vitest run ${testFile} --reporter=json --silent`
+      const command = `bun vitest run ${testFile} --config vitest.unit.config.ts --reporter=json --silent`
       const output = execSync(command, { encoding: 'utf-8', maxBuffer: 1024 * 1024 * 10 })
 
       // Parse vitest JSON output
@@ -190,9 +185,9 @@ class ChatSystemTestRunner {
       if (jsonLine) {
         const results = JSON.parse(jsonLine)
         return {
-          passed: results.testResults?.numPassedTests || 0,
-          failed: results.testResults?.numFailedTests || 0,
-          skipped: results.testResults?.numPendingTests || 0,
+          passed: results.numPassedTests || 0,
+          failed: results.numFailedTests || 0,
+          skipped: results.numPendingTests || 0,
           coverage: results.coverageMap ? this.calculateCoverage(results.coverageMap) : undefined,
         }
       }

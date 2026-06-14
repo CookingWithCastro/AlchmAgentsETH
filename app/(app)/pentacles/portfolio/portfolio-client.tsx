@@ -92,33 +92,59 @@ export default function PortfolioClient() {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 18px 120px', color: '#e7e9ff' }}>
       <header style={{ marginBottom: 24 }}>
-        <div
+        <h1
           style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            flexWrap: 'wrap',
-            gap: 8,
+            fontFamily: 'Playfair Display, serif',
+            fontSize: 34,
+            fontWeight: 700,
+            color: GOLD,
+            margin: 0,
           }}
         >
-          <h1
-            style={{
-              fontFamily: 'Playfair Display, serif',
-              fontSize: 34,
-              fontWeight: 700,
-              color: GOLD,
-              margin: 0,
-            }}
-          >
-            Your constellations
-          </h1>
-          <Link href="/pentacles" style={{ color: '#9aa0d8', fontSize: 13 }}>
-            ← back to the sky map
-          </Link>
-        </div>
+          Your constellations
+        </h1>
         <p style={{ color: '#9aa0d8', margin: '6px 0 0', maxWidth: 640 }}>
           The stars holding your staked USDC. Align with the ascendant to maximize essence accrual.
         </p>
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            marginTop: 12,
+            borderBottom: '1px solid rgba(122, 128, 200, 0.2)',
+            paddingBottom: 10,
+          }}
+        >
+          <Link
+            href="/pentacles"
+            style={{
+              color: '#9aa0d8',
+              fontWeight: 500,
+              textDecoration: 'none',
+              fontSize: 14,
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#e7e9ff')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#9aa0d8')}
+          >
+            Sky Vaults
+          </Link>
+          <span style={{ color: '#ffd76a', fontWeight: 600, fontSize: 14 }}>Your Portfolio</span>
+          <Link
+            href="/pentacles/connect"
+            style={{
+              color: '#9aa0d8',
+              fontWeight: 500,
+              textDecoration: 'none',
+              fontSize: 14,
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#e7e9ff')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#9aa0d8')}
+          >
+            Arc Onboarding
+          </Link>
+        </div>
       </header>
 
       {/* Stat cards */}

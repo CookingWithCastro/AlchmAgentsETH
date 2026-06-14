@@ -40,6 +40,11 @@ vi.mock('@/lib/agent-cache-system', () => ({
   buildCacheContext: vi.fn(),
 }))
 
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(async () => null),
+  requireAuthOrRedirect: vi.fn(async () => null),
+}))
+
 vi.mock('@/lib/consciousness-persistence', () => ({
   consciousnessPersistence: {
     updateAgentMemory: vi.fn(),
