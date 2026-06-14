@@ -4,13 +4,13 @@
 
 ## Live links
 
-| What                      | Link                                                   |
-| ------------------------- | ------------------------------------------------------ |
-| Live app                  | `https://<vercel-url>` _(fill after deploy)_           |
-| Demo video                | `<youtube/loom link>` _(record with the script below)_ |
-| Repo                      | this repository                                        |
-| Canonical integration map | [`INTEGRATIONS.md`](INTEGRATIONS.md)                   |
-| Star Vaults design        | [`STAR_STAKING.md`](STAR_STAKING.md)                   |
+| What                      | Link                                                       |
+| ------------------------- | ---------------------------------------------------------- |
+| Live app                  | **https://alchm-agents-eth.vercel.app** (try `/pentacles`) |
+| Demo video                | `<youtube/loom link>` _(record with the script below)_     |
+| Repo                      | this repository                                            |
+| Canonical integration map | [`INTEGRATIONS.md`](INTEGRATIONS.md)                       |
+| Star Vaults design        | [`STAR_STAKING.md`](STAR_STAKING.md)                       |
 
 ## Deployed contracts (Circle Arc testnet · chainId 5042002)
 
