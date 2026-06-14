@@ -8,6 +8,9 @@ import PentacleSkyMap from '@/components/staking/PentacleSkyMap'
 import StarStakePanel from '@/components/staking/StarStakePanel'
 import ZonePoolsPanel from '@/components/staking/ZonePoolsPanel'
 import ZonePoolLP from '@/components/staking/ZonePoolLP'
+import CosmicWallet from '@/components/staking/CosmicWallet'
+import SwapEssenceModal from '@/components/staking/SwapEssenceModal'
+import useEsmsBalances from '@/lib/staking/useEsmsBalances'
 import { computeYieldRate } from '@/lib/staking/yield-rate'
 import { deriveSky } from '@/lib/staking/zone-pools'
 import { zoneForAltAz } from '@/lib/staking/pentacle-geometry'
@@ -36,6 +39,9 @@ export default function PentaclesClient() {
   const [selectedHipId, setSelectedHipId] = useState<number | null>(null)
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null)
   const [now, setNow] = useState<Date>(() => new Date())
+  const [swapOpen, setSwapOpen] = useState(false)
+
+  const esms = useEsmsBalances()
 
   // Tick the sky every 15s so visibility, ascendant + activations stay live.
   useEffect(() => {
@@ -114,6 +120,17 @@ export default function PentaclesClient() {
     [stars, yields]
   )
 
+  const handleScrollToLP = () => {
+    if (selectedZoneId === null && sky.zones.size > 0) {
+      const activeZone = Array.from(sky.zones.values()).find(z => z.pools.length > 0)
+      setSelectedZoneId(activeZone ? activeZone.zoneId : 0)
+    }
+    const el = document.getElementById('zone-pool-lp-section')
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' })
+    }
+  }
+
   return (
     <div style={{ maxWidth: 1180, margin: '0 auto', padding: '24px 18px', color: '#e7e9ff' }}>
       <header style={{ marginBottom: 16 }}>
@@ -180,6 +197,14 @@ export default function PentaclesClient() {
             gap: 16,
           }}
         >
+          <CosmicWallet
+            onOpenSwap={() => setSwapOpen(true)}
+            onScrollToLP={handleScrollToLP}
+            balances={esms.balances}
+            loading={esms.loading}
+            connected={esms.connected}
+            address={esms.address}
+          />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <label style={{ fontSize: 13, color: '#9aa0d8' }}>Your dominant element:</label>
             <select
@@ -217,10 +242,12 @@ export default function PentaclesClient() {
             stars={stars}
           />
 
-          <ZonePoolLP
-            zone={selectedZoneId != null ? (sky.zones.get(selectedZoneId) ?? null) : null}
-            ctx={{ observer, planets }}
-          />
+          <div id="zone-pool-lp-section">
+            <ZonePoolLP
+              zone={selectedZoneId != null ? (sky.zones.get(selectedZoneId) ?? null) : null}
+              ctx={{ observer, planets }}
+            />
+          </div>
 
           <div
             style={{
@@ -283,6 +310,15 @@ export default function PentaclesClient() {
           </div>
         </div>
       </div>
+      <SwapEssenceModal
+        isOpen={swapOpen}
+        onClose={() => setSwapOpen(false)}
+        skyPools={sky.pools}
+        observer={observer}
+        planets={planets}
+        balances={esms.balances}
+        refreshBalances={esms.refresh}
+      />
     </div>
   )
 }
