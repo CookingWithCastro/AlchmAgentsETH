@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { useDynamicContext } from '@dynamic-labs/sdk-react-core'
+import { useDynamicContext, DynamicWidget } from '@dynamic-labs/sdk-react-core'
 import {
   Sparkles,
   Globe,
@@ -254,8 +254,9 @@ export default function LandingPage() {
 
   const [verifyingWorldId, setVerifyingWorldId] = useState(false)
   useEffect(() => {
+    let timer: NodeJS.Timeout | undefined
     if (verifyingWorldId) {
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setIsVerified(true)
         const mockNullifier = '0x8004A818' + Math.random().toString(16).substring(2, 10) + '2007'
         setNullifier(mockNullifier)
@@ -263,7 +264,9 @@ export default function LandingPage() {
         localStorage.setItem('world_id_nullifier', mockNullifier)
         setVerifyingWorldId(false)
       }, 2000)
-      return () => clearTimeout(timer)
+    }
+    return () => {
+      if (timer) clearTimeout(timer)
     }
   }, [verifyingWorldId])
 

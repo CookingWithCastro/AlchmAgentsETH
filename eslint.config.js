@@ -32,6 +32,7 @@ const IGNORED_PATTERNS = [
   'scratch/**',
   'design/prototypes/**',
   'backend/**',
+  'contracts/**',
 
   // Ignore all contents under lib/ and app/ by default to prevent noisy legacy lint issues
   'lib/**/*',
