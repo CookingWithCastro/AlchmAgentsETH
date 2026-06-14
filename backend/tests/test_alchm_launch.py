@@ -76,6 +76,15 @@ def test_config_status_surfaces_launch_mode(monkeypatch):
     assert status["publishedPackage"] == "@alchm/mcp-server"
 
 
+def test_default_server_path_supports_shallow_container_layout(monkeypatch):
+    monkeypatch.delenv("ALCHM_MCP_SERVER_PATH", raising=False)
+    monkeypatch.setattr(alchm_mcp, "__file__", "/app/alchm_mcp.py")
+
+    server_path = alchm_mcp._default_server_path()
+
+    assert server_path == alchm_mcp.Path("/WhatToEatNext-master/mcp-server/src/index.ts")
+
+
 # --------------------------------------------------------------------------
 # Launch circuit breaker
 # --------------------------------------------------------------------------

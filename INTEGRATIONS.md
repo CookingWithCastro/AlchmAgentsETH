@@ -222,7 +222,7 @@ Fill in `.env` (placeholders are present; values redacted here):
 | `GOOGLE_CLOUD_PROJECT` + `GOOGLE_APPLICATION_CREDENTIALS`                                                                                    | BigQuery ranking        | 🔑        |
 | `NAMESTONE_API_KEY` (set) + `NAMESTONE_DOMAIN` + resolver/enable                                                                             | ENS subnames            | 🔑 domain |
 | `X402_SELF_SETTLE=true` · `X402_NETWORK=eip155:5042002` · `X402_ASSET=0x3600…` · `X402_PAY_TO` · `ARC_OPERATOR_PRIVATE_KEY` (Arc USDC = gas) | x402 self‑settle on Arc | 🔑        |
-| `ARC_TESTNET_CHAIN_ID=5042002` · `ARC_TESTNET_RPC_URL=https://rpc.testnet.arc.network`                                                       | Arc                     | ✅ set    |
+| `ARC_TESTNET_CHAIN_ID=5042002` · `ARC_TESTNET_RPC_URL=https://rpc.testnet.arc.io`                                                            | Arc                     | ✅ set    |
 | `NEXT_PUBLIC_WORLD_APP_ID` (staging set) + `NEXT_PUBLIC_WORLD_ACTION`                                                                        | World ID                | 🔑        |
 | `ONEINCH_API_KEY` · `CCTP_ARC_DOMAIN` (confirm 26 vs 7)                                                                                      | onramp                  | 🔑        |
 | `MEMWAL_PRIVATE_KEY` + `MEMWAL_ACCOUNT_ID` (optional — HTTP fallback works without)                                                          | encrypted memory        | optional  |

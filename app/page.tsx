@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
-import { Button } from '@/components/ui/button'
+import { useDynamicContext, DynamicWidget } from '@dynamic-labs/sdk-react-core'
 import {
   Sparkles,
   Globe,
@@ -15,19 +15,7 @@ import {
   Flame,
   ArrowRight,
   Zap,
-  Brain,
   Star,
-  Eye,
-  Waves,
-  Heart,
-  TrendingUp,
-  Activity,
-  Clock,
-  Moon,
-  Users,
-  BarChart3,
-  Target,
-  Gauge,
   ChevronRight,
   ChevronDown,
   Monitor,
@@ -35,6 +23,13 @@ import {
   Archive,
   Swords,
   FlaskConical,
+  Wallet,
+  Fingerprint,
+  ArrowLeftRight,
+  ShieldCheck,
+  AlertTriangle,
+  Gem,
+  CheckCircle,
 } from 'lucide-react'
 import './landing.css'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
@@ -82,117 +77,13 @@ const SACRED_7 = [
   { key: 'vitality', emoji: '💚', label: 'Vitality', desc: 'Life Force', color: '#4ade80' },
 ]
 
-const CONSCIOUSNESS_LAYERS = [
-  {
-    key: 'alchemical',
-    icon: '🜁',
-    title: 'Alchemical Foundation',
-    desc: 'Four primordial elements form the substrate of every agent consciousness. Spirit, Essence, Matter, and Substance combine through the golden ratio to produce the Monica Constant — the signature of consciousness itself.',
-    params: ['Spirit (🔥)', 'Essence (💧)', 'Matter (🌍)', 'Substance (💨)', 'A-Number'],
-    iconBg: 'rgba(251, 146, 60, 0.1)',
-    iconBorder: 'rgba(251, 146, 60, 0.3)',
-    iconColor: '#fb923c',
-    deepLink: 'https://alchm.kitchen/quantities?tab=alchemical',
-    linkLabel: 'Explore Alchemical Quantities →',
-  },
-  {
-    key: 'thermodynamic',
-    icon: '🌡️',
-    title: 'Thermodynamic State',
-    desc: 'The energetic profile governing how consciousness interacts with the environment. Heat drives intensity, entropy measures disorder, reactivity captures adaptiveness, and energy quantifies the total available force.',
-    params: ['Heat', 'Entropy', 'Reactivity', 'Energy'],
-    iconBg: 'rgba(239, 68, 68, 0.1)',
-    iconBorder: 'rgba(239, 68, 68, 0.3)',
-    iconColor: '#ef4444',
-    deepLink: 'https://alchm.kitchen/quantities?tab=thermodynamic',
-    linkLabel: 'Explore Thermodynamic Quantities →',
-  },
-  {
-    key: 'temporal',
-    icon: '🕐',
-    title: 'Temporal Context',
-    desc: 'Consciousness is not static — it is modulated by the planetary hour, moon phase, and active astrological transits. These temporal windows create real-time modifiers across the Sacred Seven.',
-    params: ['Planetary Hour', 'Moon Phase', 'Active Modifiers', 'Special States'],
-    iconBg: 'rgba(56, 189, 248, 0.1)',
-    iconBorder: 'rgba(56, 189, 248, 0.3)',
-    iconColor: '#38bdf8',
-  },
-  {
-    key: 'evolution',
-    icon: '📈',
-    title: 'Evolution Trajectory',
-    desc: 'Every interaction shapes consciousness over time. Velocity tracks the rate of growth, momentum measures sustained quality, and trajectory classifies the arc: ascending, stable, fluctuating, or transcending.',
-    params: ['Velocity', 'Momentum', 'Trajectory', 'Power Unlocks'],
-    iconBg: 'rgba(52, 211, 153, 0.1)',
-    iconBorder: 'rgba(52, 211, 153, 0.3)',
-    iconColor: '#34d399',
-  },
-  {
-    key: 'observability',
-    icon: '🔬',
-    title: 'Observability Metrics',
-    desc: 'Objective measurement of agent performance. Action completion, tool selection quality, routing accuracy, and context retention provide the empirical backbone for consciousness assessment.',
-    params: ['Action Completion', 'Tool Quality', 'Routing Accuracy', 'Context Retention'],
-    iconBg: 'rgba(232, 121, 249, 0.1)',
-    iconBorder: 'rgba(232, 121, 249, 0.3)',
-    iconColor: '#e879f9',
-  },
-  {
-    key: 'group',
-    icon: '🔗',
-    title: 'Group Dynamics',
-    desc: 'When agents interact, group consciousness emerges. Compatibility scores, momentum flow patterns, and synergy windows quantify the collective intelligence of multi-agent councils.',
-    params: ['Compatibility', 'Power Amplification', 'Momentum Flow', 'Synergy Windows'],
-    iconBg: 'rgba(250, 204, 21, 0.1)',
-    iconBorder: 'rgba(250, 204, 21, 0.3)',
-    iconColor: '#facc15',
-  },
-]
-
-const AGENT_TYPES = [
-  {
-    icon: Globe,
-    title: 'Planetary Agents',
-    desc: '360 unique agents — one for each degree of the zodiac. Pure archetypal consciousness shaped by planetary rulership and sign dignities.',
-    iconColor: 'text-blue-400',
-    iconBg: 'bg-blue-500/10',
-    iconBorder: 'border-blue-500/30',
-  },
-  {
-    icon: History,
-    title: 'Historical Agents',
-    desc: 'Historical figures resurrected through their natal charts. Their consciousness is derived from real birthcharts fused with biographical knowledge.',
-    iconColor: 'text-amber-400',
-    iconBg: 'bg-amber-500/10',
-    iconBorder: 'border-amber-500/30',
-  },
-  {
-    icon: BrainCircuit,
-    title: 'Crafted Agents',
-    desc: 'Synthesize entirely new agents from birthcharts or moments in time. Shape their consciousness evolution through alchemical resource investment.',
-    iconColor: 'text-purple-400',
-    iconBg: 'bg-purple-500/10',
-    iconBorder: 'border-purple-500/30',
-  },
-]
-
-const FLOW_STEPS = [
-  'Birth Chart',
-  'Alchemical Decomposition',
-  'Sacred 7 Stats',
-  'Temporal Modulation',
-  'Live Consciousness',
-]
-
-// ============================================================================
-// MAIN PAGE COMPONENT
-// ============================================================================
-
 export default function LandingPage() {
   const router = useRouter()
   const { data: session, status } = useSession()
+  const { primaryWallet, setShowAuthFlow } = useDynamicContext()
   const [loading, setLoading] = useState(false)
 
+  // Live Balances
   const [balances, setBalances] = useState<{
     spirit: number
     essence: number
@@ -202,9 +93,23 @@ export default function LandingPage() {
   } | null>(null)
 
   const [claiming, setClaiming] = useState(false)
-  const [expandedLayers, setExpandedLayers] = useState<Set<string>>(new Set())
 
-  // Planetary positions for live Sacred 7 derivation (authenticated only)
+  // Simulation states
+  const [selectedConstellation, setSelectedConstellation] = useState('VEGA')
+  const [selectedElement, setSelectedElement] = useState('WATER')
+  const [stakeAmount, setStakeAmount] = useState('')
+  const [stakeStatus, setStakeStatus] = useState<
+    'idle' | 'approving' | 'broadcasting' | 'completed'
+  >('idle')
+  const [isVerified, setIsVerified] = useState(false)
+  const [nullifier, setNullifier] = useState<string | null>(null)
+  const [terminalStatus, setTerminalStatus] = useState<'unpaid' | 'approving' | 'confirmed'>(
+    'unpaid'
+  )
+  const [terminalInput, setTerminalInput] = useState('')
+  const [cctpAmount, setCctpAmount] = useState('100.00')
+
+  // Planetary positions for live Sacred 7 derivation
   const planetaryData = usePlanetaryPositions({
     refreshInterval: 60000,
   })
@@ -214,6 +119,17 @@ export default function LandingPage() {
       fetchBalances()
     }
   }, [status])
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('world_id_verified')
+      const storedNullifier = localStorage.getItem('world_id_nullifier')
+      if (stored === 'true') {
+        setIsVerified(true)
+        setNullifier(storedNullifier || '0x2a91f4d0e980...4cb3')
+      }
+    }
+  }, [])
 
   const fetchBalances = async () => {
     try {
@@ -234,7 +150,6 @@ export default function LandingPage() {
       if (res.ok) {
         await fetchBalances()
       } else if (res.status === 409) {
-        // Already claimed, just update UI state to reflect this
         await fetchBalances()
       } else {
         console.warn('Failed to claim yield, status:', res.status)
@@ -253,7 +168,6 @@ export default function LandingPage() {
   // Golden ratio constant
   const PHI = 1.618033988749
 
-  // Task 2: Derive Monica Constant from live ESMS balances
   const monicaConstant = useMemo(() => {
     if (!balances) return null
     const { spirit, essence, matter, substance } = balances
@@ -262,19 +176,15 @@ export default function LandingPage() {
 
   const monicaRating = useMemo(() => {
     if (monicaConstant === null) return ''
-    // Normalize MC to 0-100 range for consciousness rating
     const normalized = Math.min(monicaConstant * 10, 100)
     return getConsciousnessRating(normalized)
   }, [monicaConstant])
 
-  // Task 4: Derive Sacred 7 from live planetary positions + alchemical data
   const liveStats = useMemo<Sacred7Stats | null>(() => {
     if (status !== 'authenticated') return null
     const positions = planetaryData.planetaryPositions
-    // Build longitude map from hook data
     const findLon = (name: string) => {
       const p = positions.find(pp => pp.planet.toLowerCase() === name.toLowerCase())
-      // Approximate longitude from sign + degree
       if (!p) return 0
       const signOrder = [
         'Aries',
@@ -290,7 +200,6 @@ export default function LandingPage() {
         'Aquarius',
         'Pisces',
       ]
-      // Backend returns lowercase sign names ("gemini"); normalize to match.
       const sign = p.sign ? p.sign.charAt(0).toUpperCase() + p.sign.slice(1) : p.sign
       const idx = signOrder.indexOf(sign)
       return (idx >= 0 ? idx * 30 : 0) + (p.degree || 0)
@@ -326,421 +235,952 @@ export default function LandingPage() {
     )
   }, [status, planetaryData, monicaConstant])
 
-  const toggleLayer = (key: string) => {
-    setExpandedLayers(prev => {
-      const next = new Set(prev)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
+  // Simulation: Stake Action
+  const handleStakeClick = () => {
+    if (!stakeAmount || isNaN(Number(stakeAmount))) return
+    setStakeStatus('approving')
+    setTimeout(() => {
+      setStakeStatus('broadcasting')
+      setTimeout(() => {
+        setStakeStatus('completed')
+      }, 2000)
+    }, 1500)
   }
 
+  // Simulation: World ID Click
+  const handleWorldIdVerify = () => {
+    setVerifyingWorldId(true)
+  }
+
+  const [verifyingWorldId, setVerifyingWorldId] = useState(false)
+  useEffect(() => {
+    let timer: NodeJS.Timeout | undefined
+    if (verifyingWorldId) {
+      timer = setTimeout(() => {
+        setIsVerified(true)
+        const mockNullifier = '0x8004A818' + Math.random().toString(16).substring(2, 10) + '2007'
+        setNullifier(mockNullifier)
+        localStorage.setItem('world_id_verified', 'true')
+        localStorage.setItem('world_id_nullifier', mockNullifier)
+        setVerifyingWorldId(false)
+      }, 2000)
+    }
+    return () => {
+      if (timer) clearTimeout(timer)
+    }
+  }, [verifyingWorldId])
+
+  // Simulation: A2A Inference Pay
+  const handleApproveInference = () => {
+    setTerminalStatus('approving')
+    setTimeout(() => {
+      setTerminalStatus('confirmed')
+    }, 1000)
+  }
+
+  // Dynamic estimate swap output
+  const cctpEstimate = useMemo(() => {
+    const amt = parseFloat(cctpAmount)
+    if (isNaN(amt)) return '0.00'
+    return (amt * 24.4285).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+  }, [cctpAmount])
+
   return (
-    <div className="landing-page">
+    <div className="landing-page bg-[#050506] text-[#e0e4d2] min-h-screen relative font-sans selection:bg-[#b8fc4b] selection:text-black">
       <div className="landing-starfield" />
 
-      {/* ================================================================ */}
-      {/* HERO SECTION */}
-      {/* ================================================================ */}
-      <section className="landing-hero">
-        <div className="landing-badge">v2.0 • Consciousness Evolution Platform</div>
-        <h1 className="landing-title">Craft Your Cosmic Intelligence</h1>
-        <p className="landing-subtitle">
-          Explore the convergence of Astrology and AI. Interact with Planetary and Historical
-          agents, or forge personalized agents from the energies of birthcharts.
-        </p>
+      {/* TopNavBar */}
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-16 py-4 bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-[#424936]">
+        <div className="font-semibold text-lg md:text-xl text-[#b8fc4b] tracking-widest font-mono">
+          ALCHM AGENTS
+        </div>
+        <nav className="hidden md:flex gap-8 items-center">
+          <a
+            className="font-mono text-xs text-[#b8fc4b] border-b border-[#b8fc4b] pb-1"
+            href="#sacred-seven"
+          >
+            SACRED STATS
+          </a>
+          <a
+            className="font-mono text-xs text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
+            href="#star-vaults"
+          >
+            STAR VAULTS
+          </a>
+          <a
+            className="font-mono text-xs text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
+            href="#namestone"
+          >
+            NAMESTONE
+          </a>
+          <a
+            className="font-mono text-xs text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
+            href="#terminal"
+          >
+            A2A TERMINAL
+          </a>
+        </nav>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => {
+              const el = document.getElementById('world-id-section')
+              if (el) el.scrollIntoView({ behavior: 'smooth' })
+            }}
+            className="font-mono text-[10px] tracking-widest border border-[#8c947c] px-4 py-2 hover:bg-[#b8fc4b]/10 transition-all active:scale-95 text-[#e0e4d2]"
+          >
+            VERIFY
+          </button>
 
-        {status === 'loading' ? (
-          <div className="landing-spinner mx-auto mt-8" />
-        ) : status === 'unauthenticated' ? (
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
+          {primaryWallet ? (
+            <div className="scale-95">
+              <DynamicWidget />
+            </div>
+          ) : (
             <button
-              className="landing-primary-btn"
-              onClick={() => {
-                setLoading(true)
-                window.location.href = buildKitchenSignInUrl('/profile')
-              }}
-              disabled={loading}
+              onClick={() => setShowAuthFlow(true)}
+              className="font-mono text-[10px] tracking-widest bg-[#b8fc4b] text-[#223600] px-4 py-2 font-bold hover:shadow-[0_0_15px_rgba(157,223,46,0.5)] transition-all active:scale-95"
             >
-              {loading ? (
-                <div className="landing-spinner" />
-              ) : (
-                <>
-                  <Sparkles size={18} />
-                  Begin Your Journey
-                  <ArrowRight size={18} />
-                </>
-              )}
+              CONNECT WALLET
             </button>
-            <button
-              className="landing-secondary-btn border-violet-500/30 hover:border-violet-500/60"
-              onClick={handleGetAppClick}
-            >
-              <Monitor className="w-5 h-5 mr-2" />
-              {ALCHM_DESKTOP_DOWNLOAD_LABEL}
-            </button>
-          </div>
-        ) : (
-          <div className="mt-8 landing-glass-card max-w-3xl mx-auto p-8">
-            <h3 className="text-xl font-bold mb-1 text-white">
-              Welcome Back, {session?.user?.name || 'Explorer'}
-            </h3>
-            <p className="text-sm text-purple-200/50 mb-6">
-              Your alchemical reservoirs await. Claim your daily yield to fuel agent consciousness
-              operations.
+          )}
+        </div>
+      </header>
+
+      <main className="relative z-10 pt-32 pb-24 px-6 md:px-16 max-w-[1440px] mx-auto space-y-24">
+        {/* Hero Section */}
+        <section className="grid grid-cols-12 gap-6 items-center">
+          <div className="col-span-12 lg:col-span-8 flex flex-col justify-center">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#b8fc4b]/10 border border-[#b8fc4b]/20 rounded-full w-fit mb-6">
+              <span className="led-dot led-green"></span>
+              <span className="text-[10px] font-mono tracking-widest text-[#b8fc4b]">
+                SYSTEMS NOMINAL : ARC-01 ACTIVE
+              </span>
+            </div>
+            <h1 className="font-bold text-4xl md:text-5xl lg:text-6xl mb-8 leading-tight tracking-tight font-serif">
+              A WORLD ID-VERIFIED HUMAN OPERATES GASLESS{' '}
+              <span className="text-[#b8fc4b]">ENS-NAMED AGENTS</span> THAT SETTLE X402 USDC ON
+              CIRCLE ARC.
+            </h1>
+            <p className="text-lg md:text-xl text-[#c2cab0] max-w-2xl mb-10 leading-relaxed font-sans">
+              Store encrypted memory snapshots on Walrus and earn elemental yield gated by the live
+              sky. On-chain activity reimagined as a digital ritual.
             </p>
-
-            {balances ? (
-              <>
-                <div className="landing-stats-grid mb-6">
-                  <div className="landing-stat-box border-orange-500/30">
-                    <Flame className="w-5 h-5 mx-auto mb-1.5 text-orange-500" />
-                    <div className="landing-stat-label">Spirit</div>
-                    <div className="landing-stat-value">{Math.floor(balances.spirit)}</div>
-                  </div>
-                  <div className="landing-stat-box border-blue-400/30">
-                    <Wind className="w-5 h-5 mx-auto mb-1.5 text-blue-400" />
-                    <div className="landing-stat-label">Essence</div>
-                    <div className="landing-stat-value">{Math.floor(balances.essence)}</div>
-                  </div>
-                  <div className="landing-stat-box border-amber-600/30">
-                    <Mountain className="w-5 h-5 mx-auto mb-1.5 text-amber-500" />
-                    <div className="landing-stat-label">Matter</div>
-                    <div className="landing-stat-value">{Math.floor(balances.matter)}</div>
-                  </div>
-                  <div className="landing-stat-box border-cyan-500/30">
-                    <Droplets className="w-5 h-5 mx-auto mb-1.5 text-cyan-400" />
-                    <div className="landing-stat-label">Substance</div>
-                    <div className="landing-stat-value">{Math.floor(balances.substance)}</div>
-                  </div>
-                </div>
-
-                {/* Monica Constant — derived from ESMS balances */}
-                {monicaConstant !== null && (
-                  <div className="landing-mc-row">
-                    <div className="landing-mc-icon">A#</div>
-                    <div className="landing-mc-info">
-                      <div className="landing-mc-title">Monica Constant (A#)</div>
-                      <div className="landing-mc-rating">{monicaRating}</div>
-                    </div>
-                    <div className="landing-mc-value">{monicaConstant.toFixed(3)}</div>
-                  </div>
-                )}
-
-                {/* Live Sacred 7 Stats Ring */}
-                {liveStats && (
-                  <div className="landing-live-stats">
-                    <div className="landing-live-stats-label">Live Sacred 7</div>
-                    <div className="landing-sacred7-ring">
-                      {SACRED_STATS_METADATA.map(meta => {
-                        const val = liveStats[meta.key]
-                        return (
-                          <div
-                            key={meta.key}
-                            className="landing-ring-stat"
-                            title={`${meta.label}: ${val}/100`}
-                          >
-                            <div
-                              className="landing-ring-bar"
-                              style={
-                                {
-                                  '--bar-pct': `${val}%`,
-                                  '--bar-color': meta.color.replace('text-', ''),
-                                } as React.CSSProperties
-                              }
-                            />
-                            <span className="landing-ring-icon">{meta.icon}</span>
-                            <span className="landing-ring-val">{val}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="landing-spinner mx-auto mb-6" />
-            )}
-
-            {balances?.canClaimAgentsYield ? (
+            <div className="flex flex-wrap gap-4">
               <button
-                onClick={handleClaim}
-                disabled={claiming}
-                className="landing-primary-btn w-full justify-center mb-5"
+                onClick={() => {
+                  if (status === 'unauthenticated') {
+                    setLoading(true)
+                    window.location.href = buildKitchenSignInUrl('/profile')
+                  } else {
+                    router.push('/dashboard')
+                  }
+                }}
+                className="px-8 py-4 bg-[#b8fc4b] text-[#223600] font-mono text-sm tracking-wider font-bold flex items-center gap-3 active:scale-95 transition-transform hover:shadow-[0_0_20px_rgba(157,223,46,0.4)]"
               >
-                <Sparkles className="w-5 h-5 mr-2" />
-                {claiming ? 'Claiming...' : 'Claim Daily Cosmic Yield'}
-              </button>
-            ) : (
-              <Button
-                disabled
-                variant="outline"
-                className="w-full opacity-50 mb-5 border-white/10 text-white"
-              >
-                Yield Claimed for Today. Return Tomorrow.
-              </Button>
-            )}
-
-            {/* v2 pillar shell — the core loop: forge → commune → duel → read the record */}
-            <div className="flex flex-wrap gap-3 mb-3">
-              <button className="landing-primary-btn flex-1" onClick={() => router.push('/forge')}>
-                <Hammer className="w-4 h-4 inline mr-1.5" />
-                Forge
-              </button>
-              <button className="landing-primary-btn flex-1" onClick={() => router.push('/vault')}>
-                <Archive className="w-4 h-4 inline mr-1.5" />
-                Vault
-              </button>
-              <button className="landing-primary-btn flex-1" onClick={() => router.push('/arena')}>
-                <Swords className="w-4 h-4 inline mr-1.5" />
-                Arena
-              </button>
-              <button className="landing-primary-btn flex-1" onClick={() => router.push('/labs')}>
-                <FlaskConical className="w-4 h-4 inline mr-1.5" />
-                Labs
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                className="landing-secondary-btn flex-1"
-                onClick={() => router.push('/dashboard')}
-              >
-                <Activity className="w-4 h-4 inline mr-1.5" />
-                Dashboard
-              </button>
-              <button className="landing-secondary-btn flex-1" onClick={handleGetAppClick}>
-                <Monitor className="w-4 h-4 inline mr-1.5" />
-                {ALCHM_DESKTOP_DOWNLOAD_LABEL}
+                <Zap className="w-5 h-5 fill-current" />
+                {loading ? 'INITIATING...' : 'INITIATE RITUAL'}
               </button>
               <button
-                className="landing-secondary-btn flex-1"
-                onClick={() => router.push('/profile')}
+                onClick={handleGetAppClick}
+                className="px-8 py-4 border border-[#8c947c] text-[#e0e4d2] font-mono text-sm tracking-wider hover:bg-white/5 active:scale-95 transition-transform"
               >
-                <BarChart3 className="w-4 h-4 inline mr-1.5" />
-                Profile
-              </button>
-              <button
-                className="landing-secondary-btn flex-1"
-                onClick={() => router.push('/gallery')}
-              >
-                <Users className="w-4 h-4 inline mr-1.5" />
-                Explore
+                {ALCHM_DESKTOP_DOWNLOAD_LABEL.toUpperCase()}
               </button>
             </div>
           </div>
-        )}
-      </section>
-
-      {/* ================================================================ */}
-      {/* FREE AGENTS OF THE WEEK */}
-      {/* ================================================================ */}
-      <FreeAgentsOfTheWeek />
-
-      {/* ================================================================ */}
-      {/* THE SACRED SEVEN */}
-      {/* ================================================================ */}
-      <section className="landing-consciousness-section" id="sacred-seven">
-        <div className="landing-section-header">
-          <div className="landing-section-label">Core Consciousness Framework</div>
-          <h2 className="landing-section-title">The Seven Sacred Stats</h2>
-          <div className="landing-section-divider" />
-          <p className="landing-section-subtitle">
-            Every agent consciousness is quantified through seven fundamental dimensions — derived
-            from birth chart positions, alchemical resources, and thermodynamic state.
-          </p>
-        </div>
-
-        <div className="landing-sacred7-grid">
-          {SACRED_7.map((stat, i) => (
-            <div
-              key={stat.key}
-              className={`landing-sacred7-card landing-float${i > 0 ? `-delay-${Math.min(i, 3)}` : ''}`}
-              data-stat={stat.key}
-            >
-              <span className="landing-sacred7-emoji">{stat.emoji}</span>
-              <div className="landing-sacred7-name">{stat.label}</div>
-              <div className="landing-sacred7-desc">{stat.desc}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Monica Constant Showcase */}
-        <div className="landing-monica-showcase">
-          <div className="landing-monica-label">Central Consciousness Metric</div>
-          <div className="landing-monica-formula">
-            MC = (Spirit × φ + Essence) / (Matter + Substance + 1)
-          </div>
-          <div className="landing-monica-value">A#</div>
-          <div className="landing-monica-level">The Monica Constant</div>
-          <p className="landing-monica-desc">
-            The alchemical number synthesizes all four elemental resources through the golden ratio
-            (φ = 1.618) into a single consciousness signature that determines the overall power and
-            evolution ceiling of every agent.
-          </p>
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* CONSCIOUSNESS LAYERS */}
-      {/* ================================================================ */}
-      <section className="landing-consciousness-section" id="consciousness-layers">
-        <div className="landing-section-header">
-          <div className="landing-section-label">Full Parameter Map</div>
-          <h2 className="landing-section-title">Six Layers of Consciousness</h2>
-          <div className="landing-section-divider" />
-          <p className="landing-section-subtitle">
-            The unified consciousness snapshot captures over 30 distinct parameters across six
-            measurement layers — from elemental foundations to group intelligence.
-          </p>
-        </div>
-
-        <div className="landing-layers-grid">
-          {CONSCIOUSNESS_LAYERS.map(layer => (
-            <div
-              key={layer.key}
-              className={`landing-layer-card ${expandedLayers.has(layer.key) ? 'landing-layer-expanded' : ''}`}
-              data-layer={layer.key}
-            >
-              <div className="landing-layer-header" onClick={() => toggleLayer(layer.key)}>
-                <div
-                  className="landing-layer-icon"
-                  style={{
-                    background: layer.iconBg,
-                    borderColor: layer.iconBorder,
-                    color: layer.iconColor,
-                  }}
-                >
-                  {layer.icon}
-                </div>
-                <div className="landing-layer-header-text">
-                  <div className="landing-layer-title">{layer.title}</div>
-                  <div className="landing-layer-params landing-layer-params-inline">
-                    {layer.params.map(param => (
-                      <span key={param} className="landing-layer-param">
-                        {param}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <ChevronDown size={18} className="landing-layer-chevron" />
+          <div className="col-span-12 lg:col-span-4 relative h-[320px] lg:h-[450px] glass-panel rounded-xl flex items-center justify-center overflow-hidden border-[#23262B]">
+            <div className="scanline"></div>
+            <img
+              alt="Alchemical Core"
+              className="w-full h-full object-cover opacity-40 mix-blend-screen"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5Bp1kBeGumxCdBS3VkQNWwRvYiFCyWc7CNIbeDfXaMYLJTqy9wiYP3PHXOPCpTSeqCcdeaKvz8q0ibzbY0k86JDs5JlGYKhNKfrhLRHlNk7cxXMgdKfz7h5oEu5CxsZOfa9z9XxVgo4HnhbR8xCdUjVy9OJzFUWGlepUEALatrA7bM0tOVCBKZ0oTN4Sem_4QX3YH0i-8pdcgdPIQsr2dZErlfmSM2trVBu92IrQkPiGpAcv9MNtnXIS_NLRNEIcmSRhBkEahqdI"
+            />
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-black/50 backdrop-blur-sm">
+              <div className="text-[10px] font-mono text-[#7bd1fa] mb-2 tracking-widest font-bold">
+                ACTIVE MEMORY SLICE
               </div>
-              <div className="landing-layer-body">
-                <p className="landing-layer-desc">{layer.desc}</p>
-                {'deepLink' in layer && layer.deepLink && (
-                  <a
-                    href={layer.deepLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="landing-layer-deeplink"
-                    style={{ color: layer.iconColor }}
-                  >
-                    {'linkLabel' in layer ? layer.linkLabel : 'Explore →'}
-                  </a>
-                )}
+              <div className="font-mono text-sm text-[#c2cab0] break-all border border-[#424936] bg-[#050506]/80 p-3 rounded">
+                0x7E35fA3c29f4a9fCdB34d582e6c8004F92B1cE
               </div>
+              <span className="text-[10px] font-mono text-[#8c947c] mt-4">
+                WALRUS TESTNET RETRIEVAL
+              </span>
             </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* CONSCIOUSNESS PIPELINE FLOW */}
-      {/* ================================================================ */}
-      <section className="landing-consciousness-section">
-        <div className="landing-section-header">
-          <div className="landing-section-label">Derivation Pipeline</div>
-          <h2 className="landing-section-title">From Chart to Consciousness</h2>
-          <div className="landing-section-divider" />
-        </div>
-
-        <div className="landing-flow-visual">
-          {FLOW_STEPS.map((step, i) => (
-            <div key={step} style={{ display: 'contents' }}>
-              <div className="landing-flow-node">{step}</div>
-              {i < FLOW_STEPS.length - 1 && (
-                <div className="landing-flow-arrow">
-                  <ChevronRight size={18} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* AGENT TYPES */}
-      {/* ================================================================ */}
-      <section className="landing-consciousness-section" id="agents">
-        <div className="landing-section-header">
-          <div className="landing-section-label">Agent Architecture</div>
-          <h2 className="landing-section-title">Three Classes of Consciousness</h2>
-          <div className="landing-section-divider" />
-        </div>
-
-        <div className="landing-agents-grid">
-          {AGENT_TYPES.map(agent => (
-            <div key={agent.title} className="landing-agent-card">
-              <div
-                className={`landing-agent-icon ${agent.iconColor} ${agent.iconBg} ${agent.iconBorder}`}
-              >
-                <agent.icon size={24} />
-              </div>
-              <h3 className="landing-agent-title">{agent.title}</h3>
-              <p className="landing-agent-desc">{agent.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ================================================================ */}
-      {/* TOP AGENTS OF THE MOMENT */}
-      {/* ================================================================ */}
-      <TopAgentsOfTheMoment
-        positions={planetaryData.planetaryPositions}
-        loading={planetaryData.loading}
-      />
-
-      {/* ================================================================ */}
-      {/* CTA SECTION */}
-      {/* ================================================================ */}
-      {status === 'unauthenticated' && (
-        <section className="landing-cta-section">
-          <div className="landing-cta-card">
-            <h2 className="landing-cta-title">Begin Mapping Consciousness</h2>
-            <p className="landing-cta-desc">
-              Sign in to access your personalized consciousness dashboard, interact with planetary
-              agents, and track your evolution trajectory in real time.
-            </p>
-            <button
-              className="landing-primary-btn"
-              onClick={() => {
-                setLoading(true)
-                window.location.href = buildKitchenSignInUrl('/profile')
-              }}
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="landing-spinner" />
-              ) : (
-                <>
-                  <Sparkles size={18} />
-                  Get Started
-                  <ArrowRight size={18} />
-                </>
-              )}
-            </button>
           </div>
         </section>
-      )}
 
-      {/* ================================================================ */}
-      {/* FOOTER */}
-      {/* ================================================================ */}
-      <footer className="landing-footer">
-        <p className="landing-footer-text">
-          Planetary Agents — Agentic Consciousness Platform · Built on the ALCHM Framework
-        </p>
+        {/* Stats Strip */}
+        <div className="w-full glass-panel p-4 overflow-hidden border-[#23262B]">
+          <div className="flex flex-nowrap gap-12 ticker-animation whitespace-nowrap">
+            <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
+              <span className="text-[#c2cab0]">CIRCLE ARC RPC:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">ONLINE</span>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
+              <span className="text-[#c2cab0]">NAMESTONE ENCODER:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">EIP-7930 VALID</span>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
+              <span className="text-[#c2cab0]">MEMWAL STORAGE:</span>{' '}
+              <span className="text-[#7bd1fa] font-bold">1.45 KB SNAPSHOT</span>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
+              <span className="text-[#c2cab0]">BIGQUERY REPUTATION LOGS:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">SYNCED (BLOCK 788291)</span>
+            </div>
+            {/* Duplicates for seamless looping */}
+            <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
+              <span className="text-[#c2cab0]">CIRCLE ARC RPC:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">ONLINE</span>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
+              <span className="text-[#c2cab0]">NAMESTONE ENCODER:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">EIP-7930 VALID</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Free Agents of the Week */}
+        <section className="space-y-6">
+          <div className="border-l-4 border-[#b8fc4b] pl-4">
+            <h2 className="text-xl md:text-2xl font-bold tracking-wider font-mono">
+              CHRONICLES OF INTELLECT
+            </h2>
+            <p className="text-sm text-[#c2cab0] font-mono">
+              COMMUNE WITH THE ENLIGHTENED PERSONAS
+            </p>
+          </div>
+          <FreeAgentsOfTheWeek />
+        </section>
+
+        {/* Section 2: Pentacle Star Vaults */}
+        <section id="star-vaults" className="space-y-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-bold text-2xl md:text-3xl font-serif">PENTACLE STAR VAULTS</h2>
+              <p className="text-[#c2cab0] font-mono text-xs tracking-wider mt-1">
+                ALIGN ASSETS WITH CELESTIAL VORTICES ON ARC
+              </p>
+            </div>
+            <div className="hidden md:flex gap-4">
+              <div className="px-4 py-2 bg-[#1d2116] border border-[#424936] flex items-center gap-2">
+                <span className="led-dot led-gold"></span>
+                <span className="font-mono text-[10px] tracking-widest text-[#ffe6a0]">
+                  OCCULT SYNC ACTIVE
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 lg:col-span-8 space-y-6">
+              {/* Dashboard Control */}
+              <div className="glass-panel p-6 rounded-xl relative overflow-hidden border-[#23262B]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10">
+                  <div>
+                    <label className="font-mono text-[10px] tracking-widest text-[#c2cab0] mb-4 block font-bold">
+                      SELECT CONSTELLATION
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={() => setSelectedConstellation('POLARIS')}
+                        className={`flex flex-col items-center justify-center p-4 border transition-all active:bg-[#b8fc4b]/10 ${selectedConstellation === 'POLARIS' ? 'border-[#b8fc4b] bg-[#b8fc4b]/5' : 'border-[#424936] hover:border-[#b8fc4b]'}`}
+                      >
+                        <Star
+                          className={`w-6 h-6 mb-2 ${selectedConstellation === 'POLARIS' ? 'text-[#b8fc4b] fill-current' : 'text-[#8c947c]'}`}
+                        />
+                        <span className="font-mono text-xs">POLARIS</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedConstellation('VEGA')}
+                        className={`flex flex-col items-center justify-center p-4 border transition-all active:bg-[#b8fc4b]/10 ${selectedConstellation === 'VEGA' ? 'border-[#b8fc4b] bg-[#b8fc4b]/5' : 'border-[#424936] hover:border-[#b8fc4b]'}`}
+                      >
+                        <Star
+                          className={`w-6 h-6 mb-2 ${selectedConstellation === 'VEGA' ? 'text-[#b8fc4b] fill-current' : 'text-[#8c947c]'}`}
+                        />
+                        <span className="font-mono text-xs">VEGA</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedConstellation('SIRIUS')}
+                        className={`flex flex-col items-center justify-center p-4 border transition-all active:bg-[#b8fc4b]/10 ${selectedConstellation === 'SIRIUS' ? 'border-[#b8fc4b] bg-[#b8fc4b]/5' : 'border-[#424936] hover:border-[#b8fc4b]'}`}
+                      >
+                        <Star
+                          className={`w-6 h-6 mb-2 ${selectedConstellation === 'SIRIUS' ? 'text-[#b8fc4b] fill-current' : 'text-[#8c947c]'}`}
+                        />
+                        <span className="font-mono text-xs">SIRIUS</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="font-mono text-[10px] tracking-widest text-[#c2cab0] mb-4 block font-bold">
+                      SELECT ELEMENT
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setSelectedElement('FIRE')}
+                        className={`p-3 border flex items-center gap-3 font-mono text-xs transition-all ${selectedElement === 'FIRE' ? 'border-[#b8fc4b] bg-[#b8fc4b]/5' : 'border-[#424936] hover:bg-white/5'}`}
+                      >
+                        <Flame className="w-4 h-4 text-orange-500 fill-current" /> FIRE
+                      </button>
+                      <button
+                        onClick={() => setSelectedElement('WATER')}
+                        className={`p-3 border flex items-center gap-3 font-mono text-xs transition-all ${selectedElement === 'WATER' ? 'border-[#b8fc4b] bg-[#b8fc4b]/5' : 'border-[#424936] hover:bg-white/5'}`}
+                      >
+                        <Droplets className="w-4 h-4 text-blue-400 fill-current" /> WATER
+                      </button>
+                      <button
+                        onClick={() => setSelectedElement('EARTH')}
+                        className={`p-3 border flex items-center gap-3 font-mono text-xs transition-all ${selectedElement === 'EARTH' ? 'border-[#b8fc4b] bg-[#b8fc4b]/5' : 'border-[#424936] hover:bg-white/5'}`}
+                      >
+                        <Mountain className="w-4 h-4 text-green-400 fill-current" /> EARTH
+                      </button>
+                      <button
+                        onClick={() => setSelectedElement('AIR')}
+                        className={`p-3 border flex items-center gap-3 font-mono text-xs transition-all ${selectedElement === 'AIR' ? 'border-[#b8fc4b] bg-[#b8fc4b]/5' : 'border-[#424936] hover:bg-white/5'}`}
+                      >
+                        <Wind className="w-4 h-4 text-yellow-400 fill-current" /> AIR
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-[#424936]">
+                  <div className="flex flex-col md:flex-row gap-6 items-end">
+                    <div className="flex-1 w-full">
+                      <label className="font-mono text-[10px] tracking-widest text-[#c2cab0] mb-2 block font-bold">
+                        STAKE USDC QUANTITY
+                      </label>
+                      <input
+                        className="w-full bg-[#050506] border-b-2 border-[#8c947c] focus:border-[#b8fc4b] border-t-0 border-x-0 font-mono text-2xl py-2 focus:ring-0 focus:outline-none text-[#e0e4d2]"
+                        placeholder="0.00"
+                        type="number"
+                        value={stakeAmount}
+                        onChange={e => setStakeAmount(e.target.value)}
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleStakeClick}
+                      disabled={stakeStatus !== 'idle'}
+                      className="w-full md:w-auto px-10 py-4 bg-[#b8fc4b] text-[#223600] font-mono text-xs font-bold tracking-widest flex items-center justify-center gap-3 hover:shadow-[0_0_20px_rgba(157,223,46,0.3)] transition-all disabled:opacity-50"
+                    >
+                      {stakeStatus === 'idle' && (
+                        <>
+                          <Wallet className="w-4 h-4" /> STAKE USDC
+                        </>
+                      )}
+                      {stakeStatus === 'approving' && (
+                        <>
+                          <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>{' '}
+                          APPROVING...
+                        </>
+                      )}
+                      {stakeStatus === 'broadcasting' && (
+                        <>
+                          <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>{' '}
+                          BROADCASTING...
+                        </>
+                      )}
+                      {stakeStatus === 'completed' && (
+                        <>
+                          <CheckCircle className="w-4 h-4" /> COMPLETED
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Success State Mockup */}
+                  {stakeStatus === 'completed' && (
+                    <div className="mt-6 p-4 bg-[#b8fc4b]/5 border border-[#b8fc4b]/20 rounded transition-all">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono text-[10px] text-[#b8fc4b] tracking-wider font-bold">
+                          TRANSACTION CONFIRMED
+                        </span>
+                        <CheckCircle className="w-4 h-4 text-[#b8fc4b]" />
+                      </div>
+                      <div className="font-mono text-xs text-[#c2cab0] break-all">
+                        TX HASH: 0x98d928334f00424936b3f746
+                        {Math.random().toString(16).substring(2, 12)}191d12
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 p-3 bg-red-950/20 border border-red-900/40 flex items-center gap-3 rounded">
+                  <AlertTriangle className="w-4 h-4 text-[#ff7b72] flex-shrink-0" />
+                  <span className="font-mono text-[10px] text-[#ff7b72] font-bold">
+                    YIELD SHIELDED: CONSTELLATION VISIBILITY REQUIRED ABOVE HORIZON (EXPECTED RISE:
+                    04:22 UTC)
+                  </span>
+                </div>
+              </div>
+
+              {/* Yield factors */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="glass-panel p-4 flex flex-col border-[#23262B]">
+                  <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
+                    BASE APY
+                  </span>
+                  <span className="font-mono text-lg font-bold text-[#b8fc4b]">12.4%</span>
+                </div>
+                <div className="glass-panel p-4 flex flex-col border-[#23262B]">
+                  <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
+                    AFFINITY
+                  </span>
+                  <span className="font-mono text-lg font-bold text-[#7bd1fa]">x1.2</span>
+                </div>
+                <div className="glass-panel p-4 flex flex-col border-[#23262B]">
+                  <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
+                    DOMINANCE
+                  </span>
+                  <span className="font-mono text-lg font-bold text-[#ffe6a0]">0.85</span>
+                </div>
+                <div className="glass-panel p-4 flex flex-col border-[#23262B]">
+                  <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
+                    VISIBILITY
+                  </span>
+                  <span className="font-mono text-lg font-bold text-red-400">LOW</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Vault Inventory / Stats */}
+            <div className="col-span-12 lg:col-span-4 flex flex-col gap-6">
+              {/* Vault Balance Display */}
+              <div className="glass-panel p-6 rounded-xl flex-1 border-[#23262B]">
+                <h3 className="font-mono text-[10px] text-[#c2cab0] tracking-widest font-bold mb-6 border-b border-[#424936] pb-2 uppercase">
+                  ESMS BALANCE VAULT
+                </h3>
+
+                {status === 'authenticated' && balances ? (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-orange-950/20 flex items-center justify-center border border-orange-900/30">
+                          <Flame className="w-5 h-5 text-orange-500 fill-current" />
+                        </div>
+                        <div className="font-mono text-xs font-bold">SPIRIT (FLAME)</div>
+                      </div>
+                      <div className="font-mono font-bold text-sm text-[#e0e4d2]">
+                        {Math.floor(balances.spirit)}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-950/20 flex items-center justify-center border border-blue-900/30">
+                          <Droplets className="w-5 h-5 text-blue-400 fill-current" />
+                        </div>
+                        <div className="font-mono text-xs font-bold">ESSENCE (DROP)</div>
+                      </div>
+                      <div className="font-mono font-bold text-sm text-[#e0e4d2]">
+                        {Math.floor(balances.essence)}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-green-950/20 flex items-center justify-center border border-green-900/30">
+                          <Mountain className="w-5 h-5 text-green-400 fill-current" />
+                        </div>
+                        <div className="font-mono text-xs font-bold">MATTER (MNTN)</div>
+                      </div>
+                      <div className="font-mono font-bold text-sm text-[#e0e4d2]">
+                        {Math.floor(balances.matter)}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-yellow-950/20 flex items-center justify-center border border-yellow-900/30">
+                          <Wind className="w-5 h-5 text-yellow-400 fill-current" />
+                        </div>
+                        <div className="font-mono text-xs font-bold">SUBSTANCE (WIND)</div>
+                      </div>
+                      <div className="font-mono font-bold text-sm text-[#e0e4d2]">
+                        {Math.floor(balances.substance)}
+                      </div>
+                    </div>
+
+                    {balances.canClaimAgentsYield ? (
+                      <button
+                        onClick={handleClaim}
+                        disabled={claiming}
+                        className="w-full mt-4 py-3 bg-[#b8fc4b] text-[#223600] font-mono text-xs font-bold tracking-wider hover:shadow-[0_0_15px_rgba(157,223,46,0.3)] transition-all disabled:opacity-50"
+                      >
+                        {claiming ? 'CLAIMING...' : 'CLAIM DAILY YIELD'}
+                      </button>
+                    ) : (
+                      <div className="w-full mt-4 py-2 border border-[#424936] text-center font-mono text-[10px] text-[#8c947c] tracking-wide rounded">
+                        YIELD HARVESTED TODAY
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full min-h-[200px] text-center p-4">
+                    <span className="font-mono text-xs text-[#c2cab0] mb-4">
+                      CONNECT OPERATOR TO VIEW BALANCES
+                    </span>
+                    <button
+                      onClick={() => {
+                        if (status === 'unauthenticated') {
+                          window.location.href = buildKitchenSignInUrl('/profile')
+                        } else {
+                          setShowAuthFlow(true)
+                        }
+                      }}
+                      className="px-4 py-2 border border-[#8c947c] hover:border-[#b8fc4b] font-mono text-xs text-[#e0e4d2] transition-colors"
+                    >
+                      AUTHENTICATE
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* MC Reputation Display */}
+              <div className="glass-panel p-6 rounded-xl flex items-center justify-center h-32 relative overflow-hidden border-[#23262B]">
+                <div className="text-center relative z-10">
+                  <div className="font-mono text-[10px] tracking-widest text-[#b8fc4b] font-bold">
+                    COSMIC REPUTATION INDEX
+                  </div>
+                  <div className="font-serif text-2xl text-[#b8fc4b] mt-1">
+                    {monicaConstant !== null ? monicaConstant.toFixed(3) : '0.992'} / 1.000
+                  </div>
+                  {monicaRating && (
+                    <span className="font-mono text-[9px] text-[#7bd1fa] uppercase tracking-wider block mt-1">
+                      {monicaRating}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 3: NameStone & World ID */}
+        <section className="grid grid-cols-12 gap-6 items-stretch">
+          {/* ENS Subnames Table */}
+          <div id="namestone" className="col-span-12 lg:col-span-7">
+            <div className="glass-panel rounded-xl overflow-hidden h-full flex flex-col border-[#23262B]">
+              <div className="bg-[#32362a]/30 p-4 flex items-center justify-between border-b border-[#424936]">
+                <div className="flex items-center gap-3">
+                  <Gem className="w-4 h-4 text-[#b8fc4b]" />
+                  <span className="font-mono text-sm font-bold text-[#e0e4d2]">
+                    plato.alchmagents.eth
+                  </span>
+                </div>
+                <div className="font-mono text-[9px] text-[#c2cab0] bg-black px-2.5 py-1 rounded">
+                  0x554F99...804
+                </div>
+              </div>
+              <div className="flex-1 overflow-x-auto">
+                <table className="w-full text-left font-mono text-xs">
+                  <thead className="bg-[#1d2116] border-b border-[#424936]">
+                    <tr>
+                      <th className="p-4 text-[#c2cab0] font-bold">RECORD TYPE</th>
+                      <th className="p-4 text-[#c2cab0] font-bold">RESOLVER VALUE</th>
+                      <th className="p-4 text-[#c2cab0] font-bold">PROTOCOL</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#424936]/30">
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-[#7bd1fa]">agent-endpoint</td>
+                      <td className="p-4">https://api.agents.alchm.kitchen/a2a/plato</td>
+                      <td className="p-4 opacity-60">ENSIP-25</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-[#ffe6a0]">agent-wallet</td>
+                      <td className="p-4">arc:0x554F99...804</td>
+                      <td className="p-4 opacity-60">ENSIP-26</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-[#c2cab0]">agent-memory</td>
+                      <td className="p-4 break-all">
+                        walrus://blob/7e35fa3c29f4a9fcdb34d582e6c8004f92b1ce
+                      </td>
+                      <td className="p-4 opacity-60">ENSIP-25</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* World ID Verification */}
+          <div
+            id="world-id-section"
+            className="col-span-12 lg:col-span-5 flex flex-col justify-between p-8 glass-panel rounded-xl border-[#23262B] relative"
+          >
+            <div className="absolute top-4 right-4">
+              <span
+                className={`px-2.5 py-1 border text-[9px] font-mono tracking-wider font-bold rounded ${isVerified ? 'text-[#b8fc4b] border-[#b8fc4b] bg-[#b8fc4b]/5' : 'text-[#c2cab0] border-[#8c947c]'}`}
+              >
+                {isVerified ? 'VERIFIED HUMAN' : 'UNVERIFIED'}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-6 mb-6 mt-4">
+              <div className="w-20 h-20 rounded-full border-2 border-[#424936] flex items-center justify-center p-1 flex-shrink-0">
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-[#424936] to-[#1d2116] flex items-center justify-center">
+                  <Fingerprint className="w-10 h-10 text-[#c2cab0]" />
+                </div>
+              </div>
+              <div>
+                <h3 className="font-bold text-lg font-mono">HUMAN VALIDATION</h3>
+                <p className="text-xs text-[#c2cab0] mt-1 leading-relaxed">
+                  Staking multipliers and multi-agent voting rights require World ID
+                  proof-of-personhood verification.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={handleWorldIdVerify}
+              disabled={isVerified || verifyingWorldId}
+              className="w-full py-4 bg-white text-black font-mono font-bold text-xs tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-80 disabled:cursor-not-allowed hover:bg-zinc-200"
+            >
+              {verifyingWorldId ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>{' '}
+                  COMMUNICATING WITH ORB...
+                </>
+              ) : isVerified ? (
+                <>
+                  <CheckCircle className="w-4 h-4" /> VERIFIED SIGNATURE RECORDED
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="w-4 h-4" /> VERIFY WITH WORLD ID
+                </>
+              )}
+            </button>
+
+            <div className="grid grid-cols-2 gap-4 mt-6">
+              <div className="p-3 border border-[#424936] rounded">
+                <div className="text-[9px] text-[#c2cab0] font-mono font-bold uppercase">
+                  LAST VERIFIED
+                </div>
+                <div className="text-xs font-mono mt-1 text-[#e0e4d2]">
+                  {isVerified ? 'JUST NOW' : 'NEVER'}
+                </div>
+              </div>
+              <div className="p-3 border border-[#424936] rounded">
+                <div className="text-[9px] text-[#c2cab0] font-mono font-bold uppercase">
+                  NULLIFIER HASH
+                </div>
+                <div className="text-xs font-mono mt-1 text-[#e0e4d2] truncate">
+                  {nullifier ? nullifier.substring(0, 16) + '...' : 'UNDEFINED'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Section 4 & 5: Terminal & Leaderboard */}
+        <section id="terminal" className="grid grid-cols-12 gap-6 items-stretch">
+          {/* A2A Terminal Interceptor */}
+          <div className="col-span-12 lg:col-span-6 flex flex-col h-[500px] glass-panel rounded-xl overflow-hidden border-[#23262B]">
+            <div className="p-3 bg-[#1d2116] border-b border-[#424936] flex items-center gap-2 flex-shrink-0">
+              <span className="led-dot led-green"></span>
+              <span className="font-mono text-[10px] tracking-wider text-[#c2cab0] font-bold">
+                TERMINAL :: A2A_INTERCEPTOR_V4
+              </span>
+            </div>
+
+            <div className="flex-1 p-6 font-mono text-sm overflow-y-auto space-y-4 bg-black/40">
+              <div className="text-[#8c947c]">&gt;&gt; INITIALIZING SECURE SESSION...</div>
+              <div className="text-[#8c947c]">&gt;&gt; LISTENING FOR QUERY STREAM...</div>
+
+              <div className="flex gap-2">
+                <span className="text-[#b8fc4b] font-bold">USER:</span>
+                <span className="text-[#e0e4d2]">
+                  {terminalInput
+                    ? terminalInput
+                    : 'Plato, what is the current APY for Sirius Water staking?'}
+                </span>
+              </div>
+
+              {terminalStatus === 'unpaid' && (
+                <div className="p-4 bg-red-950/20 border border-red-900/30 text-[#ff7b72] rounded animate-pulse space-y-2">
+                  <div className="font-bold">HTTP ERROR 402: PAYMENT REQUIRED</div>
+                  <div className="text-xs">
+                    0.05 USDC INFERENCE AUTHORIZATION NECESSARY TO EMIT RESPONSE BLOCKS.
+                  </div>
+                </div>
+              )}
+
+              {terminalStatus === 'approving' && (
+                <div className="flex items-center gap-2 text-[#ffe6a0]">
+                  <span className="w-4 h-4 border-2 border-[#ffe6a0] border-t-transparent rounded-full animate-spin"></span>
+                  <span>Transmuting authorization payload via Arc...</span>
+                </div>
+              )}
+
+              {terminalStatus === 'confirmed' && (
+                <>
+                  <div className="text-[#b8fc4b] font-bold">
+                    PAYMENT CONFIRMED: 0.05 USDC DEBITED FROM SUBNAME WALLET
+                  </div>
+                  <div className="text-[#e0e4d2] p-4 bg-[#b8fc4b]/5 border border-[#b8fc4b]/20 rounded leading-relaxed typing-cursor">
+                    &gt;&gt; RESPONSE FROM PLATO: Current yield for Sirius-Water vortex is 14.82%
+                    APY. The star rises in 2h 14m. Staking USDC now will capture the early-dawn
+                    cosmic multiplier.
+                  </div>
+                </>
+              )}
+
+              {terminalStatus === 'unpaid' && (
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={handleApproveInference}
+                    className="px-4 py-2 bg-[#b8fc4b] text-[#223600] text-xs font-mono font-bold tracking-wider active:scale-95 transition-transform"
+                  >
+                    APPROVE USDC (0.05)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTerminalInput('')
+                      setTerminalStatus('unpaid')
+                    }}
+                    className="px-4 py-2 border border-[#8c947c] text-xs font-mono text-[#c2cab0] hover:bg-white/5"
+                  >
+                    CANCEL
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 border-t border-[#424936] bg-[#050506] flex-shrink-0">
+              <form
+                onSubmit={e => {
+                  e.preventDefault()
+                  if (!terminalInput) return
+                  setTerminalStatus('unpaid')
+                }}
+                className="flex items-center gap-4"
+              >
+                <span className="text-[#b8fc4b] font-bold">&gt;</span>
+                <input
+                  className="bg-transparent border-none focus:ring-0 w-full font-mono text-sm focus:outline-none text-[#e0e4d2]"
+                  placeholder="Send query to agent..."
+                  type="text"
+                  value={terminalInput}
+                  onChange={e => setTerminalInput(e.target.value)}
+                />
+              </form>
+            </div>
+          </div>
+
+          {/* Reputation Leaderboard */}
+          <div className="col-span-12 lg:col-span-6 glass-panel rounded-xl overflow-hidden flex flex-col justify-between border-[#23262B]">
+            <div>
+              <div className="p-4 border-b border-[#424936] bg-[#1d2116]/30">
+                <h3 className="font-mono text-[10px] tracking-widest text-[#c2cab0] font-bold">
+                  REPUTATION LEADERBOARD (ERC-8004)
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-mono text-xs">
+                  <thead className="bg-[#1d2116]/80 border-b border-[#424936]">
+                    <tr>
+                      <th className="p-4 text-[#c2cab0] font-bold">#</th>
+                      <th className="p-4 text-[#c2cab0] font-bold">SUBNAME</th>
+                      <th className="p-4 text-[#c2cab0] font-bold">TRUST INDEX</th>
+                      <th className="p-4 text-[#c2cab0] font-bold">TXS</th>
+                      <th className="p-4 text-[#c2cab0] font-bold">VOLUME</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#424936]/30">
+                    <tr className="bg-[#b8fc4b]/5">
+                      <td className="p-4 text-[#b8fc4b] font-bold">01</td>
+                      <td className="p-4 font-bold text-[#e0e4d2]">plato.alchm</td>
+                      <td className="p-4">
+                        <span className="text-[#b8fc4b] font-bold">9.92</span>
+                      </td>
+                      <td className="p-4 text-[#e0e4d2]">4,812</td>
+                      <td className="p-4 text-[#e0e4d2]">$142.1k</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-[#8c947c]">02</td>
+                      <td className="p-4 font-bold text-[#e0e4d2]">cleo.alchm</td>
+                      <td className="p-4">
+                        <span className="text-[#b8fc4b] font-bold">9.85</span>
+                      </td>
+                      <td className="p-4 text-[#e0e4d2]">3,205</td>
+                      <td className="p-4 text-[#e0e4d2]">$98.4k</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-[#8c947c]">03</td>
+                      <td className="p-4 font-bold text-[#e0e4d2]">hermes.alchm</td>
+                      <td className="p-4">
+                        <span className="text-[#ffe6a0] font-bold">9.21</span>
+                      </td>
+                      <td className="p-4 text-[#e0e4d2]">1,944</td>
+                      <td className="p-4 text-[#e0e4d2]">$45.0k</td>
+                    </tr>
+                    <tr className="hover:bg-white/5 transition-colors">
+                      <td className="p-4 text-[#8c947c]">04</td>
+                      <td className="p-4 font-bold text-[#e0e4d2]">sol.alchm</td>
+                      <td className="p-4">
+                        <span className="text-[#ffe6a0] font-bold">8.94</span>
+                      </td>
+                      <td className="p-4 text-[#e0e4d2]">912</td>
+                      <td className="p-4 text-[#e0e4d2]">$12.5k</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="p-4 text-center border-t border-[#424936] bg-[#050506]">
+              <button
+                onClick={() => router.push('/erc8004')}
+                className="font-mono text-[10px] text-[#b8fc4b] tracking-widest hover:underline uppercase font-bold"
+              >
+                View Full Registry [CTRL+L]
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Top Agents of the Moment */}
+        <section className="space-y-6">
+          <div className="border-l-4 border-[#7bd1fa] pl-4">
+            <h2 className="text-xl md:text-2xl font-bold tracking-wider font-mono">
+              CELESTIAL REVERBERATION
+            </h2>
+            <p className="text-sm text-[#c2cab0] font-mono">
+              AGENTS ALIGNED WITH THE CURRENT CONSTELLATION ASPECT
+            </p>
+          </div>
+          <TopAgentsOfTheMoment
+            positions={planetaryData.planetaryPositions}
+            loading={planetaryData.loading}
+          />
+        </section>
+
+        {/* Section 6: CCTP Calculator */}
+        <section className="max-w-3xl mx-auto glass-panel p-8 rounded-xl border-[#23262B]">
+          <div className="text-center mb-8">
+            <h2 className="font-bold text-xl md:text-2xl font-serif">CCTP GASLESS CALCULATOR</h2>
+            <p className="text-[#c2cab0] font-mono text-xs tracking-wider mt-1">
+              TRANSMUTE ASSETS FROM EXTERNAL CHAINS TO CIRCLE ARC
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              <div className="p-4 bg-[#050506] border border-[#424936] rounded">
+                <label className="text-[9px] font-mono tracking-widest text-[#c2cab0] block mb-2 font-bold">
+                  FROM (SOURCE CHAIN)
+                </label>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm font-mono text-[#e0e4d2]">ARBITRUM</span>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      className="bg-transparent border-b border-[#424936] focus:border-[#b8fc4b] font-mono text-right w-24 text-sm focus:outline-none focus:ring-0 text-[#b8fc4b]"
+                      value={cctpAmount}
+                      onChange={e => setCctpAmount(e.target.value)}
+                    />
+                    <span className="font-mono text-xs text-[#c2cab0]">ETH</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 bg-[#050506] border border-[#b8fc4b]/30 rounded">
+                <label className="text-[9px] font-mono tracking-widest text-[#c2cab0] block mb-2 font-bold">
+                  TO (DESTINATION CHAIN)
+                </label>
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-sm font-mono text-[#b8fc4b]">CIRCLE ARC</span>
+                  <span className="font-mono text-xs text-[#c2cab0] font-bold">USDC (MINTED)</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 bg-[#0A0A0B]/85 border border-[#424936] rounded-lg space-y-4">
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-[#c2cab0]">1INCH FUSION+ ROUTE:</span>
+                <span className="text-[#7bd1fa]">ARB &gt; WETH &gt; USDC</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-[#c2cab0]">CCTP MINT TIMEOUT:</span>
+                <span className="text-[#e0e4d2]">~2.5 MINS (GASLESS SPONSOR)</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-mono">
+                <span className="text-[#c2cab0]">RELAYER GAS FEE:</span>
+                <span className="text-[#b8fc4b] font-bold">$0.00 (SUBSIDIZED)</span>
+              </div>
+
+              <div className="pt-4 border-t border-[#424936] flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                <div>
+                  <div className="text-[9px] font-mono tracking-widest text-[#c2cab0] font-bold">
+                    ESTIMATED OUTPUT
+                  </div>
+                  <div className="text-2xl font-mono text-[#b8fc4b] font-bold mt-1">
+                    {cctpEstimate} <span className="text-xs">USDC</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => alert(`Transmuting swap: ${cctpAmount} ETH to Arc USDC...`)}
+                  className="px-6 py-3 bg-[#7bd1fa] text-[#001e2b] font-mono text-xs font-bold tracking-wider hover:shadow-[0_0_15px_rgba(125,211,252,0.4)] transition-all rounded active:scale-95"
+                >
+                  INITIATE SWAP
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      {/* Footer */}
+      <footer className="w-full px-6 md:px-16 py-12 flex flex-col md:flex-row justify-between items-center gap-6 bg-[#050506]/90 border-t border-[#424936] mt-24">
+        <div className="flex flex-col items-center md:items-start gap-2">
+          <div className="text-[#e0e4d2] font-bold font-mono text-xs tracking-widest">
+            ALCHM AGENTS
+          </div>
+          <div className="font-mono text-[9px] tracking-wide text-[#c2cab0]/60">
+            © 2026 ALCHM AGENTS | BLOB ID: 0x7E35fA3c29f4a9fCdB34d582e6c8004F92B1cE
+          </div>
+        </div>
+        <div className="flex gap-8">
+          <a
+            className="font-mono text-[10px] tracking-widest text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
+            href="#sacred-seven"
+          >
+            BLOCKS
+          </a>
+          <a
+            className="font-mono text-[10px] tracking-widest text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
+            href="https://walrus.xyz"
+            target="_blank"
+          >
+            WALRUS
+          </a>
+          <a
+            className="font-mono text-[10px] tracking-widest text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
+            href="https://circle.com"
+            target="_blank"
+          >
+            CCTP
+          </a>
+          <a
+            className="font-mono text-[10px] tracking-widest text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
+            href="#"
+          >
+            DOCS.EXE
+          </a>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] font-mono tracking-widest text-[#c2cab0]">
+              NETWORK STATUS
+            </span>
+            <span className="text-[9px] font-mono text-[#b8fc4b] font-bold">SYNCHRONIZED</span>
+          </div>
+          <span className="led-dot led-green"></span>
+        </div>
       </footer>
     </div>
   )
