@@ -98,7 +98,7 @@ X402_SELF_SETTLE=true
 X402_NETWORK=eip155:5042002
 X402_ASSET=0x3600000000000000000000000000000000000000   # Arc USDC (= gas token)
 ARC_OPERATOR_PRIVATE_KEY=0x...                            # relayer/sponsor; fund with Arc USDC
-ARC_TESTNET_RPC_URL=https://rpc.testnet.arc.network       # default
+ARC_TESTNET_RPC_URL=https://rpc.testnet.arc.io       # default
 ```
 
 `arc_facilitator.py` verifies the client's EIP-3009 signature locally (recovers the signer from

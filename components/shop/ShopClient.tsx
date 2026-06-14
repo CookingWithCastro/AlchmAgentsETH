@@ -1,9 +1,8 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import {
-  ShoppingBag,
   Sparkles,
   Flame,
   Wallet,
@@ -73,7 +72,6 @@ export default function ShopClient({
   walletAddress,
   onchainBalances,
   onchainConfigured,
-  kitchenUrl,
 }: ShopClientProps) {
   const [tab, setTab] = useState<ShopItemKind>('apothecary')
   const [balances, setBalances] = useState<Balances | null>(onchainBalances)
@@ -222,7 +220,6 @@ export default function ShopClient({
             signedIn={signedIn}
             hasWallet={hasWallet}
             onchainConfigured={onchainConfigured}
-            kitchenUrl={kitchenUrl}
             onBuy={() => (item.kind === 'food' ? orderFood(item) : buyDigital(item))}
           />
         ))}
@@ -330,7 +327,6 @@ function ItemCard({
   signedIn,
   hasWallet,
   onchainConfigured,
-  kitchenUrl,
   onBuy,
 }: {
   item: ShopItem
@@ -339,7 +335,6 @@ function ItemCard({
   signedIn: boolean
   hasWallet: boolean
   onchainConfigured: boolean
-  kitchenUrl: string
   onBuy: () => void
 }) {
   const isFood = item.kind === 'food'

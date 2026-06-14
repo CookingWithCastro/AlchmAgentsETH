@@ -130,9 +130,11 @@ def _default_server_path() -> Path:
         return Path(explicit).expanduser()
 
     here = Path(__file__).resolve()
+    module_dir = here.parent
+    project_root = module_dir.parent if module_dir.name == "backend" else module_dir
     candidates = [
-        here.parents[1] / "mcp-server" / "src" / "index.ts",
-        here.parents[2] / "WhatToEatNext-master" / "mcp-server" / "src" / "index.ts",
+        project_root / "mcp-server" / "src" / "index.ts",
+        project_root.parent / "WhatToEatNext-master" / "mcp-server" / "src" / "index.ts",
     ]
     for candidate in candidates:
         if candidate.exists():

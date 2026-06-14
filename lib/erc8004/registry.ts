@@ -65,7 +65,7 @@ export const ERC8004_ADDRESSES = {
 export const ARC_TESTNET = {
   id: 5042002, // eip155:5042002 (confirmed)
   name: 'Arc Testnet',
-  rpcUrl: 'https://rpc.testnet.arc.network',
+  rpcUrl: 'https://rpc.testnet.arc.io',
   explorer: 'https://testnet.arcscan.app',
   /** USDC on Arc (gas token). ERC-20 interface is 6-decimals — use for x402 amounts. */
   usdc: '0x3600000000000000000000000000000000000000',

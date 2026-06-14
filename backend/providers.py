@@ -90,15 +90,11 @@ FREE_CHAIN: List[ProviderConfig] = [
         base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
     ),
     ProviderConfig(
-        # Avoid meta-llama/llama-3.3-70b-instruct:free — heavily oversubscribed on
-        # the free tier (429s). The prior pick deepseek/deepseek-v4-flash:free was
-        # retired by OpenRouter (404 "No endpoints found", caught live via
-        # /api/providers/health on 2026-06-01). Kimi K2.6 is a different family
-        # (less contention), has a 262K-token context, and live-served a 1-token
-        # ping cleanly. This is the 4th free fallback (Groq → Cerebras → Gemini →
-        # here), so it's rarely reached and an occasional free-tier 429 is tolerable.
+        # OpenRouter retired the free Kimi K2.6 endpoint in June 2026. Its free
+        # gpt-oss-120b route is live-verified and provides a strong general-purpose
+        # fourth fallback after Groq, Cerebras, and Gemini.
         name="openrouter",
-        model=os.getenv("OPENROUTER_FREE_MODEL", "moonshotai/kimi-k2.6:free"),
+        model=os.getenv("OPENROUTER_FREE_MODEL", "openai/gpt-oss-120b:free"),
         api_key_env="OPENROUTER_API_KEY",
         base_url="https://openrouter.ai/api/v1",
     ),

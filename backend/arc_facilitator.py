@@ -152,7 +152,7 @@ def settle(payment_payload: Dict[str, Any], requirements: Dict[str, Any]) -> Dic
 
     auth, signature = _auth_fields(payment_payload)
     asset = Web3.to_checksum_address(requirements["asset"])
-    rpc = os.getenv("ARC_TESTNET_RPC_URL", "https://rpc.testnet.arc.network")
+    rpc = os.getenv("ARC_TESTNET_RPC_URL", "https://rpc.testnet.arc.io")
     w3 = Web3(Web3.HTTPProvider(rpc))
     acct = Account.from_key(operator_key)
     usdc = w3.eth.contract(address=asset, abi=USDC_EIP3009_ABI)

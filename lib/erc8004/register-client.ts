@@ -13,7 +13,7 @@
  * (see lib/erc8004/ensip.ts → agentRegistrationKey).
  *
  * ⚠️ Set ARC_TESTNET_CHAIN_ID before any live Arc send — the chainId was not
- * confirmed during research (RPC https://rpc.testnet.arc.network/).
+ * confirmed during research (RPC https://rpc.testnet.arc.io/).
  */
 
 import {

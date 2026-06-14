@@ -101,7 +101,7 @@ All inputs come from data the app already produces: live `ephemeris`, the staker
 
 1. **Contracts** (from `contracts/`):
    ```bash
-   ARC_RPC_URL=https://rpc.testnet.arc.network \
+   ARC_RPC_URL=https://rpc.testnet.arc.io \
    DEPLOYER_PRIVATE_KEY=… ATTESTOR_ADDRESS=… ESMS_METADATA_URI=… \
    forge script script/DeployStarVault.s.sol:DeployStarVault --rpc-url arc --broadcast
    ```

@@ -45,5 +45,19 @@ forge script script/Deploy.s.sol:Deploy --rpc-url base_sepolia --broadcast --ver
 - **Upgradeable (UUPS):** fix bugs / add Phase 2 (redeem, transfers) without migrating state.
 - **Pausable:** emergency kill switch on all mint/burn/transfer.
 
-Phase 2 (later): public `burn` for redeem-back, transferability unlock, paymaster for
-user-paid txs, external-wallet targets, mainnet promotion.
+## Phase 2 — shop redeem/burn (shipped)
+
+The ESMS Bazaar spends tokens with a real on-chain burn (ESMS is soulbound, so a
+burn IS the spend):
+
+- `redeem(orderId, ids, amounts)` — the holder burns their own balance.
+- `redeemFor(from, orderId, ids, amounts)` — a `BURNER_ROLE` settlement wallet
+  burns on the holder's behalf, sponsoring gas.
+- `redeemedOrders[orderId]` makes each purchase idempotent; a matching
+  `Redeemed` event lets the backend confirm a user-signed burn before fulfilling.
+
+See [`../docs/SHOPPING.md`](../docs/SHOPPING.md). Tests:
+`forge test --match-path test/EsmsRedeem.t.sol`.
+
+Still later: transferability unlock, a paymaster for fully user-paid txs,
+external-wallet targets, mainnet promotion.

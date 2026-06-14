@@ -15,7 +15,7 @@ fi
 set -a; source .env; set +a
 
 : "${DEPLOYER_PRIVATE_KEY:?Set DEPLOYER_PRIVATE_KEY in contracts/.env}"
-export ARC_RPC_URL="${ARC_RPC_URL:-${ARC_TESTNET_RPC_URL:-https://rpc.testnet.arc.network}}"
+export ARC_RPC_URL="${ARC_RPC_URL:-${ARC_TESTNET_RPC_URL:-https://rpc.testnet.arc.io}}"
 export ESMS_METADATA_URI="${ESMS_METADATA_URI:-https://alchmagents.eth.limo/esms/{id}.json}"
 
 # Default the attestor to the deployer address (fast demo path).
