@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { NextRequest } from 'next/server'
-import { POST } from '@/app/api/monica-agent/route'
 import { backend, BackendError } from '@/lib/backend'
 import { generateText } from 'ai'
 
@@ -14,6 +13,11 @@ vi.mock('next-auth/next', () => ({
 
 vi.mock('@/app/api/auth/[...nextauth]/route', () => ({
   authOptions: {},
+}))
+
+vi.mock('@/lib/auth', () => ({
+  auth: vi.fn(async () => null),
+  requireAuthOrRedirect: vi.fn(async () => null),
 }))
 
 vi.mock('@/lib/backend', () => ({
@@ -56,6 +60,8 @@ describe('Monica Agent Route', () => {
   })
 
   it('returns a direct Monica response payload', async () => {
+    const { POST } = await import('@/app/api/monica-agent/route')
+
     vi.mocked(generateText).mockResolvedValue({
       text: 'Monica is present and responding clearly.',
       usage: { totalTokens: 24 },
@@ -81,6 +87,8 @@ describe('Monica Agent Route', () => {
   })
 
   it('surfaces Monica backend failures instead of returning a synthetic reply', async () => {
+    const { POST } = await import('@/app/api/monica-agent/route')
+
     vi.mocked(generateText).mockRejectedValueOnce(
       new BackendError(400, '/api/chat', 'Backend unavailable')
     )

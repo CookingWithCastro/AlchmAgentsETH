@@ -43,10 +43,16 @@ contract EsmsToken is
     /// @notice Processed claim ids (idempotency guard).
     mapping(bytes32 => bool) public claimed;
 
+    /// @notice Processed shop redeem orders (idempotency guard). Appended after
+    /// `claimed` to keep the UUPS storage layout backwards-compatible.
+    mapping(bytes32 => bool) public redeemedOrders;
+
     event ClaimExecuted(address indexed to, bytes32 indexed claimId, uint256[] ids, uint256[] amounts);
+    event Redeemed(address indexed from, bytes32 indexed orderId, uint256[] ids, uint256[] amounts);
 
     error TransfersDisabled();
     error ClaimAlreadyProcessed(bytes32 claimId);
+    error RedeemAlreadyProcessed(bytes32 orderId);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -99,6 +105,52 @@ contract EsmsToken is
         uint256[] calldata amounts
     ) external onlyRole(BURNER_ROLE) {
         _burnBatch(from, ids, amounts);
+    }
+
+    /**
+     * @notice Spend ESMS in the token-economy shop: burn the caller's own
+     * balance against a unique `orderId`. Soulbound is preserved (the burn goes
+     * to 0x0; no account-to-account transfer). Idempotent — a repeat `orderId`
+     * reverts, so a retried purchase never double-burns. The backend watches the
+     * {Redeemed} event (or reads {redeemedOrders}) to settle off-chain fulfillment.
+     * @param orderId unique purchase id (off-chain shop order key)
+     * @param ids     token ids (0..3)
+     * @param amounts amounts (18-dp scaled)
+     */
+    function redeem(
+        bytes32 orderId,
+        uint256[] calldata ids,
+        uint256[] calldata amounts
+    ) external {
+        _redeem(msg.sender, orderId, ids, amounts);
+    }
+
+    /**
+     * @notice Backend-sponsored variant of {redeem}: a vetted BURNER (the shop
+     * settlement wallet) burns `from`'s ESMS for a purchase the holder authorized
+     * off-chain, paying the gas so the user needs no native balance. Same
+     * soulbound and idempotency guarantees as {redeem}.
+     */
+    function redeemFor(
+        address from,
+        bytes32 orderId,
+        uint256[] calldata ids,
+        uint256[] calldata amounts
+    ) external onlyRole(BURNER_ROLE) {
+        _redeem(from, orderId, ids, amounts);
+    }
+
+    /// @dev Shared redeem path: idempotency guard, burn, event.
+    function _redeem(
+        address from,
+        bytes32 orderId,
+        uint256[] calldata ids,
+        uint256[] calldata amounts
+    ) internal {
+        if (redeemedOrders[orderId]) revert RedeemAlreadyProcessed(orderId);
+        redeemedOrders[orderId] = true;
+        _burnBatch(from, ids, amounts);
+        emit Redeemed(from, orderId, ids, amounts);
     }
 
     function pause() external onlyRole(PAUSER_ROLE) {

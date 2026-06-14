@@ -63,6 +63,15 @@ export function TopNavBar() {
           </span>
         </Link>
         <Link
+          href="/shop"
+          aria-label="ESMS Bazaar"
+          className="text-on-surface-variant hover:text-st-primary transition-colors"
+        >
+          <span className="material-symbols-outlined" aria-hidden>
+            redeem
+          </span>
+        </Link>
+        <Link
           href={session ? '/profile' : '/auth/signin'}
           className="flex items-center gap-3 glass-panel px-4 py-2 rounded-full hover:border-st-primary/30 transition-colors"
         >

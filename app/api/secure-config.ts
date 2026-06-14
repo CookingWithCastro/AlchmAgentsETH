@@ -3,12 +3,24 @@
 
 // Use environment variables instead
 export const config = {
-  galileoApiKey: process.env.GALILEO_API_KEY,
-  openaiApiKey: process.env.OPENAI_API_KEY,
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY,
-  googleApiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY,
-  groqApiKey: process.env.GROQ_API_KEY,
-  aiGatewayApiKey: process.env.AI_GATEWAY_API_KEY,
+  get galileoApiKey() {
+    return process.env.GALILEO_API_KEY
+  },
+  get openaiApiKey() {
+    return process.env.OPENAI_API_KEY
+  },
+  get anthropicApiKey() {
+    return process.env.ANTHROPIC_API_KEY
+  },
+  get googleApiKey() {
+    return process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  },
+  get groqApiKey() {
+    return process.env.GROQ_API_KEY
+  },
+  get aiGatewayApiKey() {
+    return process.env.AI_GATEWAY_API_KEY
+  },
 }
 
 // Verify keys are available (without logging them)

@@ -10,7 +10,7 @@ import { base, baseSepolia } from 'viem/chains'
 /** Token ids on the ERC-1155 (must match EsmsToken.sol). */
 export const ESMS_IDS = [0n, 1n, 2n, 3n] as const // spirit, essence, matter, substance
 
-/** Minimal ABI for the two calls PA needs. */
+/** ABI for the ESMS calls PA needs: claim/mint (Phase 1) + shop redeem/burn (Phase 2). */
 export const ESMS_ABI = [
   {
     type: 'function',
@@ -40,6 +40,49 @@ export const ESMS_ABI = [
     stateMutability: 'view',
     inputs: [{ name: 'claimId', type: 'bytes32' }],
     outputs: [{ type: 'bool' }],
+  },
+  {
+    // Phase 2 — shop spend: user-signed self-burn against a unique orderId.
+    type: 'function',
+    name: 'redeem',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'orderId', type: 'bytes32' },
+      { name: 'ids', type: 'uint256[]' },
+      { name: 'amounts', type: 'uint256[]' },
+    ],
+    outputs: [],
+  },
+  {
+    // Phase 2 — shop spend: backend-sponsored burn of `from`'s balance (BURNER_ROLE).
+    type: 'function',
+    name: 'redeemFor',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'from', type: 'address' },
+      { name: 'orderId', type: 'bytes32' },
+      { name: 'ids', type: 'uint256[]' },
+      { name: 'amounts', type: 'uint256[]' },
+    ],
+    outputs: [],
+  },
+  {
+    type: 'function',
+    name: 'redeemedOrders',
+    stateMutability: 'view',
+    inputs: [{ name: 'orderId', type: 'bytes32' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'event',
+    name: 'Redeemed',
+    inputs: [
+      { name: 'from', type: 'address', indexed: true },
+      { name: 'orderId', type: 'bytes32', indexed: true },
+      { name: 'ids', type: 'uint256[]', indexed: false },
+      { name: 'amounts', type: 'uint256[]', indexed: false },
+    ],
+    anonymous: false,
   },
 ] as const
 
@@ -87,4 +130,19 @@ export async function readEsmsClaimed(claimId: `0x${string}`): Promise<boolean> 
     functionName: 'claimed',
     args: [claimId],
   })
+}
+
+/** Whether a shop redeem order has already been burned on-chain (idempotency read). */
+export async function readEsmsRedeemed(orderId: `0x${string}`): Promise<boolean> {
+  return esmsPublicClient().readContract({
+    address: esmsContractAddress(),
+    abi: ESMS_ABI,
+    functionName: 'redeemedOrders',
+    args: [orderId],
+  })
+}
+
+/** True when the on-chain ESMS contract is configured (deployed + address set). */
+export function esmsOnchainConfigured(): boolean {
+  return Boolean(process.env.ESMS_CONTRACT_ADDRESS)
 }

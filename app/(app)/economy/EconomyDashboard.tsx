@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles, Activity, ShieldAlert, Target, Flame } from 'lucide-react'
+import Link from 'next/link'
+import { Sparkles, Activity, ShieldAlert, Target, Flame, ShoppingBag } from 'lucide-react'
 
 interface TokenBalances {
   spirit: number
@@ -134,6 +135,27 @@ export default function EconomyDashboard({
           ))}
         </div>
       </div>
+
+      {/* Spend CTA → ESMS Bazaar */}
+      <Link
+        href="/shop"
+        className="group flex items-center justify-between gap-4 bg-surface border border-border hover:border-amber-500/40 p-5 rounded-xl transition-colors"
+      >
+        <div className="flex items-center gap-4">
+          <div className="p-2.5 bg-amber-500/10 rounded-full">
+            <ShoppingBag className="w-5 h-5 text-amber-400" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-zinc-200">Spend in the ESMS Bazaar</h3>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Burn your reserves on alchemical goods, premium recipes, and real food.
+            </p>
+          </div>
+        </div>
+        <span className="text-amber-400 text-sm font-medium opacity-70 group-hover:opacity-100 transition-opacity">
+          Open →
+        </span>
+      </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Cosmic Yield Panel */}
