@@ -69,6 +69,20 @@ bun run build-storybook  # Static build
 
 ## Architecture Overview
 
+### On-Chain & Agent-Economy Layer (ENS · A2A · x402/Arc · World · Walrus · ERC-8004)
+
+A bounty-driven layer that puts agents on-chain. **Canonical doc + diagrams + demo steps: [`INTEGRATIONS.md`](INTEGRATIONS.md).** In brief:
+
+- **A2A server** — `backend/a2a_server.py` (`register_a2a_routes`) exposes each agent at `/a2a/{id}/.well-known/agent-card.json` with `message/send` + incremental `message/stream` (SSE), wrapping in-process `/api/chat`. Wired + x402-gated in `backend/main.py` (tail).
+- **x402 payments** — `backend/x402_middleware.py` gates `/a2a/`; **dual settlement**: external facilitator (Base Sepolia) OR self-settle on **Circle Arc** via `backend/arc_facilitator.py` (`X402_SELF_SETTLE=true`, EIP-3009).
+- **ENS via NameStone** — `lib/namestone.ts` issues gasless `*.alchmagents.eth` subnames; `lib/erc8004/ensip.ts` writes ENSIP-25/26 records (`agent-endpoint[a2a/mcp/web]`, `agent-registration`, `agent-memory`, `human-verified`, `agent-wallet[x402]`). Hooked into `app/api/agents/unified/route.ts` create.
+- **ERC-8004** — `lib/erc8004/` (registry ABIs, BigQuery indexer + SQL generator) + `app/erc8004/page.tsx` (reputation leaderboard); register on Arc via `lib/erc8004/register-client.ts`.
+- **Walrus/MemWal memory** — `lib/walrus/` (encrypted persona snapshots + recall; HTTP fallback needs no wallet).
+- **World ID + AgentKit** — `lib/worldid/` (proof-of-personhood verify + `human-verified` badge; AgentKit proof-of-human).
+- **Onramp / privacy / distribution** — 1inch (`lib/onramp/`), Unlink ZK (`lib/unlink/`), Tool Router (`lib/toolrouter/`).
+
+Env vars for this layer are in `.env` (placeholders) — the full table is in `INTEGRATIONS.md`. Most are independently optional with code defaults.
+
 ### Two-Layer Backend
 
 The app has two distinct backends that must stay in sync:
