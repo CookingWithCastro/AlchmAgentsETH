@@ -62,13 +62,16 @@ Verified against **a2a-sdk 1.1.0**: streaming emits an initial Task, then one
 
 ## Payments (x402)
 
-- **Chain: Base Sepolia** (testnet USDC). x402 does **not** support Circle Arc — ERC-8004
-  agent _registration_ happens on Arc, but x402 _payments_ are on Base Sepolia. Separate chains.
+- **Two settlement paths.** (1) external facilitator on **Base Sepolia** (`x402.org/facilitator`),
+  or (2) **self-settle on Circle Arc** — set `X402_SELF_SETTLE=true` and the middleware verifies the
+  EIP-3009 signature locally + submits `transferWithAuthorization` to Arc USDC (`0x3600…`, chainId 5042002) via an operator key (`arc_facilitator.py`). Arc **is** supported (see "Single-chain Arc" below).
 - **Enforcement is opt-in:** set `X402_PAY_TO` to a wallet you control to require payment.
   Unset → dev pass-through (calls are free), so you can demo A2A without a wallet.
-- Facilitator `https://x402.org/facilitator` (testnet, no API key) does the EIP-3009
-  verification + on-chain settlement; the middleware only orchestrates the 402 → verify →
-  serve → settle flow and returns the receipt in `X-PAYMENT-RESPONSE`.
+- **Facilitator mode** delegates verify/settle to `X402_FACILITATOR_URL` (e.g. `x402.org/facilitator`
+  on Base Sepolia) and returns the receipt in `X-PAYMENT-RESPONSE`. **Self-settle mode**
+  (`X402_SELF_SETTLE=true`, or `X402_FACILITATOR_URL=local`) does the EIP-712 recover + on-chain
+  settle in-process — Arc isn't covered by the public/Coinbase facilitators, so this is how
+  single-chain Arc works.
 
 | env                    | default                | purpose                                        |
 | ---------------------- | ---------------------- | ---------------------------------------------- |
@@ -85,3 +88,20 @@ Verified against **a2a-sdk 1.1.0**: streaming emits an initial Task, then one
 `plato.alchmagents.eth` → ENS `agent-endpoint[a2a]` (set by `scripts/register-all-agents-ens.ts`
 from `A2A_PUBLIC_URL`) → `{base}/a2a/plato/.well-known/agent-card.json` → `message/send`
 (x402-paid) → persona-driven reply.
+
+## Single-chain Arc (self-settle)
+
+x402 also settles on **Circle Arc** with no external facilitator. Set:
+
+```bash
+X402_SELF_SETTLE=true
+X402_NETWORK=eip155:5042002
+X402_ASSET=0x3600000000000000000000000000000000000000   # Arc USDC (= gas token)
+ARC_OPERATOR_PRIVATE_KEY=0x...                            # relayer/sponsor; fund with Arc USDC
+ARC_TESTNET_RPC_URL=https://rpc.testnet.arc.network       # default
+```
+
+`arc_facilitator.py` verifies the client's EIP-3009 signature locally (recovers the signer from
+the `TransferWithAuthorization` EIP-712 typed data) and submits `transferWithAuthorization` to Arc
+USDC — the operator only pays gas (in USDC), the value moves client→payTo. The EIP-3009 verify is
+runtime-verified; see **../INTEGRATIONS.md** for the full integration map + demo.

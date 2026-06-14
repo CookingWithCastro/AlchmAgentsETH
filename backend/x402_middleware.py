@@ -13,8 +13,9 @@ EIP-3009 signature verification + on-chain settlement. No `x402` pip package nee
 (its Python SDK currently ships two incompatible in-tree APIs), so this avoids the
 dependency conflict while staying spec-compliant.
 
-x402 runs on **Base Sepolia** (testnet USDC) — NOT Circle Arc, which x402 doesn't
-support. (ERC-8004 agent registration still happens on Arc; these are separate chains.)
+x402 settles on **Base Sepolia** via the public facilitator, OR **self-settles on
+Circle Arc** (X402_SELF_SETTLE=true) via arc_facilitator.py — no external facilitator
+needed. (Arc isn't covered by the public/Coinbase x402 facilitators, hence self-settle.)
 
 Config (env): X402_PAY_TO (required to ENFORCE — unset = pass-through dev mode),
   X402_NETWORK (base-sepolia), X402_ASSET (Base Sepolia USDC), X402_PRICE_ATOMIC

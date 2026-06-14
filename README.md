@@ -73,9 +73,9 @@ See [BETA_OPTIMIZATION_SUMMARY.md](docs/archive/BETA_OPTIMIZATION_SUMMARY.md) fo
 
 ### ⚡ Backend-to-Backend Architecture - NEW!
 
-**Complete Express.js gateway service for alchemical calculations:**
+**FastAPI (Python) backend service for alchemical calculations** (Railway; Next.js API routes proxy to it via feature flags):
 
-- **Gateway Service**: Express.js backend running on port 8000 with WebSocket on 8001
+- **Gateway Service**: FastAPI (Python) backend on port 8000 (Railway `uvicorn`), with progressive frontend fallbacks
 - **Live Consciousness API**: `/api/consciousness/live` and `/batch` endpoints for real-time chart transformation
 - **Agent Consciousness Evolution**: Real-time kinetic profiles with live MC tracking for all agents
 - **Planetary Hours Service**: Server-side calculations with solar timing algorithms
@@ -202,21 +202,22 @@ Get detailed interpretations of astrological charts:
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: Next.js 15.5.3, React 18.3.1, TypeScript, Tailwind CSS
+- **Frontend**: Next.js 15.5, React 18.3, TypeScript, Tailwind CSS
 - **UI Components**: shadcn/ui, Radix UI, Lucide Icons
-- **AI Integration**: AI SDK (OpenAI), Anthropic Claude API 3.5 Sonnet & Haiku
-- **Backend**: Express.js gateway service (port 8000), WebSocket (port 8001)
-- **Database**: PostgreSQL + Prisma, Redis caching
+- **AI Integration**: Vercel AI SDK + a multi-provider fallback chain — Anthropic Claude 4.x (Haiku 4.5 default for historical chat, Sonnet 4.6, Opus 4.7) → Groq / Cerebras / Gemini / OpenRouter / OpenAI
+- **Backend**: two layers — Next.js API routes + a **FastAPI (Python)** service on Railway (`uvicorn`, port 8000). See `CLAUDE.md` → Two-Layer Backend
+- **On-Chain & Agent Economy**: A2A + x402 (Circle Arc), ENS via NameStone, ERC-8004 registry, Walrus memory, World ID — see [`INTEGRATIONS.md`](INTEGRATIONS.md)
+- **Database**: PostgreSQL + Prisma (Accelerate), Redis caching
 - **Styling**: Tailwind CSS with dark mode and responsive design
 - **Planetary Calculations**: Unified PlanetaryPositionsService with multi-level fallback hierarchy
 - **Agent Creation**: Chart synthesis engine with element-based personality generation
-- **Package Management**: Yarn 4.0.0 (migrated from npm September 21, 2025)
-- **Testing Framework**: Vitest 3.2.4 with comprehensive bun-based test suite (25 new tests added)
-- **Production Status**: ✅ Fully stable, zero critical errors, comprehensive fallback systems
+- **Package Management**: **Bun 1.3.13** (`packageManager: bun@1.3.13`; Yarn fails with a Corepack mismatch, npm triggers strict-peer warnings)
+- **Testing Framework**: Vitest 3.2.4, run via Bun
+- **Production Status**: ✅ Stable, comprehensive fallback systems
 
-## 🧪 Testing System (Yarn-Based)
+## 🧪 Testing System
 
-**Production-ready test suite migrated to Yarn 4.0.0 (September 21, 2025):**
+**Production-ready test suite (Vitest), run via Bun:**
 
 ### Chat System Testing
 
@@ -251,7 +252,7 @@ bun run test:chat:report             # Display latest test summary
 
 ## 📦 Development Guidelines
 
-### Yarn and NPX Usage
+### Package Manager (Bun)
 
 This project uses **Bun exclusively** for package management (`packageManager: bun@1.3.13`). Yarn fails with a Corepack mismatch on this repo and npm triggers strict-peer warnings — use Bun for installs, scripts, and the dev server:
 
