@@ -10,7 +10,10 @@ import ZonePoolsPanel from '@/components/staking/ZonePoolsPanel'
 import ZonePoolLP from '@/components/staking/ZonePoolLP'
 import CosmicWallet from '@/components/staking/CosmicWallet'
 import SwapEssenceModal from '@/components/staking/SwapEssenceModal'
+import ZoneDetailCard from '@/components/staking/ZoneDetailCard'
+import ShootingStarToasts from '@/components/staking/ShootingStarToasts'
 import useEsmsBalances from '@/lib/staking/useEsmsBalances'
+import Link from 'next/link'
 import { computeYieldRate } from '@/lib/staking/yield-rate'
 import { deriveSky } from '@/lib/staking/zone-pools'
 import { zoneForAltAz } from '@/lib/staking/pentacle-geometry'
@@ -141,6 +144,45 @@ export default function PentaclesClient() {
           stars crossing your <strong>ascendant</strong> burst-boost the zone they sit in. Settles
           on Circle Arc.
         </p>
+        <div
+          style={{
+            display: 'flex',
+            gap: 16,
+            marginTop: 12,
+            borderBottom: '1px solid rgba(122, 128, 200, 0.2)',
+            paddingBottom: 10,
+          }}
+        >
+          <span style={{ color: '#ffd76a', fontWeight: 600, fontSize: 14 }}>Sky Vaults</span>
+          <Link
+            href="/pentacles/portfolio"
+            style={{
+              color: '#9aa0d8',
+              fontWeight: 500,
+              textDecoration: 'none',
+              fontSize: 14,
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#e7e9ff')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#9aa0d8')}
+          >
+            Your Portfolio
+          </Link>
+          <Link
+            href="/pentacles/connect"
+            style={{
+              color: '#9aa0d8',
+              fontWeight: 500,
+              textDecoration: 'none',
+              fontSize: 14,
+              transition: 'color 0.2s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = '#e7e9ff')}
+            onMouseLeave={e => (e.currentTarget.style.color = '#9aa0d8')}
+          >
+            Arc Onboarding
+          </Link>
+        </div>
       </header>
 
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'flex-start' }}>
@@ -242,6 +284,12 @@ export default function PentaclesClient() {
             stars={stars}
           />
 
+          <ZoneDetailCard
+            zone={selectedZoneId != null ? (sky.zones.get(selectedZoneId) ?? null) : null}
+            liveZone={zones.find(z => z.zoneId === selectedZoneId) ?? null}
+            onProvide={handleScrollToLP}
+          />
+
           <div id="zone-pool-lp-section">
             <ZonePoolLP
               zone={selectedZoneId != null ? (sky.zones.get(selectedZoneId) ?? null) : null}
@@ -319,6 +367,7 @@ export default function PentaclesClient() {
         balances={esms.balances}
         refreshBalances={esms.refresh}
       />
+      <ShootingStarToasts />
     </div>
   )
 }
