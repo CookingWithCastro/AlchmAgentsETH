@@ -14,15 +14,15 @@
 
 ## Deployed contracts (Circle Arc testnet · chainId 5042002)
 
-_Filled in by `scripts/deploy-arc.sh`:_
+Deployer + attestor: `0x554F991D030aDF539CBD2ff3D896951C6f089804` (deploy via `scripts/deploy-arc.sh`). Addresses below are **deterministic** (fresh deployer, nonce 0) and are already wired into the live app + local `.env`; they go on-chain the moment the deployer is funded with ~0.5 Arc USDC and `deploy-arc.sh` broadcasts.
 
-| Contract                 | Address       | Role                                                          |
-| ------------------------ | ------------- | ------------------------------------------------------------- |
-| `EsmsToken` (UUPS proxy) | `0x…`         | Soulbound elemental essence (Spirit/Essence/Matter/Substance) |
-| `StarVault`              | `0x…`         | USDC custody per star + visibility-attested ESMS yield        |
-| `ConstellationDeed`      | `0x…`         | LP-position NFT for zone pools                                |
-| `ConstellationAMM`       | `0x…`         | 6 ESMS element-pair pools, aspect-gated                       |
-| ERC-8004 registry (Arc)  | `0x8004A818…` | Agent identity / reputation                                   |
+| Contract                 | Address (deterministic)                      | Role                                                          |
+| ------------------------ | -------------------------------------------- | ------------------------------------------------------------- |
+| `EsmsToken` (UUPS proxy) | `0x124ECa1bb1E106D3614A22A256f9A412FfeEAd8F` | Soulbound elemental essence (Spirit/Essence/Matter/Substance) |
+| `StarVault`              | `0x34eAC0fe797df2889d9dc59Cb98dCe24154BB9B6` | USDC custody per star + visibility-attested ESMS yield        |
+| `ConstellationDeed`      | `0x6B4EE164320e9E5583C0F6BEe14D5BABb5ba5095` | LP-position NFT for zone pools                                |
+| `ConstellationAMM`       | `0x34d860Cb460ecD2595584138d22Ad6fe7DAeA3BB` | 6 ESMS element-pair pools, aspect-gated                       |
+| ERC-8004 registry (Arc)  | `0x8004A818…`                                | Agent identity / reputation                                   |
 
 > Contracts: `contracts/src/` — `forge test` → **43/43 passing** (25 on `StarVault.sol`: pro-rata custody, no cross-staker loss, and every attestation failure mode + 2 fuzz tests).
 
