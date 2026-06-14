@@ -110,6 +110,10 @@ const nextConfig = {
     config.resolve.alias = {
       ...config.resolve.alias,
       'react-remove-scroll-bar/constants': 'react-remove-scroll-bar/dist/es2015/constants',
+      // @privy-io/react-auth references optional Farcaster-miniapp Solana integrations
+      // that aren't installed (this app uses Dynamic/EVM, not Privy's Solana path).
+      // Stub them so a clean CI install doesn't hard-fail with "Module not found".
+      '@farcaster/mini-app-solana': false,
     }
 
     // Code splitting for large libraries
