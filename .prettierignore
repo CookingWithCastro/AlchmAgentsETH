@@ -1,2 +1,5 @@
 src-tauri/gen/schemas/**
 desktop-shell/dist/**
+.venv/**
+backend/.venv/**
+.next/**

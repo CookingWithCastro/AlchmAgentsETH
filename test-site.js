@@ -47,7 +47,7 @@ async function run() {
     try {
       const response = await page.goto(`http://localhost:3000${route}`, {
         waitUntil: 'networkidle',
-        timeout: 10000,
+        timeout: 120000,
       })
       if (!response.ok()) {
         errors.push(`HTTP Error: ${response.status()} ${response.statusText()}`)

@@ -7,8 +7,16 @@ import { v4 as uuidv4 } from 'uuid'
 config()
 
 const { Pool } = pg
+const dbUrl = process.env.DATABASE_URL || ''
+const directUrl = process.env.DIRECT_URL || ''
+const connectionString = directUrl.startsWith('postgres')
+  ? directUrl
+  : dbUrl.startsWith('postgres')
+    ? dbUrl
+    : directUrl || dbUrl
+
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || process.env.DIRECT_URL,
+  connectionString,
 })
 
 /**

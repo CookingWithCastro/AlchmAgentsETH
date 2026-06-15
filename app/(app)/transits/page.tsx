@@ -47,8 +47,10 @@ export default function TransitsPage() {
   const [loading, setLoading] = useState(true)
   const [showGroupChat, setShowGroupChat] = useState(false)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     loadTransitsAndActivateAgents(true)
     // Refresh every 5 minutes — silently: no loading flash, no modal re-open
     const interval = setInterval(() => loadTransitsAndActivateAgents(false), 300000)
@@ -219,7 +221,7 @@ export default function TransitsPage() {
         <div className="flex items-center gap-3">
           <Badge variant="outline" className="flex items-center gap-1">
             <Clock className="w-3 h-3" />
-            Updated {lastUpdate.toLocaleTimeString()}
+            Updated {mounted ? lastUpdate.toLocaleTimeString() : ''}
           </Badge>
           {activatedAgentIds.length > 0 && (
             <Badge variant="secondary" className="flex items-center gap-1">
@@ -238,7 +240,9 @@ export default function TransitsPage() {
               <Star className="w-5 h-5 text-purple-500" />
               Current Cosmic Configuration
             </CardTitle>
-            <CardDescription>Planetary positions at {new Date().toLocaleString()}</CardDescription>
+            <CardDescription>
+              Planetary positions at {mounted ? new Date().toLocaleString() : ''}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
