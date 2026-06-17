@@ -51,6 +51,11 @@ const navigationGroups = [
         description: 'Export your whole chart + alchm profile as one file any LLM can read.',
       },
       { href: '/elemental-chart', label: 'Elemental Chart', description: 'Balance of elements.' },
+      {
+        href: '/tilt-skillet',
+        label: 'Tilt Skillet',
+        description: 'Plan large-batch cooking as a recipe-as-a-circuit.',
+      },
     ],
   },
   {

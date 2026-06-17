@@ -23,6 +23,7 @@ import rag
 import providers
 import ingest
 import recipe_generation
+import tilt_skillet_generation
 import alchm_mcp
 from feed_emitter import emit_feed_event
 
@@ -1361,6 +1362,65 @@ async def generate_cosmic_recipe(request: schemas.CosmicRecipeRequest):
         },
     )
     return recipe
+
+
+@app.post(
+    "/api/tilt-skillet-plan",
+    response_model=schemas.TiltSkilletPlanResponse,
+    response_model_exclude_none=True,
+)
+async def generate_tilt_skillet_plan(request: schemas.TiltSkilletRequest):
+    plan_tier = _resolve_tier(
+        request.modelTier or os.getenv("TILT_SKILLET_MODEL_TIER", "primary")
+    )
+    anthropic_model = ANTHROPIC_TIER_MODEL.get(plan_tier)
+
+    # Optional MCP enrichment: aggregate the batch's ingredient names through the WTEN
+    # `alchemize_ingredients` tool and pass the profile as extra grounding. The local circuit
+    # math (circuitContext) stays authoritative; this only enriches the LLM's context. Degrades
+    # silently when the MCP server is unavailable, exactly like the cosmic-recipe catalog seed.
+    if (
+        request.mcpIngredientProfile is None
+        and _env_enabled("TILT_SKILLET_USE_MCP_INGREDIENTS", True)
+        and alchm_mcp.is_enabled()
+    ):
+        names = sorted(
+            {
+                ing.name.strip()
+                for stage in request.stages
+                for ing in stage.ingredients
+                if ing.name and ing.name.strip()
+            }
+        )
+        if names:
+            try:
+                request.mcpIngredientProfile = await alchm_mcp.alchemize_ingredients(names)
+            except Exception as exc:
+                print(
+                    f"tilt_skillet_mcp_ingredients_unavailable error={str(exc)[:240]}",
+                    flush=True,
+                )
+
+    plan = await tilt_skillet_generation.generate_tilt_skillet_plan(
+        request=request,
+        tier=plan_tier,
+        anthropic_model=anthropic_model,
+    )
+    emit_feed_event(
+        "alchemical-chef",
+        "tilt_skillet_plan",
+        {
+            "recipeName": plan.title,
+            "recipeId": plan.id,
+            "topic": request.prompt[:140],
+            "messageExcerpt": plan.summary,
+            "summary": plan.summary,
+            "userId": request.userId,
+            "tier": plan_tier,
+            "stageCount": len(plan.stages),
+        },
+    )
+    return plan
 
 # --- RAG Management ---
 

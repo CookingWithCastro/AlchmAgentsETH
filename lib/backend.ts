@@ -17,6 +17,8 @@
  * In Client Components, wrap in a Server Action.
  */
 
+import type { TiltSkilletBackendRequest, TiltSkilletPlan } from './tilt-skillet-types'
+
 // The frontend talks to TWO backends and a single base URL cannot serve both:
 //   • Planetary Agents Core (api.agents.alchm.kitchen) — chat, agents, moment-
 //     recommendations. The kitchen backend has NO /api/chat → chat 404s there.
@@ -236,18 +238,20 @@ class BackendError extends Error {
 
 async function request<T>(
   path: string,
-  init: RequestInit & { auth?: boolean; baseUrl?: string } = {}
+  init: RequestInit & { auth?: boolean; baseUrl?: string; timeoutMs?: number } = {}
 ): Promise<T> {
   const {
     auth,
     headers,
     signal: callerSignal,
     baseUrl,
+    timeoutMs,
     ...rest
   } = init as RequestInit & {
     auth?: boolean
     signal?: AbortSignal
     baseUrl?: string
+    timeoutMs?: number
   }
   const url = `${baseUrl || KITCHEN_BACKEND_URL}${path}`
 
@@ -264,7 +268,9 @@ async function request<T>(
   if (auth === false) delete finalHeaders.INTERNAL_API_SECRET
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 10_000)
+  // Most backend calls are fast; LLM-generation calls (e.g. tilt-skillet-plan) pass a longer
+  // timeoutMs since a structured Sonnet response can exceed the 10s default.
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs ?? 10_000)
   if (callerSignal) callerSignal.addEventListener('abort', () => controller.abort())
 
   let res: Response
@@ -297,7 +303,10 @@ async function request<T>(
  * agents / chat / moment-recommendations domain; everything else stays on the
  * kitchen backend (the `request` default).
  */
-function agentRequest<T>(path: string, init: RequestInit & { auth?: boolean } = {}): Promise<T> {
+function agentRequest<T>(
+  path: string,
+  init: RequestInit & { auth?: boolean; timeoutMs?: number } = {}
+): Promise<T> {
   return request<T>(path, { ...init, baseUrl: AGENTS_BACKEND_URL })
 }
 
@@ -381,6 +390,18 @@ export const backend = {
           thermo_rating: 0,
         }),
         auth: false,
+      }),
+
+    /**
+     * Generate a large-batch Tilt Skillet plan (recipe-as-a-circuit). Mirrors the cosmic-recipe
+     * generator: structured JSON via the FastAPI backend. Uses a longer timeout because a Sonnet
+     * structured response can exceed the default 10s.
+     */
+    tiltSkilletPlan: (body: TiltSkilletBackendRequest) =>
+      agentRequest<TiltSkilletPlan>('/api/tilt-skillet-plan', {
+        method: 'POST',
+        body: JSON.stringify(body),
+        timeoutMs: 60_000,
       }),
   },
 

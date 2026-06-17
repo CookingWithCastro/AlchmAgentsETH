@@ -275,6 +275,109 @@ class CosmicRecipeResponse(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+# --- Tilt Skillet / Recipe-as-a-Circuit batch planner ---
+
+class TiltSkilletIngredient(BaseModel):
+    """One ingredient added to the skillet, by volume (large batches use volume, not weight)."""
+    name: str
+    quantity: float = Field(gt=0)
+    unit: str
+
+class TiltSkilletStageInput(BaseModel):
+    name: Optional[str] = None
+    ingredients: List[TiltSkilletIngredient] = Field(default_factory=list)
+
+class TiltSkilletRequest(BaseModel):
+    prompt: str = Field(
+        default="A large-batch braise for the week ahead.",
+        min_length=1,
+        max_length=2000,
+    )
+    batchServings: Optional[int] = Field(default=12, ge=1, le=500)
+    cuisine: Optional[str] = Field(default=None, max_length=120)
+    dietPreference: Optional[str] = Field(default="omnivore", max_length=120)
+    dietary: List[str] = Field(default_factory=list, max_length=20)
+    disallowedIngredients: List[str] = Field(default_factory=list, max_length=40)
+    dominantElement: Optional[Literal["Air", "Fire", "Water", "Earth"]] = None
+    stages: List[TiltSkilletStageInput] = Field(default_factory=list, max_length=12)
+    # Precomputed deterministic circuit readings (per-stage + series) — see lib/recipe-circuit.ts.
+    # Injected as factual grounding so the model honors the math instead of inventing physics.
+    circuitContext: Optional[Dict[str, Any]] = None
+    # Optional aggregate ingredient profile from the WTEN MCP `alchemize_ingredients` enrichment.
+    mcpIngredientProfile: Optional[Dict[str, Any]] = None
+    userId: Optional[str] = None
+    modelTier: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_context_and_aliases(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        data = dict(value)
+        context = data.pop("context", None)
+        if isinstance(context, dict):
+            merged = dict(context)
+            merged.update({k: v for k, v in data.items() if v is not None})
+            data = merged
+        if "diet" in data and "dietPreference" not in data:
+            data["dietPreference"] = data["diet"]
+        if "dietaryRestrictions" in data and "dietary" not in data:
+            data["dietary"] = data["dietaryRestrictions"]
+        if "preferredCuisine" in data and "cuisine" not in data:
+            data["cuisine"] = data["preferredCuisine"]
+        if "servings" in data and "batchServings" not in data:
+            data["batchServings"] = data["servings"]
+        return data
+
+class TiltSkilletStageIngredient(BaseModel):
+    ingredient: str
+    quantity: str
+    unit: str
+
+class TiltSkilletStage(BaseModel):
+    step_number: int = Field(ge=1)
+    name: str
+    instruction: str
+    add_to_skillet: List[TiltSkilletStageIngredient] = Field(default_factory=list)
+    skillet_position: str  # e.g. "tilt forward to pool oil", "level for the braise"
+    tilt_angle_degrees: float = Field(ge=0, le=45)
+    temperature_f: float = Field(ge=0)
+    time_minutes: float = Field(ge=0)
+    technique: str
+    # Which circuit element this stage plays in the recipe-as-a-circuit model.
+    circuit_role: Literal["source", "resistor", "capacitor", "load"]
+    reaction_note: str
+    sensory_cues: List[str]
+
+class TiltSkilletCircuitSummary(BaseModel):
+    total_voltage: float
+    total_current: float
+    total_resistance: float
+    total_power: float
+    impedance: float
+    kalchm: float
+    monica: float
+    narrative: str
+
+class TiltSkilletPlanResponse(BaseModel):
+    id: str
+    title: str
+    summary: str
+    cuisine: str
+    batch_yield: str
+    total_time: float = Field(gt=0)
+    equipment_notes: str
+    stages: List[TiltSkilletStage] = Field(min_length=1)
+    elementalBalance: ElementalBalance
+    circuit_summary: TiltSkilletCircuitSummary
+    alignment_notes: List[str]
+    finishing_and_serving: FinishingAndServing
+    leftovers_and_storage: LeftoversAndStorage
+
+    model_config = ConfigDict(extra="ignore")
+
 class HealthResponse(BaseModel):
     status: str
     service: str

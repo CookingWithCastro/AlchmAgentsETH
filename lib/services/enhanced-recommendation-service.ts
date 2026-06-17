@@ -707,7 +707,9 @@ export class EnhancedRecommendationService {
   private static calculateRecipeRuneAlignment(recipe: any, rune: RuneOfTheMoment): number {
     // Check if cooking method aligns with rune element
     const methodElementMapping = {
-      fire: ['grilling', 'roasting', 'sautéing'],
+      // 'tilt skillet' is a dual-phase sear+braise method; filed under fire (its dominant
+      // searing phase). See lib/cooking-methods.ts COOKING_METHODS['tilt-skillet'].
+      fire: ['grilling', 'roasting', 'sautéing', 'tilt skillet'],
       water: ['steaming', 'poaching', 'braising'],
       earth: ['baking', 'slow cooking'],
       air: ['raw', 'light cooking', 'whipping'],
