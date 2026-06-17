@@ -73,7 +73,7 @@ export function useZonePool(ctx: ZonePoolContext) {
   )
 
   const seed = useCallback(
-    async (constId: number, amtA: string, amtB: string) => {
+    async (constId: number, amtA: string, amtB: string, minShares: bigint = 0n) => {
       if (!configured) {
         setMessage('AMM not deployed yet')
         return
@@ -85,11 +85,20 @@ export function useZonePool(ctx: ZonePoolContext) {
         const { att, signature } = await fetchAttestation(constId)
         const wallet = await getArcWalletClient(primaryWallet)
         setMessage('Providing essence…')
+        // minShares is the LP's slippage floor; the on-chain on-ratio guard + admin-seeded
+        // baseline are the primary defenses, so 0n (no floor) is a safe default here.
         const tx = await wallet.writeContract({
           address: CONSTELLATION_AMM_ADDRESS,
           abi: CONSTELLATION_AMM_ABI,
           functionName: 'seedLiquidity',
-          args: [constId, parseUnits(amtA || '0', 18), parseUnits(amtB || '0', 18), att, signature],
+          args: [
+            constId,
+            parseUnits(amtA || '0', 18),
+            parseUnits(amtB || '0', 18),
+            minShares,
+            att,
+            signature,
+          ],
         })
         await publicClient.waitForTransactionReceipt({ hash: tx })
         setLastTx(tx)

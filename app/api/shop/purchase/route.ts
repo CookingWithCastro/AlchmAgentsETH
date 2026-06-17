@@ -7,11 +7,17 @@ import { shopOrderId, isValidNonce } from '@/lib/shop/orders'
 import { grantPurchase, hasUnlock } from '@/lib/shop/entitlement'
 import { canAffordOnchain, costToAmountStrings, onchainShortfall } from '@/lib/shop/pricing'
 import {
+  buildRedeemAuthChallenge,
   esmsOnchainConfigured,
   readEsmsBalances,
   readEsmsRedeemed,
 } from '@/lib/esms-chain/contract'
-import { redeemEsmsFor, redeemerConfigured, verifyRedeem } from '@/lib/esms-chain/redeemer'
+import {
+  redeemEsmsFor,
+  redeemerConfigured,
+  toOnchainAmounts,
+  verifyRedeem,
+} from '@/lib/esms-chain/redeemer'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,7 +43,14 @@ export async function POST(request: Request) {
   const userId = session?.user?.id
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { itemId?: unknown; payWith?: unknown; nonce?: unknown; txHash?: unknown }
+  let body: {
+    itemId?: unknown
+    payWith?: unknown
+    nonce?: unknown
+    txHash?: unknown
+    signature?: unknown
+    deadline?: unknown
+  }
   try {
     body = await request.json()
   } catch {
@@ -161,8 +174,43 @@ export async function POST(request: Request) {
     )
   }
 
+  // The buyer must authorize the sponsored burn with an EIP-712 RedeemAuthorization
+  // (gasless — a signature, not a tx). Without one, hand the client a signing challenge.
+  const sig =
+    typeof body.signature === 'string' && /^0x[0-9a-fA-F]+$/.test(body.signature)
+      ? (body.signature as Hex)
+      : null
+  if (!sig || body.deadline === undefined) {
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 600)
+    return NextResponse.json({
+      mode: 'sign',
+      itemId: item.id,
+      orderId,
+      deadline: deadline.toString(),
+      challenge: buildRedeemAuthChallenge({
+        from: wallet,
+        orderId,
+        values: toOnchainAmounts(amounts),
+        deadline,
+      }),
+    })
+  }
+
+  let deadline: bigint
   try {
-    const burnTx = await redeemEsmsFor({ from: wallet, orderId, amounts })
+    deadline = BigInt(String(body.deadline))
+  } catch {
+    return NextResponse.json({ error: 'Invalid deadline.', code: 'bad_deadline' }, { status: 400 })
+  }
+  if (deadline < BigInt(Math.floor(Date.now() / 1000))) {
+    return NextResponse.json(
+      { error: 'Signing window expired — try again.', code: 'sig_expired' },
+      { status: 400 }
+    )
+  }
+
+  try {
+    const burnTx = await redeemEsmsFor({ from: wallet, orderId, amounts, deadline, sig })
     await grantPurchase({ userId, item, orderId, txHash: burnTx })
     return NextResponse.json({ ok: true, itemId: item.id, orderId, txHash: burnTx })
   } catch (err) {

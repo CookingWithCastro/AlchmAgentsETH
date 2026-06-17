@@ -16,16 +16,20 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
  *
  *   forge script script/Deploy.s.sol:Deploy --rpc-url base_sepolia --broadcast --verify
  *
- * Env: DEPLOYER_PRIVATE_KEY, MINTER_ADDRESS, ATTESTOR_ADDRESS, ESMS_METADATA_URI
+ * Env: DEPLOYER_PRIVATE_KEY, MINTER_ADDRESS, ATTESTOR_ADDRESS, ESMS_METADATA_URI,
+ *      [REDEEMER_ADDRESS]
  *   DEPLOYER becomes DEFAULT_ADMIN/PAUSER/UPGRADER (ESMS) and ADMIN (AMM + Deed).
- *   MINTER_ADDRESS gets ESMS MINTER_ROLE (the backend that seeds demo ESMS).
+ *   MINTER_ADDRESS gets ESMS MINTER_ROLE (the backend that seeds/claims demo ESMS).
  *   ATTESTOR_ADDRESS gets AMM ATTESTOR_ROLE (the Pentacles feeder's signing key).
+ *   REDEEMER_ADDRESS (optional) gets ESMS BURNER_ROLE — the shop settlement wallet that
+ *     submits holder-signed redeemFor burns. Set it for the on-chain shop to work.
  */
 contract Deploy is Script {
     function run() external {
         uint256 pk = vm.envUint("DEPLOYER_PRIVATE_KEY");
         address minter = vm.envAddress("MINTER_ADDRESS");
         address attestor = vm.envAddress("ATTESTOR_ADDRESS");
+        address redeemer = vm.envOr("REDEEMER_ADDRESS", address(0));
         string memory uri = vm.envString("ESMS_METADATA_URI");
         address admin = vm.addr(pk);
 
@@ -48,12 +52,16 @@ contract Deploy is Script {
         // 5. The feeder attestor may sign visibility attestations.
         amm.grantRole(amm.ATTESTOR_ROLE(), attestor);
 
+        // 5b. The shop settlement wallet may burn buyers' (holder-signed) ESMS via redeemFor.
+        if (redeemer != address(0)) esms.grantRole(esms.BURNER_ROLE(), redeemer);
+
         // 6. Register the 12 demo pools (id, elemA, elemB, feeBps).
         _registerPools(amm);
 
         vm.stopBroadcast();
 
         console.log("EsmsToken proxy (ESMS_CONTRACT_ADDRESS):", address(esms));
+        console.log("Shop BURNER (REDEEMER_ADDRESS):", redeemer);
         console.log("ConstellationDeed (DEED_CONTRACT_ADDRESS):", address(deed));
         console.log("ConstellationAMM (AMM_CONTRACT_ADDRESS):", address(amm));
     }

@@ -6,6 +6,7 @@ import {EsmsToken} from "../src/EsmsToken.sol";
 import {ConstellationDeed} from "../src/ConstellationDeed.sol";
 import {ConstellationAMM} from "../src/ConstellationAMM.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 contract ConstellationAMMTest is Test {
     EsmsToken esms;
@@ -87,7 +88,7 @@ contract ConstellationAMMTest is Test {
         ConstellationAMM.VisibilityAttestation memory a = _att(who, ORION, nonce, uint64(block.timestamp + 120));
         bytes memory sig = _sign(attestorPk, a);
         vm.prank(who);
-        deedId = amm.seedLiquidity(ORION, amtA, amtB, a, sig);
+        deedId = amm.seedLiquidity(ORION, amtA, amtB, 0, a, sig);
     }
 
     // ── liquidity ──────────────────────────────────────────────────────────
@@ -101,7 +102,7 @@ contract ConstellationAMMTest is Test {
         assertEq(deed.ownerOf(deedId), user);
         assertEq(esms.balanceOf(user, SPIRIT), 1_000_000e18 - 1000e18);
         assertEq(esms.balanceOf(user, SUBSTANCE), 1_000_000e18 - 4000e18);
-        assertEq(amm.usedNonce(user), 1);
+        assertEq(amm.usedNonce(ORION, user), 1);
     }
 
     function test_Swap_ConstantProductAndMintsOutput() public {
@@ -160,7 +161,7 @@ contract ConstellationAMMTest is Test {
         bytes memory sig = _sign(attestorPk, a);
         vm.prank(user);
         vm.expectRevert(ConstellationAMM.AttestationBadNonce.selector);
-        amm.seedLiquidity(ORION, 10e18, 10e18, a, sig);
+        amm.seedLiquidity(ORION, 10e18, 10e18, 0, a, sig);
     }
 
     function test_Attestation_ExpiredReverts() public {
@@ -169,7 +170,7 @@ contract ConstellationAMMTest is Test {
         vm.warp(block.timestamp + 61); // the constellation has since set
         vm.prank(user);
         vm.expectRevert(ConstellationAMM.AttestationExpired.selector);
-        amm.seedLiquidity(ORION, 10e18, 10e18, a, sig);
+        amm.seedLiquidity(ORION, 10e18, 10e18, 0, a, sig);
     }
 
     function test_Attestation_WrongTraderReverts() public {
@@ -177,7 +178,7 @@ contract ConstellationAMMTest is Test {
         bytes memory sig = _sign(attestorPk, a);
         vm.prank(user); // user submits an attestation bound to `other`
         vm.expectRevert(ConstellationAMM.AttestationTraderMismatch.selector);
-        amm.seedLiquidity(ORION, 10e18, 10e18, a, sig);
+        amm.seedLiquidity(ORION, 10e18, 10e18, 0, a, sig);
     }
 
     function test_Attestation_WrongConstellationReverts() public {
@@ -185,7 +186,7 @@ contract ConstellationAMMTest is Test {
         bytes memory sig = _sign(attestorPk, a);
         vm.prank(user);
         vm.expectRevert(ConstellationAMM.AttestationConstellationMismatch.selector);
-        amm.seedLiquidity(ORION, 10e18, 10e18, a, sig);
+        amm.seedLiquidity(ORION, 10e18, 10e18, 0, a, sig);
     }
 
     function test_Attestation_BadSignerReverts() public {
@@ -194,7 +195,7 @@ contract ConstellationAMMTest is Test {
         bytes memory sig = _sign(fakePk, a); // signed by a key without ATTESTOR_ROLE
         vm.prank(user);
         vm.expectRevert(ConstellationAMM.AttestationBadSigner.selector);
-        amm.seedLiquidity(ORION, 10e18, 10e18, a, sig);
+        amm.seedLiquidity(ORION, 10e18, 10e18, 0, a, sig);
     }
 
     // ── invariants ───────────────────────────────────────────────────────────
@@ -215,5 +216,101 @@ contract ConstellationAMMTest is Test {
     function test_RegisterPool_OnlyAdmin() public {
         vm.expectRevert();
         amm.registerPool(99, 0, 1, 30); // caller lacks ADMIN_ROLE
+    }
+
+    // ── liquidity-add safety (Q6) ──────────────────────────────────────────────
+
+    function test_SeedLiquidity_SlippageGuardReverts() public {
+        _seed(user, 0, 1000e18, 1000e18); // on-ratio baseline
+        // add on-ratio but demand more shares than the deposit yields
+        ConstellationAMM.VisibilityAttestation memory a = _att(user, ORION, 1, uint64(block.timestamp + 120));
+        bytes memory sig = _sign(attestorPk, a);
+        vm.prank(user);
+        vm.expectRevert(ConstellationAMM.SlippageTooHigh.selector);
+        amm.seedLiquidity(ORION, 100e18, 100e18, 1_000e18, a, sig); // minShares unreachable
+    }
+
+    function test_SeedLiquidity_OffRatioAddReverts() public {
+        _seed(user, 0, 1000e18, 1000e18); // 1:1 baseline
+        // add badly off-ratio (1:2) — would silently donate the excess; now rejected
+        ConstellationAMM.VisibilityAttestation memory a = _att(user, ORION, 1, uint64(block.timestamp + 120));
+        bytes memory sig = _sign(attestorPk, a);
+        vm.prank(user);
+        vm.expectRevert(ConstellationAMM.OffRatioDeposit.selector);
+        amm.seedLiquidity(ORION, 100e18, 200e18, 0, a, sig);
+    }
+
+    function test_SeedLiquidity_OnRatioAddSucceeds() public {
+        _seed(user, 0, 1000e18, 1000e18);
+        ConstellationAMM.VisibilityAttestation memory a = _att(user, ORION, 1, uint64(block.timestamp + 120));
+        bytes memory sig = _sign(attestorPk, a);
+        vm.prank(user);
+        uint256 deedId = amm.seedLiquidity(ORION, 500e18, 500e18, 1, a, sig); // exactly on-ratio
+        (, uint256 shares,) = deed.positionOf(deedId);
+        assertGt(shares, 0);
+    }
+
+    function test_SeedInitial_AdminBootstrapsVirtualBaseline() public {
+        // admin bootstraps a pool with NO attestation and NO ESMS burned (virtual reserves)
+        assertEq(esms.balanceOf(admin, SPIRIT), 0);
+        vm.prank(admin);
+        uint256 deedId = amm.seedInitial(ORION, 1000e18, 1000e18, 0);
+        assertEq(deed.ownerOf(deedId), admin);
+        (uint256 rA, uint256 rB) = amm.getReserves(ORION);
+        assertEq(rA, 1000e18);
+        assertEq(rB, 1000e18);
+        assertEq(esms.balanceOf(admin, SPIRIT), 0, "no ESMS burned from admin");
+    }
+
+    function test_SeedInitial_OnlyAdmin() public {
+        vm.prank(user);
+        vm.expectRevert();
+        amm.seedInitial(ORION, 1000e18, 1000e18, 0);
+    }
+
+    // ── pause scope (Q3) ───────────────────────────────────────────────────────
+
+    function test_Pause_BlocksSeedAndSwapButNotWithdraw() public {
+        uint256 deedId = _seed(user, 0, 1000e18, 1000e18);
+
+        vm.prank(admin);
+        amm.pause();
+
+        // seed blocked
+        ConstellationAMM.VisibilityAttestation memory a = _att(user, ORION, 1, uint64(block.timestamp + 120));
+        bytes memory sig = _sign(attestorPk, a);
+        vm.prank(user);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        amm.seedLiquidity(ORION, 10e18, 10e18, 0, a, sig);
+
+        // swap blocked
+        vm.prank(user);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        amm.swap(ORION, SPIRIT, 10e18, 0, a, sig);
+
+        // withdraw STILL works — "you can always pull liquidity"
+        vm.prank(user);
+        amm.withdraw(deedId, 10_000);
+        assertGt(esms.balanceOf(user, SPIRIT), 1_000_000e18 - 1000e18);
+    }
+
+    // ── per-constellation nonce independence (Q8) ──────────────────────────────
+
+    function test_Nonce_IndependentPerConstellation() public {
+        uint16 LEO = 1;
+        vm.prank(admin);
+        amm.registerPool(LEO, SPIRIT, SUBSTANCE, FEE);
+
+        // nonce 0 on ORION
+        _seed(user, 0, 1000e18, 1000e18);
+        assertEq(amm.usedNonce(ORION, user), 1);
+        assertEq(amm.usedNonce(LEO, user), 0); // LEO untouched
+
+        // nonce 0 still valid on LEO — pools don't serialize against each other
+        ConstellationAMM.VisibilityAttestation memory a = _att(user, LEO, 0, uint64(block.timestamp + 120));
+        bytes memory sig = _sign(attestorPk, a);
+        vm.prank(user);
+        amm.seedLiquidity(LEO, 1000e18, 1000e18, 0, a, sig);
+        assertEq(amm.usedNonce(LEO, user), 1);
     }
 }

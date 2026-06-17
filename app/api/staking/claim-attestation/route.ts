@@ -110,12 +110,13 @@ export async function POST(req: Request) {
     regionHint: star.regionHint ?? 0,
   })
 
-  // Read on-chain principal + nonce.
+  // Read on-chain principal, per-star nonce, and the on-chain yield cap.
   const client = createPublicClient({ chain: arcChain, transport: http() })
   let principalRaw: bigint
   let nonce: bigint
+  let cap: bigint
   try {
-    ;[principalRaw, nonce] = await Promise.all([
+    ;[principalRaw, nonce, cap] = await Promise.all([
       client.readContract({
         address: STAR_VAULT_ADDRESS,
         abi: STAR_VAULT_ABI,
@@ -126,7 +127,13 @@ export async function POST(req: Request) {
         address: STAR_VAULT_ADDRESS,
         abi: STAR_VAULT_ABI,
         functionName: 'usedNonce',
-        args: [address as `0x${string}`],
+        args: [enriched.hipId, address as `0x${string}`], // per-(star,staker) nonce
+      }) as Promise<bigint>,
+      client.readContract({
+        address: STAR_VAULT_ADDRESS,
+        abi: STAR_VAULT_ABI,
+        functionName: 'yieldCap',
+        args: [enriched.hipId, address as `0x${string}`],
       }) as Promise<bigint>,
     ])
   } catch (err) {
@@ -158,6 +165,18 @@ export async function POST(req: Request) {
   if (amount <= 0n) {
     return NextResponse.json({ error: 'no yield accrued yet' }, { status: 409 })
   }
+
+  // Clamp to the on-chain cap (principal × maxRate × elapsed-since-last-claim) so the
+  // signed claim can never exceed what StarVault.claimYield will accept. The cap only
+  // grows until the next claim resets it, so clamping at sign-time is safe.
+  if (cap <= 0n) {
+    return NextResponse.json(
+      { error: 'no claimable yield yet — accrual window just opened, try again shortly' },
+      { status: 409 }
+    )
+  }
+  const capped = amount > cap
+  if (capped) amount = cap
 
   const deadline = BigInt(Math.floor(now.getTime() / 1000) + 600)
   const signed = await signStarYield({
@@ -192,6 +211,8 @@ export async function POST(req: Request) {
       altitudeDeg: rate.altitudeDeg,
       onAscendant,
       burst: burst.toString(),
+      capped, // true if the on-chain yield cap clamped the accrued amount
+      cap: cap.toString(),
     },
   })
 }

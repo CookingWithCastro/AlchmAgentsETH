@@ -6,7 +6,7 @@ import {EsmsToken} from "../src/EsmsToken.sol";
 import {StarVault} from "../src/StarVault.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
+import {Pausable} from "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// Minimal 6-decimal USDC stand-in for Arc's gas token.
 contract MockUSDC is ERC20 {
@@ -41,10 +41,14 @@ contract StarVaultTest is Test {
     uint8 constant SUBSTANCE = 3;
 
     uint256 constant USDC1 = 1e6; // 1 USDC (6-dp)
+    // Generous default so the yield cap never binds in functional tests; cap binding is
+    // exercised separately in the cap tests via setMaxYieldRate.
+    uint256 constant MAX_RATE = 1e18;
 
     event Staked(uint32 indexed starId, address indexed staker, uint256 usdcAmount, uint256 shares);
     event Unstaked(uint32 indexed starId, address indexed staker, uint256 usdcAmount, uint256 shares);
     event YieldClaimed(uint32 indexed starId, address indexed staker, uint8 element, uint256 amount);
+    event StarActivated(uint32 indexed starId, address indexed awakener);
 
     function setUp() public {
         attestor = vm.addr(attestorPk);
@@ -56,11 +60,15 @@ contract StarVaultTest is Test {
         bytes memory init = abi.encodeCall(EsmsToken.initialize, ("uri/{id}", admin, esmsMinter));
         esms = EsmsToken(address(new ERC1967Proxy(address(impl), init)));
 
-        vault = new StarVault(address(usdc), address(esms), admin);
+        vault = new StarVault(address(usdc), address(esms), admin, MAX_RATE);
 
         vm.startPrank(admin);
         esms.grantRole(esms.MINTER_ROLE(), address(vault)); // vault mints yield
         vault.grantRole(vault.ATTESTOR_ROLE(), attestor); // feeder may sign claims
+        uint32[] memory bright = new uint32[](2);
+        bright[0] = SIRIUS;
+        bright[1] = VEGA;
+        vault.adminActivateStars(bright); // pre-activate the test stars
         vm.stopPrank();
 
         usdc.mint(alice, 1_000 * USDC1);
@@ -99,18 +107,92 @@ contract StarVaultTest is Test {
         return abi.encodePacked(r, s, v);
     }
 
-    function _claim(
-        address who,
-        uint256 pk,
-        uint32 starId,
-        uint8 element,
-        uint256 amount
-    ) internal {
+    /// Warp a day so the cap has accrued, then claim with the star's current nonce.
+    function _claim(address who, uint256 pk, uint32 starId, uint8 element, uint256 amount) internal {
+        vm.warp(block.timestamp + 1 days);
         StarVault.StarYield memory y =
-            _yield(who, starId, element, amount, vault.usedNonce(who), uint64(block.timestamp + 600));
+            _yield(who, starId, element, amount, vault.usedNonce(starId, who), uint64(block.timestamp + 600));
         bytes memory sig = _signYield(pk, y);
         vm.prank(who);
         vault.claimYield(y, sig);
+    }
+
+    function _leaf(uint32 starId) internal pure returns (bytes32) {
+        return keccak256(bytes.concat(keccak256(abi.encode(starId))));
+    }
+
+    function _commutative(bytes32 a, bytes32 b) internal pure returns (bytes32) {
+        return a < b ? keccak256(abi.encodePacked(a, b)) : keccak256(abi.encodePacked(b, a));
+    }
+
+    // ── registry: activation gate ───────────────────────────────────────────────
+
+    function test_Stake_UnactivatedStarReverts() public {
+        vm.startPrank(alice);
+        usdc.approve(address(vault), 10 * USDC1);
+        vm.expectRevert(StarVault.StarNotActivated.selector);
+        vault.stake(40000, 10 * USDC1); // never activated
+        vm.stopPrank();
+    }
+
+    function test_AdminActivate_EmitsAndEnablesStake() public {
+        uint32 NEWSTAR = 55555;
+        assertFalse(vault.starActivated(NEWSTAR));
+        uint32[] memory ids = new uint32[](1);
+        ids[0] = NEWSTAR;
+        vm.expectEmit(true, true, false, false);
+        emit StarActivated(NEWSTAR, admin);
+        vm.prank(admin);
+        vault.adminActivateStars(ids);
+        assertTrue(vault.starActivated(NEWSTAR));
+        _stake(alice, NEWSTAR, 10 * USDC1); // now stakeable
+        assertEq(vault.principalOf(NEWSTAR, alice), 10 * USDC1);
+    }
+
+    function test_AdminActivate_OnlyAdmin() public {
+        uint32[] memory ids = new uint32[](1);
+        ids[0] = 12345;
+        vm.prank(alice);
+        vm.expectRevert();
+        vault.adminActivateStars(ids);
+    }
+
+    function test_ActivateStar_MerkleProof() public {
+        uint32 A = 11111;
+        uint32 B = 22222;
+        bytes32 leafA = _leaf(A);
+        bytes32 leafB = _leaf(B);
+        bytes32 root = _commutative(leafA, leafB);
+
+        vm.prank(admin);
+        vault.setStarRoot(root);
+
+        bytes32[] memory proof = new bytes32[](1);
+        proof[0] = leafB; // sibling proves A
+        vm.expectEmit(true, true, false, false);
+        emit StarActivated(A, address(this));
+        vault.activateStar(A, proof);
+        assertTrue(vault.starActivated(A));
+
+        _stake(alice, A, 5 * USDC1);
+        assertEq(vault.principalOf(A, alice), 5 * USDC1);
+    }
+
+    function test_ActivateStar_BadProofReverts() public {
+        bytes32 root = _commutative(_leaf(11111), _leaf(22222));
+        vm.prank(admin);
+        vault.setStarRoot(root);
+
+        bytes32[] memory badProof = new bytes32[](1);
+        badProof[0] = _leaf(99999); // wrong sibling
+        vm.expectRevert(StarVault.BadStarProof.selector);
+        vault.activateStar(11111, badProof);
+    }
+
+    function test_SetStarRoot_OnlyAdmin() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        vault.setStarRoot(bytes32(uint256(1)));
     }
 
     // ── custody: stake ─────────────────────────────────────────────────────────
@@ -235,15 +317,22 @@ contract StarVaultTest is Test {
         _stake(alice, SIRIUS, 100 * USDC1);
         uint256 amount = 5e18;
 
+        vm.warp(block.timestamp + 1 days);
+        StarVault.StarYield memory y =
+            _yield(alice, SIRIUS, SPIRIT, amount, vault.usedNonce(SIRIUS, alice), uint64(block.timestamp + 600));
+        bytes memory sig = _signYield(attestorPk, y);
         vm.expectEmit(true, true, false, true);
         emit YieldClaimed(SIRIUS, alice, SPIRIT, amount);
-        _claim(alice, attestorPk, SIRIUS, SPIRIT, amount);
+        vm.prank(alice);
+        vault.claimYield(y, sig);
 
         assertEq(esms.balanceOf(alice, SPIRIT), amount, "ESMS minted to staker");
-        assertEq(vault.usedNonce(alice), 1, "nonce consumed");
+        assertEq(vault.usedNonce(SIRIUS, alice), 1, "nonce consumed");
     }
 
     function test_ClaimYield_EachElement() public {
+        _stake(alice, SIRIUS, 100 * USDC1);
+        _stake(alice, VEGA, 100 * USDC1);
         _claim(alice, attestorPk, SIRIUS, SPIRIT, 1e18);
         _claim(alice, attestorPk, VEGA, ESSENCE, 2e18);
         _claim(alice, attestorPk, SIRIUS, MATTER, 3e18);
@@ -252,7 +341,6 @@ contract StarVaultTest is Test {
         assertEq(esms.balanceOf(alice, ESSENCE), 2e18);
         assertEq(esms.balanceOf(alice, MATTER), 3e18);
         assertEq(esms.balanceOf(alice, SUBSTANCE), 4e18);
-        assertEq(vault.usedNonce(alice), 4);
     }
 
     function test_ClaimYield_BadSignerReverts() public {
@@ -293,6 +381,7 @@ contract StarVaultTest is Test {
     }
 
     function test_ClaimYield_ReplayReverts() public {
+        _stake(alice, SIRIUS, 100 * USDC1);
         _claim(alice, attestorPk, SIRIUS, SPIRIT, 1e18); // consumes nonce 0
         StarVault.StarYield memory y = _yield(alice, SIRIUS, SPIRIT, 1e18, 0, uint64(block.timestamp + 600));
         bytes memory sig = _signYield(attestorPk, y);
@@ -317,11 +406,122 @@ contract StarVaultTest is Test {
         vault.claimYield(y, sig);
     }
 
+    function test_ClaimYield_ZeroAmountReverts() public {
+        StarVault.StarYield memory y = _yield(alice, SIRIUS, SPIRIT, 0, 0, uint64(block.timestamp + 600));
+        bytes memory sig = _signYield(attestorPk, y);
+        vm.prank(alice);
+        vm.expectRevert(StarVault.ZeroAmount.selector);
+        vault.claimYield(y, sig);
+    }
+
     function test_ClaimYield_EsmsStaysSoulbound() public {
+        _stake(alice, SIRIUS, 100 * USDC1);
         _claim(alice, attestorPk, SIRIUS, SPIRIT, 1e18);
         vm.prank(alice);
         vm.expectRevert(EsmsToken.TransfersDisabled.selector);
         esms.safeTransferFrom(alice, bob, SPIRIT, 1e18, "");
+    }
+
+    // ── yield: the on-chain cap (Q1) ─────────────────────────────────────────────
+
+    function test_YieldCap_ClaimAtCapSucceeds() public {
+        vm.prank(admin);
+        vault.setMaxYieldRate(1e16); // 0.01 ESMS / USDC / day
+        _stake(alice, SIRIUS, 100 * USDC1); // 100 USDC
+        vm.warp(block.timestamp + 1 days);
+
+        // cap = 100 * 1e16 = 1e18 after exactly one day
+        assertEq(vault.yieldCap(SIRIUS, alice), 1e18, "cap = principal * rate * elapsed");
+        StarVault.StarYield memory y =
+            _yield(alice, SIRIUS, SPIRIT, 1e18, 0, uint64(block.timestamp + 600));
+        bytes memory sig = _signYield(attestorPk, y); // sign before pranking (view call would consume it)
+        vm.prank(alice);
+        vault.claimYield(y, sig); // exactly at cap: ok
+        assertEq(esms.balanceOf(alice, SPIRIT), 1e18);
+    }
+
+    function test_YieldCap_OverCapReverts() public {
+        vm.prank(admin);
+        vault.setMaxYieldRate(1e16);
+        _stake(alice, SIRIUS, 100 * USDC1);
+        vm.warp(block.timestamp + 1 days);
+
+        StarVault.StarYield memory y =
+            _yield(alice, SIRIUS, SPIRIT, 1e18 + 1, 0, uint64(block.timestamp + 600)); // 1 wei over cap
+        bytes memory sig = _signYield(attestorPk, y);
+        vm.prank(alice);
+        vm.expectRevert(StarVault.YieldExceedsCap.selector);
+        vault.claimYield(y, sig);
+    }
+
+    function test_YieldCap_NoPrincipalIsZero() public {
+        // a signed claim from someone who never staked the star cannot mint (cap 0)
+        vm.prank(admin);
+        vault.setMaxYieldRate(1e16);
+        assertEq(vault.yieldCap(SIRIUS, alice), 0);
+        StarVault.StarYield memory y =
+            _yield(alice, SIRIUS, SPIRIT, 1, 0, uint64(block.timestamp + 600));
+        bytes memory sig = _signYield(attestorPk, y);
+        vm.prank(alice);
+        vm.expectRevert(StarVault.YieldExceedsCap.selector);
+        vault.claimYield(y, sig);
+    }
+
+    // ── per-star nonce independence (Q8) ─────────────────────────────────────────
+
+    function test_Nonce_IndependentPerStar() public {
+        _stake(alice, SIRIUS, 100 * USDC1);
+        _stake(alice, VEGA, 100 * USDC1);
+        // a claim on SIRIUS (nonce 0) does not advance VEGA's nonce
+        _claim(alice, attestorPk, SIRIUS, SPIRIT, 1e18);
+        assertEq(vault.usedNonce(SIRIUS, alice), 1);
+        assertEq(vault.usedNonce(VEGA, alice), 0, "VEGA nonce untouched");
+        // VEGA can still claim with nonce 0 — stars don't serialize against each other
+        _claim(alice, attestorPk, VEGA, ESSENCE, 1e18);
+        assertEq(vault.usedNonce(VEGA, alice), 1);
+    }
+
+    // ── pause scope (Q3) ─────────────────────────────────────────────────────────
+
+    function test_Pause_BlocksClaimButNotStakeOrUnstake() public {
+        _stake(alice, SIRIUS, 100 * USDC1);
+        vm.warp(block.timestamp + 1 days);
+
+        vm.prank(admin);
+        vault.pause();
+
+        // claim blocked
+        StarVault.StarYield memory y =
+            _yield(alice, SIRIUS, SPIRIT, 1e18, 0, uint64(block.timestamp + 600));
+        bytes memory sig = _signYield(attestorPk, y);
+        vm.prank(alice);
+        vm.expectRevert(Pausable.EnforcedPause.selector);
+        vault.claimYield(y, sig);
+
+        // stake STILL works while paused
+        _stake(bob, SIRIUS, 50 * USDC1);
+        assertEq(vault.principalOf(SIRIUS, bob), 50 * USDC1);
+
+        // unstake STILL works while paused — "you can always exit"
+        vm.prank(alice);
+        uint256 out = vault.unstake(SIRIUS, 100 * USDC1);
+        assertEq(out, 100 * USDC1);
+    }
+
+    function test_Pause_OnlyPauser() public {
+        vm.prank(alice);
+        vm.expectRevert();
+        vault.pause();
+    }
+
+    function test_Unpause_RestoresClaim() public {
+        _stake(alice, SIRIUS, 100 * USDC1);
+        vm.prank(admin);
+        vault.pause();
+        vm.prank(admin);
+        vault.unpause();
+        _claim(alice, attestorPk, SIRIUS, SPIRIT, 1e18); // works again
+        assertEq(esms.balanceOf(alice, SPIRIT), 1e18);
     }
 
     // ── roles ──────────────────────────────────────────────────────────────────
@@ -329,6 +529,8 @@ contract StarVaultTest is Test {
     function test_Constructor_GrantsAdminRoles() public view {
         assertTrue(vault.hasRole(vault.DEFAULT_ADMIN_ROLE(), admin));
         assertTrue(vault.hasRole(vault.ADMIN_ROLE(), admin));
+        assertTrue(vault.hasRole(vault.PAUSER_ROLE(), admin));
+        assertEq(vault.maxYieldRatePerUsdcPerDay(), MAX_RATE);
     }
 
     function test_GrantAttestor_OnlyAdmin() public {

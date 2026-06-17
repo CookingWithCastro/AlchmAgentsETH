@@ -165,8 +165,38 @@ export const STAR_VAULT_ABI = [
     type: 'function',
     name: 'usedNonce',
     stateMutability: 'view',
-    inputs: [{ name: 'staker', type: 'address' }],
+    inputs: [
+      { name: 'starId', type: 'uint32' },
+      { name: 'staker', type: 'address' },
+    ],
     outputs: [{ type: 'uint64' }],
+  },
+  {
+    type: 'function',
+    name: 'yieldCap',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'starId', type: 'uint32' },
+      { name: 'staker', type: 'address' },
+    ],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    type: 'function',
+    name: 'starActivated',
+    stateMutability: 'view',
+    inputs: [{ name: 'starId', type: 'uint32' }],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    type: 'function',
+    name: 'activateStar',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'starId', type: 'uint32' },
+      { name: 'proof', type: 'bytes32[]' },
+    ],
+    outputs: [],
   },
   {
     type: 'function',
