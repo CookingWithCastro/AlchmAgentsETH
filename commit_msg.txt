@@ -1,0 +1,13 @@
+feat: harden + deploy on-chain ESMS / Star Vault stack
+
+Audit-driven hardening (8 locked decisions) of the Pentacle Star Vaults stack,
+deployed testnet-first to Arc (5042002) + Base Sepolia (84532).
+
+Contracts: StarVault on-chain mint cap + Pausable + per-(staker,star) nonce +
+Merkle star registry/lazy activate; EsmsToken signed redeemFor (EIP-712) +
+id guard + scoped pause; ConstellationAMM Pausable + per-(trader,const) nonce +
+minShares/on-ratio guard + virtual-reserve seedInitial. Deploy scripts get
+separation-of-duties (distinct attestor/minter, deployer never minter).
+74 Foundry tests green; off-chain ABIs/routes/hook/shop signing wired.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>

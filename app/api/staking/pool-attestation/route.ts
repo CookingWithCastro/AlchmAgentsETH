@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       address: CONSTELLATION_AMM_ADDRESS,
       abi: CONSTELLATION_AMM_ABI,
       functionName: 'usedNonce',
-      args: [address as `0x${string}`],
+      args: [constId, address as `0x${string}`], // per-(constellation,trader) nonce
     })) as bigint
   } catch (err) {
     return NextResponse.json(

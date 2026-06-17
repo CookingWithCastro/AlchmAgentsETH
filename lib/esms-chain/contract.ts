@@ -54,7 +54,8 @@ export const ESMS_ABI = [
     outputs: [],
   },
   {
-    // Phase 2 — shop spend: backend-sponsored burn of `from`'s balance (BURNER_ROLE).
+    // Phase 2 — shop spend: backend-sponsored burn of `from`'s balance (BURNER_ROLE),
+    // now gated by the holder's EIP-712 RedeemAuthorization signature + deadline.
     type: 'function',
     name: 'redeemFor',
     stateMutability: 'nonpayable',
@@ -63,6 +64,8 @@ export const ESMS_ABI = [
       { name: 'orderId', type: 'bytes32' },
       { name: 'ids', type: 'uint256[]' },
       { name: 'amounts', type: 'uint256[]' },
+      { name: 'deadline', type: 'uint256' },
+      { name: 'sig', type: 'bytes' },
     ],
     outputs: [],
   },
@@ -145,4 +148,56 @@ export async function readEsmsRedeemed(orderId: `0x${string}`): Promise<boolean>
 /** True when the on-chain ESMS contract is configured (deployed + address set). */
 export function esmsOnchainConfigured(): boolean {
   return Boolean(process.env.ESMS_CONTRACT_ADDRESS)
+}
+
+// ── EIP-712 RedeemAuthorization (holder consent for a sponsored redeemFor) ───────
+
+/** EIP-712 domain for the deployed EsmsToken — must match EsmsToken.initialize("EsmsToken","1"). */
+export function esmsEip712Domain() {
+  return {
+    name: 'EsmsToken',
+    version: '1',
+    chainId: esmsChain().id,
+    verifyingContract: esmsContractAddress(),
+  } as const
+}
+
+/** Must match EsmsToken.REDEEM_AUTH_TYPEHASH exactly. */
+export const REDEEM_AUTH_TYPES = {
+  RedeemAuthorization: [
+    { name: 'from', type: 'address' },
+    { name: 'orderId', type: 'bytes32' },
+    { name: 'ids', type: 'uint256[]' },
+    { name: 'amounts', type: 'uint256[]' },
+    { name: 'deadline', type: 'uint256' },
+  ],
+} as const
+
+/**
+ * Build the typed-data challenge a buyer signs to authorize a sponsored {redeemFor}.
+ * Numeric fields are returned as strings so the payload is JSON-safe over the wire;
+ * the client converts ids/amounts/deadline back to bigint before signTypedData.
+ */
+export function buildRedeemAuthChallenge(params: {
+  from: Address
+  orderId: `0x${string}`
+  values: bigint[]
+  deadline: bigint
+}) {
+  const ids = [...ESMS_IDS]
+  return {
+    domain: {
+      ...esmsEip712Domain(),
+      chainId: esmsChain().id,
+    },
+    types: REDEEM_AUTH_TYPES,
+    primaryType: 'RedeemAuthorization' as const,
+    message: {
+      from: params.from,
+      orderId: params.orderId,
+      ids: ids.map(String),
+      amounts: params.values.map(String),
+      deadline: params.deadline.toString(),
+    },
+  }
 }

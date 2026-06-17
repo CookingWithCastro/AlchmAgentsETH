@@ -62,15 +62,17 @@ export async function redeemEsmsFor(params: {
   from: Address
   orderId: Hex
   amounts: EsmsAmounts
+  deadline: bigint
+  sig: Hex
 }): Promise<Hex> {
-  const { from, orderId, amounts } = params
+  const { from, orderId, amounts, deadline, sig } = params
   const contract = esmsContractAddress()
   const ids = [...ESMS_IDS]
   const values = toOnchainAmounts(amounts)
   const data = encodeFunctionData({
     abi: ESMS_ABI,
     functionName: 'redeemFor',
-    args: [from, orderId, ids, values],
+    args: [from, orderId, ids, values, deadline, sig],
   })
 
   // Preferred: Privy server wallet (no raw key, gas-sponsorable). Reuse the

@@ -5,7 +5,6 @@ import {Test} from "forge-std/Test.sol";
 import {EsmsToken} from "../src/EsmsToken.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 
 contract EsmsTokenTest is Test {
     EsmsToken token;
@@ -63,19 +62,25 @@ contract EsmsTokenTest is Test {
         token.safeTransferFrom(user, other, 0, 1e18, "");
     }
 
-    function test_PauseBlocksMint() public {
+    /// Pause is scoped to the shop spend paths ({redeem}/{redeemFor}), NOT minting — so
+    /// the AMM's always-on {withdraw} (which settles by minting ESMS) is never frozen.
+    function test_PauseDoesNotBlockMint() public {
         (uint256[] memory ids, uint256[] memory amts) = _esms();
         vm.prank(admin);
         token.pause();
         vm.prank(minter);
-        vm.expectRevert(PausableUpgradeable.EnforcedPause.selector);
-        token.claimMint(user, keccak256("c1"), ids, amts);
-        // unpause → works again
-        vm.prank(admin);
-        token.unpause();
-        vm.prank(minter);
-        token.claimMint(user, keccak256("c1"), ids, amts);
+        token.claimMint(user, keccak256("c1"), ids, amts); // mint still works while paused
         assertEq(token.balanceOf(user, 0), 1e18);
+    }
+
+    function test_ClaimMint_RejectsOutOfRangeId() public {
+        uint256[] memory ids = new uint256[](1);
+        uint256[] memory amts = new uint256[](1);
+        ids[0] = 4; // only 0..3 are real elements
+        amts[0] = 1e18;
+        vm.prank(minter);
+        vm.expectRevert(abi.encodeWithSelector(EsmsToken.BadElementId.selector, uint256(4)));
+        token.claimMint(user, keccak256("c1"), ids, amts);
     }
 
     function test_UpgradeRequiresRole() public {

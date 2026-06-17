@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { PrivyProvider, useWallets } from '@privy-io/react-auth'
+import { base } from 'viem/chains'
 import {
   Sparkles,
   Flame,
@@ -14,6 +16,27 @@ import {
   FlaskConical,
 } from 'lucide-react'
 import type { ShopItem, ShopItemKind, ElementKey } from '@/lib/shop/catalog'
+
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID || 'cmi9t84qs00acl80dam2j8195'
+
+/** EIP-712 challenge the server hands back for a sponsored ESMS burn. */
+interface RedeemChallenge {
+  domain: {
+    name: string
+    version: string
+    chainId: number | string
+    verifyingContract: `0x${string}`
+  }
+  types: Record<string, { name: string; type: string }[]>
+  primaryType: string
+  message: {
+    from: `0x${string}`
+    orderId: `0x${string}`
+    ids: string[]
+    amounts: string[]
+    deadline: string
+  }
+}
 
 interface Balances {
   spirit: number
@@ -65,7 +88,7 @@ function usd(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`
 }
 
-export default function ShopClient({
+function ShopClientInner({
   signedIn,
   catalog,
   owned,
@@ -73,6 +96,7 @@ export default function ShopClient({
   onchainBalances,
   onchainConfigured,
 }: ShopClientProps) {
+  const { wallets } = useWallets()
   const [tab, setTab] = useState<ShopItemKind>('apothecary')
   const [balances, setBalances] = useState<Balances | null>(onchainBalances)
   const [ownedSet, setOwnedSet] = useState<Set<string>>(new Set(owned))
@@ -95,6 +119,41 @@ export default function ShopClient({
     }
   }
 
+  /** Sign the server's RedeemAuthorization challenge with the buyer's Privy wallet. */
+  async function signRedeemAuth(challenge: RedeemChallenge): Promise<`0x${string}`> {
+    const embedded = wallets.find(w => w.walletClientType === 'privy') ?? wallets[0]
+    if (!embedded) {
+      throw new Error('Connect your wallet on the Account page, then try again.')
+    }
+    const provider = await embedded.getEthereumProvider()
+    // Sign via raw EIP-1193 eth_signTypedData_v4 — the challenge is already JSON-encoded
+    // (string uint256s), so no viem generics. EIP712Domain must be included for v4.
+    const typedData = {
+      domain: {
+        name: challenge.domain.name,
+        version: challenge.domain.version,
+        chainId: Number(challenge.domain.chainId),
+        verifyingContract: challenge.domain.verifyingContract,
+      },
+      types: {
+        EIP712Domain: [
+          { name: 'name', type: 'string' },
+          { name: 'version', type: 'string' },
+          { name: 'chainId', type: 'uint256' },
+          { name: 'verifyingContract', type: 'address' },
+        ],
+        ...challenge.types,
+      },
+      primaryType: challenge.primaryType,
+      message: challenge.message,
+    }
+    const sig = (await provider.request({
+      method: 'eth_signTypedData_v4',
+      params: [embedded.address, JSON.stringify(typedData)],
+    })) as `0x${string}`
+    return sig
+  }
+
   async function buyDigital(item: ShopItem) {
     setItemState(item.id, { status: 'busy' })
     try {
@@ -105,12 +164,25 @@ export default function ShopClient({
             ? crypto.randomUUID()
             : `${item.id}-${Math.floor(performance.now())}`
       }
-      const res = await fetch('/api/shop/purchase', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      const data = await res.json().catch(() => ({}))
+      const post = () =>
+        fetch('/api/shop/purchase', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+
+      let res = await post()
+      let data = await res.json().catch(() => ({}))
+
+      // Sponsored burn needs the buyer's EIP-712 RedeemAuthorization — sign and retry once.
+      if (res.ok && data.mode === 'sign' && data.challenge) {
+        setItemState(item.id, { status: 'busy' })
+        const signature = await signRedeemAuth(data.challenge as RedeemChallenge)
+        body.signature = signature
+        body.deadline = data.deadline
+        res = await post()
+        data = await res.json().catch(() => ({}))
+      }
 
       if (res.ok && data.alreadyOwned) {
         setOwnedSet(prev => new Set(prev).add(item.id))
@@ -139,8 +211,11 @@ export default function ShopClient({
         status: 'error',
         message: data.error || 'Purchase failed. Try again.',
       })
-    } catch {
-      setItemState(item.id, { status: 'error', message: 'Network error. Try again.' })
+    } catch (e) {
+      setItemState(item.id, {
+        status: 'error',
+        message: e instanceof Error ? e.message : 'Network error. Try again.',
+      })
     }
   }
 
@@ -225,6 +300,31 @@ export default function ShopClient({
         ))}
       </div>
     </div>
+  )
+}
+
+/**
+ * Scoped Privy provider (same pattern as /account) so the shop can sign the
+ * RedeemAuthorization for sponsored ESMS burns — the buyer's wallet signs, the backend
+ * BURNER submits — without bundling the web3 SDK into every route.
+ */
+export default function ShopClient(props: ShopClientProps) {
+  return (
+    <PrivyProvider
+      appId={PRIVY_APP_ID}
+      config={{
+        loginMethods: ['email', 'google', 'wallet'],
+        embeddedWallets: {
+          ethereum: { createOnLogin: 'users-without-wallets' },
+          solana: { createOnLogin: 'off' },
+        },
+        defaultChain: base,
+        supportedChains: [base],
+        appearance: { theme: 'dark', accentColor: '#7c5cf0' },
+      }}
+    >
+      <ShopClientInner {...props} />
+    </PrivyProvider>
   )
 }
 

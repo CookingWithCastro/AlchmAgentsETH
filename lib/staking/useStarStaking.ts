@@ -94,6 +94,27 @@ export function useStarStaking(star: StakeableStar | null, ctx: StakingContext =
         const wallet = await getWalletClient()
         const owner = wallet.account.address
 
+        // Awaken the star on its first stake: if not yet activated, submit a Merkle proof.
+        const activated = (await publicClient.readContract({
+          address: STAR_VAULT_ADDRESS,
+          abi: STAR_VAULT_ABI,
+          functionName: 'starActivated',
+          args: [star.hipId],
+        })) as boolean
+        if (!activated) {
+          setMessage(`Awakening ${star.name}…`)
+          const pres = await fetch(`/api/staking/star-proof?hipId=${star.hipId}`)
+          const pdata = await pres.json()
+          if (!pres.ok) throw new Error(pdata.error || 'This star cannot be staked yet')
+          const actTx = await wallet.writeContract({
+            address: STAR_VAULT_ADDRESS,
+            abi: STAR_VAULT_ABI,
+            functionName: 'activateStar',
+            args: [star.hipId, pdata.proof as `0x${string}`[]],
+          })
+          await publicClient.waitForTransactionReceipt({ hash: actTx })
+        }
+
         const allowance = (await publicClient.readContract({
           address: ARC_USDC,
           abi: ERC20_ABI,

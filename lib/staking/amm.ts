@@ -48,6 +48,7 @@ export const CONSTELLATION_AMM_ABI = [
       { name: 'constId', type: 'uint16' },
       { name: 'amtA', type: 'uint256' },
       { name: 'amtB', type: 'uint256' },
+      { name: 'minShares', type: 'uint256' },
       {
         name: 'att',
         type: 'tuple',
@@ -124,7 +125,10 @@ export const CONSTELLATION_AMM_ABI = [
     type: 'function',
     name: 'usedNonce',
     stateMutability: 'view',
-    inputs: [{ name: 'trader', type: 'address' }],
+    inputs: [
+      { name: 'constId', type: 'uint16' },
+      { name: 'trader', type: 'address' },
+    ],
     outputs: [{ type: 'uint64' }],
   },
 ] as const

@@ -12,13 +12,15 @@ contract EsmsRedeemTest is Test {
     address admin = address(0xA11CE);
     address minter = address(0xB0B);
     address burner = address(0xBEEF);
-    address user = address(0xCAFE);
+    uint256 userPk = uint256(keccak256("user")); // user has a key so it can sign redeem auths
+    address user;
 
     bytes32 constant ORDER = keccak256("order-1");
 
     event Redeemed(address indexed from, bytes32 indexed orderId, uint256[] ids, uint256[] amounts);
 
     function setUp() public {
+        user = vm.addr(userPk);
         EsmsToken impl = new EsmsToken();
         bytes memory init = abi.encodeCall(EsmsToken.initialize, ("https://x/{id}", admin, minter));
         token = EsmsToken(address(new ERC1967Proxy(address(impl), init)));
@@ -51,6 +53,19 @@ contract EsmsRedeemTest is Test {
         }
     }
 
+    /// Sign a RedeemAuthorization as `userPk` (the holder consenting to a sponsored burn).
+    function _signRedeem(
+        uint256 pk,
+        bytes32 orderId,
+        uint256[] memory ids,
+        uint256[] memory amts,
+        uint256 deadline
+    ) internal view returns (bytes memory) {
+        bytes32 digest = token.hashRedeemAuthorization(vm.addr(pk), orderId, ids, amts, deadline);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(pk, digest);
+        return abi.encodePacked(r, s, v);
+    }
+
     function test_Redeem_BurnsCallerOwnBalance() public {
         (uint256[] memory ids, uint256[] memory amts) = _cost();
         vm.expectEmit(true, true, false, true);
@@ -72,22 +87,48 @@ contract EsmsRedeemTest is Test {
         assertEq(token.balanceOf(user, 0), 7e18); // not double-burned
     }
 
-    function test_RedeemFor_OnlyBurner() public {
+    function test_RedeemFor_OnlyBurnerWithHolderSig() public {
         (uint256[] memory ids, uint256[] memory amts) = _cost();
-        // a random caller without BURNER_ROLE cannot sponsor a burn
+        uint256 deadline = block.timestamp + 600;
+        bytes memory sig = _signRedeem(userPk, ORDER, ids, amts, deadline);
+        // a random caller without BURNER_ROLE cannot sponsor a burn even with a valid sig
         vm.expectRevert();
-        token.redeemFor(user, ORDER, ids, amts);
-        // the vetted burner can
+        token.redeemFor(user, ORDER, ids, amts, deadline, sig);
+        // the vetted burner can, because the holder signed the authorization
         vm.prank(burner);
-        token.redeemFor(user, ORDER, ids, amts);
+        token.redeemFor(user, ORDER, ids, amts, deadline, sig);
         assertEq(token.balanceOf(user, 1), 7e18);
         assertTrue(token.redeemedOrders(ORDER));
     }
 
+    function test_RedeemFor_WithoutHolderSigReverts() public {
+        (uint256[] memory ids, uint256[] memory amts) = _cost();
+        uint256 deadline = block.timestamp + 600;
+        // attacker (the burner key) forges an order the holder never signed
+        bytes memory wrongSig = _signRedeem(uint256(keccak256("not-the-user")), ORDER, ids, amts, deadline);
+        vm.prank(burner);
+        vm.expectRevert(EsmsToken.RedeemBadSigner.selector);
+        token.redeemFor(user, ORDER, ids, amts, deadline, wrongSig);
+        assertEq(token.balanceOf(user, 1), 10e18); // nothing burned
+        assertFalse(token.redeemedOrders(ORDER));
+    }
+
+    function test_RedeemFor_ExpiredAuthReverts() public {
+        (uint256[] memory ids, uint256[] memory amts) = _cost();
+        uint256 deadline = block.timestamp + 60;
+        bytes memory sig = _signRedeem(userPk, ORDER, ids, amts, deadline);
+        vm.warp(block.timestamp + 61);
+        vm.prank(burner);
+        vm.expectRevert(EsmsToken.RedeemAuthExpired.selector);
+        token.redeemFor(user, ORDER, ids, amts, deadline, sig);
+    }
+
     function test_RedeemFor_ShareIdempotencyWithRedeem() public {
         (uint256[] memory ids, uint256[] memory amts) = _cost();
+        uint256 deadline = block.timestamp + 600;
+        bytes memory sig = _signRedeem(userPk, ORDER, ids, amts, deadline);
         vm.prank(burner);
-        token.redeemFor(user, ORDER, ids, amts);
+        token.redeemFor(user, ORDER, ids, amts, deadline, sig);
         // the same orderId can never be redeemed again, even via the user path
         vm.prank(user);
         vm.expectRevert(abi.encodeWithSelector(EsmsToken.RedeemAlreadyProcessed.selector, ORDER));
