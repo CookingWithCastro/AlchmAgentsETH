@@ -23,6 +23,7 @@ import rag
 import providers
 import ingest
 import recipe_generation
+import tilt_skillet_generation
 import alchm_mcp
 from feed_emitter import emit_feed_event
 
@@ -1361,6 +1362,38 @@ async def generate_cosmic_recipe(request: schemas.CosmicRecipeRequest):
         },
     )
     return recipe
+
+
+@app.post(
+    "/api/tilt-skillet-plan",
+    response_model=schemas.TiltSkilletPlanResponse,
+    response_model_exclude_none=True,
+)
+async def generate_tilt_skillet_plan(request: schemas.TiltSkilletRequest):
+    plan_tier = _resolve_tier(
+        request.modelTier or os.getenv("TILT_SKILLET_MODEL_TIER", "primary")
+    )
+    anthropic_model = ANTHROPIC_TIER_MODEL.get(plan_tier)
+    plan = await tilt_skillet_generation.generate_tilt_skillet_plan(
+        request=request,
+        tier=plan_tier,
+        anthropic_model=anthropic_model,
+    )
+    emit_feed_event(
+        "alchemical-chef",
+        "tilt_skillet_plan",
+        {
+            "recipeName": plan.title,
+            "recipeId": plan.id,
+            "topic": request.prompt[:140],
+            "messageExcerpt": plan.summary,
+            "summary": plan.summary,
+            "userId": request.userId,
+            "tier": plan_tier,
+            "stageCount": len(plan.stages),
+        },
+    )
+    return plan
 
 # --- RAG Management ---
 

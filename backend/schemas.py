@@ -275,6 +275,85 @@ class CosmicRecipeResponse(BaseModel):
 
     model_config = ConfigDict(extra="ignore")
 
+# --- Tilt Skillet / Recipe-as-a-Circuit batch planner ---
+# Mirrors WTEN's tiltSkilletBatchSchema (src/types/tiltSkilletSchema.ts). WTEN computes the
+# deterministic circuit grounding (circuitContext) and proxies here; this owns the LLM step.
+
+class TiltSkilletStageIngredientInput(BaseModel):
+    name: str
+    amount: float
+    unit: str
+
+class TiltSkilletStageInput(BaseModel):
+    name: Optional[str] = None
+    ingredients: List[TiltSkilletStageIngredientInput] = Field(default_factory=list)
+
+class TiltSkilletRequest(BaseModel):
+    prompt: str = Field(
+        default="A large-batch braise for the week ahead.",
+        min_length=1,
+        max_length=2000,
+    )
+    batchServings: Optional[int] = Field(default=12, ge=1, le=500)
+    cuisine: Optional[str] = Field(default=None, max_length=120)
+    dietPreference: Optional[str] = Field(default="omnivore", max_length=120)
+    dietary: List[str] = Field(default_factory=list, max_length=20)
+    disallowedIngredients: List[str] = Field(default_factory=list, max_length=40)
+    stages: List[TiltSkilletStageInput] = Field(default_factory=list, max_length=12)
+    # Precomputed recipe-as-a-circuit grounding from WTEN's computeBatchCircuit (per-stage + series).
+    circuitContext: Optional[Dict[str, Any]] = None
+    userId: Optional[str] = None
+    tier: Optional[str] = None
+    modelTier: Optional[str] = None
+
+    model_config = ConfigDict(extra="ignore")
+
+class TiltSkilletStageIngredient(BaseModel):
+    ingredient: str
+    quantity: str
+    unit: str
+
+class TiltSkilletStage(BaseModel):
+    step_number: int = Field(ge=1)
+    name: str
+    instruction: str
+    add_to_skillet: List[TiltSkilletStageIngredient] = Field(default_factory=list)
+    skillet_position: str
+    tilt_angle_degrees: float = Field(ge=0, le=45)
+    temperature_f: float = Field(ge=0)
+    time_minutes: float = Field(ge=0)
+    technique: str
+    circuit_role: Literal["source", "resistor", "capacitor", "load"]
+    reaction_note: str
+    sensory_cues: List[str]
+
+class TiltSkilletCircuitSummary(BaseModel):
+    total_voltage: float
+    total_current: float
+    total_resistance: float
+    total_power: float
+    efficiency: float
+    kalchm: float
+    monica: float
+    narrative: str
+
+class TiltSkilletPlanResponse(BaseModel):
+    id: str
+    title: str
+    summary: str
+    cuisine: str
+    batch_yield: str
+    total_time: float = Field(gt=0)
+    equipment_notes: str
+    stages: List[TiltSkilletStage] = Field(min_length=1)
+    elementalBalance: ElementalBalance
+    circuit_summary: TiltSkilletCircuitSummary
+    alignment_notes: List[str]
+    finishing_and_serving: FinishingAndServing
+    leftovers_and_storage: LeftoversAndStorage
+
+    model_config = ConfigDict(extra="ignore")
+
 class HealthResponse(BaseModel):
     status: str
     service: str
