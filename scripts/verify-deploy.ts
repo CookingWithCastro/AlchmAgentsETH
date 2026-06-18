@@ -9,7 +9,7 @@
  * SHIFTED addresses vs Arc (Deploy.s.sol has no StarVault) — handled below.
  */
 
-import { createPublicClient, http, parseAbi } from 'viem'
+import { createPublicClient, formatEther, http, parseAbi } from 'viem'
 
 const ARC = { id: 5042002, rpc: 'https://rpc.testnet.arc.io' }
 const BASE_SEPOLIA = { id: 84532, rpc: 'https://sepolia.base.org' }
@@ -21,6 +21,11 @@ const ARC_DEED = '0x6B4EE164320e9E5583C0F6BEe14D5BABb5ba5095'
 const DEPLOYER = '0x554F991D030aDF539CBD2ff3D896951C6f089804'
 const ATTESTOR = '0x6a9a906AC3B8AcF21Ca950b8Bf9702d1ADD368Be'
 const MINTER = '0x984dbdA6da6D80c95b4A8Ff9b05cb62b2D27dC99'
+// Active claim+redeem settlement wallet — what MINTER_PRIVATE_KEY/REDEEMER_PRIVATE_KEY
+// in .env actually derive to. This is the wallet that
+// signs claimMint + redeemFor on Base Sepolia, so it's the one that must hold the roles
+// AND have gas. (The legacy 0x984dbd above also still holds the roles but is unused.)
+const SETTLEMENT = '0x8a332B96232f443931cc423DaC86403a6c752475'
 const EXPECTED_ROOT = '0x505ac1166c3d841ea3a0bfe89e887a6204aff19cca24974ed3f309dd4bef2aee'
 
 const vaultAbi = parseAbi([
@@ -109,19 +114,38 @@ async function arc() {
 async function baseSepolia() {
   console.log('\n========== BASE SEPOLIA (84532) ==========')
   const r = makeReader(BASE_SEPOLIA.rpc, BASE_SEPOLIA.id)
+  const gasClient = createPublicClient({
+    chain: {
+      id: BASE_SEPOLIA.id,
+      name: 'base-sepolia',
+      nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+      rpcUrls: { default: { http: [BASE_SEPOLIA.rpc] } },
+    } as never,
+    transport: http(BASE_SEPOLIA.rpc),
+  })
   const MR = await r<`0x${string}`>(ESMS, esmsAbi, 'MINTER_ROLE')
   const BR = await r<`0x${string}`>(ESMS, esmsAbi, 'BURNER_ROLE')
   console.log(`   shop ESMS uri: ${await r<string>(ESMS, esmsAbi, 'uri', [0])}`)
+  // The ACTIVE settlement wallet (signs claimMint + redeemFor) must hold BOTH roles.
   check(
-    'separate minter has MINTER (claim/mint works)',
-    await r<boolean>(ESMS, esmsAbi, 'hasRole', [MR, MINTER])
+    'settlement wallet has MINTER (claim/mint works)',
+    await r<boolean>(ESMS, esmsAbi, 'hasRole', [MR, SETTLEMENT])
   )
-  check('deployer is NOT a minter', !(await r<boolean>(ESMS, esmsAbi, 'hasRole', [MR, DEPLOYER])))
-  // Action item: the shop settlement wallet must hold BURNER for sponsored redeemFor.
   check(
     'settlement wallet has BURNER (sponsored redeemFor)',
-    await r<boolean>(ESMS, esmsAbi, 'hasRole', [BR, MINTER]),
-    'if ❌: grant BURNER to your redeemer wallet — see WEB3_STATUS.md'
+    await r<boolean>(ESMS, esmsAbi, 'hasRole', [BR, SETTLEMENT]),
+    'if ❌: grant BURNER to the settlement wallet — see WEB3_STATUS.md'
+  )
+  check('deployer is NOT a minter', !(await r<boolean>(ESMS, esmsAbi, 'hasRole', [MR, DEPLOYER])))
+  // Roles are useless without gas: a 0-balance settlement wallet cannot send claimMint
+  // or redeemFor, so the whole on-chain rail is dead even when every role check is green.
+  const gas = await gasClient.getBalance({ address: SETTLEMENT as `0x${string}` })
+  check(
+    'settlement wallet has gas (can send txs)',
+    gas > 0n,
+    gas > 0n
+      ? `${formatEther(gas)} ETH`
+      : 'fund 0x8a332B with Base Sepolia ETH — see WEB3_STATUS.md'
   )
 }
 
