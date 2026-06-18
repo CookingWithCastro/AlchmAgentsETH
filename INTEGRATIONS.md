@@ -41,7 +41,7 @@ flowchart TB
         WORLD["World ID + AgentKit<br/>proof-of-human"]
     end
 
-    subgraph Memory["🧠 Memory — Walrus / Sui"]
+    subgraph Memory["🧠 Memory — Walrus / WAL Token"]
         MEMWAL["MemWal encrypted persona snapshot → blobId"]
     end
 
@@ -96,7 +96,7 @@ sequenceDiagram
 | **ENS**                     | Gasless offchain subnames (`*.alchmagents.eth`) + ENSIP‑25/26 records (incl. custom `agent-memory`, `human-verified`, `agent-wallet[x402]`). ERC‑7930 encoder reproduces the spec example byte‑for‑byte. | ✅ dry‑run + encoder; 🔑 domain enable |
 | **A2A** (AAIF/Google)       | One server, per‑agent card at `/a2a/{id}/.well-known/agent-card.json`, `message/send` + incremental `message/stream` (SSE).                                                                              | ✅ runtime‑verified (a2a‑sdk 1.1.0)    |
 | **Google Cloud — BigQuery** | Ranking app over the **mainnet** ERC‑8004 registry: SQL generator (partition‑pruned) + indexer + leaderboard UI; highlights x402‑payable + reputation/validation.                                        | ✅ SQL/decode; 🔑 GCP creds            |
-| **Walrus + Sui**            | Encrypted persona memory (MemWal) with a no‑wallet raw‑HTTP fallback; blobId → ENS `agent-memory`.                                                                                                       | ✅ **live testnet write/read**         |
+| **Walrus + WAL Token**      | Encrypted persona memory (MemWal) with native **WAL Token Staking** to fund agent storage capacity; blobId → ENS `agent-memory`.                                                                         | ✅ **live testnet write/read**         |
 | **Circle / Arc**            | Single‑chain x402 on Arc — **self‑settle** EIP‑3009 (`LocalArcFacilitator`) or Circle's facilitator. ERC‑8004 register on Arc.                                                                           | ✅ EIP‑3009 verify; 🔑 operator wallet |
 | **World** (ID + AgentKit)   | World ID proof‑of‑personhood gate + `human-verified` ENS/A2A badge; AgentKit proof‑of‑human for x402.                                                                                                    | ☑️ verify backend; 🔑 World app        |
 | **Dynamic**                 | Operator auth/wallet (existing `@dynamic-labs/*`); Privy server wallet kept as agent signer.                                                                                                             | existing                               |
