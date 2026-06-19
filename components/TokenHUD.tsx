@@ -95,16 +95,9 @@ export function TokenHUD() {
 
   if (loading) return null
 
-  if (!balances || status !== 'authenticated') {
-    return (
-      <Card className="fixed bottom-4 right-4 z-50 p-3 shadow-lg bg-black/80 backdrop-blur-md border border-zinc-800 text-white rounded-xl">
-        <div className="flex flex-col gap-2 items-center text-center">
-          <h4 className="text-sm font-semibold tracking-wider text-zinc-300">ALCHEMICAL VAULT</h4>
-          <p className="text-xs text-zinc-400 px-4 py-1">Sign in to claim daily cosmic yield</p>
-        </div>
-      </Card>
-    )
-  }
+  // Navigation already exposes sign-in. A second fixed panel covered content on
+  // every public route without offering an action, especially on small screens.
+  if (!balances || status !== 'authenticated') return null
 
   return (
     <Card className="fixed bottom-4 right-4 z-50 p-3 shadow-lg bg-black/80 backdrop-blur-md border border-zinc-800 text-white rounded-xl">

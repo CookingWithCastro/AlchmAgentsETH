@@ -15,6 +15,21 @@ import { ChartGeometryExtractor } from '@/lib/chart-geometry-extractor'
 import { detectPatternsStatic, PlanetPosition } from '@/lib/astrological-pattern-recognition'
 import { RuneGeometry } from '@/lib/runes/natal-sigil-runes'
 
+const SIGN_ORDER = [
+  'Aries',
+  'Taurus',
+  'Gemini',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagittarius',
+  'Capricorn',
+  'Aquarius',
+  'Pisces',
+]
+
 export default function ChartOfTheMomentPage() {
   const [currentTime, setCurrentTime] = useState('')
   const [currentDate, setCurrentDate] = useState('')
@@ -79,7 +94,9 @@ export default function ChartOfTheMomentPage() {
         planet,
         sign: data.sign,
         degree: parseFloat(data.degree),
-        house: Math.floor(Math.random() * 12) + 1, // Mock house data
+        // This location-free chart cannot calculate true houses. Use the
+        // deterministic whole-sign ordinal so repeated sigils remain stable.
+        house: Math.max(1, SIGN_ORDER.indexOf(data.sign) + 1),
         date: new Date(),
       })
     )

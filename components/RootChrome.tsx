@@ -11,15 +11,16 @@ const OCCULT_SURFACES = ['/forge', '/vault', '/arena', '/labs']
 
 export function RootChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const isLandingSurface = pathname === '/'
   const isDesktopSurface = pathname?.startsWith('/desktop')
   const isOccultSurface = OCCULT_SURFACES.some(p => pathname === p || pathname?.startsWith(`${p}/`))
   // /yield is its own ESMS surface — the HUD would duplicate the page's own CTAs.
   const isYieldSurface = pathname === '/yield' || pathname?.startsWith('/yield/')
-  const hideHud = isDesktopSurface || isYieldSurface || isOccultSurface
+  const hideHud = isLandingSurface || isDesktopSurface || isYieldSurface || isOccultSurface
 
   return (
     <>
-      {!isDesktopSurface && !isOccultSurface && <Navigation />}
+      {!isLandingSurface && !isDesktopSurface && !isOccultSurface && <Navigation />}
       <main className={isDesktopSurface || isOccultSurface ? 'flex-1 min-h-screen' : 'flex-1'}>
         {children}
       </main>

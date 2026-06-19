@@ -5,29 +5,15 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useDynamicContext, DynamicWidget } from '@dynamic-labs/sdk-react-core'
 import {
-  Sparkles,
-  Globe,
-  History,
-  BrainCircuit,
   Droplets,
   Wind,
   Mountain,
   Flame,
-  ArrowRight,
   Zap,
   Star,
-  ChevronRight,
-  ChevronDown,
-  Monitor,
-  Hammer,
-  Archive,
-  Swords,
-  FlaskConical,
   Wallet,
   Fingerprint,
-  ArrowLeftRight,
   ShieldCheck,
-  AlertTriangle,
   Gem,
   CheckCircle,
 } from 'lucide-react'
@@ -44,6 +30,7 @@ import { ALCHM_DESKTOP_DOWNLOAD_LABEL, openDesktopAppDownload } from '@/lib/desk
 import { buildKitchenSignInUrl } from '@/lib/kitchen-signin'
 import TopAgentsOfTheMoment from '@/components/landing/top-agents-of-the-moment'
 import FreeAgentsOfTheWeek from '@/components/landing/free-agents-of-the-week'
+import { WorldIdButton } from '@/components/world/WorldIdButton'
 
 // ============================================================================
 // CONSCIOUSNESS PARAMETER DEFINITIONS
@@ -79,7 +66,7 @@ const SACRED_7 = [
 
 export default function LandingPage() {
   const router = useRouter()
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const { primaryWallet, setShowAuthFlow } = useDynamicContext()
   const [loading, setLoading] = useState(false)
 
@@ -94,20 +81,11 @@ export default function LandingPage() {
 
   const [claiming, setClaiming] = useState(false)
 
-  // Simulation states
+  // Landing preview controls
   const [selectedConstellation, setSelectedConstellation] = useState('VEGA')
   const [selectedElement, setSelectedElement] = useState('WATER')
-  const [stakeAmount, setStakeAmount] = useState('')
-  const [stakeStatus, setStakeStatus] = useState<
-    'idle' | 'approving' | 'broadcasting' | 'completed'
-  >('idle')
   const [isVerified, setIsVerified] = useState(false)
   const [nullifier, setNullifier] = useState<string | null>(null)
-  const [terminalStatus, setTerminalStatus] = useState<'unpaid' | 'approving' | 'confirmed'>(
-    'unpaid'
-  )
-  const [terminalInput, setTerminalInput] = useState('')
-  const [cctpAmount, setCctpAmount] = useState('100.00')
 
   // Planetary positions for live Sacred 7 derivation
   const planetaryData = usePlanetaryPositions({
@@ -235,66 +213,20 @@ export default function LandingPage() {
     )
   }, [status, planetaryData, monicaConstant])
 
-  // Simulation: Stake Action
-  const handleStakeClick = () => {
-    if (!stakeAmount || isNaN(Number(stakeAmount))) return
-    setStakeStatus('approving')
-    setTimeout(() => {
-      setStakeStatus('broadcasting')
-      setTimeout(() => {
-        setStakeStatus('completed')
-      }, 2000)
-    }, 1500)
+  const handleWorldIdVerified = (nullifierHash: string) => {
+    setIsVerified(true)
+    setNullifier(nullifierHash)
+    localStorage.setItem('world_id_verified', 'true')
+    localStorage.setItem('world_id_nullifier', nullifierHash)
   }
-
-  // Simulation: World ID Click
-  const handleWorldIdVerify = () => {
-    setVerifyingWorldId(true)
-  }
-
-  const [verifyingWorldId, setVerifyingWorldId] = useState(false)
-  useEffect(() => {
-    let timer: NodeJS.Timeout | undefined
-    if (verifyingWorldId) {
-      timer = setTimeout(() => {
-        setIsVerified(true)
-        const mockNullifier = '0x8004A818' + Math.random().toString(16).substring(2, 10) + '2007'
-        setNullifier(mockNullifier)
-        localStorage.setItem('world_id_verified', 'true')
-        localStorage.setItem('world_id_nullifier', mockNullifier)
-        setVerifyingWorldId(false)
-      }, 2000)
-    }
-    return () => {
-      if (timer) clearTimeout(timer)
-    }
-  }, [verifyingWorldId])
-
-  // Simulation: A2A Inference Pay
-  const handleApproveInference = () => {
-    setTerminalStatus('approving')
-    setTimeout(() => {
-      setTerminalStatus('confirmed')
-    }, 1000)
-  }
-
-  // Dynamic estimate swap output
-  const cctpEstimate = useMemo(() => {
-    const amt = parseFloat(cctpAmount)
-    if (isNaN(amt)) return '0.00'
-    return (amt * 24.4285).toLocaleString(undefined, {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-  }, [cctpAmount])
 
   return (
     <div className="landing-page bg-[#050506] text-[#e0e4d2] min-h-screen relative font-sans selection:bg-[#b8fc4b] selection:text-black">
       <div className="landing-starfield" />
 
       {/* TopNavBar */}
-      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-6 md:px-16 py-4 bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-[#424936]">
-        <div className="font-semibold text-lg md:text-xl text-[#b8fc4b] tracking-widest font-mono">
+      <header className="fixed top-0 w-full z-50 flex justify-between items-center px-4 md:px-16 py-4 bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-[#424936]">
+        <div className="font-semibold text-sm sm:text-lg md:text-xl text-[#b8fc4b] tracking-widest font-mono whitespace-nowrap">
           ALCHM AGENTS
         </div>
         <nav className="hidden md:flex gap-8 items-center">
@@ -323,13 +255,13 @@ export default function LandingPage() {
             A2A TERMINAL
           </a>
         </nav>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           <button
             onClick={() => {
               const el = document.getElementById('world-id-section')
               if (el) el.scrollIntoView({ behavior: 'smooth' })
             }}
-            className="font-mono text-[10px] tracking-widest border border-[#8c947c] px-4 py-2 hover:bg-[#b8fc4b]/10 transition-all active:scale-95 text-[#e0e4d2]"
+            className="hidden sm:block font-mono text-[10px] tracking-widest border border-[#8c947c] px-4 py-2 hover:bg-[#b8fc4b]/10 transition-all active:scale-95 text-[#e0e4d2]"
           >
             VERIFY
           </button>
@@ -341,7 +273,7 @@ export default function LandingPage() {
           ) : (
             <button
               onClick={() => setShowAuthFlow(true)}
-              className="font-mono text-[10px] tracking-widest bg-[#b8fc4b] text-[#223600] px-4 py-2 font-bold hover:shadow-[0_0_15px_rgba(157,223,46,0.5)] transition-all active:scale-95"
+              className="font-mono text-[9px] sm:text-[10px] tracking-widest bg-[#b8fc4b] text-[#223600] px-3 sm:px-4 py-2 font-bold hover:shadow-[0_0_15px_rgba(157,223,46,0.5)] transition-all active:scale-95 whitespace-nowrap"
             >
               CONNECT WALLET
             </button>
@@ -356,7 +288,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#b8fc4b]/10 border border-[#b8fc4b]/20 rounded-full w-fit mb-6">
               <span className="led-dot led-green"></span>
               <span className="text-[10px] font-mono tracking-widest text-[#b8fc4b]">
-                SYSTEMS NOMINAL : ARC-01 ACTIVE
+                LIVE PRODUCT + TESTNET INTEGRATIONS
               </span>
             </div>
             <h1 className="font-bold text-4xl md:text-5xl lg:text-6xl mb-8 leading-tight tracking-tight font-serif">
@@ -394,13 +326,13 @@ export default function LandingPage() {
           <div className="col-span-12 lg:col-span-4 relative h-[320px] lg:h-[450px] glass-panel rounded-xl flex items-center justify-center overflow-hidden border-[#23262B]">
             <div className="scanline"></div>
             <img
-              alt="Alchemical Core"
-              className="w-full h-full object-cover opacity-40 mix-blend-screen"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5Bp1kBeGumxCdBS3VkQNWwRvYiFCyWc7CNIbeDfXaMYLJTqy9wiYP3PHXOPCpTSeqCcdeaKvz8q0ibzbY0k86JDs5JlGYKhNKfrhLRHlNk7cxXMgdKfz7h5oEu5CxsZOfa9z9XxVgo4HnhbR8xCdUjVy9OJzFUWGlepUEALatrA7bM0tOVCBKZ0oTN4Sem_4QX3YH0i-8pdcgdPIQsr2dZErlfmSM2trVBu92IrQkPiGpAcv9MNtnXIS_NLRNEIcmSRhBkEahqdI"
+              alt="Alchm alchemical core"
+              className="w-full h-full object-cover opacity-35 mix-blend-screen"
+              src="/alchm-logo.png"
             />
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-black/50 backdrop-blur-sm">
               <div className="text-[10px] font-mono text-[#7bd1fa] mb-2 tracking-widest font-bold">
-                ACTIVE MEMORY SLICE
+                REFERENCE MEMORY RECORD
               </div>
               <div className="font-mono text-sm text-[#c2cab0] break-all border border-[#424936] bg-[#050506]/80 p-3 rounded">
                 0x7E35fA3c29f4a9fCdB34d582e6c8004F92B1cE
@@ -412,33 +344,33 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Stats Strip */}
+        {/* Integration capabilities — avoids presenting unpolled services as live telemetry. */}
         <div className="w-full glass-panel p-4 overflow-hidden border-[#23262B]">
           <div className="flex flex-nowrap gap-12 ticker-animation whitespace-nowrap">
             <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
-              <span className="text-[#c2cab0]">CIRCLE ARC RPC:</span>{' '}
-              <span className="text-[#b8fc4b] font-bold">ONLINE</span>
+              <span className="text-[#c2cab0]">CIRCLE ARC:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">TESTNET SETTLEMENT</span>
             </div>
             <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
-              <span className="text-[#c2cab0]">NAMESTONE ENCODER:</span>{' '}
-              <span className="text-[#b8fc4b] font-bold">EIP-7930 VALID</span>
+              <span className="text-[#c2cab0]">NAMESTONE:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">ENSIP-25/26 RECORDS</span>
             </div>
             <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
-              <span className="text-[#c2cab0]">MEMWAL STORAGE:</span>{' '}
-              <span className="text-[#7bd1fa] font-bold">1.45 KB SNAPSHOT</span>
+              <span className="text-[#c2cab0]">MEMWAL:</span>{' '}
+              <span className="text-[#7bd1fa] font-bold">ENCRYPTED SNAPSHOTS</span>
             </div>
             <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
-              <span className="text-[#c2cab0]">BIGQUERY REPUTATION LOGS:</span>{' '}
-              <span className="text-[#b8fc4b] font-bold">SYNCED (BLOCK 788291)</span>
+              <span className="text-[#c2cab0]">ERC-8004:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">BIGQUERY INDEX</span>
             </div>
             {/* Duplicates for seamless looping */}
             <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
-              <span className="text-[#c2cab0]">CIRCLE ARC RPC:</span>{' '}
-              <span className="text-[#b8fc4b] font-bold">ONLINE</span>
+              <span className="text-[#c2cab0]">A2A:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">JSON-RPC + STREAMING</span>
             </div>
             <div className="flex items-center gap-2 font-mono text-[10px] tracking-wider">
-              <span className="text-[#c2cab0]">NAMESTONE ENCODER:</span>{' '}
-              <span className="text-[#b8fc4b] font-bold">EIP-7930 VALID</span>
+              <span className="text-[#c2cab0]">WORLD ID:</span>{' '}
+              <span className="text-[#b8fc4b] font-bold">PROOF OF HUMAN</span>
             </div>
           </div>
         </div>
@@ -469,7 +401,7 @@ export default function LandingPage() {
               <div className="px-4 py-2 bg-[#1d2116] border border-[#424936] flex items-center gap-2">
                 <span className="led-dot led-gold"></span>
                 <span className="font-mono text-[10px] tracking-widest text-[#ffe6a0]">
-                  OCCULT SYNC ACTIVE
+                  LIVE VAULT APP
                 </span>
               </div>
             </div>
@@ -547,74 +479,17 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="mt-8 pt-8 border-t border-[#424936]">
-                  <div className="flex flex-col md:flex-row gap-6 items-end">
-                    <div className="flex-1 w-full">
-                      <label className="font-mono text-[10px] tracking-widest text-[#c2cab0] mb-2 block font-bold">
-                        STAKE USDC QUANTITY
-                      </label>
-                      <input
-                        className="w-full bg-[#050506] border-b-2 border-[#8c947c] focus:border-[#b8fc4b] border-t-0 border-x-0 font-mono text-2xl py-2 focus:ring-0 focus:outline-none text-[#e0e4d2]"
-                        placeholder="0.00"
-                        type="number"
-                        value={stakeAmount}
-                        onChange={e => setStakeAmount(e.target.value)}
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleStakeClick}
-                      disabled={stakeStatus !== 'idle'}
-                      className="w-full md:w-auto px-10 py-4 bg-[#b8fc4b] text-[#223600] font-mono text-xs font-bold tracking-widest flex items-center justify-center gap-3 hover:shadow-[0_0_20px_rgba(157,223,46,0.3)] transition-all disabled:opacity-50"
-                    >
-                      {stakeStatus === 'idle' && (
-                        <>
-                          <Wallet className="w-4 h-4" /> STAKE USDC
-                        </>
-                      )}
-                      {stakeStatus === 'approving' && (
-                        <>
-                          <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>{' '}
-                          APPROVING...
-                        </>
-                      )}
-                      {stakeStatus === 'broadcasting' && (
-                        <>
-                          <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>{' '}
-                          BROADCASTING...
-                        </>
-                      )}
-                      {stakeStatus === 'completed' && (
-                        <>
-                          <CheckCircle className="w-4 h-4" /> COMPLETED
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Success State Mockup */}
-                  {stakeStatus === 'completed' && (
-                    <div className="mt-6 p-4 bg-[#b8fc4b]/5 border border-[#b8fc4b]/20 rounded transition-all">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-mono text-[10px] text-[#b8fc4b] tracking-wider font-bold">
-                          TRANSACTION CONFIRMED
-                        </span>
-                        <CheckCircle className="w-4 h-4 text-[#b8fc4b]" />
-                      </div>
-                      <div className="font-mono text-xs text-[#c2cab0] break-all">
-                        TX HASH: 0x98d928334f00424936b3f746
-                        {Math.random().toString(16).substring(2, 12)}191d12
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 p-3 bg-red-950/20 border border-red-900/40 flex items-center gap-3 rounded">
-                  <AlertTriangle className="w-4 h-4 text-[#ff7b72] flex-shrink-0" />
-                  <span className="font-mono text-[10px] text-[#ff7b72] font-bold">
-                    YIELD SHIELDED: CONSTELLATION VISIBILITY REQUIRED ABOVE HORIZON (EXPECTED RISE:
-                    04:22 UTC)
-                  </span>
+                <div className="mt-8 pt-8 border-t border-[#424936] flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <p className="font-mono text-xs text-[#c2cab0] max-w-xl leading-relaxed">
+                    Review live star visibility, wallet requirements, Arc testnet balances, and
+                    current vault rates before authorizing a transaction.
+                  </p>
+                  <button
+                    onClick={() => router.push('/pentacles')}
+                    className="w-full md:w-auto px-8 py-4 bg-[#b8fc4b] text-[#223600] font-mono text-xs font-bold tracking-widest flex items-center justify-center gap-3 hover:shadow-[0_0_20px_rgba(157,223,46,0.3)] transition-all"
+                  >
+                    <Wallet className="w-4 h-4" /> OPEN LIVE STAR VAULTS
+                  </button>
                 </div>
               </div>
 
@@ -624,25 +499,29 @@ export default function LandingPage() {
                   <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
                     BASE APY
                   </span>
-                  <span className="font-mono text-lg font-bold text-[#b8fc4b]">12.4%</span>
+                  <span className="font-mono text-sm font-bold text-[#b8fc4b]">LIVE IN VAULT</span>
                 </div>
                 <div className="glass-panel p-4 flex flex-col border-[#23262B]">
                   <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
                     AFFINITY
                   </span>
-                  <span className="font-mono text-lg font-bold text-[#7bd1fa]">x1.2</span>
+                  <span className="font-mono text-lg font-bold text-[#7bd1fa]">
+                    {selectedElement}
+                  </span>
                 </div>
                 <div className="glass-panel p-4 flex flex-col border-[#23262B]">
                   <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
                     DOMINANCE
                   </span>
-                  <span className="font-mono text-lg font-bold text-[#ffe6a0]">0.85</span>
+                  <span className="font-mono text-lg font-bold text-[#ffe6a0]">
+                    {selectedConstellation}
+                  </span>
                 </div>
                 <div className="glass-panel p-4 flex flex-col border-[#23262B]">
                   <span className="font-mono text-[10px] text-[#c2cab0] mb-1 font-bold">
                     VISIBILITY
                   </span>
-                  <span className="font-mono text-lg font-bold text-red-400">LOW</span>
+                  <span className="font-mono text-sm font-bold text-[#c2cab0]">CHECK LIVE</span>
                 </div>
               </div>
             </div>
@@ -741,10 +620,10 @@ export default function LandingPage() {
               <div className="glass-panel p-6 rounded-xl flex items-center justify-center h-32 relative overflow-hidden border-[#23262B]">
                 <div className="text-center relative z-10">
                   <div className="font-mono text-[10px] tracking-widest text-[#b8fc4b] font-bold">
-                    COSMIC REPUTATION INDEX
+                    YOUR LIVE MONICA CONSTANT
                   </div>
-                  <div className="font-serif text-2xl text-[#b8fc4b] mt-1">
-                    {monicaConstant !== null ? monicaConstant.toFixed(3) : '0.992'} / 1.000
+                  <div className="font-serif text-xl text-[#b8fc4b] mt-1">
+                    {monicaConstant !== null ? monicaConstant.toFixed(3) : 'SIGN IN TO CALCULATE'}
                   </div>
                   {monicaRating && (
                     <span className="font-mono text-[9px] text-[#7bd1fa] uppercase tracking-wider block mt-1">
@@ -767,6 +646,9 @@ export default function LandingPage() {
                   <Gem className="w-4 h-4 text-[#b8fc4b]" />
                   <span className="font-mono text-sm font-bold text-[#e0e4d2]">
                     plato.alchmagents.eth
+                  </span>
+                  <span className="font-mono text-[9px] text-[#ffe6a0] border border-[#ffe6a0]/40 px-2 py-0.5 rounded">
+                    EXAMPLE RECORD
                   </span>
                 </div>
                 <div className="font-mono text-[9px] text-[#c2cab0] bg-black px-2.5 py-1 rounded">
@@ -834,26 +716,25 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <button
-              onClick={handleWorldIdVerify}
-              disabled={isVerified || verifyingWorldId}
-              className="w-full py-4 bg-white text-black font-mono font-bold text-xs tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all disabled:opacity-80 disabled:cursor-not-allowed hover:bg-zinc-200"
-            >
-              {verifyingWorldId ? (
-                <>
-                  <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></span>{' '}
-                  COMMUNICATING WITH ORB...
-                </>
-              ) : isVerified ? (
-                <>
-                  <CheckCircle className="w-4 h-4" /> VERIFIED SIGNATURE RECORDED
-                </>
-              ) : (
-                <>
-                  <ShieldCheck className="w-4 h-4" /> VERIFY WITH WORLD ID
-                </>
-              )}
-            </button>
+            {isVerified ? (
+              <div className="w-full py-4 bg-[#b8fc4b]/10 border border-[#b8fc4b]/40 text-[#b8fc4b] font-mono font-bold text-xs tracking-widest flex items-center justify-center gap-3">
+                <CheckCircle className="w-4 h-4" /> VERIFIED SIGNATURE RECORDED
+              </div>
+            ) : primaryWallet ? (
+              <WorldIdButton
+                signal={primaryWallet.address}
+                onVerified={handleWorldIdVerified}
+                className="w-full py-4 bg-white text-black font-mono font-bold text-xs tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:bg-zinc-200"
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowAuthFlow(true)}
+                className="w-full py-4 bg-white text-black font-mono font-bold text-xs tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:bg-zinc-200"
+              >
+                <ShieldCheck className="w-4 h-4" /> CONNECT WALLET TO VERIFY
+              </button>
+            )}
 
             <div className="grid grid-cols-2 gap-4 mt-6">
               <div className="p-3 border border-[#424936] rounded">
@@ -878,157 +759,67 @@ export default function LandingPage() {
 
         {/* Section 4 & 5: Terminal & Leaderboard */}
         <section id="terminal" className="grid grid-cols-12 gap-6 items-stretch">
-          {/* A2A Terminal Interceptor */}
-          <div className="col-span-12 lg:col-span-6 flex flex-col h-[500px] glass-panel rounded-xl overflow-hidden border-[#23262B]">
+          {/* Live A2A discovery */}
+          <div className="col-span-12 lg:col-span-6 flex flex-col min-h-[420px] glass-panel rounded-xl overflow-hidden border-[#23262B]">
             <div className="p-3 bg-[#1d2116] border-b border-[#424936] flex items-center gap-2 flex-shrink-0">
               <span className="led-dot led-green"></span>
               <span className="font-mono text-[10px] tracking-wider text-[#c2cab0] font-bold">
-                TERMINAL :: A2A_INTERCEPTOR_V4
+                A2A :: LIVE DISCOVERY ENDPOINT
               </span>
             </div>
 
-            <div className="flex-1 p-6 font-mono text-sm overflow-y-auto space-y-4 bg-black/40">
-              <div className="text-[#8c947c]">&gt;&gt; INITIALIZING SECURE SESSION...</div>
-              <div className="text-[#8c947c]">&gt;&gt; LISTENING FOR QUERY STREAM...</div>
-
-              <div className="flex gap-2">
-                <span className="text-[#b8fc4b] font-bold">USER:</span>
-                <span className="text-[#e0e4d2]">
-                  {terminalInput
-                    ? terminalInput
-                    : 'Plato, what is the current APY for Sirius Water staking?'}
-                </span>
+            <div className="flex-1 p-6 font-mono text-sm space-y-5 bg-black/40">
+              <div className="text-[#8c947c]">&gt;&gt; AGENT CARD AVAILABLE</div>
+              <div className="p-4 bg-[#b8fc4b]/5 border border-[#b8fc4b]/20 rounded space-y-3">
+                <div className="text-[#b8fc4b] font-bold">PLATO · JSON-RPC 1.0</div>
+                <p className="text-xs text-[#c2cab0] leading-relaxed">
+                  Discover capabilities and streaming support from the live A2A card. Paid message
+                  requests are authorized by the client wallet through x402; this page never fakes
+                  an approval or transaction receipt.
+                </p>
               </div>
-
-              {terminalStatus === 'unpaid' && (
-                <div className="p-4 bg-red-950/20 border border-red-900/30 text-[#ff7b72] rounded animate-pulse space-y-2">
-                  <div className="font-bold">HTTP ERROR 402: PAYMENT REQUIRED</div>
-                  <div className="text-xs">
-                    0.05 USDC INFERENCE AUTHORIZATION NECESSARY TO EMIT RESPONSE BLOCKS.
-                  </div>
-                </div>
-              )}
-
-              {terminalStatus === 'approving' && (
-                <div className="flex items-center gap-2 text-[#ffe6a0]">
-                  <span className="w-4 h-4 border-2 border-[#ffe6a0] border-t-transparent rounded-full animate-spin"></span>
-                  <span>Transmuting authorization payload via Arc...</span>
-                </div>
-              )}
-
-              {terminalStatus === 'confirmed' && (
-                <>
-                  <div className="text-[#b8fc4b] font-bold">
-                    PAYMENT CONFIRMED: 0.05 USDC DEBITED FROM SUBNAME WALLET
-                  </div>
-                  <div className="text-[#e0e4d2] p-4 bg-[#b8fc4b]/5 border border-[#b8fc4b]/20 rounded leading-relaxed typing-cursor">
-                    &gt;&gt; RESPONSE FROM PLATO: Current yield for Sirius-Water vortex is 14.82%
-                    APY. The star rises in 2h 14m. Staking USDC now will capture the early-dawn
-                    cosmic multiplier.
-                  </div>
-                </>
-              )}
-
-              {terminalStatus === 'unpaid' && (
-                <div className="flex gap-2 pt-2">
-                  <button
-                    onClick={handleApproveInference}
-                    className="px-4 py-2 bg-[#b8fc4b] text-[#223600] text-xs font-mono font-bold tracking-wider active:scale-95 transition-transform"
-                  >
-                    APPROVE USDC (0.05)
-                  </button>
-                  <button
-                    onClick={() => {
-                      setTerminalInput('')
-                      setTerminalStatus('unpaid')
-                    }}
-                    className="px-4 py-2 border border-[#8c947c] text-xs font-mono text-[#c2cab0] hover:bg-white/5"
-                  >
-                    CANCEL
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="p-4 border-t border-[#424936] bg-[#050506] flex-shrink-0">
-              <form
-                onSubmit={e => {
-                  e.preventDefault()
-                  if (!terminalInput) return
-                  setTerminalStatus('unpaid')
-                }}
-                className="flex items-center gap-4"
-              >
-                <span className="text-[#b8fc4b] font-bold">&gt;</span>
-                <input
-                  className="bg-transparent border-none focus:ring-0 w-full font-mono text-sm focus:outline-none text-[#e0e4d2]"
-                  placeholder="Send query to agent..."
-                  type="text"
-                  value={terminalInput}
-                  onChange={e => setTerminalInput(e.target.value)}
-                />
-              </form>
+              <div className="text-xs text-[#c2cab0] break-all">
+                https://api.agents.alchm.kitchen/a2a/plato/.well-known/agent-card.json
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <a
+                  href="https://api.agents.alchm.kitchen/a2a/plato/.well-known/agent-card.json"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-4 py-3 bg-[#b8fc4b] text-[#223600] text-xs font-mono font-bold tracking-wider text-center"
+                >
+                  OPEN LIVE AGENT CARD
+                </a>
+                <button
+                  type="button"
+                  onClick={() => router.push('/gallery/chat/plato')}
+                  className="px-4 py-3 border border-[#8c947c] text-xs font-mono text-[#c2cab0] hover:bg-white/5"
+                >
+                  CHAT WITH PLATO
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Reputation Leaderboard */}
+          {/* Live registry entry point */}
           <div className="col-span-12 lg:col-span-6 glass-panel rounded-xl overflow-hidden flex flex-col justify-between border-[#23262B]">
-            <div>
-              <div className="p-4 border-b border-[#424936] bg-[#1d2116]/30">
-                <h3 className="font-mono text-[10px] tracking-widest text-[#c2cab0] font-bold">
-                  REPUTATION LEADERBOARD (ERC-8004)
-                </h3>
+            <div className="p-8 flex-1 flex flex-col justify-center">
+              <div className="font-mono text-[10px] tracking-widest text-[#c2cab0] font-bold mb-4">
+                ERC-8004 LIVE REGISTRY
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left font-mono text-xs">
-                  <thead className="bg-[#1d2116]/80 border-b border-[#424936]">
-                    <tr>
-                      <th className="p-4 text-[#c2cab0] font-bold">#</th>
-                      <th className="p-4 text-[#c2cab0] font-bold">SUBNAME</th>
-                      <th className="p-4 text-[#c2cab0] font-bold">TRUST INDEX</th>
-                      <th className="p-4 text-[#c2cab0] font-bold">TXS</th>
-                      <th className="p-4 text-[#c2cab0] font-bold">VOLUME</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-[#424936]/30">
-                    <tr className="bg-[#b8fc4b]/5">
-                      <td className="p-4 text-[#b8fc4b] font-bold">01</td>
-                      <td className="p-4 font-bold text-[#e0e4d2]">plato.alchm</td>
-                      <td className="p-4">
-                        <span className="text-[#b8fc4b] font-bold">9.92</span>
-                      </td>
-                      <td className="p-4 text-[#e0e4d2]">4,812</td>
-                      <td className="p-4 text-[#e0e4d2]">$142.1k</td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 text-[#8c947c]">02</td>
-                      <td className="p-4 font-bold text-[#e0e4d2]">cleo.alchm</td>
-                      <td className="p-4">
-                        <span className="text-[#b8fc4b] font-bold">9.85</span>
-                      </td>
-                      <td className="p-4 text-[#e0e4d2]">3,205</td>
-                      <td className="p-4 text-[#e0e4d2]">$98.4k</td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 text-[#8c947c]">03</td>
-                      <td className="p-4 font-bold text-[#e0e4d2]">hermes.alchm</td>
-                      <td className="p-4">
-                        <span className="text-[#ffe6a0] font-bold">9.21</span>
-                      </td>
-                      <td className="p-4 text-[#e0e4d2]">1,944</td>
-                      <td className="p-4 text-[#e0e4d2]">$45.0k</td>
-                    </tr>
-                    <tr className="hover:bg-white/5 transition-colors">
-                      <td className="p-4 text-[#8c947c]">04</td>
-                      <td className="p-4 font-bold text-[#e0e4d2]">sol.alchm</td>
-                      <td className="p-4">
-                        <span className="text-[#ffe6a0] font-bold">8.94</span>
-                      </td>
-                      <td className="p-4 text-[#e0e4d2]">912</td>
-                      <td className="p-4 text-[#e0e4d2]">$12.5k</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <h3 className="font-serif text-2xl text-[#e0e4d2] mb-4">
+                Verify reputation on-chain
+              </h3>
+              <p className="font-mono text-xs text-[#c2cab0] leading-relaxed mb-6">
+                The registry view queries indexed ERC-8004 registration, feedback, validation, and
+                trust records. Values appear only when the live index returns them—no sample
+                rankings or invented transaction volume.
+              </p>
+              <div className="grid grid-cols-2 gap-3 font-mono text-[10px]">
+                <div className="border border-[#424936] p-3 text-[#7bd1fa]">IDENTITY REGISTRY</div>
+                <div className="border border-[#424936] p-3 text-[#b8fc4b]">X402 DISCOVERY</div>
+                <div className="border border-[#424936] p-3 text-[#ffe6a0]">VALIDATION LOGS</div>
+                <div className="border border-[#424936] p-3 text-[#c2cab0]">OWNER RECORDS</div>
               </div>
             </div>
 
@@ -1037,7 +828,7 @@ export default function LandingPage() {
                 onClick={() => router.push('/erc8004')}
                 className="font-mono text-[10px] text-[#b8fc4b] tracking-widest hover:underline uppercase font-bold"
               >
-                View Full Registry [CTRL+L]
+                VIEW LIVE REGISTRY
               </button>
             </div>
           </div>
@@ -1059,77 +850,28 @@ export default function LandingPage() {
           />
         </section>
 
-        {/* Section 6: CCTP Calculator */}
+        {/* Onramp entry point */}
         <section className="max-w-3xl mx-auto glass-panel p-8 rounded-xl border-[#23262B]">
           <div className="text-center mb-8">
-            <h2 className="font-bold text-xl md:text-2xl font-serif">CCTP GASLESS CALCULATOR</h2>
+            <h2 className="font-bold text-xl md:text-2xl font-serif">FUND YOUR ARC WALLET</h2>
             <p className="text-[#c2cab0] font-mono text-xs tracking-wider mt-1">
-              TRANSMUTE ASSETS FROM EXTERNAL CHAINS TO CIRCLE ARC
+              CONNECT, SWITCH NETWORKS, AND REVIEW LIVE BALANCES BEFORE STAKING
             </p>
           </div>
 
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
-              <div className="p-4 bg-[#050506] border border-[#424936] rounded">
-                <label className="text-[9px] font-mono tracking-widest text-[#c2cab0] block mb-2 font-bold">
-                  FROM (SOURCE CHAIN)
-                </label>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm font-mono text-[#e0e4d2]">ARBITRUM</span>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      className="bg-transparent border-b border-[#424936] focus:border-[#b8fc4b] font-mono text-right w-24 text-sm focus:outline-none focus:ring-0 text-[#b8fc4b]"
-                      value={cctpAmount}
-                      onChange={e => setCctpAmount(e.target.value)}
-                    />
-                    <span className="font-mono text-xs text-[#c2cab0]">ETH</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 bg-[#050506] border border-[#b8fc4b]/30 rounded">
-                <label className="text-[9px] font-mono tracking-widest text-[#c2cab0] block mb-2 font-bold">
-                  TO (DESTINATION CHAIN)
-                </label>
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm font-mono text-[#b8fc4b]">CIRCLE ARC</span>
-                  <span className="font-mono text-xs text-[#c2cab0] font-bold">USDC (MINTED)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 bg-[#0A0A0B]/85 border border-[#424936] rounded-lg space-y-4">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-[#c2cab0]">1INCH FUSION+ ROUTE:</span>
-                <span className="text-[#7bd1fa]">ARB &gt; WETH &gt; USDC</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-[#c2cab0]">CCTP MINT TIMEOUT:</span>
-                <span className="text-[#e0e4d2]">~2.5 MINS (GASLESS SPONSOR)</span>
-              </div>
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-[#c2cab0]">RELAYER GAS FEE:</span>
-                <span className="text-[#b8fc4b] font-bold">$0.00 (SUBSIDIZED)</span>
-              </div>
-
-              <div className="pt-4 border-t border-[#424936] flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-                <div>
-                  <div className="text-[9px] font-mono tracking-widest text-[#c2cab0] font-bold">
-                    ESTIMATED OUTPUT
-                  </div>
-                  <div className="text-2xl font-mono text-[#b8fc4b] font-bold mt-1">
-                    {cctpEstimate} <span className="text-xs">USDC</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => alert(`Transmuting swap: ${cctpAmount} ETH to Arc USDC...`)}
-                  className="px-6 py-3 bg-[#7bd1fa] text-[#001e2b] font-mono text-xs font-bold tracking-wider hover:shadow-[0_0_15px_rgba(125,211,252,0.4)] transition-all rounded active:scale-95"
-                >
-                  INITIATE SWAP
-                </button>
-              </div>
-            </div>
+          <div className="p-6 bg-[#0A0A0B]/85 border border-[#424936] rounded-lg">
+            <p className="text-sm text-[#c2cab0] leading-relaxed mb-6">
+              The guided connection flow checks your wallet, Arc network, and testnet USDC in real
+              time. Quotes and transactions are shown only when a provider and wallet can actually
+              authorize them.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/pentacles/connect')}
+              className="w-full px-6 py-3 bg-[#7bd1fa] text-[#001e2b] font-mono text-xs font-bold tracking-wider hover:shadow-[0_0_15px_rgba(125,211,252,0.4)] transition-all rounded active:scale-95"
+            >
+              OPEN WALLET SETUP
+            </button>
           </div>
         </section>
       </main>
@@ -1141,7 +883,7 @@ export default function LandingPage() {
             ALCHM AGENTS
           </div>
           <div className="font-mono text-[9px] tracking-wide text-[#c2cab0]/60">
-            © 2026 ALCHM AGENTS | BLOB ID: 0x7E35fA3c29f4a9fCdB34d582e6c8004F92B1cE
+            © 2026 ALCHM AGENTS | REFERENCE BLOB: 0x7E35…B1cE
           </div>
         </div>
         <div className="flex gap-8">
@@ -1167,7 +909,9 @@ export default function LandingPage() {
           </a>
           <a
             className="font-mono text-[10px] tracking-widest text-[#c2cab0] hover:text-[#b8fc4b] transition-colors"
-            href="#"
+            href="https://github.com/CookingWithCastro/AlchmAgentsETH/blob/main/INTEGRATIONS.md"
+            target="_blank"
+            rel="noreferrer"
           >
             DOCS.EXE
           </a>
@@ -1175,9 +919,9 @@ export default function LandingPage() {
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-end">
             <span className="text-[9px] font-mono tracking-widest text-[#c2cab0]">
-              NETWORK STATUS
+              INTEGRATION MODE
             </span>
-            <span className="text-[9px] font-mono text-[#b8fc4b] font-bold">SYNCHRONIZED</span>
+            <span className="text-[9px] font-mono text-[#b8fc4b] font-bold">LIVE + TESTNET</span>
           </div>
           <span className="led-dot led-green"></span>
         </div>

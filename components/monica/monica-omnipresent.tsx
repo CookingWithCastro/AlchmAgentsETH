@@ -28,47 +28,9 @@ import {
   Atom,
   Zap,
   Eye,
-  Stars,
   Send,
 } from 'lucide-react'
 import { calculateMonicaConstant, type MonicaConstantResult } from '@/lib/monica/monica-constant'
-
-// Local stand-ins for the deleted `@/lib/monica/alchemical-trainer` module.
-// The trainer ran heavy local calculations against now-removed data; until a
-// backend equivalent ships, we surface a neutral "unavailable" result so the
-// UI keeps functioning without throwing.
-// TODO: wire to a real training endpoint when one exists.
-interface TrainingResult {
-  status?: string
-  samples?: any[]
-  statistics?: Record<string, any>
-  metadata: { numSamples: number }
-  patterns: { dominantElement: string }
-  monicaConstant?: { average: number }
-}
-
-const UNAVAILABLE_TRAINING: TrainingResult = {
-  status: 'unavailable',
-  samples: [],
-  statistics: {},
-  metadata: { numSamples: 0 },
-  patterns: { dominantElement: 'Fire' },
-}
-
-async function trainOnAlchemicalValues(_n: number = 15): Promise<TrainingResult> {
-  return UNAVAILABLE_TRAINING
-}
-
-async function todayHourlyAlchemize(_loc: {
-  latitude: number
-  longitude: number
-}): Promise<TrainingResult> {
-  return UNAVAILABLE_TRAINING
-}
-
-async function trainWithRetrogrades(_n: number = 20): Promise<TrainingResult> {
-  return UNAVAILABLE_TRAINING
-}
 
 // Browser-safe alchemize replacement — proxies through `/api/alchemize?legacy=true`.
 async function fetchLegacyAlchm(birth: {
@@ -115,14 +77,6 @@ interface UserProgress {
   unlockedCapabilities: string[]
 }
 
-interface MonicaTrainingProgress {
-  level: number
-  unlockedCapabilities: string[]
-  currentCourse: string | null
-  completedLessons: string[]
-  totalXP: number
-}
-
 interface ContextualHelp {
   greeting: string
   tips: string[]
@@ -142,13 +96,7 @@ interface MonicaMessage {
   }
 }
 
-type MonicaState =
-  | 'minimized'
-  | 'notification'
-  | 'expanded'
-  | 'full-chat'
-  | 'training-mode'
-  | 'settings'
+type MonicaState = 'minimized' | 'notification' | 'expanded' | 'full-chat' | 'settings'
 
 import {
   getPageGuidance,
@@ -209,22 +157,6 @@ export function MonicaOmnipresent() {
     'idle'
   )
 
-  // Training system state management
-  const [trainingProgress, setTrainingProgress] = useState<MonicaTrainingProgress>({
-    level: 1,
-    unlockedCapabilities: ['basic-guidance'],
-    currentCourse: null,
-    completedLessons: [],
-    totalXP: 0,
-  })
-  const [isTraining, setIsTraining] = useState(false)
-  const [trainingResults, setTrainingResults] = useState<TrainingResult | null>(null)
-  const [availableTrainings] = useState<string[]>([
-    'alchemical-values',
-    'hourly-analysis',
-    'retrograde-patterns',
-  ])
-
   // Load settings and progress using enhanced persistence (with validation)
   useEffect(() => {
     // Load settings using enhanced system
@@ -251,25 +183,6 @@ export function MonicaOmnipresent() {
       console.error('Error loading Monica progress:', error)
       localStorage.removeItem('monica-progress')
     }
-
-    // Load training progress with error resilience
-    try {
-      const savedTrainingProgress = localStorage.getItem('monica-training-progress')
-      if (savedTrainingProgress) {
-        const progress = JSON.parse(savedTrainingProgress)
-        // Validate training progress structure
-        if (
-          progress &&
-          typeof progress.level === 'number' &&
-          Array.isArray(progress.completedLessons)
-        ) {
-          setTrainingProgress(progress)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading Monica training progress:', error)
-      localStorage.removeItem('monica-training-progress')
-    }
   }, [])
 
   // Save settings using enhanced system with validation
@@ -290,18 +203,6 @@ export function MonicaOmnipresent() {
       console.error('Error saving Monica progress:', error)
     }
   }, [userProgress])
-
-  // Save training progress with validation
-  useEffect(() => {
-    try {
-      if (trainingProgress.totalXP > 0 || trainingProgress.completedLessons.length > 0) {
-        localStorage.setItem('monica-training-progress', JSON.stringify(trainingProgress))
-        localStorage.setItem('monica-training-progress-timestamp', Date.now().toString())
-      }
-    } catch (error) {
-      console.error('Error saving Monica training progress:', error)
-    }
-  }, [trainingProgress])
 
   // Auto-hide functionality
   useEffect(() => {
@@ -433,24 +334,10 @@ export function MonicaOmnipresent() {
 
         setCurrentMC(monicaResult.value)
         setConsciousnessResult(monicaResult)
-
-        // Update training progress based on consciousness level
-        if (
-          monicaResult.consciousnessState.level === 'elevated' ||
-          monicaResult.consciousnessState.level === 'transcendent'
-        ) {
-          setTrainingProgress(prev => ({
-            ...prev,
-            unlockedCapabilities: prev.unlockedCapabilities.includes('consciousness-tracking')
-              ? prev.unlockedCapabilities
-              : [...prev.unlockedCapabilities, 'consciousness-tracking'],
-          }))
-        }
       } catch (error) {
         console.error('Error updating consciousness:', error)
-        // Fallback to simulated value
-        const mockMC = 5.89 + (Math.random() - 0.5) * 0.2
-        setCurrentMC(mockMC)
+        setCurrentMC(null)
+        setConsciousnessResult(null)
       } finally {
         setIsUpdatingConsciousness(false)
       }
@@ -516,7 +403,9 @@ export function MonicaOmnipresent() {
       currentLearning: tutorialId,
       lastAction: `Started tutorial: ${tutorialId}`,
     }))
-    setMonicaState('training-mode')
+    // The legacy in-widget trainer no longer has a real data source. Continue
+    // tutorials in Monica's live guide instead of awarding simulated results.
+    router.push(`/monica-guide?tutorial=${encodeURIComponent(tutorialId)}`)
   }
 
   // Handler for quick actions from contextual help
@@ -645,73 +534,6 @@ export function MonicaOmnipresent() {
   const closeFullChat = () => {
     setMonicaState('expanded')
     setWidgetSize({ width: 320, height: 480 })
-  }
-
-  // Training system functions
-  const startTraining = async (trainingType: string) => {
-    setIsTraining(true)
-    try {
-      let results: TrainingResult
-
-      switch (trainingType) {
-        case 'alchemical-values':
-          results = await trainOnAlchemicalValues(15)
-          break
-        case 'hourly-analysis':
-          results = await todayHourlyAlchemize({ latitude: 37.7749, longitude: -122.4194 })
-          break
-        case 'retrograde-patterns':
-          results = await trainWithRetrogrades(20)
-          break
-        default:
-          throw new Error(`Unknown training type: ${trainingType}`)
-      }
-
-      setTrainingResults(results)
-
-      // Update training progress
-      const completedLesson = `${trainingType}-${Date.now()}`
-      setTrainingProgress(prev => ({
-        ...prev,
-        completedLessons: [...prev.completedLessons, completedLesson],
-        totalXP: prev.totalXP + 50,
-        level: Math.floor((prev.totalXP + 50) / 100) + 1,
-        unlockedCapabilities:
-          prev.level > 1
-            ? [...prev.unlockedCapabilities, `advanced-${trainingType}`]
-            : prev.unlockedCapabilities,
-      }))
-    } catch (error) {
-      console.error('Training error:', error)
-    } finally {
-      setIsTraining(false)
-    }
-  }
-
-  const getTrainingDescription = (trainingType: string): string => {
-    switch (trainingType) {
-      case 'alchemical-values':
-        return 'Master the calculation of Spirit, Essence, Matter, and Substance values across diverse planetary configurations'
-      case 'hourly-analysis':
-        return 'Learn to analyze consciousness patterns throughout planetary hours and timing cycles'
-      case 'retrograde-patterns':
-        return 'Understand the deeper meanings and calculations behind planetary retrograde movements'
-      default:
-        return 'Advanced consciousness development training'
-    }
-  }
-
-  const getTrainingIcon = (trainingType: string) => {
-    switch (trainingType) {
-      case 'alchemical-values':
-        return <FlaskConical className="w-5 h-5" />
-      case 'hourly-analysis':
-        return <Eye className="w-5 h-5" />
-      case 'retrograde-patterns':
-        return <Stars className="w-5 h-5" />
-      default:
-        return <Brain className="w-5 h-5" />
-    }
   }
 
   const getPersonalityStyle = () => {
@@ -1329,158 +1151,6 @@ export function MonicaOmnipresent() {
                 </Button>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Training Mode Interface */}
-      {monicaState === 'training-mode' && (
-        <Card className="w-96 h-[600px] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-8rem)] bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm border-2 border-purple-400 shadow-xl">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg text-purple-700 dark:text-purple-300 flex items-center gap-2">
-                <Brain className="w-5 h-5" />
-                Monica Training Hub
-              </CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => setMonicaState('expanded')}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="h-full overflow-y-auto space-y-4">
-            {/* Training Progress Overview */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold">Consciousness Level</span>
-                <Badge variant="outline" className="bg-purple-100 text-purple-800">
-                  Level {trainingProgress.level}
-                </Badge>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>XP Progress</span>
-                  <span>{trainingProgress.totalXP % 100}/100</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${trainingProgress.totalXP % 100}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="text-center p-2 bg-purple-50 rounded">
-                  <div className="font-semibold">{trainingProgress.completedLessons.length}</div>
-                  <div className="text-muted-foreground">Lessons</div>
-                </div>
-                <div className="text-center p-2 bg-purple-50 rounded">
-                  <div className="font-semibold">
-                    {trainingProgress.unlockedCapabilities.length}
-                  </div>
-                  <div className="text-muted-foreground">Abilities</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">
-                Available Training Modules
-              </h4>
-
-              {availableTrainings.map(training => (
-                <div
-                  key={training}
-                  className="mb-3 p-3 border rounded-lg bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      {getTrainingIcon(training)}
-                      <div>
-                        <h5 className="font-medium text-sm capitalize">
-                          {training.replace('-', ' ')}
-                        </h5>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {getTrainingDescription(training)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="w-full mt-2 bg-purple-600 text-white hover:bg-purple-700"
-                    onClick={() => startTraining(training)}
-                    disabled={isTraining}
-                  >
-                    {isTraining ? (
-                      <>
-                        <FlaskConical className="w-3 h-3 mr-1 animate-spin" />
-                        Training...
-                      </>
-                    ) : (
-                      <>
-                        <PlayCircle className="w-3 h-3 mr-1" />
-                        Start Training
-                      </>
-                    )}
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            {/* Training Results Display */}
-            {trainingResults && (
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">
-                  Latest Training Results
-                </h4>
-                <div className="space-y-2 text-xs">
-                  <div className="flex justify-between">
-                    <span>Samples Analyzed:</span>
-                    <span className="font-semibold">{trainingResults.metadata.numSamples}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Dominant Element:</span>
-                    <span className="font-semibold">
-                      {trainingResults.patterns.dominantElement}
-                    </span>
-                  </div>
-                  {trainingResults.monicaConstant && (
-                    <div className="flex justify-between">
-                      <span>Monica Constant:</span>
-                      <span className="font-semibold">
-                        {trainingResults.monicaConstant.average.toFixed(3)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <div className="mt-2">
-                  <Badge variant="secondary" className="text-xs">
-                    +50 XP Earned
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* Unlocked Capabilities */}
-            {trainingProgress.unlockedCapabilities.length > 1 && (
-              <div className="border-t pt-4">
-                <h4 className="font-semibold mb-3 text-purple-700 dark:text-purple-300">
-                  Unlocked Capabilities
-                </h4>
-                <div className="space-y-1">
-                  {trainingProgress.unlockedCapabilities.map((capability, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs mr-1 mb-1">
-                      <Star className="w-3 h-3 mr-1" />
-                      {capability.replace('-', ' ')}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       )}

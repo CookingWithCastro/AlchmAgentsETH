@@ -7,12 +7,11 @@ import type { SacredStat } from './StatChip'
 import { AlchemicalButton } from './AlchemicalButton'
 import { RitualInput } from './RitualInput'
 import { useOccultStore, type OccultAgentRef } from '@/lib/store/occult-store'
-import { cn } from '@/lib/utils'
 
 /**
  * Live Vault collection (Stitch realization plan, Phase 5). Lists the REAL
- * agent populations from /api/agents/gallery — 72 historical figures, 3600
- * planetary-degree and 3240 moon-phase intelligences — no invented agents.
+ * historical agents from /api/agents/gallery, with a source-controlled fallback
+ * when the optional database mirror is unavailable.
  */
 
 export interface GalleryAgent {
@@ -27,15 +26,6 @@ export interface GalleryAgent {
   level: number
   sacred7: Record<SacredStat, number>
 }
-
-const POPULATIONS = [
-  { key: 'historical', label: 'Historical Minds' },
-  { key: 'planetary', label: 'Planetary Intelligences' },
-  { key: 'moon-phase', label: 'Lunar Phases' },
-  { key: 'crafted', label: 'Forged Vessels' },
-] as const
-
-type PopulationKey = (typeof POPULATIONS)[number]['key']
 
 const PAGE_SIZE = 24
 
@@ -55,19 +45,18 @@ export function LiveVaultGallery({
   selectable?: boolean
   onSelect?: (agent: OccultAgentRef) => void
 }) {
-  const [population, setPopulation] = useState<PopulationKey>('historical')
   const [search, setSearch] = useState('')
   const [agents, setAgents] = useState<GalleryAgent[]>([])
   const [total, setTotal] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async (pop: PopulationKey, query: string, offset: number) => {
+  const load = useCallback(async (query: string, offset: number) => {
     setLoading(true)
     setError(null)
     try {
       const params = new URLSearchParams({
-        population: pop,
+        population: 'historical',
         limit: String(PAGE_SIZE),
         offset: String(offset),
       })
@@ -85,41 +74,24 @@ export function LiveVaultGallery({
   }, [])
 
   useEffect(() => {
-    const handle = setTimeout(() => void load(population, search, 0), search ? 300 : 0)
+    const handle = setTimeout(() => void load(search, 0), search ? 300 : 0)
     return () => clearTimeout(handle)
-  }, [population, search, load])
+  }, [search, load])
 
   return (
     <section className="px-margin-mobile md:px-margin-desktop py-10 max-w-container-max mx-auto">
-      {/* Population tabs */}
-      <div role="tablist" aria-label="Agent populations" className="flex flex-wrap gap-2 mb-6">
-        {POPULATIONS.map(p => (
-          <button
-            key={p.key}
-            type="button"
-            role="tab"
-            aria-selected={population === p.key}
-            onClick={() => setPopulation(p.key)}
-            className={cn(
-              'font-label-mono text-label-mono uppercase tracking-wider px-4 py-2 rounded-full border transition-all',
-              population === p.key
-                ? 'bg-primary-container/30 text-st-primary border-st-primary/40 glow-violet'
-                : 'text-on-surface-variant border-white/10 hover:text-st-primary hover:border-st-primary/30'
-            )}
-          >
-            {p.label}
-            {population === p.key && total !== null && (
-              <span className="ml-2 text-on-surface-variant">{total.toLocaleString()}</span>
-            )}
-          </button>
-        ))}
+      <div className="flex items-center gap-2 mb-6 font-label-mono text-label-mono uppercase tracking-wider">
+        <span className="text-st-primary">Historical Minds</span>
+        {total !== null && (
+          <span className="text-on-surface-variant">{total.toLocaleString()}</span>
+        )}
       </div>
 
       {/* Search */}
       <div className="max-w-md mb-8">
         <RitualInput
           label="SCRY THE VAULT"
-          placeholder="e.g. Kepler, Moon in Pisces, Full Moon…"
+          placeholder="e.g. Kepler, Plato, Marie Curie…"
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
@@ -181,10 +153,7 @@ export function LiveVaultGallery({
             COMMUNING WITH THE VAULT…
           </p>
         ) : total !== null && agents.length < total ? (
-          <AlchemicalButton
-            variant="secondary"
-            onClick={() => load(population, search, agents.length)}
-          >
+          <AlchemicalButton variant="secondary" onClick={() => load(search, agents.length)}>
             Reveal More ({agents.length.toLocaleString()} / {total.toLocaleString()})
           </AlchemicalButton>
         ) : agents.length === 0 && !error ? (

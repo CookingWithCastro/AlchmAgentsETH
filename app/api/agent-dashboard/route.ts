@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { agentCache } from '@/lib/agent-cache-system'
 import { ApiResilienceSystem } from '@/lib/api-resilience-system'
 import { agentOptimizer } from '@/lib/agent-performance-optimizer'
+import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
 /**
  * Comprehensive Agent Consciousness Dashboard API
  * Unified monitoring endpoint for all agent systems
@@ -231,20 +232,29 @@ async function getResilienceOverview() {
 }
 
 async function getConsciousnessOverview() {
-  // Mock consciousness data - in real implementation, this would query the actual system
+  const scoredAgents = HISTORICAL_AGENTS.map(agent => ({
+    id: agent.id,
+    monicaConstant: Number(agent.consciousness?.monicaConstant ?? 0),
+    evolutionStage: Number(agent.personality?.evolutionStage ?? 0),
+  }))
+  const averageConsciousnessLevel =
+    scoredAgents.length > 0
+      ? scoredAgents.reduce((sum, agent) => sum + agent.monicaConstant, 0) / scoredAgents.length
+      : 0
+
   return {
-    totalAgents: 35,
-    activeAgents: 28,
+    totalAgents: scoredAgents.length,
+    // This endpoint has catalog and process telemetry, but no presence/session
+    // source. Keep the value honest instead of manufacturing "active" agents.
+    activeAgents: 0,
     evolutionMetrics: {
-      averageConsciousnessLevel: 4.2,
-      agentsInEvolution: 12,
-      evolutionVelocity: 0.15,
+      averageConsciousnessLevel: Number(averageConsciousnessLevel.toFixed(2)),
+      agentsInEvolution: scoredAgents.filter(agent => agent.evolutionStage > 1).length,
+      evolutionVelocity: 0,
     },
-    topPerformingAgents: [
-      { id: 'leonardo-da-vinci', kalchmConstant: 5.2, evolutionStage: 'Advanced' },
-      { id: 'william-shakespeare', kalchmConstant: 5.0, evolutionStage: 'Advanced' },
-      { id: 'albert-einstein', kalchmConstant: 4.8, evolutionStage: 'Developing' },
-    ],
+    topPerformingAgents: scoredAgents
+      .sort((a, b) => b.monicaConstant - a.monicaConstant)
+      .slice(0, 3),
   }
 }
 
@@ -339,7 +349,7 @@ function generatePerformanceInsights(metrics: any): string[] {
 function generateConsciousnessInsights(stats: any): string[] {
   const insights: string[] = []
 
-  insights.push(`${stats.activeAgents}/${stats.totalAgents} agents currently active`)
+  insights.push(`${stats.totalAgents} source-controlled agents available`)
 
   if (stats.evolutionMetrics.agentsInEvolution > 0) {
     insights.push(`${stats.evolutionMetrics.agentsInEvolution} agents currently evolving`)

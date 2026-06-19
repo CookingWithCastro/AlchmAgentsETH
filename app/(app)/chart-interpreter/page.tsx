@@ -57,6 +57,21 @@ function formatSynastryAgentLabel(agentId: string) {
   return agentId.replace(/[-_]+/g, ' ').replace(/\b\w/g, char => char.toUpperCase())
 }
 
+const ZODIAC_SIGNS = [
+  'Aries',
+  'Taurus',
+  'Gemini',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagittarius',
+  'Capricorn',
+  'Aquarius',
+  'Pisces',
+]
+
 export default function ChartInterpreterPage() {
   const [chartData, setChartData] = useState<ChartData>({
     name: '',
@@ -234,20 +249,7 @@ export default function ChartInterpreterPage() {
     'neptune',
     'pluto',
   ]
-  const signs = [
-    'Aries',
-    'Taurus',
-    'Gemini',
-    'Cancer',
-    'Leo',
-    'Virgo',
-    'Libra',
-    'Scorpio',
-    'Sagittarius',
-    'Capricorn',
-    'Aquarius',
-    'Pisces',
-  ]
+  const signs = ZODIAC_SIGNS
   const houses = Array.from({ length: 12 }, (_, i) => i + 1)
   const synastryAgentLabel = synastryAgentId ? formatSynastryAgentLabel(synastryAgentId) : null
 
@@ -261,7 +263,10 @@ export default function ChartInterpreterPage() {
             acc[planetKey] = {
               sign: pos.sign,
               degree: Math.round(pos.degree),
-              house: Math.floor(Math.random() * 12) + 1, // Simplified house calculation
+              // A current-moment request has no ascendant without an observer
+              // location. Use a stable whole-sign sector instead of inventing a
+              // different house on every refresh.
+              house: Math.max(1, ZODIAC_SIGNS.indexOf(pos.sign) + 1),
             }
           }
           return acc

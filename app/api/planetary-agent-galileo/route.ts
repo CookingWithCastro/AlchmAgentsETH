@@ -1,7 +1,6 @@
 import { generateText } from 'ai'
 import { NextResponse } from 'next/server'
 import { galileo } from '@/lib/galileo-adapter'
-import { verifyApiKeys } from '../secure-config'
 import {
   getSignElement,
   getPlanetaryElement,
@@ -15,17 +14,12 @@ export const revalidate = 0
 
 export async function POST(req: Request) {
   try {
-    // Verify API keys are available
-    if (!verifyApiKeys()) {
-      console.error('API keys not configured. Providing fallback response for Galileo agent.')
-      // Return a fallback response that still provides value to the user
+    if (!process.env.GALILEO_API_KEY) {
       return NextResponse.json(
         {
-          response:
-            "I'm currently experiencing connectivity issues and cannot access the Galileo planetary wisdom. Please check your environment variables or try again later when API services are restored.",
-          error: 'API_KEY_MISSING',
+          error: 'Planetary Galileo chat is not configured on this deployment.',
         },
-        { status: 200 }
+        { status: 503 }
       )
     }
 
@@ -112,22 +106,12 @@ Always provide astrological wisdom that's accurate to traditional planetary dign
         aNumberInfo,
       })
     } catch (modelError) {
-      console.error('Error with Galileo model, falling back to default response:', modelError)
-
-      // Return a dignified response even when the model fails
+      console.error('Error with Galileo model:', modelError)
       return NextResponse.json(
         {
-          response: `As ${planet || 'the Sun'} in ${sign || 'Aries'}, I bring the wisdom of ${signElement} energy. Currently, my full capabilities are limited, but I can tell you that this combination offers unique insights into how ${planetElement} and ${signElement} energies interact. ${aNumberInfo ? `The current A-Number is ${aNumberInfo.aNumber} (${aNumberInfo.category}), indicating ${aNumberInfo.category.toLowerCase()} energy levels. ` : ''}Please try again later for more detailed guidance.`,
-          elementalInfo: {
-            signElement,
-            planetElement,
-            elementalAffinity: Math.round(elementalAffinity * 100),
-            isDiurnal,
-          },
-          aNumberInfo,
-          error: 'MODEL_UNAVAILABLE',
+          error: 'The selected planetary chat configuration is currently unavailable.',
         },
-        { status: 200 }
+        { status: 502 }
       )
     }
   } catch (error) {

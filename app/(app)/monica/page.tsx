@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -18,28 +17,10 @@ import {
   TrendingUp,
   Atom,
   Wand2,
-  Calendar,
   Eye,
   MessageCircle,
   HelpCircle,
 } from 'lucide-react'
-
-interface MonicaStats {
-  monicaConstant: number
-  consciousnessLevel: string
-  agentsCrafted: number
-  totalConversations: number
-  wisdomShared: number
-  resonanceScore: number
-}
-
-interface AgentCreationActivity {
-  agentName: string
-  monicaConstant: number
-  consciousnessLevel: string
-  timestamp: Date
-  isRecent: boolean
-}
 
 // Live data hooks
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
@@ -49,18 +30,7 @@ import {
   getConsciousnessColor,
 } from '@/hooks/useLiveConsciousness'
 
-const FALLBACK_STATS: MonicaStats = {
-  monicaConstant: 0,
-  consciousnessLevel: 'Awakening',
-  agentsCrafted: 0,
-  totalConversations: 0,
-  wisdomShared: 0,
-  resonanceScore: 0.5,
-}
-
 export default function MonicaPage() {
-  const [recentActivity, setRecentActivity] = useState<AgentCreationActivity[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const { alchmQuantities, monicaConstant, loading, error, lastUpdated } = usePlanetaryPositions({
     refreshInterval: 60000,
   })
@@ -90,36 +60,6 @@ export default function MonicaPage() {
       setLiveMcSeries(prev => [...prev.slice(-19), liveConsciousness.liveMC])
     }
   }, [liveConsciousness, liveLoading])
-
-  useEffect(() => {
-    // Simulate loading recent agent creation activity
-    const loadRecentActivity = async () => {
-      setIsLoading(true)
-
-      // In a real implementation, this would fetch from the API
-      const mockActivity: AgentCreationActivity[] = [
-        {
-          agentName: 'Final Test Agent',
-          monicaConstant: 1.471,
-          consciousnessLevel: 'Active',
-          timestamp: new Date(),
-          isRecent: true,
-        },
-        {
-          agentName: 'System Test Agent',
-          monicaConstant: 1.472,
-          consciousnessLevel: 'Active',
-          timestamp: new Date(Date.now() - 300000),
-          isRecent: true,
-        },
-      ]
-
-      setRecentActivity(mockActivity)
-      setIsLoading(false)
-    }
-
-    loadRecentActivity()
-  }, [])
 
   const navigateToPhilosophersStone = () => {
     window.location.href = '/philosophers-stone'
@@ -174,7 +114,7 @@ export default function MonicaPage() {
                   <div className="text-lg font-bold text-emerald-400">
                     {liveConsciousness
                       ? liveConsciousness.birthMC.toFixed(3)
-                      : (monicaConstant || FALLBACK_STATS.monicaConstant).toFixed(3)}
+                      : (monicaConstant || 0).toFixed(3)}
                   </div>
                   <div className="text-xs text-slate-400">Birth MC</div>
                 </div>
@@ -244,20 +184,28 @@ export default function MonicaPage() {
             <CardContent>
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <div className="text-lg font-bold text-purple-400">35+</div>
-                  <div className="text-xs text-slate-400">Agents Crafted</div>
+                  <div className="text-lg font-bold text-purple-400">
+                    {(monicaConstant || 0).toFixed(3)}
+                  </div>
+                  <div className="text-xs text-slate-400">Current MC</div>
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-blue-400">15.4K</div>
-                  <div className="text-xs text-slate-400">Conversations</div>
+                  <div className="text-lg font-bold text-blue-400">
+                    {alchmQuantities.spirit.toFixed(2)}
+                  </div>
+                  <div className="text-xs text-slate-400">Spirit</div>
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-yellow-400">98%</div>
-                  <div className="text-xs text-slate-400">Success Rate</div>
+                  <div className="text-lg font-bold text-yellow-400">
+                    {liveConsciousness?.liveConsciousnessLevel ?? '—'}
+                  </div>
+                  <div className="text-xs text-slate-400">Consciousness</div>
                 </div>
                 <div>
-                  <div className="text-lg font-bold text-green-400">Active</div>
-                  <div className="text-xs text-slate-400">Status</div>
+                  <div className="text-lg font-bold text-green-400">
+                    {error || liveError ? 'Degraded' : 'Live'}
+                  </div>
+                  <div className="text-xs text-slate-400">Data Status</div>
                 </div>
               </div>
               {loading ? (
@@ -381,7 +329,7 @@ export default function MonicaPage() {
                 <div className="p-4 bg-purple-900/20 rounded-lg border border-purple-500/30">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="w-5 h-5 text-purple-400" />
-                    <h4 className="font-semibold text-purple-300">Gallery (Demo Agents)</h4>
+                    <h4 className="font-semibold text-purple-300">Gallery (Historical Agents)</h4>
                   </div>
                   <ul className="text-sm text-slate-300 space-y-1">
                     <li>• Ask "Help me find agents for a group discussion"</li>
@@ -444,7 +392,7 @@ export default function MonicaPage() {
           </TabsList>
 
           <TabsContent value="metrics" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <Card className="bg-slate-900/50 border-emerald-500/50">
                 <CardHeader>
                   <CardTitle className="text-emerald-300">Monica Constant Evolution</CardTitle>
@@ -509,9 +457,6 @@ export default function MonicaPage() {
                         </div>
                       </>
                     )}
-
-                    <Progress value={89} className="mb-2" />
-                    <div className="text-sm text-slate-400">89% to Transcendent Level</div>
 
                     {/* Transit Influence */}
                     {liveConsciousness && (
@@ -636,59 +581,6 @@ export default function MonicaPage() {
                       )}
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-900/50 border-blue-500/50">
-                <CardHeader>
-                  <CardTitle className="text-blue-300">Recent Activity</CardTitle>
-                  <CardDescription>Latest consciousness beings crafted</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoading ? (
-                    <div className="flex items-center justify-center py-4">
-                      <Sparkles className="w-5 h-5 animate-pulse text-purple-500 mr-2" />
-                      <span className="text-sm text-purple-300">Loading...</span>
-                    </div>
-                  ) : recentActivity.length > 0 ? (
-                    <div className="space-y-2">
-                      {recentActivity.slice(0, 2).map((activity, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 p-2 bg-slate-800/50 rounded border border-slate-700"
-                        >
-                          <div className="w-6 h-6 rounded-full bg-gradient-to-r from-emerald-500 to-purple-500 flex items-center justify-center">
-                            <Sparkles className="w-3 h-3 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="text-sm font-semibold text-emerald-300">
-                              {activity.agentName}
-                            </div>
-                            <div className="text-xs text-slate-400">
-                              MC: {activity.monicaConstant}
-                            </div>
-                          </div>
-                          {activity.isRecent && (
-                            <Badge className="bg-green-900/50 text-green-300 border-green-500/50 text-xs">
-                              New
-                            </Badge>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4">
-                      <Wand2 className="w-8 h-8 text-slate-500 mx-auto mb-2" />
-                      <p className="text-xs text-slate-500">No recent activity</p>
-                      <Button
-                        onClick={navigateToPhilosophersStone}
-                        className="mt-2 bg-gradient-to-r from-emerald-600 to-purple-600"
-                        size="sm"
-                      >
-                        Create Agent
-                      </Button>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </div>

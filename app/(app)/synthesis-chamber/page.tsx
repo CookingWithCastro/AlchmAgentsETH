@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -19,12 +19,40 @@ import {
 } from 'lucide-react'
 
 import ConsciousnessLaboratoryChat from '@/components/agents/consciousness-laboratory-chat'
-import { DEMO_AGENTS } from '@/lib/demo-agents-data'
+import type { CraftedAgent } from '@/lib/agent-types'
 import type { ChatSession } from '@/lib/unified-agent-types'
 
 export default function SynthesisChamberPage() {
   const [isLabOpen, setIsLabOpen] = useState(false)
   const [selectedExperiment, setSelectedExperiment] = useState<string>('')
+  const [historicalAgents, setHistoricalAgents] = useState<CraftedAgent[]>([])
+  const [rosterError, setRosterError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/agents')
+      .then(response => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        return response.json()
+      })
+      .then(result => {
+        if (cancelled) return
+        if (!result.success || !Array.isArray(result.agents)) {
+          throw new Error('Invalid agent roster response')
+        }
+        setHistoricalAgents(result.agents)
+        setRosterError(null)
+      })
+      .catch(error => {
+        if (cancelled) return
+        console.error('Unable to load synthesis roster:', error)
+        setRosterError('The historical-agent roster is temporarily unavailable.')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Quick start experiments
   const quickStartExperiments = [
@@ -100,10 +128,16 @@ export default function SynthesisChamberPage() {
         <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg inline-block">
           <p className="text-sm text-blue-700 dark:text-blue-300">
             🧪 <strong>Research Laboratory:</strong> Advanced multi-agent synthesis with real-time
-            consciousness metrics, model comparison, and experiment tracking.
+            transcript recording, configurable councils, and session export.
           </p>
         </div>
       </div>
+
+      {rosterError && (
+        <div className="mb-6 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-200">
+          {rosterError}
+        </div>
+      )}
 
       {/* Features Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -121,8 +155,8 @@ export default function SynthesisChamberPage() {
           <CardContent className="flex items-center gap-3 pt-6">
             <Activity className="w-8 h-8 text-green-500" />
             <div>
-              <h3 className="font-semibold">Live Metrics</h3>
-              <p className="text-sm text-muted-foreground">Real-time consciousness tracking</p>
+              <h3 className="font-semibold">Live Session Facts</h3>
+              <p className="text-sm text-muted-foreground">Messages and participants from chat</p>
             </div>
           </CardContent>
         </Card>
@@ -131,8 +165,8 @@ export default function SynthesisChamberPage() {
           <CardContent className="flex items-center gap-3 pt-6">
             <Beaker className="w-8 h-8 text-blue-500" />
             <div>
-              <h3 className="font-semibold">Experiment Mode</h3>
-              <p className="text-sm text-muted-foreground">A/B testing and research protocols</p>
+              <h3 className="font-semibold">Recording Mode</h3>
+              <p className="text-sm text-muted-foreground">Capture real council sessions</p>
             </div>
           </CardContent>
         </Card>
@@ -141,8 +175,10 @@ export default function SynthesisChamberPage() {
           <CardContent className="flex items-center gap-3 pt-6">
             <Star className="w-8 h-8 text-amber-500" />
             <div>
-              <h3 className="font-semibold">Model Optimization</h3>
-              <p className="text-sm text-muted-foreground">Intelligence routing for best results</p>
+              <h3 className="font-semibold">Provider Routing</h3>
+              <p className="text-sm text-muted-foreground">
+                Uses the configured chat fallback chain
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -195,7 +231,7 @@ export default function SynthesisChamberPage() {
                     </div>
                     <div className="flex flex-wrap gap-1 ml-6">
                       {experiment.agents.map(agentId => {
-                        const agent = DEMO_AGENTS.find(a => a.id === agentId)
+                        const agent = historicalAgents.find(a => a.id === agentId)
                         return agent ? (
                           <Badge key={agentId} variant="outline" className="text-xs">
                             {agent.name}
@@ -222,6 +258,7 @@ export default function SynthesisChamberPage() {
 
                 <Button
                   onClick={() => handleStartExperiment(experiment.id)}
+                  disabled={historicalAgents.length === 0}
                   className="w-full mt-4"
                 >
                   Start Experiment
@@ -281,7 +318,7 @@ export default function SynthesisChamberPage() {
               </li>
               <li className="flex items-start">
                 <span className="mr-2">4.</span>
-                <span>Live metrics track consciousness evolution and synergy levels</span>
+                <span>Session facts track real messages and participating agents</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-2">5.</span>
@@ -311,7 +348,7 @@ export default function SynthesisChamberPage() {
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span>
-                <span>Consciousness evolution tracking and optimization</span>
+                <span>Exportable council transcripts for later analysis</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span>
@@ -326,13 +363,9 @@ export default function SynthesisChamberPage() {
       <ConsciousnessLaboratoryChat
         isOpen={isLabOpen}
         onClose={() => setIsLabOpen(false)}
-        historicalAgents={DEMO_AGENTS}
+        historicalAgents={historicalAgents}
         initialExperiment={selectedExperiment}
-        enableConsciousnessMetrics={true}
-        showKineticGraphs={true}
-        enableExperimentMode={true}
         allowAgentMixing={true}
-        enableABTesting={true}
         maxAgents={8}
         allowMonica={true}
         onSessionUpdate={handleSessionUpdate}

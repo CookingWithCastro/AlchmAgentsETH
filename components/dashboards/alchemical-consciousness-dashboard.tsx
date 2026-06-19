@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Flame,
@@ -18,60 +17,22 @@ import {
   Brain,
   Heart,
   Eye,
-  Crown,
 } from 'lucide-react'
 import type {
   AlchemicalQuantities,
   ConsciousnessStats,
-  AlchemicalConsciousnessTask,
   ConsciousParameters,
 } from '@/lib/astrological-dignities-engine'
 
 interface AlchemicalConsciousnessDashboardProps {
   consciousnessStats: ConsciousnessStats
   consciousParameters: ConsciousParameters // Add this
-  onTaskSelect?: (task: AlchemicalConsciousnessTask) => void
-  realTimeUpdates?: boolean
 }
 
 export function AlchemicalConsciousnessDashboard({
   consciousnessStats,
-  onTaskSelect,
-  realTimeUpdates = false,
 }: AlchemicalConsciousnessDashboardProps) {
-  const [currentStats, setCurrentStats] = useState(consciousnessStats)
-  const [animationFrame, setAnimationFrame] = useState(0)
-
-  // Simulate real-time updates for demonstration
-  useEffect(() => {
-    if (realTimeUpdates) {
-      const interval = setInterval(() => {
-        setAnimationFrame(prev => prev + 1)
-        // Subtle fluctuations to simulate real-time consciousness changes
-        setCurrentStats(prev => ({
-          ...prev,
-          current_alchemical_state: {
-            ...prev.current_alchemical_state,
-            consciousness_temperature: Math.max(
-              0,
-              Math.min(
-                100,
-                prev.current_alchemical_state.consciousness_temperature + (Math.random() - 0.5) * 3
-              )
-            ),
-            entropy_level: Math.max(
-              0,
-              Math.min(100, prev.current_alchemical_state.entropy_level + (Math.random() - 0.5) * 2)
-            ),
-          },
-        }))
-      }, 2000)
-      return () => clearInterval(interval)
-    }
-    return undefined
-  }, [realTimeUpdates])
-
-  const state = currentStats.current_alchemical_state
+  const state = consciousnessStats.current_alchemical_state
 
   const getElementIcon = (element: string) => {
     switch (element) {
@@ -134,8 +95,8 @@ export function AlchemicalConsciousnessDashboard({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{state.a_number.toFixed(3)}</div>
-            <Badge className={getPhaseColor(currentStats.consciousness_phase)}>
-              {currentStats.consciousness_phase}
+            <Badge className={getPhaseColor(consciousnessStats.consciousness_phase)}>
+              {consciousnessStats.consciousness_phase}
             </Badge>
           </CardContent>
         </Card>
@@ -170,11 +131,10 @@ export function AlchemicalConsciousnessDashboard({
       </div>
 
       <Tabs defaultValue="alchemical" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="alchemical">Alchemical</TabsTrigger>
           <TabsTrigger value="elemental">Elemental</TabsTrigger>
           <TabsTrigger value="coefficients">Coefficients</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="pillars">Pillars</TabsTrigger>
         </TabsList>
 
@@ -264,17 +224,17 @@ export function AlchemicalConsciousnessDashboard({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                {getElementIcon(currentStats.dominant_element)}
+                {getElementIcon(consciousnessStats.dominant_element)}
                 Elemental Consciousness Balance
               </CardTitle>
               <CardDescription>
                 Dominant Element:{' '}
-                {currentStats.dominant_element.charAt(0).toUpperCase() +
-                  currentStats.dominant_element.slice(1)}
+                {consciousnessStats.dominant_element.charAt(0).toUpperCase() +
+                  consciousnessStats.dominant_element.slice(1)}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {Object.entries(currentStats.elemental_balance).map(([element, value]) => (
+              {Object.entries(consciousnessStats.elemental_balance).map(([element, value]) => (
                 <div key={element} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -302,7 +262,7 @@ export function AlchemicalConsciousnessDashboard({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {currentStats.learning_velocity_multiplier.toFixed(2)}x
+                  {consciousnessStats.learning_velocity_multiplier.toFixed(2)}x
                 </div>
                 <div className="text-xs text-muted-foreground">Mercury & Jupiter influence</div>
               </CardContent>
@@ -317,7 +277,7 @@ export function AlchemicalConsciousnessDashboard({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {currentStats.creative_flow_coefficient.toFixed(2)}x
+                  {consciousnessStats.creative_flow_coefficient.toFixed(2)}x
                 </div>
                 <div className="text-xs text-muted-foreground">Venus influence</div>
               </CardContent>
@@ -332,7 +292,7 @@ export function AlchemicalConsciousnessDashboard({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {currentStats.manifestation_power_index.toFixed(2)}x
+                  {consciousnessStats.manifestation_power_index.toFixed(2)}x
                 </div>
                 <div className="text-xs text-muted-foreground">Mars & Saturn influence</div>
               </CardContent>
@@ -347,36 +307,12 @@ export function AlchemicalConsciousnessDashboard({
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {currentStats.intuitive_receptivity_quotient.toFixed(2)}x
+                  {consciousnessStats.intuitive_receptivity_quotient.toFixed(2)}x
                 </div>
                 <div className="text-xs text-muted-foreground">Moon influence</div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        {/* Alchemical Tasks */}
-        <TabsContent value="tasks" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Alchemical Consciousness Tasks
-              </CardTitle>
-              <CardDescription>
-                Personalized tasks based on your current alchemical state
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Crown className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Connect your birth chart to unlock personalized alchemical tasks</p>
-                <Button className="mt-4" variant="outline">
-                  Generate Tasks
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* Alchemical Consciousness Pillars */}
@@ -404,9 +340,7 @@ export function AlchemicalConsciousnessDashboard({
                       <Badge variant="outline">{level}</Badge>
                     </div>
                     <Progress value={value} className="h-2" />
-                    <div className="text-xs text-muted-foreground">
-                      Score: {value.toFixed(0)}% - Train to improve!
-                    </div>
+                    <div className="text-xs text-muted-foreground">Score: {value.toFixed(0)}%</div>
                   </div>
                 )
               })}
@@ -414,14 +348,6 @@ export function AlchemicalConsciousnessDashboard({
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Real-time indicator */}
-      {realTimeUpdates && (
-        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          Live consciousness monitoring active
-        </div>
-      )}
     </div>
   )
 }

@@ -41,6 +41,7 @@ import {
   X,
   AlertTriangle,
 } from 'lucide-react'
+import { geocodeLocation } from '@/lib/services/geocoding-service'
 
 interface BirthInfo {
   date: string
@@ -145,10 +146,10 @@ const AgentCreationWizard: React.FC<AgentCreationWizardProps> = ({
       date: new Date().toISOString().split('T')[0],
       time: new Date().toTimeString().slice(0, 5),
       location: {
-        name: 'Current Location',
-        latitude: 37.7749, // Default to San Francisco
-        longitude: -122.4194,
-        timezone: 'America/Los_Angeles',
+        name: '',
+        latitude: 0,
+        longitude: 0,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
       },
     }
   )
@@ -220,25 +221,31 @@ const AgentCreationWizard: React.FC<AgentCreationWizardProps> = ({
     index?: number
   ) => {
     try {
-      // In a real implementation, this would call a geocoding API
-      // For now, we'll use mock data
-      if (query.toLowerCase().includes('san francisco')) {
-        const location = {
-          name: 'San Francisco, CA',
-          latitude: 37.7749,
-          longitude: -122.4194,
-          timezone: 'America/Los_Angeles',
-        }
+      if (query.trim().length < 2) return
+      const result = await geocodeLocation(query)
+      if (!result) {
+        setError(`No coordinates found for “${query}”. Try a city and country.`)
+        return
+      }
 
-        if (type === 'birth') {
-          setBirthInfo(prev => ({ ...prev, location }))
-        } else if (type === 'moment') {
-          setMomentInfo(prev => ({ ...prev, location }))
-        } else if (type === 'additional' && index !== undefined) {
-          setAdditionalCharts(prev =>
-            prev.map((chart, i) => (i === index ? { ...chart, location } : chart))
+      const applyLocation = (existing: BirthInfo['location']): BirthInfo['location'] => ({
+        name: result.formattedName,
+        latitude: result.latitude,
+        longitude: result.longitude,
+        timezone: existing.timezone,
+      })
+
+      setError(null)
+      if (type === 'birth') {
+        setBirthInfo(prev => ({ ...prev, location: applyLocation(prev.location) }))
+      } else if (type === 'moment') {
+        setMomentInfo(prev => ({ ...prev, location: applyLocation(prev.location) }))
+      } else if (type === 'additional' && index !== undefined) {
+        setAdditionalCharts(prev =>
+          prev.map((chart, i) =>
+            i === index ? { ...chart, location: applyLocation(chart.location) } : chart
           )
-        }
+        )
       }
     } catch (error) {
       console.error('Location search failed:', error)
@@ -634,12 +641,16 @@ const AgentCreationWizard: React.FC<AgentCreationWizardProps> = ({
                         onChange={e => {
                           const name = e.target.value
                           setBirthInfo(prev => ({ ...prev, location: { ...prev.location, name } }))
-                          if (name.length > 2) {
-                            handleLocationSearch(name, 'birth')
-                          }
                         }}
+                        onBlur={() => handleLocationSearch(birthInfo.location.name, 'birth')}
                       />
-                      <Button variant="outline" size="sm">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        aria-label="Find birth location coordinates"
+                        onClick={() => handleLocationSearch(birthInfo.location.name, 'birth')}
+                      >
                         <MapPin className="h-4 w-4" />
                       </Button>
                     </div>
@@ -694,12 +705,16 @@ const AgentCreationWizard: React.FC<AgentCreationWizardProps> = ({
                         onChange={e => {
                           const name = e.target.value
                           setMomentInfo(prev => ({ ...prev, location: { ...prev.location, name } }))
-                          if (name.length > 2) {
-                            handleLocationSearch(name, 'moment')
-                          }
                         }}
+                        onBlur={() => handleLocationSearch(momentInfo.location.name, 'moment')}
                       />
-                      <Button variant="outline" size="sm">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        aria-label="Find current location coordinates"
+                        onClick={() => handleLocationSearch(momentInfo.location.name, 'moment')}
+                      >
                         <MapPin className="h-4 w-4" />
                       </Button>
                     </div>
@@ -755,10 +770,10 @@ const AgentCreationWizard: React.FC<AgentCreationWizardProps> = ({
                           onChange={e => {
                             const name = e.target.value
                             updateAdditionalChart(index, 'location', { ...chart.location, name })
-                            if (name.length > 2) {
-                              handleLocationSearch(name, 'additional', index)
-                            }
                           }}
+                          onBlur={() =>
+                            handleLocationSearch(chart.location.name, 'additional', index)
+                          }
                         />
                       </div>
                     </CardContent>

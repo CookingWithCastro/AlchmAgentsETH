@@ -104,9 +104,7 @@ export default function Erc8004LeaderboardPage() {
           <p className="font-medium">Couldn&apos;t load the registry.</p>
           <p className="mt-1 text-sm text-amber-300/80">{error}</p>
           <p className="mt-1 text-xs text-amber-300/60">
-            Set <code>GOOGLE_CLOUD_PROJECT</code> + ADC creds and{' '}
-            <code>bun add @google-cloud/bigquery</code>. (The registry launched 2026-01-28 — it may
-            simply have no agents indexed yet.)
+            The live index is temporarily unavailable. You can retry without losing your place.
           </p>
         </div>
       )}
