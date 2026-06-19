@@ -1,7 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { VisuallyHidden } from '@/components/ui/visually-hidden'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -379,9 +385,12 @@ export function OnboardingWizard({ open, onComplete, onSkip }: OnboardingWizardP
               <IconComponent className="h-6 w-6 text-primary" aria-hidden="true" />
               <div>
                 <DialogTitle id="onboarding-title">{currentStepData.title}</DialogTitle>
-                <p id="onboarding-description" className="text-sm text-muted-foreground mt-1">
+                <DialogDescription
+                  id="onboarding-description"
+                  className="text-sm text-muted-foreground mt-1"
+                >
                   {currentStepData.description}
-                </p>
+                </DialogDescription>
               </div>
             </div>
             <Button

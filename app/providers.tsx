@@ -7,15 +7,18 @@ import { MonicaChatBubble } from '@/components/monica/monica-chat-bubble'
 import { FloatingAdminPanel } from '@/components/admin/FloatingAdminPanel'
 import { SpacetimeProvider } from '@/lib/spacetime/SpacetimeContext'
 import { useLiveEphemeris } from '@/lib/spacetime/hooks/useLiveEphemeris'
+import { DynamicCircleProvider } from '@/components/auth/DynamicCircleProvider'
+import { DynamicCircleHUD } from '@/components/auth/DynamicCircleHUD'
 
 function MonicaWrapper() {
   const pathname = usePathname()
   const disabledForDesktopSurface = pathname?.startsWith('/desktop')
+  const disabledForAuthSurface = pathname?.startsWith('/auth')
   const { monicaConstant } = useLiveEphemeris({
-    enabled: !disabledForDesktopSurface,
+    enabled: !disabledForDesktopSurface && !disabledForAuthSurface,
   })
 
-  if (disabledForDesktopSurface) return null
+  if (disabledForDesktopSurface || disabledForAuthSurface) return null
 
   return (
     <MonicaChatBubble
@@ -32,8 +35,13 @@ function DesktopAwareAdminPanel() {
   return <FloatingAdminPanel />
 }
 
-import { DynamicCircleProvider } from '@/components/auth/DynamicCircleProvider'
-import { DynamicCircleHUD } from '@/components/auth/DynamicCircleHUD'
+function EconomyWalletHUD() {
+  const pathname = usePathname()
+  const show = ['/account', '/economy', '/pentacles', '/yield'].some(
+    route => pathname === route || pathname?.startsWith(`${route}/`)
+  )
+  return show ? <DynamicCircleHUD /> : null
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -44,7 +52,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <Toaster />
           <DesktopAwareAdminPanel />
           <MonicaWrapper />
-          <DynamicCircleHUD />
+          <EconomyWalletHUD />
         </SpacetimeProvider>
       </SessionProvider>
     </DynamicCircleProvider>

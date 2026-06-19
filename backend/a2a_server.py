@@ -45,10 +45,16 @@ RunChatStream = Callable[[str, str], AsyncIterator[str]]
 
 
 def _public_base() -> str:
+    railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN")
     return (
         os.getenv("A2A_PUBLIC_URL")
         or os.getenv("PLANETARY_AGENTS_BACKEND_URL")
-        or "http://localhost:8000"
+        or (f"https://{railway_domain}" if railway_domain else None)
+        or (
+            "http://localhost:8000"
+            if os.getenv("ENVIRONMENT", "").lower() in {"local", "development", "test"}
+            else "https://api.agents.alchm.kitchen"
+        )
     ).rstrip("/")
 
 

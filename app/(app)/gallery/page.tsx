@@ -27,7 +27,6 @@ import {
   Zap,
   Activity,
   Database,
-  Shield,
   BarChart3,
   TrendingUp,
   Brain,
@@ -39,8 +38,6 @@ import {
 import Link from 'next/link'
 
 import {
-  DEMO_AGENTS,
-  getAgentCollections,
   sortAgents,
   getSortingOptions,
   type AgentSortCriteria,
@@ -75,39 +72,6 @@ import SignVectorGraphic, {
 
 import { EnhancedAgentCard } from '@/components/misc/enhanced-agent-card'
 
-const ChartTransformVisualization = dynamic(
-  () =>
-    import('@/components/charts/chart-transform-visualization').then(mod => ({
-      default: mod.ChartTransformVisualization,
-    })),
-  {
-    loading: () => (
-      <div
-        className="h-32 flex items-center justify-center"
-        style={{ minHeight: '128px', contain: 'layout' }}
-      >
-        <Skeleton className="h-28 w-full" />
-      </div>
-    ),
-  }
-)
-
-const MomentBasedRecommendations = dynamic(
-  () =>
-    import('@/components/misc/moment-based-recommendations').then(mod => ({
-      default: mod.MomentBasedRecommendations,
-    })),
-  {
-    loading: () => (
-      <div
-        className="h-28 flex items-center justify-center"
-        style={{ minHeight: '112px', contain: 'layout' }}
-      >
-        <Skeleton className="h-24 w-full" />
-      </div>
-    ),
-  }
-)
 import { useSearchParams } from 'next/navigation'
 import { degreeAgentMatcher } from '@/lib/degree-agent-matcher'
 
@@ -129,16 +93,10 @@ function GalleryPageContent() {
   const [filteredAgents, setFilteredAgents] = useState<CraftedAgent[]>([])
   const [visibleCount, setVisibleCount] = useState(12)
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [showGroupChat, setShowGroupChat] = useState(false)
   const [sortCriteria, setSortCriteria] = useState<AgentSortCriteria>('relevanceScore')
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc')
-  const [systemMetrics, setSystemMetrics] = useState({
-    cacheHitRate: 0,
-    systemHealth: 'HEALTHY',
-    activeAgents: 0,
-    totalRequests: 0,
-    averageResponseTime: 0,
-  })
   const searchParams = useSearchParams()
   const [degreeFilter, setDegreeFilter] = useState<{
     planet: string
@@ -167,8 +125,6 @@ function GalleryPageContent() {
   // Memoize sorting options to prevent infinite re-renders
   const sortingOptions = useMemo(() => getSortingOptions(), [])
 
-  const collections = getAgentCollections()
-
   // Prepare birth chart data for batch live consciousness calculation (memoized to prevent update loops)
   const agentBirthCharts: BirthChartData[] = useMemo(
     () =>
@@ -180,12 +136,6 @@ function GalleryPageContent() {
         longitude: agent.birthLocation?.longitude || 0,
       })),
     [agents]
-  )
-
-  // Stable selected agent objects for child components
-  const selectedAgentObjects = useMemo(
-    () => agents.filter(a => selectedAgents.includes(a.id)),
-    [agents, selectedAgents]
   )
 
   // Use batch live consciousness hook for all agents
@@ -225,16 +175,18 @@ function GalleryPageContent() {
           console.warn('Leveling hydrate failed (badges/sort disabled):', e)
         }
         setAgents(agentsWithLevels)
+        setLoadError(null)
         console.log(
           `Loaded ${agentsWithLevels.length} agents (${agentsWithLevels.filter((a: any) => a.isUserCreated).length} user-created)`
         )
       } else {
-        console.warn('Failed to fetch agents, using fallback')
-        setAgents(DEMO_AGENTS)
+        setAgents([])
+        setLoadError('The historical-agent roster is temporarily unavailable.')
       }
     } catch (error) {
       console.error('Error fetching agents:', error)
-      setAgents(DEMO_AGENTS) // Fallback to demo agents
+      setAgents([])
+      setLoadError('The historical-agent roster is temporarily unavailable.')
     } finally {
       setIsLoading(false)
     }
@@ -243,35 +195,6 @@ function GalleryPageContent() {
   // Load agents on mount
   useEffect(() => {
     fetchAgents()
-  }, [])
-
-  // Fetch system metrics for performance dashboard
-  const fetchSystemMetrics = async () => {
-    try {
-      const response = await fetch('/api/agent-dashboard?section=performance')
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          const data = result.data
-          setSystemMetrics({
-            cacheHitRate: data.metrics?.cacheHitRatePercent || 0,
-            systemHealth: 'HEALTHY',
-            activeAgents: 35, // From DEMO_AGENTS
-            totalRequests: data.metrics?.totalBatches || 0,
-            averageResponseTime: data.metrics?.averageBatchTimeSeconds || 0,
-          })
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to fetch system metrics:', error)
-    }
-  }
-
-  // Fetch metrics on mount and periodically
-  useEffect(() => {
-    fetchSystemMetrics()
-    const interval = setInterval(fetchSystemMetrics, 30000) // Every 30 seconds
-    return () => clearInterval(interval)
   }, [])
 
   // Filter and sort agents based on search, filters, and sorting criteria
@@ -761,23 +684,11 @@ function GalleryPageContent() {
               </div>
             </div>
 
-            {/* System Metrics Compact */}
-            <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+            {/* Collection facts derived from loaded agent records. */}
+            <div className="grid grid-cols-2 gap-3 sm:max-w-md">
               <div className="text-center p-3 bg-black/40 backdrop-blur rounded-lg border border-white/10 mt-6">
                 <div className="text-2xl font-bold text-green-600">{agents.length}</div>
                 <div className="text-xs text-muted-foreground">Agents</div>
-              </div>
-              <div className="text-center p-3 bg-black/40 backdrop-blur rounded-lg border border-white/10 mt-6">
-                <div className="text-2xl font-bold text-blue-600">
-                  {systemMetrics.cacheHitRate}%
-                </div>
-                <div className="text-xs text-muted-foreground">Cache</div>
-              </div>
-              <div className="text-center p-3 bg-black/40 backdrop-blur rounded-lg border border-white/10 mt-6">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {systemMetrics.averageResponseTime.toFixed(1)}s
-                </div>
-                <div className="text-xs text-muted-foreground">Response</div>
               </div>
               <div className="text-center p-3 bg-black/40 backdrop-blur rounded-lg border border-white/10 mt-6">
                 <div className="text-2xl font-bold text-amber-600">
@@ -787,40 +698,9 @@ function GalleryPageContent() {
                 </div>
                 <div className="text-xs text-muted-foreground">Chats</div>
               </div>
-              <div className="text-center p-3 bg-black/40 backdrop-blur rounded-lg border border-white/10 mt-6">
-                <Shield
-                  className={`w-5 h-5 mx-auto mb-1 ${systemMetrics.systemHealth === 'HEALTHY' ? 'text-green-500' : 'text-yellow-500'}`}
-                />
-                <div className="text-xs text-muted-foreground">{systemMetrics.systemHealth}</div>
-              </div>
-              <div className="text-center p-3 bg-black/40 backdrop-blur rounded-lg border border-white/10 mt-6">
-                <div className="text-2xl font-bold text-purple-600">
-                  {systemMetrics.totalRequests}
-                </div>
-                <div className="text-xs text-muted-foreground">Batches</div>
-              </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Kinetic Analysis Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Chart Transform Visualization */}
-          <div className="lg:col-span-4">
-            <ChartTransformVisualization />
-          </div>
-
-          {/* Moment-Based Recommendations */}
-          <div className="lg:col-span-4">
-            {agents.length > 0 && (
-              <MomentBasedRecommendations
-                allAgents={agents}
-                selectedAgents={selectedAgentObjects}
-                onAgentSelect={agent => toggleAgentSelection(agent.id)}
-              />
-            )}
-          </div>
-        </div>
 
         {/* Search and Filters */}
         <Card>
@@ -1018,6 +898,11 @@ function GalleryPageContent() {
 
         {/* Historical Agents Display */}
         <div className="space-y-4">
+          {loadError && (
+            <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+              {loadError}
+            </div>
+          )}
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {isLoading ? (

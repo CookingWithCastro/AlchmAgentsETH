@@ -192,15 +192,13 @@ let bqClient: any = null
 
 async function getBigQuery(config: IndexerConfig): Promise<any> {
   if (bqClient) return bqClient
-  // Variable specifier keeps TS from hard-resolving the optional dep at compile time.
-  const pkg = '@google-cloud/bigquery'
   let mod: any
   try {
-    mod = await import(pkg)
+    // Keep the specifier static so Next/Vercel includes the installed package in
+    // the server function bundle. A variable import was omitted at deployment.
+    mod = await import('@google-cloud/bigquery')
   } catch {
-    throw new Error(
-      '@google-cloud/bigquery is not installed. Run: bun add @google-cloud/bigquery',
-    )
+    throw new Error('The BigQuery client could not be loaded by this deployment.')
   }
   const BigQuery = mod.BigQuery
   bqClient = new BigQuery({
@@ -214,15 +212,15 @@ async function getBigQuery(config: IndexerConfig): Promise<any> {
 
 function ts(row: RawLogRow): string {
   const v = row.block_timestamp
-  return typeof v === 'string' ? v : v?.value ?? ''
+  return typeof v === 'string' ? v : (v?.value ?? '')
 }
 
 function topicsOf(row: RawLogRow): [Hex, ...Hex[]] {
-  return (row.topics ?? []).map((t) => t as Hex) as [Hex, ...Hex[]]
+  return (row.topics ?? []).map(t => t as Hex) as [Hex, ...Hex[]]
 }
 
 function dataOf(row: RawLogRow): Hex {
-  return ((row.data && row.data !== '') ? row.data : '0x') as Hex
+  return (row.data && row.data !== '' ? row.data : '0x') as Hex
 }
 
 // ── the indexer ──────────────────────────────────────────────────────────────
@@ -261,7 +259,7 @@ export class Erc8004Indexer {
 
   async getRegistrations(opts: RegisteredQueryOptions = {}): Promise<AgentRegistration[]> {
     const rows = await this.runQuery(buildRegisteredQuery(opts))
-    return rows.map((row) => {
+    return rows.map(row => {
       let agentId: bigint
       let owner: Address
       let agentURI: string
@@ -293,9 +291,11 @@ export class Erc8004Indexer {
     })
   }
 
-  async getUriUpdates(opts: { agentId?: bigint | number } & EventQueryOptions = {}): Promise<UriUpdate[]> {
+  async getUriUpdates(
+    opts: { agentId?: bigint | number } & EventQueryOptions = {}
+  ): Promise<UriUpdate[]> {
     const rows = await this.runQuery(buildUriUpdatedQuery(opts))
-    return rows.map((row) => {
+    return rows.map(row => {
       try {
         const { args } = decodeEventLog({
           abi: IDENTITY_REGISTRY_ABI,
@@ -303,16 +303,30 @@ export class Erc8004Indexer {
           data: dataOf(row),
           topics: topicsOf(row),
         }) as { args: { agentId: bigint; newURI: string; updatedBy: Address } }
-        return { agentId: args.agentId, newURI: args.newURI, updatedBy: getAddress(args.updatedBy), blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        return {
+          agentId: args.agentId,
+          newURI: args.newURI,
+          updatedBy: getAddress(args.updatedBy),
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       } catch {
-        return { agentId: BigInt((row.agent_id as number) ?? 0), newURI: String(row.new_uri ?? ''), updatedBy: getAddress(String(row.updated_by)), blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        return {
+          agentId: BigInt((row.agent_id as number) ?? 0),
+          newURI: String(row.new_uri ?? ''),
+          updatedBy: getAddress(String(row.updated_by)),
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       }
     })
   }
 
   async getMetadata(opts: MetadataSetQueryOptions = {}): Promise<MetadataEntry[]> {
     const rows = await this.runQuery(buildMetadataSetQuery(opts))
-    return rows.map((row) => {
+    return rows.map(row => {
       try {
         const { args } = decodeEventLog({
           abi: IDENTITY_REGISTRY_ABI,
@@ -320,7 +334,12 @@ export class Erc8004Indexer {
           data: dataOf(row),
           topics: topicsOf(row),
         }) as {
-          args: { agentId: bigint; indexedMetadataKey: Hex; metadataKey: string; metadataValue: Hex }
+          args: {
+            agentId: bigint
+            indexedMetadataKey: Hex
+            metadataKey: string
+            metadataValue: Hex
+          }
         }
         let valueUtf8: string | undefined
         try {
@@ -354,7 +373,7 @@ export class Erc8004Indexer {
 
   async getTransfers(opts: TransferQueryOptions = {}): Promise<TransferRow[]> {
     const rows = await this.runQuery(buildTransferQuery(opts))
-    return rows.map((row) => {
+    return rows.map(row => {
       try {
         const { args } = decodeEventLog({
           abi: IDENTITY_REGISTRY_ABI,
@@ -362,9 +381,23 @@ export class Erc8004Indexer {
           data: dataOf(row),
           topics: topicsOf(row),
         }) as { args: { from: Address; to: Address; tokenId: bigint } }
-        return { from: getAddress(args.from), to: getAddress(args.to), tokenId: args.tokenId, blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        return {
+          from: getAddress(args.from),
+          to: getAddress(args.to),
+          tokenId: args.tokenId,
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       } catch {
-        return { from: getAddress(String(row.from_address)), to: getAddress(String(row.to_address)), tokenId: BigInt((row.token_id as number) ?? 0), blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        return {
+          from: getAddress(String(row.from_address)),
+          to: getAddress(String(row.to_address)),
+          tokenId: BigInt((row.token_id as number) ?? 0),
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       }
     })
   }
@@ -372,7 +405,7 @@ export class Erc8004Indexer {
   /** ReputationRegistry `NewFeedback` — client ratings (agentId indexed, no join). */
   async getFeedback(opts: FeedbackQueryOptions = {}): Promise<FeedbackRow[]> {
     const rows = await this.runQuery(buildNewFeedbackQuery(opts))
-    return rows.map((row) => {
+    return rows.map(row => {
       try {
         const { args } = decodeEventLog({
           abi: REPUTATION_REGISTRY_ABI,
@@ -426,10 +459,10 @@ export class Erc8004Indexer {
 
   /** ReputationRegistry `FeedbackRevoked` — used to exclude revoked feedback from ranking. */
   async getFeedbackRevocations(
-    opts: { agentId?: bigint | number } & EventQueryOptions = {},
+    opts: { agentId?: bigint | number } & EventQueryOptions = {}
   ): Promise<FeedbackRevocation[]> {
     const rows = await this.runQuery(buildFeedbackRevokedQuery(opts))
-    return rows.map((row) => ({
+    return rows.map(row => ({
       agentId: BigInt((row.agent_id as number) ?? 0),
       client: getAddress(String(row.client_address)),
       feedbackIndex: BigInt((row.feedback_index as number) ?? 0),
@@ -442,25 +475,44 @@ export class Erc8004Indexer {
   /** ValidationRegistry `ValidationRequest`. */
   async getValidationRequests(opts: ValidationQueryOptions = {}): Promise<ValidationRequestRow[]> {
     const rows = await this.runQuery(buildValidationRequestQuery(opts))
-    return rows.map((row) => {
+    return rows.map(row => {
       try {
         const { args } = decodeEventLog({
           abi: VALIDATION_REGISTRY_ABI,
           eventName: 'ValidationRequest',
           data: dataOf(row),
           topics: topicsOf(row),
-        }) as { args: { validatorAddress: Address; agentId: bigint; requestURI: string; requestHash: Hex } }
-        return { validator: getAddress(args.validatorAddress), agentId: args.agentId, requestURI: args.requestURI, requestHash: args.requestHash, blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        }) as {
+          args: { validatorAddress: Address; agentId: bigint; requestURI: string; requestHash: Hex }
+        }
+        return {
+          validator: getAddress(args.validatorAddress),
+          agentId: args.agentId,
+          requestURI: args.requestURI,
+          requestHash: args.requestHash,
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       } catch {
-        return { validator: getAddress(String(row.validator)), agentId: BigInt((row.agent_id as number) ?? 0), requestHash: String(row.request_hash) as Hex, blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        return {
+          validator: getAddress(String(row.validator)),
+          agentId: BigInt((row.agent_id as number) ?? 0),
+          requestHash: String(row.request_hash) as Hex,
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       }
     })
   }
 
   /** ValidationRegistry `ValidationResponse` — score 0–100, agentId indexed (no join). */
-  async getValidationResponses(opts: ValidationQueryOptions = {}): Promise<ValidationResponseRow[]> {
+  async getValidationResponses(
+    opts: ValidationQueryOptions = {}
+  ): Promise<ValidationResponseRow[]> {
     const rows = await this.runQuery(buildValidationResponseQuery(opts))
-    return rows.map((row) => {
+    return rows.map(row => {
       try {
         const { args } = decodeEventLog({
           abi: VALIDATION_REGISTRY_ABI,
@@ -468,11 +520,36 @@ export class Erc8004Indexer {
           data: dataOf(row),
           topics: topicsOf(row),
         }) as {
-          args: { validatorAddress: Address; agentId: bigint; requestHash: Hex; response: number; responseURI: string; tag: string }
+          args: {
+            validatorAddress: Address
+            agentId: bigint
+            requestHash: Hex
+            response: number
+            responseURI: string
+            tag: string
+          }
         }
-        return { validator: getAddress(args.validatorAddress), agentId: args.agentId, requestHash: args.requestHash, response: Number(args.response), responseURI: args.responseURI, tag: args.tag, blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        return {
+          validator: getAddress(args.validatorAddress),
+          agentId: args.agentId,
+          requestHash: args.requestHash,
+          response: Number(args.response),
+          responseURI: args.responseURI,
+          tag: args.tag,
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       } catch {
-        return { validator: getAddress(String(row.validator)), agentId: BigInt((row.agent_id as number) ?? 0), requestHash: String(row.request_hash) as Hex, response: Number(row.response ?? 0), blockNumber: row.block_number, txHash: row.transaction_hash, timestamp: ts(row) }
+        return {
+          validator: getAddress(String(row.validator)),
+          agentId: BigInt((row.agent_id as number) ?? 0),
+          requestHash: String(row.request_hash) as Hex,
+          response: Number(row.response ?? 0),
+          blockNumber: row.block_number,
+          txHash: row.transaction_hash,
+          timestamp: ts(row),
+        }
       }
     })
   }
@@ -503,7 +580,12 @@ export class Erc8004Indexer {
    * @param passThreshold validation response score counted as "pass" (default 50).
    */
   async buildLeaderboard(
-    opts: { limit?: number; resolveFiles?: boolean; reputation?: boolean; passThreshold?: number } = {},
+    opts: {
+      limit?: number
+      resolveFiles?: boolean
+      reputation?: boolean
+      passThreshold?: number
+    } = {}
   ): Promise<LeaderboardEntry[]> {
     const { limit = 100, resolveFiles = true, reputation = true, passThreshold = 50 } = opts
     const registrations = await this.getRegistrations({ limit })
@@ -518,7 +600,7 @@ export class Erc8004Indexer {
           this.getValidationResponses({ limit: 5000 }),
         ])
         const revoked = new Set(
-          revocations.map((r) => `${r.agentId}:${r.client.toLowerCase()}:${r.feedbackIndex}`),
+          revocations.map(r => `${r.agentId}:${r.client.toLowerCase()}:${r.feedbackIndex}`)
         )
         for (const f of feedback) {
           if (revoked.has(`${f.agentId}:${f.client.toLowerCase()}:${f.feedbackIndex}`)) continue
@@ -543,7 +625,9 @@ export class Erc8004Indexer {
       const val = validationByAgent.get(reg.agentId.toString()) ?? []
       const avgFeedback = fb.length ? mean(fb) : null
       const avgValidation = val.length ? mean(val) : null
-      const validationPassRate = val.length ? val.filter((v) => v >= passThreshold).length / val.length : null
+      const validationPassRate = val.length
+        ? val.filter(v => v >= passThreshold).length / val.length
+        : null
       const prizeEligible = file ? qualifiesForPrize(file) : false
 
       // Composite: 60% feedback (clamped to 0–100), 40% validation pass %, +5 x402 bonus.

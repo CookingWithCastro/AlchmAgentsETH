@@ -424,7 +424,6 @@ export default function ConsciousnessSurveyPage() {
         <AlchemicalConsciousnessDashboard
           consciousnessStats={result.consciousnessStats} // Assume this exists or adjust
           consciousParameters={result.consciousParameters} // New prop
-          realTimeUpdates={true}
         />
 
         <Card>

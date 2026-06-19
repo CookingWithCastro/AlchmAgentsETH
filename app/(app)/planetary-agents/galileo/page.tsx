@@ -29,7 +29,6 @@ export default function GalileoAgentPage() {
   const [planet, setPlanet] = useState('Sun')
   const [sign, setSign] = useState('Aries')
   const [degree, setDegree] = useState('1')
-  const [modelStatus, setModelStatus] = useState<'ready' | 'loading' | 'error'>('ready')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const planets = [
@@ -67,24 +66,6 @@ export default function GalileoAgentPage() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
-
-  // When planet or sign changes, check if we have a model for it
-  useEffect(() => {
-    const checkModelAvailability = async () => {
-      setModelStatus('loading')
-      try {
-        // This would be a real API call to check if the model exists
-        // For now, we'll simulate with a timeout
-        await new Promise(resolve => setTimeout(resolve, 500))
-        setModelStatus('ready')
-      } catch (error) {
-        console.error('Error checking model availability:', error)
-        setModelStatus('error')
-      }
-    }
-
-    checkModelAvailability()
-  }, [planet, sign])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -158,8 +139,7 @@ export default function GalileoAgentPage() {
     <div className="container py-8">
       <h1 className="text-3xl font-bold text-center mb-2">Galileo Planetary Agents</h1>
       <p className="text-center mb-8 max-w-2xl mx-auto">
-        Consult with specialized astrological agents powered by Galileo AI models trained on
-        planetary dignities
+        Consult a placement-aware agent through the live planetary chat API.
       </p>
 
       <Tabs defaultValue="chat" className="max-w-4xl mx-auto">
@@ -175,21 +155,7 @@ export default function GalileoAgentPage() {
                 <CardTitle>
                   {planet} in {sign} {degree}°
                 </CardTitle>
-                <Badge
-                  variant={
-                    modelStatus === 'ready'
-                      ? 'default'
-                      : modelStatus === 'loading'
-                        ? 'outline'
-                        : 'destructive'
-                  }
-                >
-                  {modelStatus === 'ready'
-                    ? 'Model Ready'
-                    : modelStatus === 'loading'
-                      ? 'Loading Model...'
-                      : 'Model Unavailable'}
-                </Badge>
+                <Badge variant="outline">API-backed chat</Badge>
               </div>
               <div className="text-sm font-medium">{getDignityText()}</div>
               <div className="flex flex-wrap gap-2 mt-4">
@@ -264,10 +230,10 @@ export default function GalileoAgentPage() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   placeholder="Ask your question..."
-                  disabled={loading || modelStatus !== 'ready'}
+                  disabled={loading}
                   className="flex-1"
                 />
-                <Button type="submit" disabled={loading || modelStatus !== 'ready'}>
+                <Button type="submit" disabled={loading}>
                   {loading ? 'Consulting...' : 'Send'}
                 </Button>
               </form>
@@ -281,29 +247,25 @@ export default function GalileoAgentPage() {
               <CardTitle>About Galileo Planetary Agents</CardTitle>
             </CardHeader>
             <CardContent className="prose dark:prose-invert max-w-none">
-              <h3>Specialized Astrological Models</h3>
+              <h3>Placement-aware planetary agents</h3>
               <p>
-                Our Galileo Planetary Agents are specialized AI models trained on the specific
-                qualities and dignities of each planet in every zodiac sign. Unlike general AI
-                models, these agents embody the unique astrological wisdom of each planetary
-                placement.
+                Each request combines the chosen planet, sign, degree, and traditional dignity, then
+                sends that context to the live planetary-agent API.
               </p>
 
-              <h3>Training Methodology</h3>
-              <p>Each model has been trained on:</p>
+              <h3>Interpretive context</h3>
+              <p>The request context includes:</p>
               <ul>
-                <li>Classical astrological texts from Ptolemy to Lilly</li>
-                <li>Modern interpretations from respected astrologers</li>
-                <li>The specific dignity of each planet in each sign</li>
+                <li>The selected planet and zodiac sign</li>
+                <li>The traditional dignity of the placement</li>
                 <li>Degree-specific meanings and decanate influences</li>
               </ul>
 
-              <h3>Available Models</h3>
+              <h3>Addressable configurations</h3>
               <p>
-                We currently offer models for the 10 planets (including Sun and Moon) in all 12
-                zodiac signs, with specific training for each degree. This creates a comprehensive
-                system of 3,600 specialized astrological agents (10 planets × 12 signs × 30
-                degrees).
+                The interface can address 3,600 placement combinations: 10 planets, 12 signs, and 30
+                degrees. These are prompt configurations served through the API, not 3,600
+                separately trained models.
               </p>
 
               <h3>Usage Guidelines</h3>

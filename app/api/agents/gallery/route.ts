@@ -16,6 +16,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { CORS_HEADERS, corsPreflight } from '@/lib/cors'
+import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
+import { deriveSacredStats } from '@/lib/agents/persona/derive-sacred-stats'
 
 export function OPTIONS() {
   return corsPreflight()
@@ -36,6 +38,31 @@ const POPULATION_WHERE: Record<string, object> = {
   crafted: { agentId: { startsWith: 'agent-' } },
 }
 
+function canonicalHistoricalGallery(search: string | undefined, limit: number, offset: number) {
+  const needle = search?.toLocaleLowerCase()
+  const matching = HISTORICAL_AGENTS.filter(agent => {
+    if (!needle) return true
+    return [agent.name, agent.title, agent.abilities?.specialty]
+      .filter(Boolean)
+      .some(value => String(value).toLocaleLowerCase().includes(needle))
+  }).sort((a, b) => a.name.localeCompare(b.name))
+
+  const agents = matching.slice(offset, offset + limit).map(agent => ({
+    agentId: agent.id,
+    name: agent.name,
+    title: agent.title,
+    symbol: agent.appearance?.symbol ?? null,
+    color: agent.appearance?.color ?? null,
+    monicaConstant: agent.consciousness?.monicaConstant ?? null,
+    consciousnessLevel: agent.consciousness?.level ?? null,
+    dominantElement: agent.consciousness?.dominantElement ?? null,
+    level: Math.max(1, Math.min(100, Math.round(agent.personality?.evolutionStage ?? 1))),
+    sacred7: deriveSacredStats(agent),
+  }))
+
+  return { success: true, population: 'historical', total: matching.length, offset, limit, agents }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const params = new URL(request.url).searchParams
@@ -50,6 +77,12 @@ export async function GET(request: NextRequest) {
         { success: false, error: `Unknown population '${population}'` },
         { status: 400, headers: CORS_HEADERS }
       )
+    }
+
+    if (population === 'historical' && !process.env.DATABASE_URL) {
+      return NextResponse.json(canonicalHistoricalGallery(search, limit, offset), {
+        headers: CORS_HEADERS,
+      })
     }
 
     const where = search
@@ -105,19 +138,40 @@ export async function GET(request: NextRequest) {
       },
     }))
 
+    if (population === 'historical' && rows.length === 0) {
+      return NextResponse.json(canonicalHistoricalGallery(search, limit, offset), {
+        headers: CORS_HEADERS,
+      })
+    }
+
     return NextResponse.json(
       { success: true, population, total, offset, limit, agents },
       { headers: CORS_HEADERS }
     )
   } catch (error) {
     console.error('agents gallery GET error:', error)
+
+    const params = new URL(request.url).searchParams
+    const population = params.get('population') ?? 'historical'
+    const search = params.get('search')?.trim()
+    const limit = Math.min(Math.max(parseInt(params.get('limit') ?? '24', 10) || 24, 1), 60)
+    const offset = Math.max(parseInt(params.get('offset') ?? '0', 10) || 0, 0)
+
+    // Historical personas are canonical in source control, so the public Vault
+    // remains useful even when the optional Neon mirror is not configured.
+    if (population === 'historical') {
+      return NextResponse.json(canonicalHistoricalGallery(search, limit, offset), {
+        headers: CORS_HEADERS,
+      })
+    }
+
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Internal server error',
+        error: 'This agent population is temporarily unavailable.',
         agents: [],
       },
-      { status: 500, headers: CORS_HEADERS }
+      { status: 503, headers: CORS_HEADERS }
     )
   }
 }

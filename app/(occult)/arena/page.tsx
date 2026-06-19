@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 
-import JingArenaTokenEconomySacredStats from '@/components/stitch/jing_arena_token_economy_sacred_stats'
 import { SynastryAssembly } from '@/components/alchemy/SynastryAssembly'
 import { DuelChat } from '@/components/alchemy/DuelChat'
 import { cn } from '@/lib/utils'
@@ -11,13 +10,12 @@ import { cn } from '@/lib/utils'
  * Mystic Arts — Jing Arena (Stitch realization plan, Phase 4 + 5, Module 3).
  * Synastry and the Duel are LIVE: real agents paired via the occult store,
  * true turn-taking through /api/unified-multi-agent-chat (SSE, free chain).
- * Sacred Stats remains a design showcase pending its own binding.
+ * Design-only Sacred Stats mockups live in the sandbox, not this route.
  */
 
 const TABS = [
   { key: 'synastry', label: 'Synastry' },
   { key: 'duel', label: 'Active Duel' },
-  { key: 'stats', label: 'Sacred Stats (showcase)' },
 ] as const
 
 export default function ArenaPage() {
@@ -57,9 +55,6 @@ export default function ArenaPage() {
       </div>
       <div hidden={tab !== 'duel'}>
         <DuelChat onAssemble={() => setTab('synastry')} />
-      </div>
-      <div hidden={tab !== 'stats'}>
-        <JingArenaTokenEconomySacredStats />
       </div>
     </div>
   )

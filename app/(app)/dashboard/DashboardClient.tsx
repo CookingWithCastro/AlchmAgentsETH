@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Sparkles, Crown, TrendingUp, Users, Zap, Settings, LogOut, Star } from 'lucide-react'
+import { Sparkles, Crown, Users, Zap, Settings, LogOut, Star } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { usePerformanceMonitor } from '@/hooks/use-performance-monitor'
-import { GroupConsciousnessIndicator } from '@/components/misc/group-consciousness-indicator'
-import { TokenMonitorIntegration } from '@/components/dashboards/TokenMonitorIntegration'
 
 const PlanetaryPositionsMonitor = dynamic(
   () => import('@/components/dashboards/PlanetaryPositionsMonitor'),
@@ -39,11 +37,9 @@ interface UserData {
 
 interface DashboardClientProps {
   user: UserData
-  dashboardAgents: any[]
 }
 
-export function DashboardClient({ user, dashboardAgents }: DashboardClientProps) {
-  const [selectedAgent, setSelectedAgent] = useState('leonardo-da-vinci')
+export function DashboardClient({ user }: DashboardClientProps) {
   const [showOnboarding, setShowOnboarding] = useState(false)
   const router = useRouter()
 
@@ -208,19 +204,6 @@ export function DashboardClient({ user, dashboardAgents }: DashboardClientProps)
 
         {/* Planetary Positions Monitor */}
         <PlanetaryPositionsMonitor />
-
-        {/* Consciousness Evolution Dashboard */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          {/* Group Consciousness */}
-          <GroupConsciousnessIndicator
-            selectedAgents={dashboardAgents as any}
-            location={{ lat: 37.7749, lon: -122.4194 }}
-            onOptimalSpeakerSuggestion={agentId => setSelectedAgent(agentId)}
-          />
-
-          {/* Token Dashboard */}
-          <TokenMonitorIntegration mc={0.5} level={{ name: 'Initiate', level: 1 }} />
-        </div>
 
         {/* Quick Actions */}
         <Card className="bg-black/40 backdrop-blur-md border-purple-500/30 text-white shadow-[0_0_30px_rgba(139,92,246,0.1)]">

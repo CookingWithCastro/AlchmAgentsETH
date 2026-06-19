@@ -9,7 +9,7 @@
  *   ?limit=<n>       max rows (default 100, clamped server-side)
  *   ?dryRun=1        return estimated bytes scanned instead of executing
  *
- * Requires GOOGLE_CLOUD_PROJECT + ADC credentials and `@google-cloud/bigquery`.
+ * Requires GOOGLE_CLOUD_PROJECT + ADC credentials.
  * Degrades to 503 with a hint when BigQuery is unavailable.
  */
 
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       {
         error: message,
-        hint: 'Set GOOGLE_CLOUD_PROJECT + ADC creds and run `bun add @google-cloud/bigquery`.',
+        hint: 'Set GOOGLE_CLOUD_PROJECT and valid Google Cloud application credentials.',
       },
       { status: 503 }
     )

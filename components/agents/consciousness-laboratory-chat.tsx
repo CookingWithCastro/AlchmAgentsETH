@@ -10,7 +10,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Zap,
   Activity,
-  Settings,
   FlaskConical,
   Microscope,
   TrendingUp,
@@ -37,12 +36,7 @@ interface ConsciousnessLabChatProps {
   defaultAgents?: string[] // Mix of historical and planetary IDs
   initialExperiment?: string // Preset ID
 
-  // Laboratory features
-  enableConsciousnessMetrics?: boolean
-  showKineticGraphs?: boolean
-  enableExperimentMode?: boolean
   allowAgentMixing?: boolean
-  enableABTesting?: boolean
 
   // Configuration
   title?: string
@@ -55,40 +49,13 @@ interface ConsciousnessLabChatProps {
   onExperimentComplete?: (results: any) => void
 }
 
-interface ExperimentConfig {
-  id: string
-  name: string
-  description: string
-  variables: {
-    modelComparison?: boolean
-    agentCombinations?: string[][]
-    consciousnessLevels?: number[]
-    timeRanges?: string[]
-  }
-  metrics: string[]
-  duration: number // minutes
-}
-
-interface MetricsData {
-  timestamp: Date
-  groupConsciousness: number
-  responseQuality: number
-  synergyLevel: number
-  coherenceIndex: number
-  emergentInsights: number
-}
-
 export function ConsciousnessLaboratoryChat({
   isOpen,
   onClose,
   historicalAgents,
   defaultAgents = [],
   initialExperiment,
-  enableConsciousnessMetrics: _enableConsciousnessMetrics = true,
-  showKineticGraphs: _showKineticGraphs = true,
-  enableExperimentMode: _enableExperimentMode = true,
   allowAgentMixing: _allowAgentMixing = true,
-  enableABTesting: _enableABTesting = true,
   title = 'Consciousness Research Laboratory',
   maxAgents = 8,
   allowMonica = true,
@@ -109,16 +76,7 @@ export function ConsciousnessLaboratoryChat({
     planetary: [],
   })
 
-  const [labSettings, setLabSettings] = useState({
-    recordMetrics: true,
-    enableAdvancedLogging: true,
-    consciousnessTracking: true,
-    synergyAnalysis: true,
-    emergentPatternDetection: true,
-  })
-
-  const [currentMetrics, setCurrentMetrics] = useState<MetricsData[]>([])
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false)
+  const [latestSession, setLatestSession] = useState<ChatSession | null>(null)
   const [showPresetSelection, setShowPresetSelection] = useState(
     !selectedExperiment && defaultAgents.length === 0
   )
@@ -200,105 +158,23 @@ export function ConsciousnessLaboratoryChat({
   // Start experiment
   const handleStartExperiment = () => {
     setExperimentMode(true)
-    setCurrentMetrics([])
-    // Initialize metrics collection
   }
 
   // Stop experiment
   const handleStopExperiment = () => {
     setExperimentMode(false)
-    if (onExperimentComplete && currentMetrics.length > 0) {
+    if (onExperimentComplete && latestSession) {
       onExperimentComplete({
         experiment: selectedExperiment,
-        metrics: currentMetrics,
-        duration: currentMetrics.length,
-        conclusions: generateExperimentConclusions(),
+        session: latestSession,
+        recordedAt: new Date().toISOString(),
       })
     }
   }
 
-  // Simulate live metrics collection during experiment
-  React.useEffect(() => {
-    if (!experimentMode) return
-
-    // Immediately add first metric data point
-    setCurrentMetrics([
-      {
-        timestamp: new Date(),
-        groupConsciousness: 65.0 + Math.random() * 20.0,
-        responseQuality: 70.0 + Math.random() * 20.0,
-        synergyLevel: 0.6 + Math.random() * 0.3,
-        coherenceIndex: 0.5 + Math.random() * 0.4,
-        emergentInsights: Math.floor(Math.random() * 3),
-      },
-    ])
-
-    const interval = setInterval(() => {
-      setCurrentMetrics(prev =>
-        [
-          ...prev,
-          {
-            timestamp: new Date(),
-            groupConsciousness: Math.min(
-              100,
-              Math.max(
-                0,
-                (prev[prev.length - 1]?.groupConsciousness || 70) + (Math.random() * 10 - 5)
-              )
-            ),
-            responseQuality: Math.min(
-              100,
-              Math.max(0, (prev[prev.length - 1]?.responseQuality || 75) + (Math.random() * 10 - 5))
-            ),
-            synergyLevel: Math.min(
-              1.0,
-              Math.max(
-                0.0,
-                (prev[prev.length - 1]?.synergyLevel || 0.7) + (Math.random() * 0.2 - 0.1)
-              )
-            ),
-            coherenceIndex: Math.min(
-              1.0,
-              Math.max(
-                0.0,
-                (prev[prev.length - 1]?.coherenceIndex || 0.6) + (Math.random() * 0.2 - 0.1)
-              )
-            ),
-            emergentInsights: Math.floor(Math.random() * 3),
-          },
-        ].slice(-20)
-      ) // Keep last 20 data points
-    }, 2000)
-
-    return () => clearInterval(interval)
-  }, [experimentMode])
-
-  // Generate experiment conclusions
-  const generateExperimentConclusions = () => {
-    if (currentMetrics.length === 0) return []
-
-    const avgConsciousness =
-      currentMetrics.reduce((sum, m) => sum + m.groupConsciousness, 0) / currentMetrics.length
-    const avgSynergy =
-      currentMetrics.reduce((sum, m) => sum + m.synergyLevel, 0) / currentMetrics.length
-    const totalInsights = currentMetrics.reduce((sum, m) => sum + m.emergentInsights, 0)
-
-    return [
-      `Average group consciousness: ${avgConsciousness.toFixed(2)}`,
-      `Synergy efficiency: ${avgSynergy.toFixed(2)}`,
-      `Emergent insights generated: ${totalInsights}`,
-      `Optimal performance window: ${identifyOptimalWindow()}`,
-    ]
-  }
-
-  // Identify optimal performance window
-  const identifyOptimalWindow = () => {
-    if (currentMetrics.length < 3) return 'Insufficient data'
-
-    const maxSynergy = Math.max(...currentMetrics.map(m => m.synergyLevel))
-    const optimalPoint = currentMetrics.find(m => m.synergyLevel === maxSynergy)
-
-    return optimalPoint ? `Minute ${currentMetrics.indexOf(optimalPoint) + 1}` : 'No clear peak'
+  const handleSessionUpdate = (session: ChatSession) => {
+    setLatestSession(session)
+    onSessionUpdate?.(session)
   }
 
   // Render experiment selection
@@ -475,14 +351,6 @@ export function ConsciousnessLaboratoryChat({
             <CardTitle className="text-lg">Research Protocol</CardTitle>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
-              aria-label="Settings"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
             <Button variant="outline" size="sm" onClick={() => setShowPresetSelection(true)}>
               Change Experiment
             </Button>
@@ -522,54 +390,27 @@ export function ConsciousnessLaboratoryChat({
             </div>
           </div>
 
-          {/* Live Metrics */}
-          {currentMetrics.length > 0 && (
+          {/* Session facts from the live chat callback. */}
+          {latestSession && (
             <>
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-purple-500" />
-                  <span className="font-medium">Consciousness</span>
+                  <span className="font-medium">Messages</span>
                 </div>
-                <div className="text-lg font-bold">
-                  {currentMetrics[currentMetrics.length - 1]?.groupConsciousness.toFixed(2) ||
-                    '0.00'}
-                </div>
+                <div className="text-lg font-bold">{latestSession.messages.length}</div>
               </div>
 
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Zap className="w-4 h-4 text-amber-500" />
-                  <span className="font-medium">Synergy</span>
+                  <span className="font-medium">Participants</span>
                 </div>
-                <div className="text-lg font-bold">
-                  {currentMetrics[currentMetrics.length - 1]?.synergyLevel.toFixed(2) || '0.00'}
-                </div>
+                <div className="text-lg font-bold">{latestSession.agents.length}</div>
               </div>
             </>
           )}
         </div>
-
-        {/* Advanced Settings */}
-        {showAdvancedSettings && (
-          <div className="mt-4 pt-4 border-t space-y-3">
-            <h4 className="font-medium">Laboratory Settings</h4>
-            <div className="grid grid-cols-2 gap-4">
-              {Object.entries(labSettings).map(([key, value]) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer">
-                  <Switch
-                    checked={value}
-                    onCheckedChange={checked =>
-                      setLabSettings(prev => ({ ...prev, [key]: checked }))
-                    }
-                  />
-                  <span className="text-sm">
-                    {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Active Agents Display */}
         <div className="mt-4 pt-4 border-t">
@@ -646,9 +487,9 @@ export function ConsciousnessLaboratoryChat({
         enableGroupDynamics={true}
         enableExport={true}
         enablePresets={false} // Using custom preset system
-        enableMemoryPersistence={labSettings.consciousnessTracking}
+        enableMemoryPersistence={true}
         // Callbacks
-        onSessionUpdate={onSessionUpdate}
+        onSessionUpdate={handleSessionUpdate}
         onAgentEvolution={onAgentEvolution}
         // Custom header content
         customHeader={renderLabControls()}
