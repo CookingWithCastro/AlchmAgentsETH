@@ -81,6 +81,13 @@ FREE_CHAIN: List[ProviderConfig] = [
         base_url="https://api.cerebras.ai/v1",
     ),
     ProviderConfig(
+        # Qwen 2.5 72B Instruct via OpenRouter. Free-tier endpoint.
+        name="qwen",
+        model=os.getenv("QWEN_FREE_MODEL", "qwen/qwen-2.5-72b-instruct:free"),
+        api_key_env="OPENROUTER_API_KEY",
+        base_url="https://openrouter.ai/api/v1",
+    ),
+    ProviderConfig(
         # `gemini-flash-latest` auto-tracks the newest stable flash model, so
         # we do not get pinned to a versioned name (e.g. `-exp`, `-001`) that
         # Google later retires. As of 2026-05 it resolves to gemini-2.5-flash.

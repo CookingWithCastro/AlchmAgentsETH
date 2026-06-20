@@ -138,12 +138,14 @@ def _selective_failure(failing_names):
         (["anthropic"], "groq"),
         # Scenario 2 — anthropic + groq fail, cerebras succeeds.
         (["anthropic", "groq"], "cerebras"),
-        # Scenario 3 — anthropic + groq + cerebras fail, gemini succeeds.
-        (["anthropic", "groq", "cerebras"], "gemini"),
-        # Scenario 4 — only openrouter survives.
-        (["anthropic", "groq", "cerebras", "gemini"], "openrouter"),
-        # Scenario 5 — every free provider rate-limited; paid OpenAI catches.
-        (["anthropic", "groq", "cerebras", "gemini", "openrouter"], "openai"),
+        # Scenario 3 — anthropic + groq + cerebras fail, qwen succeeds.
+        (["anthropic", "groq", "cerebras"], "qwen"),
+        # Scenario 4 — anthropic + groq + cerebras + qwen fail, gemini succeeds.
+        (["anthropic", "groq", "cerebras", "qwen"], "gemini"),
+        # Scenario 5 — only openrouter survives.
+        (["anthropic", "groq", "cerebras", "qwen", "gemini"], "openrouter"),
+        # Scenario 6 — every free provider rate-limited; paid OpenAI catches.
+        (["anthropic", "groq", "cerebras", "qwen", "gemini", "openrouter"], "openai"),
     ],
 )
 async def test_chain_walks_to_first_survivor(
@@ -167,7 +169,7 @@ async def test_chain_walks_to_first_survivor(
 @pytest.mark.asyncio
 async def test_chain_returns_none_when_every_provider_fails(all_keys_set, monkeypatch):
     """Last-line: total outage → run_chain returns None (handler emits a stub)."""
-    every_provider = ["anthropic", "groq", "cerebras", "gemini", "openrouter", "openai"]
+    every_provider = ["anthropic", "groq", "cerebras", "qwen", "gemini", "openrouter", "openai"]
     monkeypatch.setattr(providers, "call_provider", _selective_failure(every_provider))
     chain = providers.build_chain("cheap_fast", "claude-haiku-4-5-20251001")
     result = await providers.run_chain(
@@ -225,7 +227,7 @@ async def test_chain_skips_providers_with_missing_keys(monkeypatch):
 @pytest.mark.asyncio
 async def test_paid_fallback_emits_alert_event(all_keys_set, monkeypatch, capsys):
     """When OpenAI catches the request, an alert_event log line must fire."""
-    every_free = ["anthropic", "groq", "cerebras", "gemini", "openrouter"]
+    every_free = ["anthropic", "groq", "cerebras", "qwen", "gemini", "openrouter"]
     monkeypatch.setattr(providers, "call_provider", _selective_failure(every_free))
     chain = providers.build_chain("cheap_fast", "claude-haiku-4-5-20251001")
     await providers.run_chain(

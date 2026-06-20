@@ -77,6 +77,19 @@ export const GROQ = {
 export type GroqModelId = (typeof GROQ)[keyof typeof GROQ]
 
 // ============================================================================
+// QWEN MODELS
+// ============================================================================
+
+export const QWEN = {
+  CODER_32B: 'qwen/qwen-2.5-coder-32b-instruct',
+  REASONING_QWQ: 'qwen/qwq-32b-preview',
+  CEREBRAS_QWEN: 'qwen-3-235b',
+  OPENROUTER_QWEN: 'qwen/qwen-2.5-72b-instruct:free',
+} as const
+
+export type QwenModelId = (typeof QWEN)[keyof typeof QWEN]
+
+// ============================================================================
 // EMBEDDING MODELS
 // ============================================================================
 
@@ -103,6 +116,7 @@ export const MODEL_TIERS = {
     openai: OPENAI.GPT_5_5,
     google: GEMINI.FLASH_25, // Newest Gemini — separate quota
     groq: GROQ.LLAMA_70B, // 70B param — strongest free model
+    qwen: QWEN.REASONING_QWQ, // Deep reasoning
   },
   /** General-purpose, balanced speed/quality */
   DEFAULT: {
@@ -110,6 +124,7 @@ export const MODEL_TIERS = {
     openai: OPENAI.GPT_5_4_MINI,
     google: GEMINI.FLASH_20, // Stable Gemini — separate quota from 2.5
     groq: GROQ.MIXTRAL, // Balanced free model
+    qwen: QWEN.CODER_32B, // Strong instruction following & coding
   },
   /** Fast responses, high-volume, logging, simple queries */
   FAST: {
@@ -117,6 +132,7 @@ export const MODEL_TIERS = {
     openai: OPENAI.GPT_5_4_NANO,
     google: GEMINI.FLASH_LITE, // Lightest Gemini — separate quota from 2.0
     groq: GROQ.LLAMA_8B, // Ultra-fast free model
+    qwen: QWEN.OPENROUTER_QWEN,
   },
 } as const
 
@@ -189,6 +205,8 @@ export function resolveDefaultModel(
       return resolveClaudeModel(tier)
     case 'groq':
       return resolveGroqModel(tier)
+    case 'qwen':
+      return resolveQwenModel(tier)
     default:
       return resolveGoogleModel(tier) // Free tier baseline
   }
@@ -320,4 +338,23 @@ export function resolveEmbeddingModel(): string {
 export function resolveOpenRouterModel(modelSlug: string): LanguageModel {
   const finalModelId = isGatewayEnabled ? `openrouter/${modelSlug}` : modelSlug
   return gatewayOpenRouter(finalModelId) as unknown as LanguageModel
+}
+
+/**
+ * Resolve a Qwen LanguageModel (typically routed via OpenRouter or Groq/Cerebras).
+ */
+export function resolveQwenModel(tier: 'powerful' | 'default' | 'fast' = 'default'): LanguageModel {
+  let modelId: string
+  switch (tier) {
+    case 'powerful':
+      modelId = MODEL_TIERS.POWERFUL.qwen
+      break
+    case 'fast':
+      modelId = MODEL_TIERS.FAST.qwen
+      break
+    default:
+      modelId = MODEL_TIERS.DEFAULT.qwen
+      break
+  }
+  return resolveOpenRouterModel(modelId)
 }

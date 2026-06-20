@@ -234,17 +234,45 @@ class BackendError extends Error {
   }
 }
 
-async function request<T>(
+export async function request<T>(
   path: string,
-  init: RequestInit & { auth?: boolean; baseUrl?: string } = {}
+  init?: RequestInit & { auth?: boolean; baseUrl?: string }
+): Promise<T>
+export async function request<T>(
+  options: { path: string; auth?: boolean; baseUrl?: string } & Omit<RequestInit, 'body'> & {
+      body?: any
+    }
+): Promise<T>
+export async function request<T>(
+  pathOrOptions:
+    | string
+    | ({ path: string; auth?: boolean; baseUrl?: string } & Omit<RequestInit, 'body'> & {
+          body?: any
+        }),
+  init?: RequestInit & { auth?: boolean; baseUrl?: string }
 ): Promise<T> {
+  let path: string
+  let finalInit: RequestInit & { auth?: boolean; baseUrl?: string }
+
+  if (typeof pathOrOptions === 'object') {
+    path = pathOrOptions.path
+    const { path: _, body, ...rest } = pathOrOptions
+    finalInit = {
+      ...rest,
+      body: body && typeof body === 'object' ? JSON.stringify(body) : body,
+    }
+  } else {
+    path = pathOrOptions
+    finalInit = init || {}
+  }
+
   const {
     auth,
     headers,
     signal: callerSignal,
     baseUrl,
     ...rest
-  } = init as RequestInit & {
+  } = finalInit as RequestInit & {
     auth?: boolean
     signal?: AbortSignal
     baseUrl?: string
@@ -297,8 +325,20 @@ async function request<T>(
  * agents / chat / moment-recommendations domain; everything else stays on the
  * kitchen backend (the `request` default).
  */
-function agentRequest<T>(path: string, init: RequestInit & { auth?: boolean } = {}): Promise<T> {
-  return request<T>(path, { ...init, baseUrl: AGENTS_BACKEND_URL })
+export function agentRequest<T>(path: string, init?: RequestInit & { auth?: boolean }): Promise<T>
+export function agentRequest<T>(
+  options: { path: string; auth?: boolean } & Omit<RequestInit, 'body'> & { body?: any }
+): Promise<T>
+export function agentRequest<T>(
+  pathOrOptions:
+    | string
+    | ({ path: string; auth?: boolean } & Omit<RequestInit, 'body'> & { body?: any }),
+  init?: RequestInit & { auth?: boolean }
+): Promise<T> {
+  if (typeof pathOrOptions === 'object') {
+    return request<T>({ ...pathOrOptions, baseUrl: AGENTS_BACKEND_URL })
+  }
+  return request<T>(pathOrOptions, { ...init, baseUrl: AGENTS_BACKEND_URL })
 }
 
 // ============================================================================
@@ -306,6 +346,12 @@ function agentRequest<T>(path: string, init: RequestInit & { auth?: boolean } = 
 // ============================================================================
 
 export const backend = {
+  /** Raw HTTP request helper targeting kitchen backend by default */
+  request,
+
+  /** Raw HTTP request helper targeting agents backend */
+  agentRequest,
+
   /** Health check — public endpoint */
   health: () =>
     request<{ status: string; database: string; service: string }>('/health', {

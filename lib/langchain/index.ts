@@ -12,6 +12,12 @@ export {
   consciousnessAnalysisTool,
   multiAgentCoordinatorTool,
   memoryRetrievalTool,
+  ensSubnameRegisterTool,
+  ensSubnamesListTool,
+  walrusMemoryStoreTool,
+  walrusMemoryRecallTool,
+  liveSkyTransitsTool,
+  cosmicRecipeGeneratorTool,
 } from './agent-tools'
 
 export {

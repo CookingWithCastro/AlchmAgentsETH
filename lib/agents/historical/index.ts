@@ -69,6 +69,7 @@ export { SOJOURNER_TRUTH } from './sojourner-truth'
 export { CARL_SAGAN } from './carl-sagan'
 export { RACHEL_CARSON } from './rachel-carson'
 export { PAULO_FREIRE } from './paulo-freire'
+export { CHIRON } from './chiron'
 
 export { HOMER } from './homer'
 export { ARISTOTLE } from './aristotle'
@@ -160,6 +161,7 @@ import { SOJOURNER_TRUTH } from './sojourner-truth'
 import { CARL_SAGAN } from './carl-sagan'
 import { RACHEL_CARSON } from './rachel-carson'
 import { PAULO_FREIRE } from './paulo-freire'
+import { CHIRON } from './chiron'
 
 export const HISTORICAL_AGENTS = [
   LEWIS_CARROLL,
@@ -233,6 +235,7 @@ export const HISTORICAL_AGENTS = [
   RACHEL_CARSON,
   PAULO_FREIRE,
   GREG_CASTRO,
+  CHIRON,
 ]
 
 // Helper functions for working with historical agents

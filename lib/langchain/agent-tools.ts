@@ -14,6 +14,9 @@ import { DEMO_AGENTS } from '../demo-agents-data'
 import { logger } from '@/lib/structured-logger'
 import { withErrorHandling } from '@/lib/error-handling'
 import { TemporalAnalysisEngine } from '../temporal-analysis-engine'
+import { setSubname, getNames } from '../namestone'
+import { writeMemory, recallMemory } from '../walrus/memory'
+import { backend } from '../backend'
 
 /**
  * Tool 1: Semantic Agent Search
@@ -399,6 +402,253 @@ export const temporalAnalysisTool = new DynamicStructuredTool({
   },
 })
 
+export const ensSubnameRegisterTool = new DynamicStructuredTool({
+  name: 'ens_subname_register',
+  description:
+    'Register or update a gasless ENS subname (e.g. "plato") under alchmagents.eth mapped to an address and optional text records.',
+  schema: z.object({
+    name: z.string().describe('The subname label to register, e.g. "plato"'),
+    address: z.string().describe('The target Ethereum wallet address'),
+    description: z.string().optional().describe('Optional bio or details for the text records'),
+  }),
+  func: async ({ name, address, description }) => {
+    return withErrorHandling(
+      async () => {
+        logger.info('Tool call: ens_subname_register', {
+          system: 'langchain-tools',
+          operation: 'ens_subname_register',
+          metadata: { name, address },
+        })
+
+        const textRecords: Record<string, string> = {
+          description: description || `Alchm agent subname ${name}`,
+        }
+
+        await setSubname({
+          name: name.toLowerCase().trim(),
+          address: address.trim(),
+          textRecords,
+        })
+
+        return JSON.stringify({
+          success: true,
+          message: `Successfully registered gasless subname ${name}.alchmagents.eth pointing to ${address}`,
+        })
+      },
+      {
+        system: 'langchain-tools',
+        operation: 'ens_subname_register',
+        severity: 'high',
+      }
+    ).then(res => (typeof res === 'string' ? res : JSON.stringify(res)))
+  },
+})
+
+export const ensSubnamesListTool = new DynamicStructuredTool({
+  name: 'ens_subnames_list',
+  description: 'List ENS subnames registered on NameStone. Can filter by a specific address.',
+  schema: z.object({
+    address: z.string().optional().describe('Optional wallet address to filter subnames by'),
+    limit: z.number().optional().describe('Maximum names to return (default: 20)'),
+  }),
+  func: async ({ address, limit = 20 }) => {
+    return withErrorHandling(
+      async () => {
+        logger.info('Tool call: ens_subnames_list', {
+          system: 'langchain-tools',
+          operation: 'ens_subnames_list',
+          metadata: { address, limit },
+        })
+
+        const names = await getNames({
+          address: address?.trim(),
+          limit,
+        })
+
+        return JSON.stringify({
+          success: true,
+          names: names.map(n => ({
+            name: n.name,
+            address: n.address,
+            textRecords: n.text_records,
+          })),
+        })
+      },
+      {
+        system: 'langchain-tools',
+        operation: 'ens_subnames_list',
+        severity: 'medium',
+      }
+    ).then(res => (typeof res === 'string' ? res : JSON.stringify(res)))
+  },
+})
+
+export const walrusMemoryStoreTool = new DynamicStructuredTool({
+  name: 'walrus_memory_store',
+  description:
+    'Store an encrypted memory snapshot, conversation logs, or facts to Walrus. Returns a blob ID and aggregator URL.',
+  schema: z.object({
+    content: z.string().describe('The text content to store'),
+    agentId: z.string().describe('The agent ID associating with the memory'),
+  }),
+  func: async ({ content, agentId }) => {
+    return withErrorHandling(
+      async () => {
+        logger.info('Tool call: walrus_memory_store', {
+          system: 'langchain-tools',
+          operation: 'walrus_memory_store',
+          metadata: { agentId },
+        })
+
+        const result = await writeMemory({
+          content,
+          namespace: `agent:${agentId}`,
+        })
+
+        return JSON.stringify({
+          success: true,
+          blobId: result.blobId,
+          url: result.url,
+          backend: result.backend,
+          encrypted: result.encrypted,
+        })
+      },
+      {
+        system: 'langchain-tools',
+        operation: 'walrus_memory_store',
+        severity: 'high',
+      }
+    ).then(res => (typeof res === 'string' ? res : JSON.stringify(res)))
+  },
+})
+
+export const walrusMemoryRecallTool = new DynamicStructuredTool({
+  name: 'walrus_memory_recall',
+  description: 'Recall and retrieve past memories for an agent using semantic search over Walrus.',
+  schema: z.object({
+    query: z.string().describe('The search query to match against memories'),
+    agentId: z.string().describe('The agent ID to recall memory for'),
+    limit: z.number().optional().describe('Maximum memories to retrieve (default: 5)'),
+  }),
+  func: async ({ query, agentId, limit = 5 }) => {
+    return withErrorHandling(
+      async () => {
+        logger.info('Tool call: walrus_memory_recall', {
+          system: 'langchain-tools',
+          operation: 'walrus_memory_recall',
+          metadata: { agentId, query },
+        })
+
+        const results = await recallMemory({
+          query,
+          namespace: `agent:${agentId}`,
+          limit,
+        })
+
+        return JSON.stringify({
+          success: true,
+          memories: results,
+        })
+      },
+      {
+        system: 'langchain-tools',
+        operation: 'walrus_memory_recall',
+        severity: 'medium',
+      }
+    ).then(res => (typeof res === 'string' ? res : JSON.stringify(res)))
+  },
+})
+
+export const liveSkyTransitsTool = new DynamicStructuredTool({
+  name: 'live_sky_transits',
+  description:
+    'Retrieve live astrological transit details for elemental and planetary alignment calculations.',
+  schema: z.object({
+    latitude: z.number().optional().describe('Location latitude (default: 0.0)'),
+    longitude: z.number().optional().describe('Location longitude (default: 0.0)'),
+  }),
+  func: async ({ latitude = 0.0, longitude = 0.0 }) => {
+    return withErrorHandling(
+      async () => {
+        logger.info('Tool call: live_sky_transits', {
+          system: 'langchain-tools',
+          operation: 'live_sky_transits',
+          metadata: { latitude, longitude },
+        })
+
+        const transits = await backend.request({
+          path: '/api/planetary/positions',
+          method: 'POST',
+          body: {
+            lat: latitude,
+            lon: longitude,
+          },
+        })
+
+        return JSON.stringify({
+          success: true,
+          transits: transits || {},
+        })
+      },
+      {
+        system: 'langchain-tools',
+        operation: 'live_sky_transits',
+        severity: 'medium',
+      }
+    ).then(res => (typeof res === 'string' ? res : JSON.stringify(res)))
+  },
+})
+
+export const cosmicRecipeGeneratorTool = new DynamicStructuredTool({
+  name: 'cosmic_recipe_generator',
+  description:
+    'Generate alchemical food recipes utilizing specified ingredients and planetary or elemental alignments.',
+  schema: z.object({
+    prompt: z.string().describe('The user query describing what they want to cook'),
+    cuisine: z.string().optional().describe('Preferred cuisine style, e.g. "Mediterranean"'),
+    dietary: z
+      .array(z.string())
+      .optional()
+      .describe('List of dietary restrictions, e.g. ["vegan"]'),
+    dominantElement: z
+      .enum(['Fire', 'Water', 'Air', 'Earth'])
+      .optional()
+      .describe('The dominant element to align with'),
+  }),
+  func: async ({ prompt, cuisine, dietary, dominantElement }) => {
+    return withErrorHandling(
+      async () => {
+        logger.info('Tool call: cosmic_recipe_generator', {
+          system: 'langchain-tools',
+          operation: 'cosmic_recipe_generator',
+          metadata: { cuisine, dominantElement },
+        })
+
+        const recipe = await backend.request({
+          path: '/api/generate-recipe',
+          method: 'POST',
+          body: {
+            prompt,
+            cuisine,
+            dietary: dietary || [],
+            dominantElement,
+          },
+        })
+
+        return JSON.stringify({
+          success: true,
+          recipe: recipe || {},
+        })
+      },
+      {
+        system: 'langchain-tools',
+        operation: 'cosmic_recipe_generator',
+        severity: 'high',
+      }
+    ).then(res => (typeof res === 'string' ? res : JSON.stringify(res)))
+  },
+})
+
 /**
  * Export all tools as an array
  */
@@ -409,6 +659,12 @@ export const planetaryAgentTools = [
   multiAgentCoordinatorTool,
   memoryRetrievalTool,
   temporalAnalysisTool,
+  ensSubnameRegisterTool,
+  ensSubnamesListTool,
+  walrusMemoryStoreTool,
+  walrusMemoryRecallTool,
+  liveSkyTransitsTool,
+  cosmicRecipeGeneratorTool,
 ]
 
 /**
