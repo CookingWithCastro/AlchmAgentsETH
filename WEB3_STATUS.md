@@ -1,6 +1,6 @@
 # Web3 / On-Chain Status — Pentacle Star Vaults + ESMS Economy
 
-_Last updated: 2026-06-17. Source of truth for the on-chain deployment + wiring._
+_Last verified: 2026-06-21. Source of truth for the on-chain deployment + wiring._
 
 ## TL;DR
 
@@ -56,6 +56,10 @@ Deed/AMM are orphaned/unused. Only the ESMS token (`0x124E…`) is used on Base 
 - `app/api/staking/pool-attestation` — per-constellation nonce.
 - `app/api/staking/star-proof` + `lib/staking/star-registry.ts` — Merkle proofs for lazy `activateStar`.
 - `lib/staking/useStarStaking.ts` — awakens a star before its first stake.
+- `lib/staking/deployment.ts` — canonical public Arc/Base Sepolia deployment registry; env vars
+  remain optional overrides rather than a hidden requirement for previews and fresh installs.
+- `components/staking/PentaclesNetworkStatus.tsx` — reads all four Arc contract bytecodes in the
+  browser and exposes the active EVM testnet/chain ID directly on `/pentacles` and onboarding.
 - `lib/esms-chain/*` + `app/api/shop/purchase` + `components/shop/ShopClient.tsx` — signed `redeemFor`
   (server issues an EIP-712 `RedeemAuthorization` challenge; the buyer's Privy wallet signs).
 

@@ -99,13 +99,15 @@ All inputs come from data the app already produces: live `ephemeris`, the staker
 
 ## Deploy & run
 
-1. **Contracts** (from `contracts/`):
+1. **Contracts** (from `contracts/`; only needed for a new deployment):
    ```bash
    ARC_RPC_URL=https://rpc.testnet.arc.io \
    DEPLOYER_PRIVATE_KEY=… ATTESTOR_ADDRESS=… ESMS_METADATA_URI=… \
    forge script script/DeployStarVault.s.sol:DeployStarVault --rpc-url arc --broadcast
    ```
    Copy the printed `NEXT_PUBLIC_STAR_VAULT_ADDRESS` and `NEXT_PUBLIC_ARC_ESMS_ADDRESS`.
+   The current verified Arc testnet deployment is checked into `lib/staking/deployment.ts`, so
+   fresh installs and previews use it automatically unless these variables override it.
 2. **Env** (`.env`):
    ```
    NEXT_PUBLIC_STAR_VAULT_ADDRESS=0x…           # deployed StarVault on Arc
@@ -166,11 +168,17 @@ Verified locally:
 - `bunx tsc --noEmit` clean; `/pentacles` renders the 11 canonical zones + live
   star_node/zone/ephemeris feed (10 planets) + planets-in-zones + ascendant line + live
   aspect pools + per-star multiplicative APYs + chart-affinity reactivity + the zone-pool LP panel.
-- **`forge test` — 43/43 pass**, including **`StarVault.t.sol` (25 tests)**: custody &
+- **`forge test` — 74/74 pass**, including **`StarVault.t.sol` (39 tests)**: custody &
   pro-rata shares, unstake round-trips with no cross-staker loss, attested ESMS yield, and every
   attestation failure mode (bad signer, revoked attestor, expired, bad/replayed nonce, staker
   mismatch, bad element), plus 2 fuzz tests (`forge test --match-contract StarVaultTest`).
 
-Remaining: the live Arc deploy + round-trip (needs the 4 `NEXT_PUBLIC_*_ADDRESS` vars +
-`ARC_ATTESTOR_PRIVATE_KEY`), a real `NEXT_PUBLIC_DYNAMIC_ENVIRONMENT_ID`, and the swap +
-ESMS-balance UI in the LP panel.
+Live deployment (verified 2026-06-21):
+
+- **Arc testnet 5042002:** ESMS, StarVault, ConstellationDeed, and ConstellationAMM all have
+  bytecode; vault/AMM attestor and token minter/burner roles are correctly wired; all six pools
+  are seeded. `bun run scripts/verify-deploy.ts` verifies the exact addresses used by the app.
+- **Base Sepolia 84532:** the mirrored ESMS shop settlement wallet holds MINTER + BURNER and is
+  funded for sponsored transactions.
+- **Production:** `/pentacles` is live, its server-side attestor is configured, and the claim API
+  reaches the real horizon-visibility gate. The UI shows a live Arc bytecode status badge.

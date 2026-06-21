@@ -3,6 +3,7 @@
 import { DynamicWidget } from '@dynamic-labs/sdk-react-core'
 import { useArcWallet } from '@/lib/staking/useArcWallet'
 import { GOLD } from '@/lib/staking/ui'
+import PentaclesNetworkStatus from './PentaclesNetworkStatus'
 
 const card: React.CSSProperties = {
   background: 'rgba(22,19,12,0.6)',
@@ -96,6 +97,7 @@ export default function OnboardingPanel() {
         <p style={{ color: '#9aa0d8', marginTop: 6 }}>
           Stake USDC on the stars. Earn alchemical essence.
         </p>
+        <PentaclesNetworkStatus />
       </div>
 
       <DynamicWidget />

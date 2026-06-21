@@ -12,6 +12,7 @@ import CosmicWallet from '@/components/staking/CosmicWallet'
 import SwapEssenceModal from '@/components/staking/SwapEssenceModal'
 import ZoneDetailCard from '@/components/staking/ZoneDetailCard'
 import ShootingStarToasts from '@/components/staking/ShootingStarToasts'
+import PentaclesNetworkStatus from '@/components/staking/PentaclesNetworkStatus'
 import useEsmsBalances from '@/lib/staking/useEsmsBalances'
 import Link from 'next/link'
 import { computeYieldRate } from '@/lib/staking/yield-rate'
@@ -144,6 +145,7 @@ export default function PentaclesClient() {
           stars crossing your <strong>ascendant</strong> burst-boost the zone they sit in. Settles
           on Circle Arc.
         </p>
+        <PentaclesNetworkStatus />
         <div
           style={{
             display: 'flex',
