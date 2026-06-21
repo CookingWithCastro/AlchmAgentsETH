@@ -5,6 +5,7 @@
 
 import { defineChain } from 'viem'
 import { ARC_TESTNET } from '@/lib/erc8004/registry'
+import { PENTACLES_ARC_TESTNET_DEPLOYMENT } from './deployment'
 
 export const arcChain = defineChain({
   id: ARC_TESTNET.id,
@@ -25,8 +26,9 @@ export const ARC_USDC = ARC_TESTNET.usdc as `0x${string}`
 
 /** Deployed addresses (set after running DeployStarVault.s.sol). */
 export const STAR_VAULT_ADDRESS = (process.env.NEXT_PUBLIC_STAR_VAULT_ADDRESS ??
-  '') as `0x${string}`
-export const ARC_ESMS_ADDRESS = (process.env.NEXT_PUBLIC_ARC_ESMS_ADDRESS ?? '') as `0x${string}`
+  PENTACLES_ARC_TESTNET_DEPLOYMENT.starVault) as `0x${string}`
+export const ARC_ESMS_ADDRESS = (process.env.NEXT_PUBLIC_ARC_ESMS_ADDRESS ??
+  PENTACLES_ARC_TESTNET_DEPLOYMENT.esms) as `0x${string}`
 
 export function isStarVaultConfigured(): boolean {
   return /^0x[0-9a-fA-F]{40}$/.test(STAR_VAULT_ADDRESS)

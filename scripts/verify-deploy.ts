@@ -10,14 +10,20 @@
  */
 
 import { createPublicClient, formatEther, http, parseAbi } from 'viem'
+import { ARC_ESMS_ADDRESS, STAR_VAULT_ADDRESS } from '../lib/staking/arc'
+import { CONSTELLATION_AMM_ADDRESS, CONSTELLATION_DEED_ADDRESS } from '../lib/staking/amm'
+import { PENTACLES_BASE_SEPOLIA_DEPLOYMENT } from '../lib/staking/deployment'
 
 const ARC = { id: 5042002, rpc: 'https://rpc.testnet.arc.io' }
 const BASE_SEPOLIA = { id: 84532, rpc: 'https://sepolia.base.org' }
 
-const ESMS = '0x124ECa1bb1E106D3614A22A256f9A412FfeEAd8F'
-const ARC_VAULT = '0x34eAC0fe797df2889d9dc59Cb98dCe24154BB9B6'
-const ARC_AMM = '0x34d860Cb460ecD2595584138d22Ad6fe7DAeA3BB'
-const ARC_DEED = '0x6B4EE164320e9E5583C0F6BEe14D5BABb5ba5095'
+// Read the same configuration the application uses. This makes the script verify the
+// integration, not merely a separate hard-coded deployment that the UI may not point at.
+const ESMS = ARC_ESMS_ADDRESS
+const ARC_VAULT = STAR_VAULT_ADDRESS
+const ARC_AMM = CONSTELLATION_AMM_ADDRESS
+const ARC_DEED = CONSTELLATION_DEED_ADDRESS
+const BASE_ESMS = PENTACLES_BASE_SEPOLIA_DEPLOYMENT.esms
 const DEPLOYER = '0x554F991D030aDF539CBD2ff3D896951C6f089804'
 const ATTESTOR = '0x6a9a906AC3B8AcF21Ca950b8Bf9702d1ADD368Be'
 const MINTER = '0x984dbdA6da6D80c95b4A8Ff9b05cb62b2D27dC99'
@@ -73,6 +79,29 @@ function makeReader(rpc: string, id: number) {
 async function arc() {
   console.log('\n========== ARC TESTNET (5042002) ==========')
   const r = makeReader(ARC.rpc, ARC.id)
+  const configured = [ESMS, ARC_VAULT, ARC_AMM, ARC_DEED]
+  check(
+    'app has all four Pentacles addresses',
+    configured.every(a => /^0x[0-9a-fA-F]{40}$/.test(a))
+  )
+  check('app addresses are distinct', new Set(configured.map(a => a.toLowerCase())).size === 4)
+  const codes = await Promise.all(
+    configured.map(address =>
+      createPublicClient({
+        chain: {
+          id: ARC.id,
+          name: 'arc-testnet',
+          nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 6 },
+          rpcUrls: { default: { http: [ARC.rpc] } },
+        } as never,
+        transport: http(ARC.rpc),
+      }).getBytecode({ address })
+    )
+  )
+  check(
+    'all four configured addresses have bytecode',
+    codes.every(code => Boolean(code && code !== '0x'))
+  )
   const MR = await r<`0x${string}`>(ESMS, esmsAbi, 'MINTER_ROLE')
   const BR = await r<`0x${string}`>(ESMS, esmsAbi, 'BURNER_ROLE')
   const AR = await r<`0x${string}`>(ARC_VAULT, vaultAbi, 'ATTESTOR_ROLE')
@@ -123,20 +152,23 @@ async function baseSepolia() {
     } as never,
     transport: http(BASE_SEPOLIA.rpc),
   })
-  const MR = await r<`0x${string}`>(ESMS, esmsAbi, 'MINTER_ROLE')
-  const BR = await r<`0x${string}`>(ESMS, esmsAbi, 'BURNER_ROLE')
-  console.log(`   shop ESMS uri: ${await r<string>(ESMS, esmsAbi, 'uri', [0])}`)
+  const MR = await r<`0x${string}`>(BASE_ESMS, esmsAbi, 'MINTER_ROLE')
+  const BR = await r<`0x${string}`>(BASE_ESMS, esmsAbi, 'BURNER_ROLE')
+  console.log(`   shop ESMS uri: ${await r<string>(BASE_ESMS, esmsAbi, 'uri', [0])}`)
   // The ACTIVE settlement wallet (signs claimMint + redeemFor) must hold BOTH roles.
   check(
     'settlement wallet has MINTER (claim/mint works)',
-    await r<boolean>(ESMS, esmsAbi, 'hasRole', [MR, SETTLEMENT])
+    await r<boolean>(BASE_ESMS, esmsAbi, 'hasRole', [MR, SETTLEMENT])
   )
   check(
     'settlement wallet has BURNER (sponsored redeemFor)',
-    await r<boolean>(ESMS, esmsAbi, 'hasRole', [BR, SETTLEMENT]),
+    await r<boolean>(BASE_ESMS, esmsAbi, 'hasRole', [BR, SETTLEMENT]),
     'if ❌: grant BURNER to the settlement wallet — see WEB3_STATUS.md'
   )
-  check('deployer is NOT a minter', !(await r<boolean>(ESMS, esmsAbi, 'hasRole', [MR, DEPLOYER])))
+  check(
+    'deployer is NOT a minter',
+    !(await r<boolean>(BASE_ESMS, esmsAbi, 'hasRole', [MR, DEPLOYER]))
+  )
   // Roles are useless without gas: a 0-balance settlement wallet cannot send claimMint
   // or redeemFor, so the whole on-chain rail is dead even when every role check is green.
   const gas = await gasClient.getBalance({ address: SETTLEMENT as `0x${string}` })

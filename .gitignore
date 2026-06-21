@@ -28,6 +28,8 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
+!contracts/.env.example
 backend/.env.render
 .env.render
 

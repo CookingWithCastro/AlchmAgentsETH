@@ -4,13 +4,14 @@
  */
 
 import { ARC_CHAIN_ID } from './arc'
+import { PENTACLES_ARC_TESTNET_DEPLOYMENT } from './deployment'
 import { ESMS_NAME } from './elements'
 import type { EsmsId } from './types'
 
 export const CONSTELLATION_AMM_ADDRESS = (process.env.NEXT_PUBLIC_CONSTELLATION_AMM_ADDRESS ??
-  '') as `0x${string}`
+  PENTACLES_ARC_TESTNET_DEPLOYMENT.constellationAmm) as `0x${string}`
 export const CONSTELLATION_DEED_ADDRESS = (process.env.NEXT_PUBLIC_CONSTELLATION_DEED_ADDRESS ??
-  '') as `0x${string}`
+  PENTACLES_ARC_TESTNET_DEPLOYMENT.constellationDeed) as `0x${string}`
 
 export function isAmmConfigured(): boolean {
   return /^0x[0-9a-fA-F]{40}$/.test(CONSTELLATION_AMM_ADDRESS)
