@@ -48,6 +48,7 @@ import McpInvocationsPanel from '@/components/admin/panels/McpInvocationsPanel'
 import RagKnowledgePanel from '@/components/admin/panels/RagKnowledgePanel'
 import GroupChatSessionsPanel from '@/components/admin/panels/GroupChatSessionsPanel'
 import ScrabbleLeaguePanel from '@/components/admin/panels/ScrabbleLeaguePanel'
+import Web3TelemetryPanel from '@/components/admin/panels/Web3TelemetryPanel'
 
 import type {
   AdminDashboardData,
@@ -63,6 +64,7 @@ type AdminTab =
   | 'agents'
   | 'chats'
   | 'mcp'
+  | 'web3'
   | 'groupChats'
   | 'jing'
   | 'scrabble'
@@ -111,6 +113,7 @@ const tabs: Array<{ id: AdminTab; label: string; icon: LucideIcon }> = [
   { id: 'agents', label: 'Agents', icon: Bot },
   { id: 'chats', label: 'Chat Status', icon: TerminalSquare },
   { id: 'mcp', label: 'MCP Invocations', icon: Cpu },
+  { id: 'web3', label: 'Web3 Integration', icon: ShieldCheck },
   { id: 'groupChats', label: 'Council Convenings', icon: Network },
   { id: 'jing', label: 'Jing Arena', icon: Swords },
   { id: 'scrabble', label: 'Scrabble League', icon: Trophy },
@@ -817,6 +820,9 @@ export function AdminOperatorConsole({ initialUser, authSource }: AdminOperatorC
 
                 {/* 9. RAG / KNOWLEDGE PANEL */}
                 {activeTab === 'rag' && <RagKnowledgePanel productionUrl={productionUrl} />}
+
+                {/* WEB3 INTEGRATION PANEL */}
+                {activeTab === 'web3' && <Web3TelemetryPanel />}
 
                 {/* 10. INFRASTRUCTURE PANEL */}
                 {activeTab === 'infrastructure' && (

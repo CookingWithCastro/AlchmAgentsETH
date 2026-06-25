@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Sparkles, Moon, Sun, Flame, Droplets, Wind, Mountain, Compass } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -16,8 +17,95 @@ interface CosmicTelemetryProps {
   }
 }
 
+// Aspect and orb calculation helpers
+function getAspectOrb(deg1: number, deg2: number) {
+  const diff = Math.abs(deg1 - deg2) % 360
+  const angle = diff > 180 ? 360 - diff : diff
+
+  const majorAspects = [
+    { name: 'Conjunction', target: 0 },
+    { name: 'Sextile', target: 60 },
+    { name: 'Square', target: 90 },
+    { name: 'Trine', target: 120 },
+    { name: 'Opposition', target: 180 },
+  ]
+
+  let minOrb = 360
+  for (const aspect of majorAspects) {
+    const orb = Math.abs(angle - aspect.target)
+    if (orb < minOrb) {
+      minOrb = orb
+    }
+  }
+  return minOrb
+}
+
+function calculateFieldOrb(positions: any[]) {
+  if (!positions || positions.length < 2) return 8.42 // Fallback
+
+  const orbs: number[] = []
+  for (let i = 0; i < positions.length; i++) {
+    for (let j = i + 1; j < positions.length; j++) {
+      const p1 = positions[i]
+      const p2 = positions[j]
+
+      const deg1 = p1.longitude
+      const deg2 = p2.longitude
+      if (typeof deg1 === 'number' && typeof deg2 === 'number') {
+        const orb = getAspectOrb(deg1, deg2)
+        orbs.push(orb)
+      }
+    }
+  }
+
+  const closestOrbs = orbs.sort((a, b) => a - b).slice(0, 5)
+  if (closestOrbs.length === 0) return 8.42
+  const averageOrb = closestOrbs.reduce((a, b) => a + b, 0) / closestOrbs.length
+  return Math.round(averageOrb * 100) / 100
+}
+
+function calculateMoonPhase(positions: any[]) {
+  const sun = positions.find(p => p.name === 'Sun')
+  const moon = positions.find(p => p.name === 'Moon')
+  if (!sun || !moon) return null
+
+  return (moon.longitude - sun.longitude + 360) % 360
+}
+
+function getRealMoonPhaseName(diff: number): string {
+  if (diff < 22.5 || diff >= 337.5) return 'New Moon (Initiation)'
+  if (diff < 67.5) return 'Waxing Crescent (Emergence)'
+  if (diff < 112.5) return 'First Quarter (Decision)'
+  if (diff < 157.5) return 'Waxing Gibbous (Refinement)'
+  if (diff < 202.5) return 'Full Moon (Illumination)'
+  if (diff < 247.5) return 'Waning Gibbous (Release)'
+  if (diff < 292.5) return 'Last Quarter (Revaluation)'
+  return 'Waning Crescent (Surrender)'
+}
+
 export default function CosmicTelemetryPanel({ data }: CosmicTelemetryProps) {
   const { spirit, essence, matter, substance } = data.agents.cosmicHarmony
+  const [realTransits, setRealTransits] = useState<any[] | null>(null)
+  const [transitsLoading, setTransitsLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadTransits() {
+      try {
+        const res = await fetch('/api/planetary-positions?includeAlchemy=true')
+        if (res.ok) {
+          const payload = await res.json()
+          if (payload.success && payload.planetaryPositions) {
+            setRealTransits(payload.planetaryPositions)
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load live transits:', err)
+      } finally {
+        setTransitsLoading(false)
+      }
+    }
+    loadTransits()
+  }, [])
 
   // Calculate roster balance standard deviation
   const values = [spirit, essence, matter, substance]
@@ -232,7 +320,16 @@ export default function CosmicTelemetryPanel({ data }: CosmicTelemetryProps) {
                 <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">
                   Observed Lunar Phase
                 </span>
-                <span className="font-semibold text-zinc-200">{moonPhaseName}</span>
+                <span className="font-semibold text-zinc-200">
+                  {transitsLoading
+                    ? 'Loading...'
+                    : realTransits
+                      ? (() => {
+                          const diff = calculateMoonPhase(realTransits)
+                          return diff !== null ? getRealMoonPhaseName(diff) : moonPhaseName
+                        })()
+                      : moonPhaseName}
+                </span>
               </div>
               <span className="px-2.5 py-1 text-[10px] font-mono font-bold bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 uppercase tracking-wider rounded-md">
                 Degree Sync Active
@@ -252,7 +349,11 @@ export default function CosmicTelemetryPanel({ data }: CosmicTelemetryProps) {
                 <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">
                   Calculated Field Orb
                 </span>
-                <span className="text-xs font-bold text-zinc-300 mt-1 block">8.42° Arc</span>
+                <span className="text-xs font-bold text-zinc-300 mt-1 block">
+                  {transitsLoading || !realTransits
+                    ? '8.42° Arc'
+                    : `${calculateFieldOrb(realTransits).toFixed(2)}° Arc`}
+                </span>
               </div>
             </div>
 
@@ -273,37 +374,56 @@ export default function CosmicTelemetryPanel({ data }: CosmicTelemetryProps) {
             </h4>
           </div>
 
-          <div className="space-y-3">
-            {[
-              { body: 'Sun', degree: "11° Gemini 28'", motion: 'Direct', power: 'High' },
-              {
-                body: 'Moon',
-                degree: "24° Scorpio 15'",
-                motion: 'Direct',
-                power: 'Metaphysical Max',
-              },
-              { body: 'Mercury', degree: "04° Cancer 12'", motion: 'Direct', power: 'Moderate' },
-              {
-                body: 'Venus',
-                degree: "18° Gemini 55'",
-                motion: 'Direct',
-                power: 'Strong Coherence',
-              },
-            ].map(t => (
-              <div
-                key={t.body}
-                className="flex justify-between items-center rounded-xl bg-black/10 border border-white/5 px-3.5 py-2.5 hover:bg-black/25 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="h-2 w-2 rounded-full bg-fuchsia-400 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-                  <span className="font-bold text-xs text-zinc-200">{t.body}</span>
-                </div>
-                <span className="font-mono text-[11px] text-zinc-400">{t.degree}</span>
-                <span className="text-[10px] text-fuchsia-300 font-semibold px-2 py-0.5 bg-fuchsia-500/10 rounded-md border border-fuchsia-500/15">
-                  {t.power}
-                </span>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+            {transitsLoading ? (
+              <div className="text-center py-6 text-xs text-zinc-555 font-mono animate-pulse">
+                Syncing Swiss Ephemeris...
               </div>
-            ))}
+            ) : realTransits && realTransits.length > 0 ? (
+              realTransits.map(t => {
+                const degreeStr = `${t.degree}° ${t.sign} ${t.minute ?? 0}'`
+                const motion = t.isRetrograde ? 'Retrograde' : 'Direct'
+                const power = t.isRetrograde
+                  ? 'Retrograde (Inward)'
+                  : Math.abs(t.longitudeSpeed) > 1.2
+                    ? 'High Coherence'
+                    : 'Strong Coherence'
+
+                return (
+                  <div
+                    key={t.name}
+                    className="flex justify-between items-center rounded-xl bg-black/10 border border-white/5 px-3.5 py-2.5 hover:bg-black/25 transition-colors"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className={cn(
+                          'h-2 w-2 rounded-full',
+                          t.isRetrograde
+                            ? 'bg-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                            : 'bg-fuchsia-400 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                        )}
+                      />
+                      <span className="font-bold text-xs text-zinc-200">{t.name}</span>
+                    </div>
+                    <span className="font-mono text-[11px] text-zinc-450">{degreeStr}</span>
+                    <span
+                      className={cn(
+                        'text-[10px] font-semibold px-2 py-0.5 rounded-md border',
+                        t.isRetrograde
+                          ? 'text-amber-300 bg-amber-500/10 border-amber-500/15'
+                          : 'text-fuchsia-300 bg-fuchsia-500/10 border-fuchsia-500/15'
+                      )}
+                    >
+                      {motion} ({power})
+                    </span>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-center py-6 text-xs text-rose-400 font-mono">
+                Astronomical Engine Offline
+              </div>
+            )}
           </div>
         </div>
       </div>

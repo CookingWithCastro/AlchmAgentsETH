@@ -61,3 +61,38 @@ See [`../docs/SHOPPING.md`](../docs/SHOPPING.md). Tests:
 
 Still later: transferability unlock, a paymaster for fully user-paid txs,
 external-wallet targets, mainnet promotion.
+
+## Recipe rights + NFT provenance protocol
+
+`AlchmRightsRegistry` anchors a registered work, declared rights holder, evidence
+hash, and versioned license manifest. Rights-holder transfers use a two-party
+propose/accept flow referencing an external signed transfer instrument. A transfer
+increments the operator epoch, automatically invalidating every previously
+authorized recipe-minting agent.
+
+`RecipeRegistry` mints one ERC-721 per immutable canonical recipe version. Each
+record commits to its content hash, deterministic computation hash, ingredient
+catalog root, rights anchor, license hash, creator, engine version, and
+revision/fork lineage. NFT ownership never overwrites creator attribution.
+ERC-2981 royalties are optional and capped at 10%.
+
+```bash
+# Focused test suite
+forge test --match-path test/RecipeProtocol.t.sol -vvv
+
+# Base Sepolia deployment (separate from Deploy.s.sol; existing addresses do not shift)
+export DEPLOYER_PRIVATE_KEY=0x...
+export RIGHTS_HOLDER=0x...
+export ALCHM_WORK_HASH=0x...       # keccak256 of canonical work/manifest bytes
+export ALCHM_EVIDENCE_HASH=0x...   # keccak256 of certificate/evidence bundle
+export ALCHM_LICENSE_HASH=0x...    # keccak256 of canonical license-manifest bytes
+export ALCHM_LICENSE_URI=walrus://...
+
+forge script script/DeployRecipeProtocol.s.sol:DeployRecipeProtocol \
+  --rpc-url base_sepolia --broadcast --verify
+```
+
+The genesis deployment script identifies the work as
+`Alchm Planetary-Food Algorithm`, U.S. Copyright Reg. No. `VA 2-434-962`.
+The registry is a provenance and licensing record, not an adjudication of the
+legal validity or scope of a claim, license, or transfer.
