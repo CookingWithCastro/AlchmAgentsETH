@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { ELEMENT_METADATA } from '@/lib/element-metadata'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -124,33 +125,6 @@ const ELEMENTS = [
 ]
 
 const ERAS = ['ANCIENT', 'CLASSICAL', 'MEDIEVAL', 'RENAISSANCE', 'ENLIGHTENMENT', 'MODERN']
-
-const ELEMENT_METADATA = {
-  Air: {
-    glow: 'agent-glow-air border-substance-air/30',
-    bg: 'bg-substance-air',
-    text: 'text-substance-air',
-    glowColor: 'rgba(185, 140, 214, 0.4)',
-  },
-  Water: {
-    glow: 'agent-glow-water border-essence-water/30',
-    bg: 'bg-essence-water',
-    text: 'text-essence-water',
-    glowColor: 'rgba(74, 163, 216, 0.4)',
-  },
-  Fire: {
-    glow: 'agent-glow-fire border-spirit-fire/30',
-    bg: 'bg-spirit-fire',
-    text: 'text-spirit-fire',
-    glowColor: 'rgba(224, 162, 58, 0.4)',
-  },
-  Earth: {
-    glow: 'agent-glow-earth border-matter-earth/30',
-    bg: 'bg-matter-earth',
-    text: 'text-matter-earth',
-    glowColor: 'rgba(95, 179, 122, 0.4)',
-  },
-}
 
 function GalleryPageContent() {
   const [viewMode, setViewMode] = useState<GalleryViewMode>('grid')
@@ -290,9 +264,6 @@ function GalleryPageContent() {
         }
         setAgents(agentsWithLevels)
         setLoadError(null)
-        console.log(
-          `Loaded ${agentsWithLevels.length} agents (${agentsWithLevels.filter((a: any) => a.isUserCreated).length} user-created)`
-        )
       } else {
         setAgents([])
         setLoadError('The historical-agent roster is temporarily unavailable.')
@@ -474,23 +445,6 @@ function GalleryPageContent() {
         return 'bg-green-500'
       default:
         return 'bg-gray-500'
-    }
-  }
-
-  const getConsciousnessColor = (level: string) => {
-    switch (level) {
-      case 'Transcendent':
-        return 'bg-purple-600'
-      case 'Illuminated':
-        return 'bg-indigo-600'
-      case 'Advanced':
-        return 'bg-blue-600'
-      case 'Elevated':
-        return 'bg-green-600'
-      case 'Active':
-        return 'bg-yellow-600'
-      default:
-        return 'bg-gray-600'
     }
   }
 
