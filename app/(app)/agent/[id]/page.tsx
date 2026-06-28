@@ -55,46 +55,9 @@ const ELEMENT_TINT: Record<Element, string> = {
   Earth: 'from-emerald-500/30 to-lime-500/10',
 }
 
-function formatBirth(agent: CraftedAgent): string {
-  const d = agent.birthData?.date
-  if (!d) return '—'
-  const date = typeof d === 'string' ? new Date(d) : d
-  const year = date.getUTCFullYear()
-  const month = date.toLocaleString('en-US', { month: 'long', timeZone: 'UTC' })
-  const day = date.getUTCDate()
-  const era = year < 0 ? `${Math.abs(year)} BCE` : `${year}`
-  return `${month} ${day}, ${era}`
-}
-
 import { StitchProfileClient } from '@/components/agent-profile/stitch-profile-client'
 import { getTarotRecommendations } from '@/lib/thermodynamics-to-tarot'
-
-const ELEMENT_METADATA = {
-  Air: {
-    glow: 'agent-glow-air border-substance-air/30',
-    bg: 'bg-substance-air',
-    text: 'text-substance-air',
-    glowColor: 'rgba(185, 140, 214, 0.4)',
-  },
-  Water: {
-    glow: 'agent-glow-water border-essence-water/30',
-    bg: 'bg-essence-water',
-    text: 'text-essence-water',
-    glowColor: 'rgba(74, 163, 216, 0.4)',
-  },
-  Fire: {
-    glow: 'agent-glow-fire border-spirit-fire/30',
-    bg: 'bg-spirit-fire',
-    text: 'text-spirit-fire',
-    glowColor: 'rgba(224, 162, 58, 0.4)',
-  },
-  Earth: {
-    glow: 'agent-glow-earth border-matter-earth/30',
-    bg: 'bg-matter-earth',
-    text: 'text-matter-earth',
-    glowColor: 'rgba(95, 179, 122, 0.4)',
-  },
-}
+import { ELEMENT_METADATA } from '@/lib/element-metadata'
 
 const SUIT_METADATA: Record<string, { icon: string; color: string; border: string; text: string }> =
   {
