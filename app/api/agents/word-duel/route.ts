@@ -68,11 +68,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const agentId =
+      typeof body.agentId === 'string'
+        ? body.agentId
+        : typeof context === 'object' &&
+            context &&
+            'agentId' in context &&
+            typeof (context as any).agentId === 'string'
+          ? (context as any).agentId
+          : undefined
+
     const move = await chooseWordMove({
       planet: planet as Planet,
       rack: rack as string | Record<string, number>,
       candidates: candidates as Array<Candidate | string>,
       context: (context as DuelContext) || undefined,
+      agentId,
     })
 
     // Fire-and-forget telemetry — layered onto the agent duel family. Never let
@@ -101,23 +112,23 @@ async function persistWordDuel(
   planet: Planet,
   move: Awaited<ReturnType<typeof chooseWordMove>>
 ): Promise<void> {
-  // The AgentWordDuel model is added in prisma/schema.prisma; until the
-  // migration + client generation land, prisma.agentWordDuel is undefined.
-  // Guard so this is an inert no-op rather than a crash.
-  const client = (
-    prisma as unknown as { agentWordDuel?: { create: (a: unknown) => Promise<unknown> } }
-  ).agentWordDuel
-  if (!client) return
-
-  const str = (k: string): string | null =>
-    typeof body[k] === 'string' ? (body[k] as string) : null
-  const num = (k: string): number | null =>
-    typeof body[k] === 'number' && Number.isFinite(body[k]) ? (body[k] as number) : null
-  const ctx = (body.context && typeof body.context === 'object' ? body.context : null) as
-    | (DuelContext & Record<string, unknown>)
-    | null
-
   try {
+    // The AgentWordDuel model is added in prisma/schema.prisma; until the
+    // migration + client generation land, prisma.agentWordDuel is undefined.
+    // Guard so this is an inert no-op rather than a crash.
+    const client = (
+      prisma as unknown as { agentWordDuel?: { create: (a: unknown) => Promise<unknown> } }
+    ).agentWordDuel
+    if (!client) return
+
+    const str = (k: string): string | null =>
+      typeof body[k] === 'string' ? (body[k] as string) : null
+    const num = (k: string): number | null =>
+      typeof body[k] === 'number' && Number.isFinite(body[k]) ? (body[k] as number) : null
+    const ctx = (body.context && typeof body.context === 'object' ? body.context : null) as
+      | (DuelContext & Record<string, unknown>)
+      | null
+
     await client.create({
       data: {
         sessionId: str('sessionId') || 'desktop-word-duel',

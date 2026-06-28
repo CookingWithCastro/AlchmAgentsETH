@@ -8,30 +8,26 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Suit,
-  Planet,
-} from "./types";
-
+} from 'spacetimedb'
+import { Planet, Suit } from './types'
 
 export default __t.row({
-  cardId: __t.u64().primaryKey().name("card_id"),
+  cardId: __t.u64().primaryKey().name('card_id'),
   owner: __t.identity(),
   get suit() {
-    return Suit;
+    return Suit
   },
   rank: __t.u8(),
   health: __t.u16(),
   attack: __t.u16(),
   armour: __t.u16(),
-  cooldownMs: __t.u16().name("cooldown_ms"),
+  cooldownMs: __t.u16().name('cooldown_ms'),
   get sourceBody() {
-    return Planet.name("source_body");
+    return Planet.name('source_body')
   },
   inverted: __t.bool(),
-  isTrump: __t.bool().name("is_trump"),
+  isTrump: __t.bool().name('is_trump'),
   level: __t.u8(),
-  mintedAt: __t.timestamp().name("minted_at"),
+  mintedAt: __t.timestamp().name('minted_at'),
   letter: __t.u8(),
-});
+})

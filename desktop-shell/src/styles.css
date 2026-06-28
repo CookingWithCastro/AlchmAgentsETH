@@ -454,12 +454,25 @@ button {
   color: #f8fafc;
   background: linear-gradient(135deg, #6d28d9, #0f766e);
   font-weight: 900;
+  overflow: hidden;
 }
 
 .large-avatar {
   width: 48px;
   height: 48px;
   border-radius: 12px;
+}
+
+.image-avatar {
+  background: rgba(24, 24, 27, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.image-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .truncate {
@@ -902,6 +915,155 @@ button {
   color: #f8fafc;
   font-size: 22px;
   overflow-wrap: anywhere;
+}
+
+.web3-view {
+  max-width: 1280px;
+}
+
+.web3-header h1 {
+  max-width: 680px;
+}
+
+.web3-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.web3-kpi {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 120px;
+  padding: 14px;
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(7, 18, 24, 0.84), rgba(24, 14, 28, 0.78)), rgba(10, 7, 18, 0.82);
+}
+
+.web3-kpi .material-symbols-outlined {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(250, 204, 21, 0.22);
+  border-radius: 8px;
+  color: #fde68a;
+  background: rgba(120, 70, 10, 0.16);
+  font-size: 22px;
+}
+
+.web3-kpi small,
+.web3-feature-card small {
+  color: #a1a1aa;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.web3-kpi strong {
+  display: block;
+  margin-top: 4px;
+  color: #f8fafc;
+  font-size: 24px;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.web3-kpi p {
+  margin: 7px 0 0;
+  color: #a7f3d0;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.web3-hero-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 22px;
+  border: 1px solid rgba(250, 204, 21, 0.2);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(120, 70, 10, 0.2), rgba(12, 74, 110, 0.14)), rgba(8, 12, 20, 0.72);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+}
+
+.web3-hero-panel h2 {
+  max-width: 680px;
+  margin: 4px 0 0;
+  color: #f8fafc;
+  font-size: 26px;
+  line-height: 1.12;
+}
+
+.web3-hero-panel p {
+  max-width: 760px;
+  margin: 10px 0 0;
+  color: #d4d4d8;
+  line-height: 1.55;
+}
+
+.web3-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.web3-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.web3-feature-card {
+  display: grid;
+  gap: 14px;
+  min-height: 278px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.58), rgba(5, 7, 13, 0.66)), rgba(10, 7, 18, 0.78);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+}
+
+.web3-feature-head {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.web3-feature-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(45, 212, 191, 0.24);
+  border-radius: 8px;
+  color: #5eead4;
+  background: rgba(13, 148, 136, 0.12);
+  font-size: 24px;
+}
+
+.web3-feature-card h3 {
+  margin: 0;
+  color: #f8fafc;
+  font-size: 18px;
+  line-height: 1.16;
+  overflow-wrap: anywhere;
+}
+
+.web3-feature-card p {
+  margin: 0;
+  color: #cbd5e1;
+  line-height: 1.55;
 }
 
 .astrology-view {
@@ -2712,8 +2874,14 @@ button {
   .physics-vector-grid,
   .physics-equation-row,
   .physics-thermo-grid,
-  .physics-source-grid {
+  .physics-source-grid,
+  .web3-kpi-grid,
+  .web3-hero-panel {
     grid-template-columns: 1fr;
+  }
+
+  .web3-hero-actions {
+    justify-content: flex-start;
   }
 
   .astro-wheel {
@@ -2823,6 +2991,11 @@ button {
 
   .aspect-score {
     text-align: left;
+  }
+
+  .web3-kpi,
+  .web3-feature-head {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -4373,6 +4546,20 @@ tr.standings-row:hover {
   box-shadow:
     0 22px 60px rgba(0, 0, 0, 0.45),
     0 0 24px rgba(234, 179, 8, 0.15);
+}
+
+.agent-card.tier-private {
+  border-color: rgba(217, 79, 50, 0.28);
+  background:
+    linear-gradient(135deg, rgba(217, 79, 50, 0.1), rgba(250, 204, 21, 0.06)),
+    rgba(24, 24, 27, 0.72);
+}
+
+.agent-card.tier-private:hover {
+  border-color: rgba(217, 79, 50, 0.52);
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(217, 79, 50, 0.16);
 }
 
 /* Avatar ring on hover */

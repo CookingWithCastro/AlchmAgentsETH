@@ -18,11 +18,13 @@
  * The model call is injectable (`deps.generateMove`) so tests run offline.
  */
 
-import { generateObject } from 'ai'
+import { generateText, generateObject } from 'ai'
 import { z } from 'zod'
-import { gatewayGroq, isGatewayEnabled } from '@/lib/models/gateway'
+import { gatewayGroq, gatewayGoogle, gatewayOpenAI, isGatewayEnabled } from '@/lib/models/gateway'
 import { GROQ } from '@/lib/models/registry'
 import { type Planet } from '../planetary-traits'
+import { buildAgentContext } from '../persona/build-agent-context'
+import type { CraftedAgent } from '@/lib/agent-types'
 import {
   canSpell,
   normalizeRack,
@@ -69,6 +71,7 @@ export interface WordDuelInput {
   /** Legal candidate words from the caller's solver (string or {word,score}). */
   candidates: Array<Candidate | string>
   context?: DuelContext
+  agentId?: string
 }
 
 export interface GenerateMoveArgs {
@@ -79,6 +82,7 @@ export interface GenerateMoveArgs {
   /** Persona-ranked candidate menu shown to the model. */
   candidates: Candidate[]
   modelId: string
+  agent?: CraftedAgent
 }
 
 export type GenerateMoveFn = (
@@ -135,14 +139,25 @@ export async function chooseWordMove(
   const top = ranked[0]
   const menu = ranked.slice(0, MENU_SIZE)
   const legalWords = new Set(legal.map(c => c.word))
-  const modelId = strategy.sharp ? GROQ.LLAMA_70B : GROQ.LLAMA_8B
+  const modelId = GROQ.LLAMA_70B
   const generate = deps.generateMove ?? groqGenerateMove
   const timeoutMs =
     deps.timeoutMs ?? (Number(process.env.WORD_DUEL_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS)
 
+  const agentCtx = input.agentId ? buildAgentContext(input.agentId) : null
+  const agent = agentCtx?.agent || undefined
+
   try {
     const result = await withTimeout(
-      generate({ planet, strategy, rackString, context: input.context, candidates: menu, modelId }),
+      generate({
+        planet,
+        strategy,
+        rackString,
+        context: input.context,
+        candidates: menu,
+        modelId,
+        agent,
+      }),
       timeoutMs
     )
     if (result) {
@@ -159,7 +174,8 @@ export async function chooseWordMove(
         }
       }
     }
-  } catch {
+  } catch (err) {
+    console.error('[chooseWordMove] Error calling LLM:', err)
     // Timeout or provider error — fall through to the persona-greedy fallback.
   }
 
@@ -232,17 +248,40 @@ function formatContext(ctx: DuelContext): string {
   return parts.join(', ') || 'a fresh duel begins'
 }
 
-function buildSystemPrompt(s: PlanetStrategy): string {
-  return [
+function buildSystemPrompt(s: PlanetStrategy, agent?: CraftedAgent): string {
+  const parts = [
     `You are ${s.planet}, one of the ten planetary spheres, dueling with Words of Power in the Lettered Arcana.`,
-    `Temperament: ${s.voice}`,
-    `Duel directive: ${s.directive}`,
+  ]
+  if (agent) {
+    parts.push(
+      `For this duel, you are channeling the specific personality and voice of the historical figure: ${agent.name} (${agent.title || ''}).`,
+      `Your communication style should blend ${s.planet}'s traits with ${agent.name}'s voice and perspective.`,
+      `Channeled figure details:`,
+      `Essence: ${agent.personality?.core?.essence || agent.id}`,
+      agent.personality?.core?.expression ? `Expression: ${agent.personality.core.expression}` : '',
+      agent.personality?.core?.emotion ? `Emotion: ${agent.personality.core.emotion}` : '',
+      agent.quotes && agent.quotes.length > 0
+        ? `Representative Quotes:\n${agent.quotes.map(q => `"${q}"`).join('\n')}`
+        : '',
+      agent.coreBeliefs && agent.coreBeliefs.length > 0
+        ? `Beliefs:\n${agent.coreBeliefs.map(b => `- ${b}`).join('\n')}`
+        : ''
+    )
+  } else {
+    parts.push(`Temperament: ${s.voice}`, `Duel directive: ${s.directive}`)
+  }
+
+  parts.push(
     '',
     'Rules:',
     '1. Choose exactly ONE word, copied verbatim from the candidate list you are given.',
     '2. Reply with that word in UPPERCASE and a single in-character sentence of rationale.',
     '3. Stay fully in character. Never mention letters, point values, Scrabble, dictionaries, racks, or that you are an AI.',
-  ].join('\n')
+    agent
+      ? `4. Ensure the rationale sounds authentic to ${agent.name} while expressing the power of the chosen word.`
+      : ''
+  )
+  return parts.filter(Boolean).join('\n')
 }
 
 function buildUserPrompt(args: GenerateMoveArgs): string {
@@ -264,15 +303,68 @@ function buildUserPrompt(args: GenerateMoveArgs): string {
  * errors, which chooseWordMove catches.
  */
 const groqGenerateMove: GenerateMoveFn = async args => {
-  if (!isGatewayEnabled && !process.env.GROQ_API_KEY) return null
+  // Try Groq first
+  if (isGatewayEnabled || process.env.GROQ_API_KEY) {
+    try {
+      const gatewayId = isGatewayEnabled ? `groq/${args.modelId}` : args.modelId
+      const { text } = await generateText({
+        model: gatewayGroq(gatewayId) as any,
+        responseFormat: { type: 'json_object' },
+        system: buildSystemPrompt(args.strategy, args.agent),
+        prompt:
+          buildUserPrompt(args) +
+          `\n\nRespond with a JSON object matching this schema exactly: { "word": "CHOSEN_WORD", "rationale": "One-sentence explanation" }`,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+      } as any)
+      const parsed = JSON.parse(text)
+      const validated = MoveSchema.parse(parsed)
+      return { word: validated.word, rationale: validated.rationale }
+    } catch (e) {
+      console.warn('[word-duel] Groq failed, trying Gemini...', e)
+    }
+  }
 
-  const gatewayId = isGatewayEnabled ? `groq/${args.modelId}` : args.modelId
-  const { object } = await generateObject({
-    model: gatewayGroq(gatewayId) as any,
-    schema: MoveSchema,
-    system: buildSystemPrompt(args.strategy),
-    prompt: buildUserPrompt(args),
-    maxOutputTokens: MAX_OUTPUT_TOKENS,
-  })
-  return { word: object.word, rationale: object.rationale }
+  // Fallback 1: Gemini
+  if (isGatewayEnabled || process.env.GOOGLE_GENERATIVE_AI_API_KEY || process.env.GEMINI_API_KEY) {
+    try {
+      const modelId = isGatewayEnabled ? 'google/gemini-2.0-flash' : 'gemini-2.0-flash'
+      const { text } = await generateText({
+        model: gatewayGoogle(modelId) as any,
+        responseFormat: { type: 'json_object' },
+        system: buildSystemPrompt(args.strategy, args.agent),
+        prompt:
+          buildUserPrompt(args) +
+          `\n\nRespond with a JSON object matching this schema exactly: { "word": "CHOSEN_WORD", "rationale": "One-sentence explanation" }`,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+      } as any)
+      const parsed = JSON.parse(text)
+      const validated = MoveSchema.parse(parsed)
+      return { word: validated.word, rationale: validated.rationale }
+    } catch (e) {
+      console.warn('[word-duel] Gemini failed, trying OpenAI...', e)
+    }
+  }
+
+  // Fallback 2: OpenAI (gpt-4o-mini)
+  if (isGatewayEnabled || process.env.OPENAI_API_KEY) {
+    try {
+      const modelId = isGatewayEnabled ? 'openai/gpt-4o-mini' : 'gpt-4o-mini'
+      const { text } = await generateText({
+        model: gatewayOpenAI(modelId) as any,
+        responseFormat: { type: 'json_object' },
+        system: buildSystemPrompt(args.strategy, args.agent),
+        prompt:
+          buildUserPrompt(args) +
+          `\n\nRespond with a JSON object matching this schema exactly: { "word": "CHOSEN_WORD", "rationale": "One-sentence explanation" }`,
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+      } as any)
+      const parsed = JSON.parse(text)
+      const validated = MoveSchema.parse(parsed)
+      return { word: validated.word, rationale: validated.rationale }
+    } catch (e) {
+      console.warn('[word-duel] OpenAI failed.', e)
+    }
+  }
+
+  return null
 }

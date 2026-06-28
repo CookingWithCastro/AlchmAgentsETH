@@ -94,3 +94,12 @@ src-tauri/icons/icon_rgb.png
 src-tauri/bin/orchestrator-*
 src-tauri/bin/alchm-mcp-*
 src-tauri/bin/pa-mcp-*
+
+# Local-only/private desktop agents. These are device-local catalog entries
+# and assets that must not be published with the web app or pushed to GitHub.
+public/private-agents/
+desktop-shell/dist/private-agents/
+lib/agents/private-local/
+desktop-shell/private-agents*.json
+public/avatars/_backup-*/
+desktop-shell/dist/avatars/_backup-*/

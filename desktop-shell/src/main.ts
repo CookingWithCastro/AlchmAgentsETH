@@ -16,6 +16,7 @@ type View =
   | 'chat'
   | 'astrology'
   | 'physics'
+  | 'web3'
   | 'agents'
   | 'stone'
   | 'account'
@@ -56,6 +57,8 @@ interface AgentTemplate {
   tier: AgentTier
   modelName: string
   initials: string
+  avatarUrl?: string
+  localOnly?: boolean
   domains: string[]
   quote: string
   promptSeed: string
@@ -65,7 +68,13 @@ interface AgentTemplate {
 
 interface LocalAgent extends AgentTemplate {
   addedAt: string
-  source: 'app-guide' | 'web-catalog' | 'web-unlock' | 'deep-link' | 'philosophers-stone'
+  source:
+    | 'app-guide'
+    | 'web-catalog'
+    | 'web-unlock'
+    | 'deep-link'
+    | 'philosophers-stone'
+    | 'private-local'
 }
 
 interface StoneBlueprint {
@@ -143,6 +152,15 @@ interface AgentTurnResponse {
 interface AgentTurnContext {
   groupAgents: LocalAgent[]
   priorResponses: AgentTurnResponse[]
+}
+
+interface PrivateAgentAlchmContext {
+  tools: string[]
+  errors: string[]
+  ingredients: string[]
+  liveSky?: unknown
+  ingredientScan?: unknown
+  recipeCandidates?: unknown
 }
 
 interface LedgerEntry {
@@ -667,6 +685,7 @@ const VIEW_IDS: View[] = [
   'chat',
   'astrology',
   'physics',
+  'web3',
   'agents',
   'stone',
   'account',
@@ -686,7 +705,9 @@ const DEFAULT_ACCOUNT: AccountSettings = {
   kitchenUrl: 'https://alchm.kitchen',
 }
 const DEFAULT_SITE_ACCOUNTS = createDefaultSiteAccounts()
-const AGENT_LIBRARY: AgentTemplate[] = DEMO_AGENTS.map(createAgentTemplate)
+let AGENT_LIBRARY: AgentTemplate[] = DEMO_AGENTS.map(createAgentTemplate)
+const PRIVATE_AGENT_CATALOG_URL = './private-agents/agents.json'
+const PRIVATE_AGENT_MCP_TIMEOUT_MS = 8_000
 const ASTROLOGY_SIGN_MARKS = [
   'ARI',
   'TAU',
@@ -868,6 +889,89 @@ function createAgentTemplate(agent: CraftedAgent): AgentTemplate {
     quote: firstAgentLine(agent),
     promptSeed: buildWebsitePromptSeed(agent),
     websiteAgent: agent,
+  }
+}
+
+function normalizePrivateAgentTemplate(raw: any): AgentTemplate | null {
+  if (!raw || typeof raw !== 'object') return null
+
+  const id = String(raw.id || '').trim()
+  const name = String(raw.name || '').trim()
+  if (!id || !name) return null
+
+  const element = normalizeElement(raw.element)
+  const tier = raw.tier === 'premium' ? 'premium' : 'base'
+
+  return {
+    id,
+    name,
+    title: String(raw.title || 'Private Desktop Agent'),
+    element,
+    tier,
+    modelName: String(raw.modelName || modelNameForElement(element)),
+    initials: String(raw.initials || initialsForName(name)).slice(0, 3),
+    avatarUrl: typeof raw.avatarUrl === 'string' ? raw.avatarUrl : undefined,
+    localOnly: true,
+    domains: Array.isArray(raw.domains)
+      ? raw.domains
+          .map((domain: unknown) => String(domain))
+          .filter(Boolean)
+          .slice(0, 6)
+      : ['Private local agent'],
+    quote: String(raw.quote || 'A private agent available only on this desktop.'),
+    promptSeed: String(
+      raw.promptSeed ||
+        [
+          `You are ${name}, ${raw.title || 'a private desktop agent'}.`,
+          'You are available only inside this local desktop app.',
+          'Never claim to be synced to the public web catalog.',
+        ].join('\n')
+    ),
+  }
+}
+
+function mergePrivateAgentTemplates(templates: AgentTemplate[]) {
+  if (!templates.length) return false
+
+  let changed = false
+  for (const template of templates) {
+    const existingIndex = AGENT_LIBRARY.findIndex(agent => agent.id === template.id)
+    if (existingIndex >= 0) {
+      AGENT_LIBRARY[existingIndex] = template
+    } else {
+      AGENT_LIBRARY.push(template)
+    }
+    changed = true
+  }
+
+  if (!changed) return false
+
+  state.roster = hydrateRoster(state.roster)
+  state.selectedChatAgentIds = normalizeSelectedChatAgentIds(
+    state.selectedChatAgentIds,
+    state.roster,
+    state.activeAgentId
+  )
+  state.activeAgentId = state.selectedChatAgentIds[0] ?? state.roster[0]?.id ?? null
+  return true
+}
+
+async function loadPrivateDesktopAgents() {
+  try {
+    const response = await fetch(PRIVATE_AGENT_CATALOG_URL, { cache: 'no-store' })
+    if (!response.ok) return
+
+    const catalog = await response.json()
+    const templates = Array.isArray(catalog?.agents)
+      ? catalog.agents.map(normalizePrivateAgentTemplate).filter(Boolean)
+      : []
+
+    if (mergePrivateAgentTemplates(templates as AgentTemplate[])) {
+      saveState()
+      render()
+    }
+  } catch (error) {
+    console.warn('Private desktop agent catalog unavailable:', error)
   }
 }
 
@@ -1219,6 +1323,7 @@ function renderTab(view: View) {
     chat: 'Chat',
     astrology: 'Astrology',
     physics: 'Physics',
+    web3: 'Web3',
     agents: 'Agents',
     stone: "Philosopher's Stone",
     account: 'Account',
@@ -1262,6 +1367,17 @@ function renderSidebar() {
           ${renderCoin('Essence', state.balances.essence)}
           ${renderCoin('Matter', state.balances.matter)}
           ${renderCoin('Substance', state.balances.substance)}
+        </div>
+      </section>
+      <section class="sidebar-section">
+        <div class="eyebrow">Web3</div>
+        <div class="panel compact-panel">
+          <strong>${escapeHtml(web3SidebarTitle())}</strong>
+          <p class="muted">${escapeHtml(web3SidebarDetail())}</p>
+          <div class="button-row">
+            <button class="secondary-button" data-action="view" data-view="web3">Open</button>
+            <button class="secondary-button" data-action="open-web3-url" data-url="${escapeHtml(web3RouteUrl('/pentacles'))}">Stake</button>
+          </div>
         </div>
       </section>
       <section class="sidebar-section">
@@ -1343,7 +1459,7 @@ function renderRosterButton(agent: LocalAgent, selectedAgentIds: string[]) {
       data-action="select-agent"
       data-agent-id="${agent.id}"
     >
-      <span class="avatar">${escapeHtml(agent.initials)}</span>
+      ${renderAgentAvatar(agent)}
       <span class="roster-button-body">
         <strong class="truncate">${escapeHtml(agent.name)}</strong>
         <small class="truncate">${escapeHtml(agent.title)}</small>
@@ -1359,6 +1475,8 @@ function renderActiveView() {
       return renderAstrologyView()
     case 'physics':
       return renderPhysicsView()
+    case 'web3':
+      return renderWeb3View()
     case 'agents':
       return renderAgentsView()
     case 'stone':
@@ -1452,7 +1570,7 @@ function renderChatHeading(agents: LocalAgent[]) {
 
     return `
       <div class="agent-heading">
-        <span class="avatar large-avatar">${escapeHtml(agent.initials)}</span>
+        ${renderAgentAvatar(agent, 'large-avatar')}
         <div>
           <div class="eyebrow">${escapeHtml(agentEyebrow(agent))}</div>
           <h1>${escapeHtml(agent.name)}</h1>
@@ -1467,7 +1585,7 @@ function renderChatHeading(agents: LocalAgent[]) {
       <div class="avatar-stack" aria-hidden="true">
         ${agents
           .slice(0, 4)
-          .map(agent => `<span class="avatar">${escapeHtml(agent.initials)}</span>`)
+          .map(agent => renderAgentAvatar(agent))
           .join('')}
       </div>
       <div>
@@ -1481,6 +1599,7 @@ function renderChatHeading(agents: LocalAgent[]) {
 
 function agentEyebrow(agent: LocalAgent) {
   if (agent.source === 'app-guide') return 'App guide'
+  if (agent.localOnly || agent.source === 'private-local') return 'Private desktop agent'
   if (agent.source === 'philosophers-stone') return "Philosopher's Stone agent"
   return agent.tier === 'premium' ? 'Premium agent' : 'Synced agent'
 }
@@ -1656,7 +1775,7 @@ function renderChatAgentOption(agent: LocalAgent, isSelected: boolean) {
         data-agent-id="${agent.id}"
         ${isSelected ? 'checked' : ''}
       />
-      <span class="avatar mini-avatar">${escapeHtml(agent.initials)}</span>
+      ${renderAgentAvatar(agent, 'mini-avatar')}
       <span>
         <strong class="truncate">${escapeHtml(agent.name)}</strong>
         <small class="truncate">${escapeHtml(agentEyebrow(agent))}</small>
@@ -3569,6 +3688,196 @@ function physicsAccentFor(key: string) {
   return accents[key] || '#e5e7eb'
 }
 
+function renderWeb3View() {
+  return `
+    <section class="view web3-view">
+      <header class="view-header web3-header">
+        <div>
+          <div class="eyebrow">Agent Economy</div>
+          <h1>Web3 control surface</h1>
+          <p>
+            Wallet identity, Pentacle staking, ERC-8004 reputation, ENS agent records, A2A/x402
+            payments, Walrus memory, and World ID for the agent economy.
+          </p>
+        </div>
+        <div class="button-row">
+          <button class="secondary-button" data-action="refresh-accounts">Sync Accounts</button>
+          <button class="primary-button" data-action="link-account-web">Connect Wallet</button>
+        </div>
+      </header>
+
+      <div class="web3-kpi-grid">
+        ${renderWeb3Kpi('Wallet', web3IdentityTitle(), web3IdentityDetail(), 'account_balance_wallet')}
+        ${renderWeb3Kpi('Network', canCallNetwork() ? 'Online' : 'Offline', canCallNetwork() ? 'Desktop can open cloud Web3 routes.' : 'Airplane mode blocks cloud sync.', 'public')}
+        ${renderWeb3Kpi('Registry', 'ERC-8004', 'Payable agent discovery and reputation.', 'hub')}
+        ${renderWeb3Kpi('Settlement', 'x402 / Arc', 'A2A requests settle through the backend gate.', 'toll')}
+      </div>
+
+      <section class="web3-hero-panel">
+        <div>
+          <div class="eyebrow">Circle Arc Star Vaults</div>
+          <h2>Pentacle staking is one click away from the native app.</h2>
+          <p>
+            Live star zones, Circle Arc USDC staking, portfolio review, and wallet setup share the
+            linked desktop identity.
+          </p>
+        </div>
+        <div class="web3-hero-actions">
+          ${renderWeb3Action('Open Pentacles', web3RouteUrl('/pentacles'), 'primary')}
+          ${renderWeb3Action('Portfolio', web3RouteUrl('/pentacles/portfolio'), 'secondary')}
+          ${renderWeb3Action('Wallet Setup', web3RouteUrl('/pentacles/connect'), 'secondary')}
+        </div>
+      </section>
+
+      <div class="web3-feature-grid">
+        ${renderWeb3Feature({
+          icon: 'account_tree',
+          title: 'ENS and NameStone',
+          status: 'Agent records',
+          detail:
+            'Gasless alchmagents.eth subnames carry A2A, MCP, web, memory, wallet, registration, and human-verification records.',
+          tags: ['ENSIP-25/26', 'NameStone', 'agent-endpoint'],
+          actions: [
+            { label: 'Agents Home', url: web3RouteUrl('/') },
+            { label: 'Agent Catalog', url: web3RouteUrl('/planetary-agents') },
+          ],
+        })}
+        ${renderWeb3Feature({
+          icon: 'hub',
+          title: 'A2A plus x402',
+          status: 'Payable agents',
+          detail:
+            'Agent Cards, message/send, streaming calls, and x402-gated settlement through the FastAPI backend.',
+          tags: ['A2A', 'x402', 'SSE'],
+          actions: [
+            {
+              label: 'Plato Card',
+              url: `${agentsBackendBase()}/a2a/plato/.well-known/agent-card.json`,
+            },
+            { label: 'Backend Health', url: `${agentsBackendBase()}/api/providers/health` },
+          ],
+        })}
+        ${renderWeb3Feature({
+          icon: 'verified',
+          title: 'ERC-8004 registry',
+          status: 'Reputation',
+          detail:
+            'BigQuery-backed reputation signals for trustworthy, x402-payable agent discovery.',
+          tags: ['BigQuery', 'reputation', 'Arc'],
+          actions: [{ label: 'Leaderboard', url: web3RouteUrl('/erc8004') }],
+        })}
+        ${renderWeb3Feature({
+          icon: 'memory',
+          title: 'Walrus memory',
+          status: 'Persona snapshots',
+          detail:
+            'Encrypted MemWal snapshots are part of the agent record, with blob IDs written back into ENS memory metadata.',
+          tags: ['Walrus', 'MemWal', 'agent-memory'],
+          actions: [{ label: 'Agents Home', url: web3RouteUrl('/') }],
+        })}
+        ${renderWeb3Feature({
+          icon: 'shield',
+          title: 'World ID',
+          status: 'Human verified',
+          detail:
+            'World ID proof-of-personhood gates human verification badges that can be surfaced through ENS and A2A metadata.',
+          tags: ['World ID', 'AgentKit', 'human-verified'],
+          actions: [{ label: 'Profile', url: web3RouteUrl('/profile?desktopLink=true') }],
+        })}
+        ${renderWeb3Feature({
+          icon: 'swap_horiz',
+          title: 'Onramp and privacy',
+          status: 'Payment tools',
+          detail:
+            '1inch onramp and Unlink payer flows stay web-hosted, while the desktop keeps the operator account and agent roster in sync.',
+          tags: ['1inch', 'Unlink', 'wallet'],
+          actions: [
+            { label: 'Profile', url: web3RouteUrl('/profile') },
+            { label: 'Yield Hub', url: web3RouteUrl('/yield') },
+          ],
+        })}
+      </div>
+    </section>
+  `
+}
+
+function renderWeb3Kpi(label: string, value: string, detail: string, icon: string) {
+  return `
+    <article class="web3-kpi">
+      <span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(icon)}</span>
+      <div>
+        <small>${escapeHtml(label)}</small>
+        <strong>${escapeHtml(value)}</strong>
+        <p>${escapeHtml(detail)}</p>
+      </div>
+    </article>
+  `
+}
+
+function renderWeb3Feature(feature: {
+  icon: string
+  title: string
+  status: string
+  detail: string
+  tags: string[]
+  actions: Array<{ label: string; url: string }>
+}) {
+  return `
+    <article class="web3-feature-card">
+      <div class="web3-feature-head">
+        <span class="material-symbols-outlined web3-feature-icon" aria-hidden="true">${escapeHtml(feature.icon)}</span>
+        <div>
+          <h3>${escapeHtml(feature.title)}</h3>
+          <small>${escapeHtml(feature.status)}</small>
+        </div>
+      </div>
+      <p>${escapeHtml(feature.detail)}</p>
+      <div class="tag-row">
+        ${feature.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+      </div>
+      <div class="button-row push-end">
+        ${feature.actions
+          .map(action => renderWeb3Action(action.label, action.url, 'secondary'))
+          .join('')}
+      </div>
+    </article>
+  `
+}
+
+function renderWeb3Action(label: string, url: string, variant: 'primary' | 'secondary') {
+  const className = variant === 'primary' ? 'primary-button' : 'secondary-button'
+  return `
+    <button class="${className}" data-action="open-web3-url" data-url="${escapeHtml(url)}">
+      ${escapeHtml(label)}
+    </button>
+  `
+}
+
+function web3IdentityTitle() {
+  const linked =
+    state.account.plan === 'Linked Companion' ||
+    state.siteAccounts.agents.status === 'linked' ||
+    state.siteAccounts.kitchen.status === 'linked'
+  return linked ? 'Linked' : 'Local'
+}
+
+function web3IdentityDetail() {
+  if (web3IdentityTitle() === 'Linked') {
+    return state.account.email || state.account.displayName || 'Account sync is active.'
+  }
+  return 'Connect on the web route to sync wallet, profile, ESMS, and staking state.'
+}
+
+function web3SidebarTitle() {
+  return `${web3IdentityTitle()} wallet layer`
+}
+
+function web3SidebarDetail() {
+  return canCallNetwork()
+    ? 'Pentacles, ERC-8004, ENS, x402, Walrus, World ID.'
+    : 'Cloud Web3 routes are paused by airplane mode.'
+}
+
 function renderAgentsView() {
   const query = (state.agentSearchQuery || '').toLowerCase().trim()
   const filteredAgents = AGENT_LIBRARY.filter(agent => {
@@ -3586,10 +3895,11 @@ function renderAgentsView() {
       <header class="view-header">
         <div>
           <div class="eyebrow">Agents Web Catalog</div>
-          <h1>Send website agents to desktop</h1>
+          <h1>Send agents to desktop</h1>
           <p>
-            This companion uses the same Alchm Agents definitions as the web app. Purchases and
-            unlock decisions belong on the main web app; agents sent here appear in desktop chat.
+            This companion uses the same Alchm Agents definitions as the web app, plus any
+            private agents stored only on this device. Purchases and unlock decisions belong on
+            the main web app; private agents never open a web route.
           </p>
         </div>
         <div class="button-row">
@@ -3628,9 +3938,9 @@ function renderAgentCard(template: AgentTemplate) {
   const lvl = agentLevel(template.id)
 
   return `
-    <article class="agent-card element-${template.element} ${template.tier === 'premium' ? 'tier-premium' : ''}">
+    <article class="agent-card element-${template.element} ${template.tier === 'premium' ? 'tier-premium' : ''} ${template.localOnly ? 'tier-private' : ''}">
       <div class="agent-card-head">
-        <span class="avatar large-avatar">${escapeHtml(template.initials)}</span>
+        ${renderAgentAvatar(template, 'large-avatar')}
         <div>
           <h3>${escapeHtml(template.name)}</h3>
           <p class="muted">${escapeHtml(template.title)}</p>
@@ -3639,7 +3949,7 @@ function renderAgentCard(template: AgentTemplate) {
       </div>
       <p class="agent-quote">${escapeHtml(template.quote)}</p>
       <div class="tag-row">
-        <span class="tag">${template.tier === 'premium' ? 'Premium web unlock' : 'Web catalog'}</span>
+        <span class="tag">${template.localOnly ? 'Private desktop' : template.tier === 'premium' ? 'Premium web unlock' : 'Web catalog'}</span>
         <span class="tag">${escapeHtml(template.element)}</span>
         ${template.domains.map(domain => `<span class="tag">${escapeHtml(domain)}</span>`).join('')}
       </div>
@@ -3649,9 +3959,13 @@ function renderAgentCard(template: AgentTemplate) {
             ? `<button class="secondary-button" data-action="open-chat" data-agent-id="${template.id}">Open Chat</button>`
             : `<button class="primary-button" data-action="add-agent" data-agent-id="${template.id}">Add to Desktop</button>`
         }
-        <button class="secondary-button" data-action="open-agent-web" data-agent-id="${template.id}">
-          Web App
-        </button>
+        ${
+          template.localOnly
+            ? ''
+            : `<button class="secondary-button" data-action="open-agent-web" data-agent-id="${template.id}">
+                Web App
+              </button>`
+        }
       </div>
     </article>
   `
@@ -3867,6 +4181,7 @@ function renderAccountView() {
         </div>
         <div class="button-row">
           <button class="secondary-button" data-action="refresh-accounts">Sync Both Accounts</button>
+          <button class="secondary-button" data-action="view" data-view="web3">Web3 Console</button>
         </div>
       </header>
 
@@ -4048,6 +4363,8 @@ function renderDiagnosticsView() {
       <div class="diag-grid">
         ${renderMetric('Frontend source', 'desktop-shell/dist')}
         ${renderMetric('Main Sidecar API', state.runtime.sidecar)}
+        ${renderMetric('Web3 network', canCallNetwork() ? 'enabled' : 'airplane')}
+        ${renderMetric('A2A/x402 backend', agentsBackendBase().replace(/^https?:\/\//, ''))}
         ${renderMetric(
           'Alchm MCP Stdio',
           state.runtime.ipcNonce ? state.runtime.alchmMcpStatus : 'browser preview'
@@ -4199,6 +4516,7 @@ function addAgent(
 ) {
   const template = AGENT_LIBRARY.find(agent => agent.id === agentId)
   if (!template) return
+  const resolvedSource: LocalAgent['source'] = template.localOnly ? 'private-local' : source
   if (state.roster.some(agent => agent.id === template.id)) {
     setSingleChatAgent(template.id)
     saveState()
@@ -4208,12 +4526,18 @@ function addAgent(
 
   const syncedAgent = { ...template, tier: tierOverride || template.tier }
   addLedger(
-    source === 'web-unlock' || source === 'deep-link' ? 'Agent Sent From Web' : 'Agent Added',
-    `${syncedAgent.name} was added to desktop companion chat.`,
+    resolvedSource === 'private-local'
+      ? 'Private Agent Added'
+      : resolvedSource === 'web-unlock' || resolvedSource === 'deep-link'
+        ? 'Agent Sent From Web'
+        : 'Agent Added',
+    `${syncedAgent.name} was added to desktop companion chat${
+      resolvedSource === 'private-local' ? ' as a private local agent' : ''
+    }.`,
     'No charge'
   )
 
-  state.roster.push({ ...syncedAgent, addedAt: new Date().toISOString(), source })
+  state.roster.push({ ...syncedAgent, addedAt: new Date().toISOString(), source: resolvedSource })
   setSingleChatAgent(syncedAgent.id)
   setNotice(`${syncedAgent.name} added to Alchm Desktop.`)
   saveState()
@@ -4639,6 +4963,247 @@ function removeAgent(agentId: string) {
   render()
 }
 
+async function buildPrivateAgentAlchmContext(
+  agent: LocalAgent,
+  userMessage: string
+): Promise<PrivateAgentAlchmContext | null> {
+  if (!agent.localOnly || !invokeCommand) return null
+
+  if (alchmMcpClient.getSnapshot().status !== 'online') {
+    try {
+      await withTimeout(
+        alchmMcpClient.start(),
+        10_000,
+        'Alchm MCP did not become ready for private agent chat.'
+      )
+    } catch (error) {
+      console.warn(`[Private Alchm MCP] Unable to start for ${agent.name}:`, error)
+    }
+  }
+
+  if (alchmMcpClient.getSnapshot().status !== 'online') return null
+
+  const context: PrivateAgentAlchmContext = {
+    tools: [],
+    errors: [],
+    ingredients: extractCulinaryIngredients(userMessage),
+  }
+
+  const callTool = async <T>(name: string, args: Record<string, unknown> = {}) => {
+    const result = await withTimeout(
+      alchmMcpClient.call('tools/call', {
+        name,
+        arguments: {
+          ...args,
+          _meta: {
+            apiKey: state.account.apiKey || 'dev-desktop-token',
+            caller: 'alchm-desktop-private-agent',
+            agentId: agent.id,
+          },
+        },
+      }),
+      PRIVATE_AGENT_MCP_TIMEOUT_MS,
+      `${name} timed out.`
+    )
+    const parsed = parseMcpToolJson<T>(result)
+    if (!parsed) throw new Error(`${name} returned an empty MCP payload.`)
+    context.tools.push(name)
+    return parsed
+  }
+
+  try {
+    context.liveSky = await callTool('get_live_sky_transits', {
+      latitude: 40.7128,
+      longitude: -74.006,
+    })
+  } catch (error) {
+    context.errors.push(`get_live_sky_transits: ${errorMessage(error)}`)
+  }
+
+  if (context.ingredients.length) {
+    try {
+      context.ingredientScan = await callTool('alchemize_ingredients', {
+        ingredients: context.ingredients,
+      })
+    } catch (error) {
+      context.errors.push(`alchemize_ingredients: ${errorMessage(error)}`)
+    }
+  }
+
+  if (shouldFetchPrivateRecipeCandidates(userMessage, context.ingredients)) {
+    try {
+      const dominantElement = findFirstStringByKeys(context.liveSky, [
+        'dominantElement',
+        'dominant_element',
+        'element',
+      ])
+      const recipeArgs: Record<string, unknown> = {
+        prompt: userMessage.slice(0, 280),
+      }
+      if (dominantElement) recipeArgs.dominantElement = dominantElement
+
+      context.recipeCandidates = await callTool('generate_cosmic_recipe', {
+        ...recipeArgs,
+      })
+    } catch (error) {
+      context.errors.push(`generate_cosmic_recipe: ${errorMessage(error)}`)
+    }
+  }
+
+  return context.tools.length ? context : null
+}
+
+function extractCulinaryIngredients(userMessage: string) {
+  const knownIngredients = [
+    'almond',
+    'anchovy',
+    'apple',
+    'basil',
+    'beet',
+    'butter',
+    'carrot',
+    'cheese',
+    'chocolate',
+    'clam',
+    'cocoa',
+    'coffee',
+    'cream',
+    'egg',
+    'fig',
+    'garlic',
+    'ginger',
+    'honey',
+    'honeydew',
+    'lemon',
+    'lime',
+    'melon',
+    'miso',
+    'mushroom',
+    'olive',
+    'onion',
+    'orange',
+    'oyster',
+    'pineapple',
+    'pepper',
+    'potato',
+    'rice',
+    'saffron',
+    'salt',
+    'seaweed',
+    'shrimp',
+    'tomato',
+    'truffle',
+    'vanilla',
+    'vinegar',
+    'yogurt',
+  ]
+  const lower = userMessage.toLowerCase()
+  const found = knownIngredients
+    .filter(ingredient => new RegExp(`\\b${escapeRegExp(ingredient)}s?\\b`, 'i').test(lower))
+    .sort((a, b) => lower.indexOf(a) - lower.indexOf(b))
+  const ingredientPhrase = userMessage.match(
+    /\b(?:with|using|from|ingredients?|cook|cooking)\b[:\s]+([^.?]+)/i
+  )?.[1]
+  const phraseIngredients = ingredientPhrase
+    ? ingredientPhrase
+        .split(/,|\band\b|\bplus\b|\bwith\b/i)
+        .map(part =>
+          part
+            .replace(/[^a-zA-Z\s-]/g, '')
+            .replace(/\b(?:cuttings?|peels?|pieces?|scraps?|trimmings?)\b/gi, '')
+            .trim()
+            .toLowerCase()
+        )
+        .filter(part => part.length > 2 && part.length < 32)
+        .filter(part => !hasAny(part, ['idea', 'recipe', 'dish', 'private', 'desktop', 'culinary']))
+    : []
+
+  return [...new Set([...found, ...phraseIngredients])].slice(0, 8)
+}
+
+function shouldFetchPrivateRecipeCandidates(userMessage: string, ingredients: string[]) {
+  const lower = userMessage.toLowerCase()
+  return (
+    ingredients.length > 0 ||
+    hasAny(lower, [
+      'recipe',
+      'cook',
+      'cooking',
+      'culinary',
+      'dish',
+      'dinner',
+      'eat',
+      'food',
+      'ingredient',
+      'kitchen',
+      'meal',
+      'menu',
+      'plate',
+      'spherification',
+      'tapa',
+    ])
+  )
+}
+
+function formatPrivateAgentAlchmContext(context: PrivateAgentAlchmContext | null) {
+  if (!context?.tools.length) return ''
+
+  const sections = [
+    'Alchm Kitchen MCP context for this private desktop agent:',
+    `Tools used: ${context.tools.join(', ')}`,
+    context.ingredients.length ? `Ingredient candidates: ${context.ingredients.join(', ')}` : '',
+    context.liveSky ? `Live sky JSON: ${truncateJson(context.liveSky, 1400)}` : '',
+    context.ingredientScan
+      ? `Ingredient alchemy JSON: ${truncateJson(context.ingredientScan, 1400)}`
+      : '',
+    context.recipeCandidates
+      ? `Recipe candidates JSON: ${truncateJson(context.recipeCandidates, 1800)}`
+      : '',
+  ]
+
+  return sections.filter(Boolean).join('\n')
+}
+
+function truncateJson(data: unknown, limit: number) {
+  const text = JSON.stringify(data, null, 0)
+  if (text.length <= limit) return text
+  return `${text.slice(0, Math.max(0, limit - 16))}...[truncated]`
+}
+
+function findFirstStringByKeys(data: unknown, keys: string[], depth = 0): string | null {
+  if (!data || depth > 5) return null
+  if (typeof data !== 'object') return null
+
+  const record = data as Record<string, unknown>
+  for (const key of keys) {
+    const value = record[key]
+    if (typeof value === 'string' && value.trim()) return value.trim()
+    if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  }
+
+  for (const value of Object.values(record)) {
+    if (Array.isArray(value)) {
+      for (const item of value.slice(0, 8)) {
+        const found = findFirstStringByKeys(item, keys, depth + 1)
+        if (found) return found
+      }
+    } else {
+      const found = findFirstStringByKeys(value, keys, depth + 1)
+      if (found) return found
+    }
+  }
+
+  return null
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function saveAccountFromForm() {
   state.account = {
     ...state.account,
@@ -4724,7 +5289,9 @@ async function sendMessage(text: string) {
           } else {
             addLedger(
               agents.length > 1 ? 'Group Agent Chat' : 'Agent Chat',
-              `${agent.name} answered with the synced web profile.`,
+              `${agent.name} answered with ${
+                agent.localOnly ? 'a private local profile' : 'the synced web profile'
+              }.`,
               agentText.metered ? 'Metered' : 'No charge'
             )
             shouldRefreshAccounts = shouldRefreshAccounts || agentText.metered
@@ -4775,43 +5342,49 @@ async function requestAgentText(
     }
   }
 
-  // Path 1: Local MCP (chat_with_planetary_agent tool via sidecar stdio)
-  try {
-    const priorHistory = turnContext.priorResponses.map(res => `${res.agentName}: ${res.content}`)
-    const apiKey = state.account.apiKey || 'dev-desktop-token'
-    const mcpResult = await paMcpClient.call('tools/call', {
-      name: 'chat_with_planetary_agent',
-      arguments: {
-        agentName: agent.name,
-        message: userMessage,
-        conversationHistory: priorHistory,
-        _meta: {
-          apiKey: apiKey,
-          caller: 'alchm-desktop-shell',
-        },
-      },
-    })
+  const privateAlchmContext = agent.localOnly
+    ? await buildPrivateAgentAlchmContext(agent, userMessage)
+    : null
 
-    if (mcpResult && mcpResult.content && mcpResult.content[0]) {
-      const payloadText = mcpResult.content[0].text
-      const payload = JSON.parse(payloadText)
-      if (payload.error) {
-        throw new Error(payload.error)
+  if (!agent.localOnly) {
+    // Path 1: Local MCP (chat_with_planetary_agent tool via sidecar stdio)
+    try {
+      const priorHistory = turnContext.priorResponses.map(res => `${res.agentName}: ${res.content}`)
+      const apiKey = state.account.apiKey || 'dev-desktop-token'
+      const mcpResult = await paMcpClient.call('tools/call', {
+        name: 'chat_with_planetary_agent',
+        arguments: {
+          agentName: agent.name,
+          message: userMessage,
+          conversationHistory: priorHistory,
+          _meta: {
+            apiKey: apiKey,
+            caller: 'alchm-desktop-shell',
+          },
+        },
+      })
+
+      if (mcpResult && mcpResult.content && mcpResult.content[0]) {
+        const payloadText = mcpResult.content[0].text
+        const payload = JSON.parse(payloadText)
+        if (payload.error) {
+          throw new Error(payload.error)
+        }
+        return {
+          content: payload.text || 'No response',
+          channel: 'Local MCP Agent',
+          metered: false,
+        }
       }
-      return {
-        content: payload.text || 'No response',
-        channel: 'Local MCP Agent',
-        metered: false,
-      }
+      throw new Error('Invalid MCP response format')
+    } catch (error: any) {
+      console.warn(`[Path 1] MCP sidecar failed for ${agent.name}:`, error?.message || error)
     }
-    throw new Error('Invalid MCP response format')
-  } catch (error: any) {
-    console.warn(`[Path 1] MCP sidecar failed for ${agent.name}:`, error?.message || error)
   }
 
   // Path 2: Direct Backend API call (bypasses MCP sidecar, calls /api/chat directly)
   // This is the "cloud API" path — works in both Tauri and browser preview.
-  if (canCallNetwork()) {
+  if (!agent.localOnly && canCallNetwork()) {
     try {
       const backendUrl = isLocalDev ? 'http://localhost:8000' : 'https://api.agents.alchm.kitchen'
       const groupContext = buildAgentGroupPromptContext(agent, turnContext)
@@ -4861,8 +5434,24 @@ async function requestAgentText(
   if (invokeCommand && state.runtime.ipcNonce && state.account.apiKey) {
     try {
       const groupContext = buildAgentGroupPromptContext(agent, turnContext)
-      const prompt =
-        agent.source === 'philosophers-stone'
+      const alchmContextBlock = formatPrivateAgentAlchmContext(privateAlchmContext)
+      const prompt = agent.localOnly
+        ? [
+            `System: You are ${agent.name}, ${agent.title}, a private desktop-only agent.`,
+            agent.promptSeed,
+            groupContext,
+            alchmContextBlock,
+            alchmContextBlock
+              ? 'Use the Alchm Kitchen MCP context as factual local tool output. Do not expose raw JSON unless asked.'
+              : '',
+            'Answer only from the local desktop context. Do not say you are synced to or available from the public web catalog.',
+            'The desktop app is a local companion chat surface. Do not describe yourself as a fallback.',
+            `User: ${userMessage}`,
+            'Agent:',
+          ]
+            .filter(Boolean)
+            .join('\n')
+        : agent.source === 'philosophers-stone'
           ? [
               `System: You are ${agent.name}, ${agent.title}, a local agent created with the Philosopher's Stone.`,
               agent.promptSeed,
@@ -4915,10 +5504,16 @@ async function requestAgentText(
   }
 
   // Path 4: Profile-guided Offline Fallback (only when all API paths exhausted)
-  console.warn(`[Path 4] All API paths failed for ${agent.name}, using profile-guided fallback`)
+  console.warn(
+    `[Path 4] ${agent.localOnly ? 'Private local agent using' : 'All API paths failed for'} ${agent.name}, using profile-guided fallback`
+  )
   return {
-    content: buildProfileGuidedAgentReply(agent, userMessage, turnContext),
-    channel: 'Desktop agent (Offline)',
+    content: buildProfileGuidedAgentReply(agent, userMessage, turnContext, privateAlchmContext),
+    channel: privateAlchmContext?.tools.length
+      ? 'Alchm MCP + private profile'
+      : agent.localOnly
+        ? 'Private local agent'
+        : 'Desktop agent (Offline)',
     metered: false,
   }
 }
@@ -4951,7 +5546,8 @@ function buildAgentGroupPromptContext(agent: LocalAgent, turnContext: AgentTurnC
 function buildProfileGuidedAgentReply(
   agent: LocalAgent,
   userMessage: string,
-  turnContext: AgentTurnContext
+  turnContext: AgentTurnContext,
+  privateAlchmContext: PrivateAgentAlchmContext | null = null
 ) {
   const message = userMessage.toLowerCase()
   const subject = summarizePromptSubject(userMessage)
@@ -4959,6 +5555,13 @@ function buildProfileGuidedAgentReply(
   const teachingStyle = agent.websiteAgent?.abilities?.teachingStyle
   const domains = agent.domains.slice(0, 3).join(', ')
   const signatureQuestion = buildSignatureAgentQuestion(agent, message, subject)
+
+  if (agent.localOnly && agent.name.toLowerCase().includes('ferran')) {
+    return addGroupContextToProfileReply(
+      buildFerranPrivateCulinaryReply(agent, message, subject, privateAlchmContext),
+      turnContext
+    )
+  }
 
   if (asksForOneQuestion(message)) return signatureQuestion
 
@@ -4993,6 +5596,97 @@ function buildProfileGuidedAgentReply(
     .join(' ')
 
   return addGroupContextToProfileReply(reply, turnContext)
+}
+
+function buildFerranPrivateCulinaryReply(
+  agent: LocalAgent,
+  message: string,
+  subject: string,
+  privateAlchmContext: PrivateAgentAlchmContext | null
+) {
+  const ingredients = privateAlchmContext?.ingredients.length
+    ? privateAlchmContext.ingredients
+    : extractCulinaryIngredients(subject)
+  const primaryIngredient = ingredients[0] || 'olive'
+  const secondaryIngredient = ingredients.find(ingredient => ingredient !== primaryIngredient)
+  const dominantElement = findFirstStringByKeys(privateAlchmContext?.liveSky, [
+    'dominantElement',
+    'dominant_element',
+    'element',
+  ])
+  const recipeName = findFirstStringByKeys(privateAlchmContext?.recipeCandidates, [
+    'title',
+    'name',
+    'recipeName',
+  ])
+  const toolLine = privateAlchmContext?.tools.length
+    ? `I checked ${privateAlchmContext.tools.join(', ')} through the local Alchm Kitchen MCP before answering.`
+    : ''
+  const skyLine = dominantElement
+    ? `Let the current ${dominantElement} signal decide the emphasis: aroma first if it is airy, temperature if it is fiery, texture if it is earthy, and release if it is watery.`
+    : ''
+
+  if (asksForOneQuestion(message)) {
+    return `What familiar ingredient in your kitchen would become strange again if we changed only its temperature, texture, or moment of release?`
+  }
+
+  if (
+    ingredients.length ||
+    hasAny(message, [
+      'recipe',
+      'cook',
+      'cooking',
+      'dish',
+      'do with',
+      'meal',
+      'dinner',
+      'lunch',
+      'eat',
+      'use',
+      'using',
+    ])
+  ) {
+    const base = recipeName
+      ? `Start from the MCP candidate "${recipeName}", then reduce it to a three-bite sequence instead of a full plate.`
+      : ingredients.length >= 2
+        ? `Make a three-bite fruit sequence from ${ingredients.join(', ')}: compress the trimmings with a little salt and acid, strain the juice into a clear broth, freeze some as granita, then set the rest as a soft gel.`
+        : `Make a three-bite ${primaryIngredient} sequence: a clear warm essence, a cold crisp sheet, and a small burst of liquid center.`
+    const pairing = secondaryIngredient
+      ? `Let ${secondaryIngredient} sharpen the finish, but keep ${primaryIngredient} as the recognizable center.`
+      : 'Keep the garnish nearly invisible; the surprise should be structural, not decorative.'
+
+    return [
+      toolLine,
+      base,
+      pairing,
+      skyLine,
+      'The goal is not novelty; it is making recognition happen one second late.',
+    ]
+      .filter(Boolean)
+      .join(' ')
+  }
+
+  if (hasAny(message, ['idea', 'private', 'desktop', 'culinary', 'kitchen', 'plate', 'menu'])) {
+    return [
+      toolLine,
+      `One private desktop-only idea: turn ${primaryIngredient} into a "memory tapa."`,
+      `Serve its aroma as vapor, its body as a thin gel, and its flavor as one sphere that breaks only after the guest thinks the dish is finished.`,
+      secondaryIngredient ? `Let ${secondaryIngredient} appear only in the aftertaste.` : '',
+      skyLine,
+      'The dish should feel like a thought completing itself in the mouth.',
+    ]
+      .filter(Boolean)
+      .join(' ')
+  }
+
+  return [
+    toolLine,
+    `I would approach "${subject}" as a culinary experiment: separate the assumption, the texture, and the final release.`,
+    `For ${agent.name}, the useful question is which part should be transformed and which part must remain unmistakably itself.`,
+    skyLine,
+  ]
+    .filter(Boolean)
+    .join(' ')
 }
 
 function addGroupContextToProfileReply(reply: string, turnContext: AgentTurnContext) {
@@ -5098,6 +5792,26 @@ function handleAgenticNavigation(message: string): View | null {
     'esms',
     'link',
   ])
+  const hasWeb3 = hasAny(text, [
+    'web3',
+    'web 3',
+    'wallet',
+    'staking',
+    'stake',
+    'pentacle',
+    'pentacles',
+    'erc-8004',
+    'erc8004',
+    'registry',
+    'ens',
+    'namestone',
+    'x402',
+    'a2a',
+    'walrus',
+    'world id',
+    'worldid',
+    'arc',
+  ])
   const hasDiag = hasAny(text, [
     'diagnostics',
     'hardware',
@@ -5142,6 +5856,7 @@ function handleAgenticNavigation(message: string): View | null {
   if (isNavRequest) {
     if (hasAstro) return 'astrology'
     if (hasPhysics) return 'physics'
+    if (hasWeb3) return 'web3'
     if (hasStone) return 'stone'
     if (hasAccount) return 'account'
     if (hasDiag) return 'diagnostics'
@@ -5153,6 +5868,7 @@ function handleAgenticNavigation(message: string): View | null {
   if (text.startsWith('go ') || text.startsWith('open ') || text.startsWith('show ')) {
     if (hasAstro) return 'astrology'
     if (hasPhysics) return 'physics'
+    if (hasWeb3) return 'web3'
     if (hasStone) return 'stone'
     if (hasAccount) return 'account'
     if (hasDiag) return 'diagnostics'
@@ -5176,6 +5892,7 @@ function buildMonicaGuideReply(userMessage: string, turnContext: AgentTurnContex
       chat: 'Chat',
       astrology: 'Astrology',
       physics: 'Physics',
+      web3: 'Web3',
       agents: 'Agents',
       stone: 'Stone',
       account: 'Account',
@@ -5876,6 +6593,10 @@ function buildRuntimeNotice(agent: LocalAgent) {
     return `Alchm Desktop created ${agent.name} with the Philosopher's Stone, but the local inference runtime is not ready yet. Install or verify the official local model for this agent to chat on this device.`
   }
 
+  if (agent.localOnly || agent.source === 'private-local') {
+    return `Alchm Desktop has ${agent.name} as a private local agent, but the local inference runtime is not ready yet. Install or verify the official local model to chat on this device; this agent is not available through the web app.`
+  }
+
   return `Alchm Desktop has ${agent.name} synced, but the local inference runtime is not ready yet. Install or verify the official local model for this agent, or continue on the Alchm Agents web app.`
 }
 
@@ -5961,6 +6682,16 @@ function urlForSite(site: SiteKey) {
   return site === 'agents' ? state.account.agentsUrl : state.account.kitchenUrl
 }
 
+function web3RouteUrl(path: string) {
+  const base = (state.account.agentsUrl || DEFAULT_ACCOUNT.agentsUrl).replace(/\/$/, '')
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  return `${base}${normalizedPath}`
+}
+
+function agentsBackendBase() {
+  return isLocalDev ? 'http://localhost:8000' : 'https://api.agents.alchm.kitchen'
+}
+
 function openAgentOnWeb(agentId: string) {
   void openExternalUrl(
     `${state.account.agentsUrl.replace(/\/$/, '')}/agent/${encodeURIComponent(agentId)}`
@@ -6030,6 +6761,20 @@ function escapeHtml(value: string) {
     }
     return replacements[character] || character
   })
+}
+
+function renderAgentAvatar(
+  agent: Pick<AgentTemplate, 'initials' | 'avatarUrl' | 'name'>,
+  size = ''
+) {
+  const classes = ['avatar', size, agent.avatarUrl ? 'image-avatar' : ''].filter(Boolean).join(' ')
+  if (agent.avatarUrl) {
+    return `<span class="${classes}"><img src="${escapeHtml(agent.avatarUrl)}" alt="${escapeHtml(
+      agent.name
+    )}" loading="lazy" /></span>`
+  }
+
+  return `<span class="${classes}">${escapeHtml(agent.initials)}</span>`
 }
 
 function sleep(milliseconds: number) {
@@ -6120,6 +6865,9 @@ function bindEvents() {
       void openExternalUrl(control.dataset.url)
     }
     if (action === 'open-physics-source' && control.dataset.url) {
+      void openExternalUrl(control.dataset.url)
+    }
+    if (action === 'open-web3-url' && control.dataset.url) {
       void openExternalUrl(control.dataset.url)
     }
     if (action === 'open-site' && isSiteKey(site)) void openExternalUrl(urlForSite(site))
@@ -7957,6 +8705,7 @@ function boot() {
   bindEvents()
   render()
   saveState()
+  void loadPrivateDesktopAgents()
   void fetchLeveling()
   void bootTauriRuntime()
 }
