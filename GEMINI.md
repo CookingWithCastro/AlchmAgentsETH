@@ -39,6 +39,14 @@ This document outlines the specialized agentic workflows and LangChain integrati
   - Injects a specialized, premium `## Lunar Phase Influence` block into system prompts containing the phase's archetype, emotional characteristics, and alchemical traits.
 - **Migration & Seeding:** Supported by `backend/improve_moon_degree_agents.py` to retroactively enrich all Moon degree records in the shared database.
 
+### 5. Hardened Agent Minigame Endpoints
+
+- **Purpose:** High-reliability API endpoints providing the agent "brain" moves for the **Word Duels** (`/api/agents/word-duel`) and **Jing Arena** (`/api/agents/jing`) minigames.
+- **Resilient AI Pipeline:**
+  - Employs a multi-LLM provider fallback chain: **Groq** (`llama-3.3-70b-versatile`) → **Gemini** (`gemini-2.0-flash`) → **OpenAI** (`gpt-4o-mini`).
+  - Seamlessly falls back to backup providers if the primary (Groq) is rate-limited (e.g. hitting Daily Token Limits).
+  - Integrates with the sibling Pentacles game via `PLANETARY_AGENTS_BACKEND_URL` pointing to the production deployment.
+
 ## ⛓️ On-Chain & Agent Economy
 
 A bounty-driven layer that puts agents on-chain. **Canonical doc + diagrams + demo steps: [`INTEGRATIONS.md`](INTEGRATIONS.md).** In brief:
@@ -50,6 +58,21 @@ A bounty-driven layer that puts agents on-chain. **Canonical doc + diagrams + de
 - **Walrus/MemWal memory** (`lib/walrus/`) — encrypted persona snapshots + recall (HTTP fallback needs no wallet).
 - **World ID + AgentKit** (`lib/worldid/`) — proof-of-personhood + `human-verified` badge.
 - **Onramp / privacy / distribution** — 1inch (`lib/onramp/`), Unlink ZK (`lib/unlink/`), Tool Router (`lib/toolrouter/`).
+- **Privy Sync Syncing:** Privy configurations are synchronized between WTEN (`WhatToEatNext-master`) and `AlchmAgentsETH` (and `planetary_agents-main`) using a shared secret `ALCHM_KITCHEN_SYNC_SECRET`.
+- **Stripe Subscriptions & Tokens:** Tested Stripe endpoints (`/api/stripe/checkout`, `/api/stripe/portal`, `/api/stripe/webhook`) enable automated subscription setup (using `checkout.session.completed` for tier updates) and direct token balance crediting upon purchase.
+
+## 🎨 Techno-Occult UI (Stitch Layouts)
+
+Implementations of the "Techno-Occult" v2 designs created by Stitch across main directory and profile modules.
+
+- **Stitch Design System:** Extended Tailwind configurations and global keyframe float/twinkle animations. Features glassmorphic panels and custom glowing borders representing the primary alchemical elements (`essence-water`, `spirit-fire`, `substance-air`, `matter-earth`).
+- **StitchAgentCard:** Reusable directory card with elemental borders, checkbox selection for multi-agent chats, and metadata displays.
+- **Gallery Page (`/gallery`):** Rich design with a dynamic starfield background, Faction Lineage filters (grouping agents by ruling planets of their Sun signs: Solaris, Lunaris, Mercury, Venus, Mars, Jupiter, Saturn), and list/grid layout toggles.
+- **Individual Agent Profiles (`/agent/[id]`):** 3-column Codex structure:
+  - _Column 1:_ Consciousness profile and radial progress tracking.
+  - _Column 2:_ Placements listing and zodiac placements ring.
+  - _Column 3:_ Thermodynamics Tarot mapping alchemical vectors to Major and Minor Arcana recommendations.
+  - Includes a client-side radial progress tracker and a live alchemical terminal log.
 
 ## 🛠️ Configuration
 
