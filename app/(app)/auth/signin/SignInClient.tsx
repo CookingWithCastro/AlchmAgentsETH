@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { buildKitchenSignInUrl } from '@/lib/kitchen-signin'
+import { startGoogleSignIn } from '@/lib/auth-client'
 
 export function SignInClient({ callbackUrl }: { callbackUrl: string }) {
   const [loading, setLoading] = useState(false)
@@ -11,7 +11,7 @@ export function SignInClient({ callbackUrl }: { callbackUrl: string }) {
     setLoading(true)
 
     try {
-      window.location.href = buildKitchenSignInUrl(callbackUrl)
+      startGoogleSignIn(callbackUrl)
     } catch {
       setLoading(false)
     }

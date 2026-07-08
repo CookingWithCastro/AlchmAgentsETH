@@ -13,6 +13,12 @@ const config: Config = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         surface: '#18181b', // zinc-900 (legacy; existing bg-surface consumers)
+        // Elemental palette for the landing showcase (planetary + economy cards)
+        'element-fire': '#FB923C',
+        'element-water': '#60A5FA',
+        'element-earth': '#4ADE80',
+        'element-air': '#FACC15',
+        'nebula-indigo': '#818CF8',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
