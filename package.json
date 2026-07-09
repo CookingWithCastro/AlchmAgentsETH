@@ -84,6 +84,8 @@
     "@auth/prisma-adapter": "^2.10.0",
     "@circle-fin/adapter-viem-v2": "^1.11.2",
     "@circle-fin/app-kit": "^1.7.0",
+    "@coinbase/agentkit": "^0.10.4",
+    "@coinbase/cdp-sdk": "^1.51.2",
     "@dynamic-labs/ethereum": "^4.88.5",
     "@dynamic-labs/sdk-react-core": "^4.88.5",
     "@google-cloud/bigquery": "^8.3.1",

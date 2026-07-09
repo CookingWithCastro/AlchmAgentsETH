@@ -1646,3 +1646,17 @@ model group_chat_sessions {
   @@index([createdAt(sort: Desc)])
   @@map("group_chat_sessions")
 }
+
+// Coinbase AgentKit / CDP wallet provisioned per agent (Base). The address is the
+// permanent source of truth — CDP's idempotencyKey is only stable for 24h, so once
+// created we persist the address here and reconnect to it on subsequent loads.
+// Also published as the agent's `agent-wallet[x402]` ENS record for payers.
+model agent_wallets {
+  agentId   String   @id @map("agent_id")
+  address   String   @map("address")
+  network   String   @default("base-sepolia") @map("network")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([address])
+  @@map("agent_wallets")
+}
