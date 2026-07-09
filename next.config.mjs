@@ -19,9 +19,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // Keep the Google SDK available to server functions without folding its
-  // large optional dependency tree into the application bundle.
-  serverExternalPackages: ['@google-cloud/bigquery'],
+  // Keep heavy server SDKs available to functions WITHOUT folding their large
+  // (and sometimes non-bundlable) dependency trees into the shared server bundle.
+  // The Coinbase CDP SDK has native/dynamic requires that, when bundled, break
+  // the shared serverless runtime and hang *every* function at cold start —
+  // externalize it (and the agentkit barrel it ships with, which eagerly loads
+  // a @scure/bip39 subpath that isn't resolvable when bundled).
+  serverExternalPackages: ['@google-cloud/bigquery', '@coinbase/cdp-sdk', '@coinbase/agentkit'],
   // Disable source maps completely to avoid Next.js internal source-map module issues
   productionBrowserSourceMaps: false,
   // Docker optimization - standalone output (only for production builds)
