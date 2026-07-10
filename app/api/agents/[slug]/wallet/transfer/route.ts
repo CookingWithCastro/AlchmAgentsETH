@@ -3,7 +3,7 @@ import { transferFromAgent, type TransferToken } from '@/lib/agentkit/actions'
 import { isCdpConfigured } from '@/lib/agentkit'
 
 /**
- * POST /api/agents/{id}/wallet/transfer   { to, amount, token? }
+ * POST /api/agents/{slug}/wallet/transfer   { to, amount, token? }
  *
  * Sends USDC (or ETH) from the agent's CDP wallet. PRIVILEGED — moving an agent's
  * funds is server-to-server only, gated by INTERNAL_API_SECRET. The endpoint is
@@ -19,7 +19,7 @@ function authorized(req: NextRequest): boolean {
   return header === secret || bearer === secret
 }
 
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   if (!process.env.INTERNAL_API_SECRET) {
     return NextResponse.json(
       { error: 'Agent transfers are disabled (INTERNAL_API_SECRET not set)' },
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: 'CDP agent wallets are not configured' }, { status: 503 })
   }
 
-  const { id } = await params
+  const { slug: id } = await params
   if (!id) return NextResponse.json({ error: 'Missing agent id' }, { status: 400 })
 
   let body: { to?: unknown; amount?: unknown; token?: unknown }
