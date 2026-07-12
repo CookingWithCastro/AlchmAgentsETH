@@ -13,6 +13,11 @@ import { MonicaResponseHandler } from '@/lib/monica/monica-response-handler'
 import { selectKnowledge } from '@/lib/monica/knowledge'
 import { resolveDefaultModel } from '@/lib/models/registry'
 
+// Supervisor routing imports
+import { monicaRouter } from '@/lib/monica/enhanced-router'
+import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
+import { unifiedAgentFactory } from '@/lib/unified-agent-factory'
+
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -37,6 +42,16 @@ export async function POST(req: Request) {
 
   // Minimal prompt assembly (reuse of base context only for streaming path)
   const ctx = getMonicaContextPrompt({ conversationStage, birthData, userPreferences })
+
+  // Execute Supervisor Intent-Based Routing
+  const unifiedHistorical = HISTORICAL_AGENTS.map(agent =>
+    unifiedAgentFactory.createFromHistorical(agent)
+  )
+  const routingDecision = await monicaRouter.route({
+    message: userMsg,
+    availableAgents: unifiedHistorical,
+  })
+
   // Choose specialized prompt
   let specialized: string
   if (
@@ -46,6 +61,26 @@ export async function POST(req: Request) {
     specialized = MONICA_SPECIALIZED_PROMPTS.personalizedAIDesign
   } else {
     specialized = MONICA_SPECIALIZED_PROMPTS.alchmGuidance
+  }
+
+  // Inject routing suggestions into supervisor context
+  if (routingDecision.selectedAgents.length > 0) {
+    const recommendationsStr = routingDecision.selectedAgents
+      .map(
+        a =>
+          `- ${a.name} (${a.title}): Specialty: ${a.capabilities.specialty}, Dominant Element: ${a.consciousness.dominantElement}`
+      )
+      .join('\n')
+
+    specialized = `${specialized}
+
+### Supervisor Agent Routing Recommendations
+You have identified the following agents as highly relevant companions/counselors for this query:
+${recommendationsStr}
+
+Reason for routing: ${routingDecision.reason}
+
+Please weave these recommendations naturally into your response to guide the user to the correct workspace or agent, explaining how their unique alchemical/astrological profiles fit the user's inquiry.`
   }
   const knowledgeSnippets = selectKnowledge(['elemental', 'tarot'])
     .map(k => k.content)
@@ -137,6 +172,19 @@ export async function POST(req: Request) {
             suggestedPractices: envelope.interactive_elements.suggested_practices,
             nextStep: envelope.educational_guidance.next_learning_step,
             followUps: envelope.interactive_elements.reflection_questions,
+            routing: {
+              reason: routingDecision.reason,
+              confidence: routingDecision.confidence,
+              strategy: routingDecision.routingStrategy,
+              recommendedAgents: routingDecision.selectedAgents.map(a => ({
+                id: a.id,
+                name: a.name,
+                title: a.title,
+                type: a.type,
+                avatar: a.appearance.avatar,
+                color: a.appearance.color,
+              })),
+            },
           },
         })
         send({ type: 'done' })

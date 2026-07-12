@@ -1,13 +1,14 @@
 'use client'
 
 import React, { useEffect, useMemo, useRef, useState } from 'react'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MessageCircle, Send, Heart, Sparkles, Brain, X, Minimize2, Eye } from 'lucide-react'
+import { MessageCircle, Send, Heart, Sparkles, Brain, X, Minimize2, Eye, Info } from 'lucide-react'
 import { useLiveOracleChat } from '@/lib/spacetime/hooks/useLiveOracleChat'
 
 interface MonicaChatMessage {
@@ -24,6 +25,19 @@ interface MonicaChatMessage {
     suggestedPractices: string[]
     nextStep: string
     followUps: string[]
+    routing?: {
+      reason: string
+      confidence: number
+      strategy: string
+      recommendedAgents: Array<{
+        id: string
+        name: string
+        title: string
+        type: string
+        avatar: string
+        color: string
+      }>
+    }
   }
 }
 
@@ -114,13 +128,38 @@ export function MonicaChatBubble({
   const [sendError, setSendError] = useState<string | null>(null)
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
+
+  // REST local fallback chat states
+  const [restMessages, setRestMessages] = useState<MonicaChatMessage[]>([])
+  const [isRestThinking, setIsRestThinking] = useState(false)
+
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
+
+  // SpacetimeDB live oracle chat hook
   const {
     messages: liveMessages,
     sendMessage: sendLiveMessage,
-    isThinking,
+    isThinking: isLiveThinking,
     error: subscriptionError,
     status,
   } = useLiveOracleChat()
+
+  const isSpacetimeAvailable = status === 'connected'
+
+  // Load local chat history for the page if using REST fallback
+  useEffect(() => {
+    try {
+      const pageKey = `monica-chat-${pathname}`
+      const savedMessages = localStorage.getItem(pageKey)
+      if (savedMessages) {
+        setRestMessages(JSON.parse(savedMessages))
+      } else {
+        setRestMessages([])
+      }
+    } catch (e) {
+      console.warn('Failed to load local chat history:', e)
+    }
+  }, [pathname])
 
   const welcomeMessage = useMemo<MonicaChatMessage>(
     () => ({
@@ -135,20 +174,32 @@ export function MonicaChatBubble({
     }),
     [pathname]
   )
-  const messages = useMemo<MonicaChatMessage[]>(
-    () => [
-      welcomeMessage,
-      ...liveMessages.map(message => ({
-        id: message.id,
-        type: message.role === 'user' ? ('user' as const) : ('monica' as const),
-        content: message.text,
-        timestamp: message.createdAt,
-        context: { page: pathname },
-      })),
-    ],
-    [liveMessages, pathname, welcomeMessage]
-  )
-  const assistantMessageCount = liveMessages.filter(message => message.role === 'assistant').length
+
+  const messages = useMemo<MonicaChatMessage[]>(() => {
+    if (isSpacetimeAvailable) {
+      return [
+        welcomeMessage,
+        ...liveMessages.map(message => ({
+          id: message.id,
+          type: message.role === 'user' ? ('user' as const) : ('monica' as const),
+          content: message.text,
+          timestamp: message.createdAt,
+          context: { page: pathname },
+        })),
+      ]
+    } else {
+      return restMessages.length > 0 ? restMessages : [welcomeMessage]
+    }
+  }, [isSpacetimeAvailable, liveMessages, restMessages, welcomeMessage, pathname])
+
+  const assistantMessageCount = useMemo(() => {
+    if (isSpacetimeAvailable) {
+      return liveMessages.filter(message => message.role === 'assistant').length
+    } else {
+      return restMessages.filter(message => message.type === 'monica').length
+    }
+  }, [isSpacetimeAvailable, liveMessages, restMessages])
+
   const previousAssistantCount = useRef(assistantMessageCount)
 
   useEffect(() => {
@@ -158,19 +209,94 @@ export function MonicaChatBubble({
     previousAssistantCount.current = assistantMessageCount
   }, [assistantMessageCount, isExpanded])
 
-  const handleSendMessage = async () => {
-    const text = currentMessage.trim()
-    if (!text || isThinking) return
+  // Scroll to bottom of chat
+  useEffect(() => {
+    if (scrollAreaRef.current && isExpanded) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight
+      }
+    }
+  }, [messages, isLiveThinking, isRestThinking, isExpanded])
 
-    setCurrentMessage('')
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend || currentMessage).trim()
+    if (!text || isLiveThinking || isRestThinking) return
+
+    if (!textToSend) setCurrentMessage('')
     setSendError(null)
 
-    try {
-      await sendLiveMessage(text)
-      setHasUnreadMessages(false)
-    } catch (error) {
-      setCurrentMessage(text)
-      setSendError(error instanceof Error ? error.message : 'Unable to send message')
+    if (isSpacetimeAvailable) {
+      try {
+        await sendLiveMessage(text)
+        setHasUnreadMessages(false)
+      } catch (error) {
+        if (!textToSend) setCurrentMessage(text)
+        setSendError(error instanceof Error ? error.message : 'Unable to send message')
+      }
+    } else {
+      // Use REST fallback API
+      setIsRestThinking(true)
+      const userMsg: MonicaChatMessage = {
+        id: Date.now().toString(),
+        type: 'user',
+        content: text,
+        timestamp: new Date(),
+      }
+
+      const newRestMessages = [...restMessages, userMsg]
+      setRestMessages(newRestMessages)
+
+      try {
+        const response = await fetch('/api/monica-agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: text,
+            context: { page: pathname },
+          }),
+        })
+
+        if (!response.ok) throw new Error('API failed')
+        const data = await response.json()
+
+        // Safely parse text and envelope response
+        const rawText = data.text || data.response || data.content || data.message
+        const envelopeData = data.metadata?.envelope || data.envelope
+
+        let cleanEnvelope = undefined
+        if (envelopeData) {
+          cleanEnvelope = {
+            suggestedPractices:
+              envelopeData.suggestedPractices ||
+              envelopeData.interactive_elements?.suggested_practices ||
+              [],
+            nextStep:
+              envelopeData.nextStep || envelopeData.educational_guidance?.next_learning_step || '',
+            followUps:
+              envelopeData.followUps ||
+              envelopeData.interactive_elements?.reflection_questions ||
+              [],
+            routing: envelopeData.routing,
+          }
+        }
+
+        const monicaMsg: MonicaChatMessage = {
+          id: (Date.now() + 1).toString(),
+          type: 'monica',
+          content: rawText || "I've processed your alchemical inquiry.",
+          timestamp: new Date(),
+          envelope: cleanEnvelope,
+        }
+
+        const updatedRestMessages = [...newRestMessages, monicaMsg]
+        setRestMessages(updatedRestMessages)
+        localStorage.setItem(`monica-chat-${pathname}`, JSON.stringify(updatedRestMessages))
+      } catch (e) {
+        setSendError("Unable to get response from Monica. Let's try again in a moment.")
+      } finally {
+        setIsRestThinking(false)
+      }
     }
   }
 
@@ -187,7 +313,9 @@ export function MonicaChatBubble({
   }
 
   const formatTimestamp = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    // If it's a serialization issue (e.g. from localStorage), convert back to Date
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp)
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   }
 
   if (pathname === '/monica') return null // Don't show on Monica's own page
@@ -199,14 +327,14 @@ export function MonicaChatBubble({
         <div className="fixed bottom-4 right-4 z-[100]" style={{ contain: 'layout' }}>
           {isExpanded ? (
             /* Expanded Chat Interface */
-            <Card className="w-96 h-[600px] flex flex-col bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-2 border-emerald-400 shadow-2xl">
+            <Card className="w-96 h-[600px] flex flex-col bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-2 border-emerald-400 shadow-2xl transition-all">
               <CardHeader className="pb-3 bg-gradient-to-r from-emerald-50/50 via-green-50/50 to-cyan-50/50 dark:from-emerald-950/50 dark:via-green-950/50 dark:to-cyan-950/50 border-b border-emerald-200 dark:border-emerald-800 shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <Avatar className="w-10 h-10 border-2 border-emerald-400 shadow-md">
                         <AvatarImage src="/alchm-logo.png" alt="Monica" />
-                        <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-green-600 text-white text-sm">
+                        <AvatarFallback className="bg-gradient-to-br from-emerald-600 to-green-600 text-white text-sm font-bold">
                           ⚗️
                         </AvatarFallback>
                       </Avatar>
@@ -262,7 +390,11 @@ export function MonicaChatBubble({
 
               <CardContent className="flex flex-col p-0 flex-1 min-h-0 overflow-hidden">
                 {/* Messages */}
-                <ScrollArea className="flex-1 p-4" style={{ maxHeight: 'calc(600px - 180px)' }}>
+                <ScrollArea
+                  ref={scrollAreaRef}
+                  className="flex-1 p-4"
+                  style={{ maxHeight: 'calc(600px - 180px)' }}
+                >
                   <div className="space-y-4">
                     {messages.map(message => (
                       <div
@@ -270,7 +402,7 @@ export function MonicaChatBubble({
                         className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}
                       >
                         <div
-                          className={`max-w-[80%] rounded-lg p-3 shadow-sm ${
+                          className={`max-w-[85%] rounded-lg p-3 shadow-sm ${
                             message.type === 'user'
                               ? 'bg-gradient-to-r from-emerald-600 to-green-600 text-white shadow-emerald-200 dark:shadow-emerald-900'
                               : 'bg-gradient-to-r from-emerald-50 via-green-50 to-cyan-50 dark:from-emerald-950/50 dark:via-green-950/50 dark:to-cyan-950/50 border-2 border-emerald-200 dark:border-emerald-800 shadow-emerald-100 dark:shadow-emerald-900/50'
@@ -291,17 +423,17 @@ export function MonicaChatBubble({
                           )}
 
                           <p
-                            className={`text-sm leading-relaxed ${message.type === 'monica' ? 'text-emerald-900 dark:text-emerald-100' : 'text-white'}`}
+                            className={`text-sm leading-relaxed whitespace-pre-wrap ${message.type === 'monica' ? 'text-emerald-900 dark:text-emerald-100' : 'text-white'}`}
                           >
                             {message.content}
                           </p>
 
                           {message.envelope && (
-                            <div className="mt-3 space-y-2">
-                              {message.envelope.suggestedPractices.length > 0 && (
+                            <div className="mt-3 space-y-2 border-t border-emerald-200 dark:border-emerald-800 pt-2">
+                              {message.envelope.suggestedPractices?.length > 0 && (
                                 <div>
-                                  <div className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                                    Suggested Practices
+                                  <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                                    Suggested Practices:
                                   </div>
                                   <ul className="list-disc pl-4 text-xs text-emerald-800 dark:text-emerald-200">
                                     {message.envelope.suggestedPractices.map((p, i) => (
@@ -321,25 +453,56 @@ export function MonicaChatBubble({
                                 </div>
                               )}
                               {message.envelope.followUps?.length > 0 && (
-                                <div className="flex flex-wrap gap-1 mt-1">
+                                <div className="flex flex-wrap gap-1 mt-2">
                                   {message.envelope.followUps.map((q, i) => (
                                     <Button
                                       key={i}
                                       size="sm"
                                       variant="outline"
-                                      className="text-xs cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900"
-                                      onClick={() => setCurrentMessage(q)}
+                                      className="text-[10px] h-6 py-1 px-2 border-emerald-300 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                                      onClick={() => handleSendMessage(q)}
                                     >
                                       {q}
                                     </Button>
                                   ))}
                                 </div>
                               )}
+                              {message.envelope.routing?.recommendedAgents &&
+                                message.envelope.routing.recommendedAgents.length > 0 && (
+                                  <div className="mt-3 pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                                    <div className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider mb-2">
+                                      Recommended Companions:
+                                    </div>
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {message.envelope.routing.recommendedAgents.map(
+                                        (agent: any) => (
+                                          <Link
+                                            key={agent.id}
+                                            href={`/agent/${agent.id}`}
+                                            className="flex items-center gap-1 px-2 py-1 rounded border border-emerald-300 bg-white/50 dark:bg-gray-800/50 text-[10px] text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 transition-colors"
+                                            style={{
+                                              borderColor: agent.color
+                                                ? `${agent.color}40`
+                                                : undefined,
+                                            }}
+                                          >
+                                            <img
+                                              src={agent.avatar || '/alchm-logo.png'}
+                                              className="w-3.5 h-3.5 rounded-full object-cover"
+                                              alt={agent.name}
+                                            />
+                                            <span>{agent.name}</span>
+                                          </Link>
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                             </div>
                           )}
 
                           {message.type === 'user' && (
-                            <div className="text-xs text-white/70 mt-2">
+                            <div className="text-[10px] text-white/70 mt-2 text-right">
                               {formatTimestamp(message.timestamp)}
                             </div>
                           )}
@@ -347,28 +510,23 @@ export function MonicaChatBubble({
                       </div>
                     ))}
 
-                    {(sendError || subscriptionError) && (
+                    {sendError && (
                       <div className="flex justify-start">
                         <div className="max-w-[80%] rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-200">
-                          {sendError || subscriptionError}
+                          {sendError}
                         </div>
                       </div>
                     )}
 
-                    {status !== 'connected' && (
-                      <div className="flex justify-start">
-                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-800 dark:bg-emerald-950/50">
-                          <div className="flex items-center gap-2">
-                            <Brain className="w-4 h-4 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-                            <span className="text-sm text-emerald-700 dark:text-emerald-300">
-                              Connecting to the live oracle...
-                            </span>
-                          </div>
-                        </div>
+                    {/* Subtle status banner for fallback mode */}
+                    {!isSpacetimeAvailable && (
+                      <div className="flex items-center gap-1.5 justify-center py-1.5 px-3 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-500 text-[10px] uppercase font-semibold tracking-wider max-w-max mx-auto select-none">
+                        <Info className="w-3.5 h-3.5" />
+                        <span>Live Sync Offline • REST Backup Active</span>
                       </div>
                     )}
 
-                    {isThinking && (
+                    {(isLiveThinking || isRestThinking) && (
                       <div className="flex justify-start">
                         <div className="bg-gradient-to-r from-emerald-50 via-green-50 to-cyan-50 dark:from-emerald-950/50 dark:via-green-950/50 dark:to-cyan-950/50 border border-emerald-200 dark:border-emerald-800 rounded-lg p-3">
                           <div className="flex items-center gap-2">
@@ -384,24 +542,20 @@ export function MonicaChatBubble({
                 </ScrollArea>
 
                 {/* Input */}
-                <div className="p-4 border-t border-emerald-200 dark:border-emerald-800 shrink-0">
+                <div className="p-4 border-t border-emerald-200 dark:border-emerald-800 shrink-0 bg-white/50 dark:bg-gray-900/50">
                   <div className="flex gap-2">
                     <Input
                       value={currentMessage}
                       onChange={e => setCurrentMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder={
-                        status === 'connected'
-                          ? 'Ask Monica anything...'
-                          : 'Connecting to Monica...'
-                      }
-                      className="flex-1 border-emerald-300 focus:border-emerald-500"
-                      disabled={isThinking || status !== 'connected'}
+                      placeholder="Ask Monica anything..."
+                      className="flex-1 border-emerald-300 focus:border-emerald-500 bg-white/80 dark:bg-gray-800/80"
+                      disabled={isLiveThinking || isRestThinking}
                     />
                     <Button
-                      onClick={handleSendMessage}
+                      onClick={() => handleSendMessage()}
                       aria-label="Send message"
-                      disabled={!currentMessage.trim() || isThinking || status !== 'connected'}
+                      disabled={!currentMessage.trim() || isLiveThinking || isRestThinking}
                       className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700"
                     >
                       <Send className="w-4 h-4" />
@@ -410,7 +564,7 @@ export function MonicaChatBubble({
 
                   {/* Quick Suggestions */}
                   {messages.length <= 1 && (
-                    <div className="mt-2 flex flex-wrap gap-1">
+                    <div className="mt-2.5 flex flex-wrap gap-1">
                       {getPageSuggestions(pathname)
                         .slice(0, 3)
                         .map((suggestion, i) => (
@@ -418,8 +572,8 @@ export function MonicaChatBubble({
                             key={i}
                             size="sm"
                             variant="outline"
-                            className="text-xs h-6"
-                            onClick={() => setCurrentMessage(suggestion)}
+                            className="text-[10px] h-6 py-0.5 px-2 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                            onClick={() => handleSendMessage(suggestion)}
                           >
                             {suggestion}
                           </Button>
@@ -435,7 +589,7 @@ export function MonicaChatBubble({
               <Button
                 onClick={openChat}
                 aria-label="Open Monica chat"
-                className="w-14 h-14 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-lg hover:shadow-emerald-400/50 hover:scale-110 transition-all duration-300"
+                className="w-14 h-14 rounded-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600 shadow-lg hover:shadow-emerald-400/50 hover:scale-110 transition-all duration-300 border border-emerald-400"
               >
                 <MessageCircle className="w-6 h-6 text-white" />
                 {hasUnreadMessages && (
@@ -459,14 +613,14 @@ export function MonicaChatBubble({
                     <div className="flex items-center gap-2 mb-2">
                       <Badge
                         variant="outline"
-                        className="text-xs bg-purple-900/50 border-purple-400/50 text-purple-200"
+                        className="text-xs bg-purple-900/50 border-purple-400/50 text-purple-200 animate-pulse"
                       >
                         MC {currentMC.toFixed(2)}
                       </Badge>
                       {consciousnessLevel && (
                         <Badge
                           variant="outline"
-                          className="text-xs bg-emerald-900/50 border-emerald-400/50 text-emerald-200"
+                          className="text-xs bg-emerald-900/50 border-emerald-400/50 text-emerald-200 animate-pulse"
                         >
                           {consciousnessLevel}
                         </Badge>
@@ -474,7 +628,10 @@ export function MonicaChatBubble({
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-xs text-emerald-300 border-t border-emerald-700 pt-2">
-                    <Sparkles className="w-3 h-3" />
+                    <Sparkles
+                      className="w-3 h-3 text-yellow-400 animate-spin"
+                      style={{ animationDuration: '6s' }}
+                    />
                     <span>Click to chat • Page: {pathname.split('/').pop() || 'home'}</span>
                   </div>
                   {/* Tooltip Arrow */}
@@ -496,7 +653,7 @@ export function MonicaChatBubble({
             }}
             variant="outline"
             size="sm"
-            className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-emerald-400 text-emerald-700 dark:text-emerald-300"
+            className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm border-emerald-400 text-emerald-700 dark:text-emerald-300 shadow-lg hover:shadow-emerald-400/25"
           >
             <MessageCircle className="w-4 h-4 mr-2" />
             Monica

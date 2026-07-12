@@ -482,14 +482,13 @@ export function MonicaOmnipresent() {
         }),
       })
 
-      if (!response.ok) throw new Error('Failed to get response')
-
       const data = await response.json()
+      const rawText = data.text || data.response || data.content || data.message
 
       const monicaMessage: MonicaMessage = {
         id: (Date.now() + 1).toString(),
         type: 'monica',
-        content: data.content || 'I apologize, but I encountered an issue. Please try again.',
+        content: rawText || 'I apologize, but I encountered an issue. Please try again.',
         timestamp: new Date(),
         context: {
           page: pathname,

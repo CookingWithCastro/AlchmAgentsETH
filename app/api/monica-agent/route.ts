@@ -15,6 +15,11 @@ import { sanitizeUserInput, clampTemperature } from '@/lib/monica/safety'
 import { MonicaResponseHandler } from '@/lib/monica/monica-response-handler'
 import { verifyApiKeys } from '../secure-config'
 
+// Multi-agent supervisor pattern imports
+import { monicaRouter } from '@/lib/monica/enhanced-router'
+import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
+import { unifiedAgentFactory } from '@/lib/unified-agent-factory'
+
 export async function POST(req: NextRequest) {
   try {
     if (!verifyApiKeys()) {
@@ -50,8 +55,38 @@ export async function POST(req: NextRequest) {
       (preferredStyle?.temperature ?? Number(process.env.MONICA_TEMPERATURE)) || 0.4
     )
 
+    // Execute Supervisor Intent-Based Routing
+    const unifiedHistorical = HISTORICAL_AGENTS.map(agent =>
+      unifiedAgentFactory.createFromHistorical(agent)
+    )
+    const routingDecision = await monicaRouter.route({
+      message: userMsg,
+      availableAgents: unifiedHistorical,
+    })
+
     const ctx = getMonicaContextPrompt({ conversationStage })
-    const specialized = MONICA_SPECIALIZED_PROMPTS.alchmGuidance
+
+    // Enrich Monica specialized prompt with the supervisor's routing decisions
+    let specialized = MONICA_SPECIALIZED_PROMPTS.alchmGuidance
+    if (routingDecision.selectedAgents.length > 0) {
+      const recommendationsStr = routingDecision.selectedAgents
+        .map(
+          a =>
+            `- ${a.name} (${a.title}): Specialty: ${a.capabilities.specialty}, Dominant Element: ${a.consciousness.dominantElement}`
+        )
+        .join('\n')
+
+      specialized = `${specialized}
+
+### Supervisor Agent Routing Recommendations
+You have identified the following agents as highly relevant companions/counselors for this query:
+${recommendationsStr}
+
+Reason for routing: ${routingDecision.reason}
+
+Please weave these recommendations naturally into your response to guide the user to the correct workspace or agent, explaining how their unique alchemical/astrological profiles fit the user's inquiry.`
+    }
+
     const sys = buildMonicaPrompt(MONICA_BASE_SYSTEM_PROMPT, ctx, specialized)
 
     const result = await generateText({
@@ -73,7 +108,22 @@ export async function POST(req: NextRequest) {
       sessionId: sessionId || `session-${Date.now()}`,
       metadata: {
         timestamp: new Date().toISOString(),
-        envelope,
+        envelope: {
+          ...envelope,
+          routing: {
+            reason: routingDecision.reason,
+            confidence: routingDecision.confidence,
+            strategy: routingDecision.routingStrategy,
+            recommendedAgents: routingDecision.selectedAgents.map(a => ({
+              id: a.id,
+              name: a.name,
+              title: a.title,
+              type: a.type,
+              avatar: a.appearance.avatar,
+              color: a.appearance.color,
+            })),
+          },
+        },
       },
     }
 
