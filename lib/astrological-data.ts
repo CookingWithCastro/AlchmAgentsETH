@@ -129,13 +129,22 @@ export function getPlanetaryDignity(planet: string, sign: string): string {
 }
 
 // Get the element of a sign
-export function getSignElement(sign: string): string {
-  return signElements[sign as keyof typeof signElements] || 'Unknown'
+export function getSignElement(sign: string): 'Fire' | 'Water' | 'Air' | 'Earth' | 'Unknown' {
+  return (signElements[sign as keyof typeof signElements] || 'Unknown') as
+    | 'Fire'
+    | 'Water'
+    | 'Air'
+    | 'Earth'
+    | 'Unknown'
 }
 
 // Get the modality of a sign
-export function getSignModality(sign: string): string {
-  return signModalities[sign as keyof typeof signModalities] || 'Unknown'
+export function getSignModality(sign: string): 'Cardinal' | 'Fixed' | 'Mutable' | 'Unknown' {
+  return (signModalities[sign as keyof typeof signModalities] || 'Unknown') as
+    | 'Cardinal'
+    | 'Fixed'
+    | 'Mutable'
+    | 'Unknown'
 }
 
 // Get the planetary element based on time of day

@@ -64,6 +64,18 @@ interface HistoricalMatch {
   description?: string
 }
 
+interface MomentRecommendation {
+  agent: {
+    agentId: string
+    name?: string
+    title?: string
+  }
+  synergy?: {
+    score?: number
+    description?: string
+  }
+}
+
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s)
 
 export default function TopAgentsOfTheMoment({
@@ -111,8 +123,8 @@ export default function TopAgentsOfTheMoment({
         const recs = Array.isArray(data?.recommendations) ? data.recommendations : []
         setMatches(
           recs
-            .filter((r: any) => r?.agent?.agentId)
-            .map((r: any) => ({
+            .filter((r: MomentRecommendation) => r?.agent?.agentId)
+            .map((r: MomentRecommendation) => ({
               agentId: r.agent.agentId,
               name: r.agent.name || r.agent.agentId,
               title: r.agent.title,

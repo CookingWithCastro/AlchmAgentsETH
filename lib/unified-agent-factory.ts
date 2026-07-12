@@ -11,7 +11,7 @@ import type {
   AgentCapabilities,
   AgentMemory,
 } from './unified-agent-types'
-import type { CraftedAgent } from './agent-types'
+import type { CraftedAgent, Element } from './agent-types'
 import {
   getPlanetaryDignity,
   getSignElement,
@@ -124,7 +124,7 @@ export class UnifiedAgentFactory implements AgentFactory {
       consciousness: {
         level: consciousnessLevel,
         monicaConstant,
-        dominantElement: planetaryElement as any,
+        dominantElement: (planetaryElement || 'Earth') as Element,
         signature: `PLANETARY-${config.planet.toUpperCase()}-${config.sign.toUpperCase()}-${config.degree}`,
         evolutionStage: 1,
         kineticProfile: {
