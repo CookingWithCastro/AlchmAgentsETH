@@ -674,6 +674,27 @@ export const backend = {
 // Legacy adapters — preserve the existing planetaryAPI shape for migration
 // ============================================================================
 
+export interface LegacyAlchemyData {
+  'Alchemy Effects': {
+    'Total Spirit': number
+    'Total Essence': number
+    'Total Matter': number
+    'Total Substance': number
+  }
+  'A-Number': number
+  A_number: number
+  Energy: number
+  Heat: number
+  Entropy: number
+  Reactivity: number
+  spirit_score: number
+  essence_score: number
+  matter_score: number
+  substance_score: number
+  kinetic_val: number
+  thermo_val: number
+}
+
 /**
  * Returns alchemical quantities mapped to the legacy shape consumers expected
  * from generateAlchmForCurrentMoment(). Older fields (Energy, Heat, Entropy,
@@ -683,7 +704,7 @@ export async function getAlchemicalQuantitiesLegacy(
   date: Date = new Date(),
   latitude?: number,
   longitude?: number
-) {
+): Promise<LegacyAlchemyData> {
   const raw = await backend.alchemy.defaultQuantities(date, latitude, longitude)
   const spirit = Number(raw?.spirit_score ?? 0)
   const essence = Number(raw?.essence_score ?? 0)

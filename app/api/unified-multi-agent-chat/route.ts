@@ -202,7 +202,7 @@ export async function POST(request: NextRequest) {
 
     if (userId && !allAgentsFreeThisWeek) {
       const currentAlchemy = await getAlchemicalQuantitiesLegacy()
-      const alchemyEffects = (currentAlchemy as any)['Alchemy Effects'] || {}
+      const alchemyEffects = currentAlchemy['Alchemy Effects'] || {}
 
       const elementsNow = [
         { name: 'Fire', val: alchemyEffects['Total Spirit'] || 0 },
