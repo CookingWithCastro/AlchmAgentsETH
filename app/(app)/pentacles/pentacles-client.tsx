@@ -42,13 +42,14 @@ export default function PentaclesClient() {
   const [natalElement, setNatalElement] = useState<Element | ''>('')
   const [selectedHipId, setSelectedHipId] = useState<number | null>(null)
   const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null)
-  const [now, setNow] = useState<Date>(() => new Date())
+  const [now, setNow] = useState<Date>(() => new Date(0))
   const [swapOpen, setSwapOpen] = useState(false)
 
   const esms = useEsmsBalances()
 
   // Tick the sky every 15s so visibility, ascendant + activations stay live.
   useEffect(() => {
+    setNow(new Date())
     const id = setInterval(() => setNow(new Date()), 15_000)
     return () => clearInterval(id)
   }, [])
