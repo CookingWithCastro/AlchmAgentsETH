@@ -657,7 +657,11 @@ body.desktop-companion-body .fixed.bottom-4.right-4.z-\[100\] {
   box-shadow: 0 0 30px -5px rgba(185, 140, 214, 0.4);
 }
 .star-field {
-  background-image: radial-gradient(circle at 50% 50%, rgba(216, 180, 106, 0.05) 0%, transparent 80%);
+  background-image: radial-gradient(
+    circle at 50% 50%,
+    rgba(216, 180, 106, 0.05) 0%,
+    transparent 80%
+  );
 }
 .trump-card-border {
   border: 2px solid;
@@ -668,16 +672,29 @@ body.desktop-companion-body .fixed.bottom-4.right-4.z-\[100\] {
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
 }
 .float-anim {
   animation: float 6s ease-in-out infinite;
 }
 
-.agent-glow-air { filter: drop-shadow(0 0 8px rgba(185, 140, 214, 0.4)); }
-.agent-glow-water { filter: drop-shadow(0 0 8px rgba(74, 163, 216, 0.4)); }
-.agent-glow-fire { filter: drop-shadow(0 0 8px rgba(224, 162, 58, 0.4)); }
-.agent-glow-earth { filter: drop-shadow(0 0 8px rgba(95, 179, 122, 0.4)); }
-
+.agent-glow-air {
+  filter: drop-shadow(0 0 8px rgba(185, 140, 214, 0.4));
+}
+.agent-glow-water {
+  filter: drop-shadow(0 0 8px rgba(74, 163, 216, 0.4));
+}
+.agent-glow-fire {
+  filter: drop-shadow(0 0 8px rgba(224, 162, 58, 0.4));
+}
+.agent-glow-earth {
+  filter: drop-shadow(0 0 8px rgba(95, 179, 122, 0.4));
+}

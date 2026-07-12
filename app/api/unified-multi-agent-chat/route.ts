@@ -278,36 +278,79 @@ export async function POST(request: NextRequest) {
 
             const updatedHistory = [...context.sessionHistory, ...currentTurnHistory]
 
-            const response = await processAgentResponse(
-              agent,
-              message,
-              {
-                otherAgents: activeAgents.filter(a => a.id !== agent.id),
-                currentDynamics: context.groupDynamics,
-                sessionHistory: updatedHistory,
-                recentMessages: updatedHistory.slice(-10),
-                variant: chatVariant,
-                modelOverrides: context.modelOverrides,
-              },
-              cosmicContext,
-              sessionId,
-              controller,
-              encoder
-            )
+            try {
+              const response = await processAgentResponse(
+                agent,
+                message,
+                {
+                  otherAgents: activeAgents.filter(a => a.id !== agent.id),
+                  currentDynamics: context.groupDynamics,
+                  sessionHistory: updatedHistory,
+                  recentMessages: updatedHistory.slice(-10),
+                  variant: chatVariant,
+                  modelOverrides: context.modelOverrides,
+                },
+                cosmicContext,
+                sessionId,
+                controller,
+                encoder
+              )
 
-            agentResponses.push(response)
-            controller.enqueue(
-              encoder.encode(`event: agent_complete\ndata: ${JSON.stringify(response)}\n\n`)
-            )
+              agentResponses.push(response)
+              controller.enqueue(
+                encoder.encode(`event: agent_complete\ndata: ${JSON.stringify(response)}\n\n`)
+              )
 
-            currentTurnHistory.push({
-              id: `temp-${Date.now()}-${agent.id}`,
-              role: 'agent',
-              content: response.content,
-              agentId: agent.id,
-              agentName: agent.name,
-              timestamp: new Date(),
-            } as Message)
+              currentTurnHistory.push({
+                id: `temp-${Date.now()}-${agent.id}`,
+                role: 'agent',
+                content: response.content,
+                agentId: agent.id,
+                agentName: agent.name,
+                timestamp: new Date(),
+              } as Message)
+            } catch (err) {
+              console.error(`[unified-multi-agent-chat] Regular agent ${agent.name} failed:`, err)
+              const fallbackContent = `*The celestial connection with ${agent.name} is temporarily unstable due to local space-time noise. Their energy is present, but their voice is obscured.*`
+
+              // Stream the fallback text chunk
+              controller.enqueue(
+                encoder.encode(
+                  `event: text\ndata: ${JSON.stringify({ agentId: agent.id, text: fallbackContent })}\n\n`
+                )
+              )
+
+              const fallbackResponse: AgentResponse = {
+                agentId: agent.id,
+                content: fallbackContent,
+                processingTime: 0,
+                consciousnessShift: 0,
+                metadata: {
+                  crossAgentReferences: [],
+                  synthesizedInsights: [],
+                  memoryUpdates: [],
+                  groupImpact: {
+                    consciousnessChange: 0,
+                    dynamicsShift: [`${agent.name} connection drop`],
+                  },
+                },
+              }
+              agentResponses.push(fallbackResponse)
+              controller.enqueue(
+                encoder.encode(
+                  `event: agent_complete\ndata: ${JSON.stringify(fallbackResponse)}\n\n`
+                )
+              )
+
+              currentTurnHistory.push({
+                id: `temp-fail-${Date.now()}-${agent.id}`,
+                role: 'agent',
+                content: fallbackContent,
+                agentId: agent.id,
+                agentName: agent.name,
+                timestamp: new Date(),
+              } as Message)
+            }
           }
 
           if (monicaAgent) {
@@ -317,27 +360,60 @@ export async function POST(request: NextRequest) {
               )
             )
             const updatedHistory = [...context.sessionHistory, ...currentTurnHistory]
-            const monicaResponse = await processMonicaCoordination(
-              monicaAgent,
-              message,
-              agentResponses,
-              {
-                otherAgents: regularAgents,
-                currentDynamics: context.groupDynamics,
-                sessionHistory: updatedHistory,
-                recentMessages: updatedHistory.slice(-10),
-                variant: chatVariant,
-                modelOverrides: context.modelOverrides,
-              },
-              cosmicContext,
-              sessionId,
-              controller,
-              encoder
-            )
-            agentResponses.push(monicaResponse)
-            controller.enqueue(
-              encoder.encode(`event: agent_complete\ndata: ${JSON.stringify(monicaResponse)}\n\n`)
-            )
+            try {
+              const monicaResponse = await processMonicaCoordination(
+                monicaAgent,
+                message,
+                agentResponses,
+                {
+                  otherAgents: regularAgents,
+                  currentDynamics: context.groupDynamics,
+                  sessionHistory: updatedHistory,
+                  recentMessages: updatedHistory.slice(-10),
+                  variant: chatVariant,
+                  modelOverrides: context.modelOverrides,
+                },
+                cosmicContext,
+                sessionId,
+                controller,
+                encoder
+              )
+              agentResponses.push(monicaResponse)
+              controller.enqueue(
+                encoder.encode(`event: agent_complete\ndata: ${JSON.stringify(monicaResponse)}\n\n`)
+              )
+            } catch (err) {
+              console.error(`[unified-multi-agent-chat] Monica coordinator failed:`, err)
+              const fallbackContent = `*Monica: The group dynamic stream is fluctuating. I am keeping the chamber open, but consensus synthesis is running on emergency buffers.*`
+
+              controller.enqueue(
+                encoder.encode(
+                  `event: text\ndata: ${JSON.stringify({ agentId: monicaAgent.id, text: fallbackContent })}\n\n`
+                )
+              )
+
+              const fallbackResponse: AgentResponse = {
+                agentId: monicaAgent.id,
+                content: fallbackContent,
+                processingTime: 0,
+                consciousnessShift: 0,
+                metadata: {
+                  crossAgentReferences: [],
+                  synthesizedInsights: [],
+                  memoryUpdates: [],
+                  groupImpact: {
+                    consciousnessChange: 0,
+                    dynamicsShift: ['Monica connection drop'],
+                  },
+                },
+              }
+              agentResponses.push(fallbackResponse)
+              controller.enqueue(
+                encoder.encode(
+                  `event: agent_complete\ndata: ${JSON.stringify(fallbackResponse)}\n\n`
+                )
+              )
+            }
           }
 
           // Calculate updated group dynamics

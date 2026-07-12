@@ -476,6 +476,7 @@ export function UnifiedMultiAgentChat({
               size="sm"
               onClick={() => setShowSettings(!showSettings)}
               className="border-white/20 bg-white/5 hover:bg-white/10 text-white"
+              aria-label="Settings"
             >
               <Settings className="w-4 h-4" />
             </Button>

@@ -1,16 +1,19 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   Activity,
   ChevronDown,
   ChevronUp,
   ExternalLink,
-  Lock,
   RefreshCw,
   Users,
+  Send,
 } from 'lucide-react'
 import type { PlanetaryPosition } from '@/hooks/usePlanetaryPositions'
+import { unifiedAgentFactory } from '@/lib/unified-agent-factory'
+import { getPlanetaryDignity, getSignElement } from '@/lib/astrological-data'
+import type { Element } from '@/lib/agent-types'
 
 type LivePlanetaryCouncilThreadProps = {
   positions: PlanetaryPosition[]
@@ -245,6 +248,27 @@ function aspectGlyph(aspect?: Aspect | null) {
   }`
 }
 
+type ThreadMessage = {
+  id: string
+  role: 'user' | 'agent'
+  agentId?: string
+  agentName: string
+  agentColor?: string
+  agentSymbol?: string
+  content: string
+  timestamp: Date
+}
+
+const PLANET_COLORS_LOCAL: Record<string, string> = {
+  Sun: '#f59e0b',
+  Moon: '#9ca3af',
+  Mercury: '#f97316',
+  Venus: '#ec4899',
+  Mars: '#ef4444',
+  Jupiter: '#8b5cf6',
+  Saturn: '#4b5563',
+}
+
 export function LivePlanetaryCouncilThread({
   positions,
   loading = false,
@@ -253,6 +277,9 @@ export function LivePlanetaryCouncilThread({
   onRefresh,
 }: LivePlanetaryCouncilThreadProps) {
   const [expanded, setExpanded] = useState(false)
+  const [messages, setMessages] = useState<ThreadMessage[]>([])
+  const [inputText, setInputText] = useState('')
+  const [isSending, setIsSending] = useState(false)
 
   const council = useMemo(() => {
     const normalized = positions
@@ -310,6 +337,177 @@ export function LivePlanetaryCouncilThread({
         council.strongestAspect.planetB
       } tightened to ${council.strongestAspect.orb.toFixed(1)}° orb.`
     : 'The council is listening for the next angular handoff.'
+
+  // Seeding effect
+  useEffect(() => {
+    if (messages.length === 0 && council.activeAgents.length > 0) {
+      const activePlanets = council.activeAgents.slice(0, 2)
+      const seeded = activePlanets.map((agent, index) => ({
+        id: `seeded-${agent.planet}-${index}`,
+        role: 'agent' as const,
+        agentId: `planetary-${agent.planet.toLowerCase()}-${agent.sign.toLowerCase()}-${agent.degree}`,
+        agentName: agent.planet,
+        agentColor: PLANET_COLORS_LOCAL[agent.planet] || '#6b7280',
+        agentSymbol: agent.glyph,
+        content: AGENT_LINES[agent.planet] || 'The council signal is assembling.',
+        timestamp: new Date(Date.now() - (2 - index) * 60000),
+      }))
+      setMessages(seeded)
+    }
+  }, [council.activeAgents, messages.length])
+
+  // Refresh handler
+  const handleRefresh = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    setMessages([]) // Clear local messages to trigger re-seed
+    onRefresh?.()
+  }
+
+  // Send message to council
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inputText.trim() || isSending || council.activeAgents.length === 0) return
+
+    const userMessage: ThreadMessage = {
+      id: `user-${Date.now()}`,
+      role: 'user',
+      agentName: 'You',
+      content: inputText.trim(),
+      timestamp: new Date(),
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInputText('')
+    setIsSending(true)
+
+    // Build the UnifiedAgent representations for the active planets
+    const activeAgentsToChat = council.activeAgents.slice(0, 2).map(agent => {
+      const config = {
+        planet: agent.planet,
+        sign: agent.sign,
+        degree: agent.degree.toString(),
+        dignity: getPlanetaryDignity(agent.planet, agent.sign),
+        element: getSignElement(agent.sign) as Element,
+        color: PLANET_COLORS_LOCAL[agent.planet] || '#6b7280',
+        symbol: agent.glyph,
+        liveSkySync: true,
+      }
+      return unifiedAgentFactory.createFromPlanetary(config)
+    })
+
+    try {
+      const priorHistory = [...messages, userMessage]
+
+      const response = await fetch('/api/unified-multi-agent-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agents: activeAgentsToChat,
+          message: userMessage.content,
+          context: {
+            sessionHistory: priorHistory.map(m => ({
+              role: m.role,
+              content: m.content,
+              agentId: m.agentId,
+              agentName: m.agentName,
+              timestamp: m.timestamp.toISOString(),
+            })),
+            enableMemoryPersistence: false,
+            realtimeUpdates: false,
+            variant: 'planetary',
+          },
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Council response failed')
+      }
+
+      if (!response.body) throw new Error('No stream response body')
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n\n')
+        buffer = lines.pop() || ''
+
+        for (const block of lines) {
+          const blockLines = block.split('\n')
+          const eventLine = blockLines.find(l => l.startsWith('event: '))
+          const dataLine = blockLines.find(l => l.startsWith('data: '))
+
+          if (!eventLine || !dataLine) continue
+
+          const event = eventLine.replace('event: ', '').trim()
+          const dataStr = dataLine.replace('data: ', '').trim()
+
+          try {
+            const parsedData = JSON.parse(dataStr)
+
+            if (event === 'agent_start') {
+              const agentId = parsedData.agentId
+              const agent = council.activeAgents.find(
+                a =>
+                  `planetary-${a.planet.toLowerCase()}-${a.sign.toLowerCase()}-${a.degree}` ===
+                  agentId
+              )
+
+              setMessages(prev => [
+                ...prev,
+                {
+                  id: `msg-${Date.now()}-${agentId}`,
+                  role: 'agent',
+                  agentId: agentId,
+                  agentName: agent?.planet || 'Planetary Agent',
+                  agentColor: agent ? PLANET_COLORS_LOCAL[agent.planet] : '#6b7280',
+                  agentSymbol: agent?.glyph || '✦',
+                  content: '',
+                  timestamp: new Date(),
+                },
+              ])
+            } else if (event === 'text') {
+              setMessages(prev => {
+                const newMessages = [...prev]
+                for (let i = newMessages.length - 1; i >= 0; i--) {
+                  if (newMessages[i].agentId === parsedData.agentId) {
+                    newMessages[i] = {
+                      ...newMessages[i],
+                      content: newMessages[i].content + parsedData.text,
+                    }
+                    break
+                  }
+                }
+                return newMessages
+              })
+            }
+          } catch (e) {
+            console.error('Failed to parse SSE line in landing council', e)
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Landing page council chat error:', err)
+      setMessages(prev => [
+        ...prev,
+        {
+          id: `error-${Date.now()}`,
+          role: 'agent',
+          agentName: 'The Council',
+          content:
+            'The celestial alignment is fluctuating, causing a brief connection dropout. Please try asking again.',
+          timestamp: new Date(),
+        },
+      ])
+    } finally {
+      setIsSending(false)
+    }
+  }
 
   return (
     <section className="glass-panel rounded-xl border-[#23262B] overflow-hidden">
@@ -422,36 +620,64 @@ export function LivePlanetaryCouncilThread({
             </div>
 
             <div className="space-y-4">
-              {messageAgents.map((agent, index) => {
-                const side = index % 2 === 1
+              {messages.map(message => {
+                const side = message.role === 'user'
+                const color = message.agentColor || '#6b7280'
+                const displayGlyph = message.agentSymbol || '✦'
                 return (
                   <div
-                    key={`${agent.planet}-${index}`}
+                    key={message.id}
                     className={`flex max-w-[92%] gap-3 ${side ? 'ml-auto flex-row-reverse text-right' : ''}`}
                   >
-                    <div
-                      className={`mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-[#050506] text-xl ${agent.border} ${agent.accent} ${agent.glow}`}
-                    >
-                      {agent.glyph}
-                    </div>
+                    {message.role === 'agent' && (
+                      <div
+                        className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border bg-[#050506] text-xl border-[#424936]"
+                        style={{
+                          borderColor: color + '50',
+                          color: color,
+                          boxShadow: `0 0 10px ${color}15`,
+                        }}
+                      >
+                        {displayGlyph}
+                      </div>
+                    )}
                     <div className="min-w-0 space-y-1">
                       <div className={`flex items-baseline gap-2 ${side ? 'justify-end' : ''}`}>
-                        <span className={`font-mono-label text-[10px] ${agent.accent}`}>
-                          {agent.callSign}
+                        <span
+                          className="font-mono-label text-[10px]"
+                          style={{ color: side ? '#b8fc4b' : color }}
+                        >
+                          {side ? 'YOU' : `${message.agentName.toUpperCase()}_NODE`}
                         </span>
                         <span className="font-mono-label text-[9px] text-[#8c947c]">
-                          {updatedLabel}
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: 'numeric',
+                            minute: '2-digit',
+                          })}
                         </span>
                       </div>
-                      <div className="rounded-lg border border-[#424936]/70 bg-[#050506]/80 p-3">
-                        <p className="font-body-md text-sm leading-relaxed text-[#e0e4d2]">
-                          {AGENT_LINES[agent.planet] || 'The council signal is assembling.'}
+                      <div
+                        className={`rounded-lg border p-3 ${
+                          side
+                            ? 'border-[#b8fc4b]/30 bg-[#b8fc4b]/5 text-[#c2cab0]'
+                            : 'border-[#424936]/70 bg-[#050506]/80 text-[#e0e4d2]'
+                        }`}
+                      >
+                        <p className="font-body-md text-sm leading-relaxed whitespace-pre-wrap">
+                          {message.content || '…'}
                         </p>
                       </div>
                     </div>
                   </div>
                 )
               })}
+
+              {isSending && (
+                <div className="flex gap-2 items-center text-xs font-mono text-[#7bd1fa] ml-3 animate-pulse">
+                  <Activity className="h-3 w-3 animate-spin" />
+                  <span>Council is synthesizing responses...</span>
+                </div>
+              )}
 
               <div className="flex justify-center">
                 <span className="rounded-full border border-[#b8fc4b]/20 bg-[#b8fc4b]/5 px-3 py-1 font-mono-label text-[10px] text-[#b8fc4b]">
@@ -482,23 +708,32 @@ export function LivePlanetaryCouncilThread({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <button
                 type="button"
-                onClick={event => {
-                  event.stopPropagation()
-                  onRefresh?.()
-                }}
+                onClick={handleRefresh}
                 className="inline-flex items-center justify-center gap-2 rounded-lg border border-[#7bd1fa]/40 px-3 py-2 font-mono-label text-[10px] uppercase tracking-widest text-[#7bd1fa] hover:bg-[#7bd1fa]/10 transition-colors"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Refresh
               </button>
-              <div className="relative flex-1">
+              <form onSubmit={handleSend} className="relative flex-1 flex gap-2">
                 <input
-                  disabled
-                  className="h-9 w-full rounded-lg border border-[#424936] bg-[#050506] px-3 pr-9 font-body-md text-sm text-[#8c947c] opacity-70"
-                  placeholder="Ask the Council"
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value)}
+                  disabled={isSending || council.activeAgents.length === 0}
+                  className="h-9 w-full rounded-lg border border-[#424936] bg-[#050506] px-3 pr-9 font-body-md text-sm text-[#e0e4d2] placeholder:text-[#8c947c] focus:outline-none focus:border-[#7bd1fa]/50 transition-colors"
+                  placeholder={
+                    council.activeAgents.length > 0
+                      ? 'Ask the Council...'
+                      : 'Waiting for council...'
+                  }
                 />
-                <Lock className="absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#8c947c]" />
-              </div>
+                <button
+                  type="submit"
+                  disabled={isSending || !inputText.trim()}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#7bd1fa] hover:text-[#7bd1fa]/80 disabled:text-[#8c947c]/50 transition-colors"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
+              </form>
               <button
                 type="button"
                 onClick={event => {

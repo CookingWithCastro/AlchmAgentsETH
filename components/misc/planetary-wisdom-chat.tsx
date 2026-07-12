@@ -299,64 +299,83 @@ export function PlanetaryWisdomChat({
   const renderPresetSelection = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold mb-2">Choose Your Celestial Council</h2>
-        <p className="text-muted-foreground">Select planetary agents for cosmic guidance</p>
+        <h2 className="text-2xl font-bold font-headline mb-2 text-[#e0e4d2]">
+          Choose Your Celestial Council
+        </h2>
+        <p className="text-sm font-mono-label tracking-widest text-[#8c947c] uppercase">
+          Select planetary agents for cosmic guidance
+        </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {PLANETARY_COUNCIL_PRESETS.map(preset => (
           <Card
             key={preset.id}
-            className="cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] bg-black/40 backdrop-blur-md border-white/10 hover:border-purple-500/50 text-white"
+            className="cursor-pointer transition-all bg-[#050506]/90 backdrop-blur-md border border-[#23262B] hover:border-purple-500/50 hover:shadow-[0_0_20px_rgba(139,92,246,0.15)] text-white hover:scale-[1.01] duration-300 rounded-xl overflow-hidden"
             onClick={() => handlePresetSelect(preset)}
           >
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 border-b border-[#23262B]/50 bg-white/[0.01] px-5 py-4">
               <div className="flex items-start justify-between">
                 <div>
-                  <CardTitle className="text-lg">{preset.name}</CardTitle>
-                  <Badge variant="outline" className="mt-1">
+                  <CardTitle className="text-lg font-headline text-[#e0e4d2]">
+                    {preset.name}
+                  </CardTitle>
+                  <Badge
+                    variant="outline"
+                    className="mt-1.5 border-purple-500/30 bg-purple-500/10 text-purple-300 font-mono-label text-[9px] uppercase tracking-wider"
+                  >
                     {preset.difficulty}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-1 text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span className="text-sm">{preset.planetaryAgentIds.length}</span>
+                <div className="flex items-center gap-1.5 text-[#8c947c] font-mono-label text-xs">
+                  <Users className="w-3.5 h-3.5" />
+                  <span>{preset.planetaryAgentIds.length}</span>
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-purple-200/70 mb-3">{preset.description}</p>
+            <CardContent className="px-5 py-4 space-y-4">
+              <p className="text-xs font-body text-[#c2cab0] leading-relaxed">
+                {preset.description}
+              </p>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5 rounded-lg bg-black/45 border border-[#23262B]/75 p-3">
                 <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-medium">Focus:</span>
+                  <Star className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="text-[10px] font-mono-label uppercase tracking-widest text-[#8c947c]">
+                    Focus:
+                  </span>
                 </div>
-                <p className="text-sm text-purple-200/70 ml-6">{preset.astrological_focus}</p>
+                <p className="text-xs font-body text-[#e0e4d2] ml-5">{preset.astrological_focus}</p>
               </div>
 
-              <div className="flex flex-wrap gap-2 mt-3">
+              <div className="flex flex-wrap gap-1.5">
                 {preset.planetCombination.map(planet => (
-                  <Badge key={planet} variant="outline" className="text-xs">
+                  <Badge
+                    key={planet}
+                    variant="outline"
+                    className="border-[#424936] bg-[#050506]/55 text-[#c2cab0] font-mono-label text-[9px] tracking-wider"
+                  >
                     {planet}
                   </Badge>
                 ))}
               </div>
 
-              <div className="flex items-center gap-2 mt-3">
+              <div className="flex items-center gap-2 border-t border-[#23262B]/55 pt-3">
                 <Crown
-                  className={`w-4 h-4 ${preset.includeMonica ? 'text-purple-500' : 'text-gray-300'}`}
+                  className={`w-3.5 h-3.5 ${preset.includeMonica ? 'text-purple-400' : 'text-gray-600'}`}
                 />
-                <span className="text-sm">
-                  {preset.includeMonica
-                    ? `Monica as ${preset.monicaRole}`
-                    : 'Pure planetary wisdom'}
+                <span className="text-[10px] font-mono-label uppercase tracking-widest text-[#8c947c]">
+                  {preset.includeMonica ? `Monica: ${preset.monicaRole}` : 'Pure planetary wisdom'}
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-1 mt-3">
+              <div className="flex flex-wrap gap-1 mt-1.5">
                 {preset.tags.map(tag => (
-                  <Badge key={tag} variant="secondary" className="text-xs">
+                  <Badge
+                    key={tag}
+                    variant="secondary"
+                    className="bg-[#1A0C2B] text-purple-300 font-mono-label text-[9px] hover:bg-[#1A0C2B]"
+                  >
                     {tag}
                   </Badge>
                 ))}
@@ -368,14 +387,16 @@ export function PlanetaryWisdomChat({
 
       {/* Custom Council Option */}
       <Card
-        className="cursor-pointer transition-all hover:shadow-[0_0_20px_rgba(139,92,246,0.2)] border-dashed border-2 bg-black/40 backdrop-blur-md border-white/20 hover:border-purple-500/50 text-white"
+        className="cursor-pointer transition-all bg-[#050506]/90 border-dashed border-2 border-[#424936]/40 hover:border-[#b8fc4b]/40 hover:shadow-[0_0_20px_rgba(184,252,75,0.08)] text-white duration-300 rounded-xl"
         onClick={handleCreateCustomCouncil}
       >
         <CardContent className="flex items-center justify-center py-8">
           <div className="text-center">
-            <Sparkles className="w-8 h-8 text-primary mx-auto mb-2" />
-            <h3 className="font-semibold mb-1">Create Custom Council</h3>
-            <p className="text-sm text-purple-200/70">Select your own planetary combination</p>
+            <Sparkles className="w-8 h-8 text-[#b8fc4b] mx-auto mb-2 animate-pulse" />
+            <h3 className="font-headline text-lg text-[#e0e4d2] mb-1">Create Custom Council</h3>
+            <p className="text-xs font-mono-label tracking-widest text-[#8c947c] uppercase">
+              Select your own planetary combination
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -384,67 +405,96 @@ export function PlanetaryWisdomChat({
 
   // Render live sky status
   const renderLiveSkyStatus = () => (
-    <Card className="mb-4 bg-black/40 backdrop-blur-md border-white/10 text-white shadow-[0_0_20px_rgba(139,92,246,0.05)]">
-      <CardHeader className="pb-3">
+    <Card className="mb-6 bg-[#050506]/95 backdrop-blur-md border border-[#23262B] text-white shadow-[0_0_35px_rgba(0,0,0,0.5)] rounded-xl overflow-hidden">
+      <CardHeader className="pb-4 border-b border-[#23262B]/55 bg-white/[0.01] px-5 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Globe className={`w-5 h-5 ${autoSyncEnabled ? 'text-green-500' : 'text-gray-400'}`} />
-            <CardTitle className="text-lg">Live Sky Connection</CardTitle>
+            <Globe className={`w-5 h-5 ${autoSyncEnabled ? 'text-[#b8fc4b]' : 'text-[#8c947c]'}`} />
+            <CardTitle className="text-lg font-headline text-[#e0e4d2]">
+              Celestial Telemetry
+            </CardTitle>
           </div>
-          <div className="flex items-center gap-2">
-            <Switch checked={autoSyncEnabled} onCheckedChange={handleAutoSyncToggle} />
-            <Button variant="ghost" size="sm" onClick={handleManualSync} disabled={autoSyncEnabled}>
-              <RefreshCw className="w-4 h-4" />
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="font-mono-label text-[10px] text-[#8c947c] uppercase tracking-wider">
+                Live Sync
+              </span>
+              <Switch
+                checked={autoSyncEnabled}
+                onCheckedChange={handleAutoSyncToggle}
+                className="data-[state=checked]:bg-[#b8fc4b]"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleManualSync}
+              disabled={autoSyncEnabled}
+              className="border border-[#23262B] bg-[#050506]/50 hover:bg-[#0A0A0B] text-white disabled:opacity-40"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <CardContent className="p-5 space-y-5">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {/* Sync Status */}
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Activity
-                className={`w-4 h-4 ${autoSyncEnabled ? 'text-green-500' : 'text-gray-400'}`}
+          <div className="rounded-lg border border-[#23262B] bg-[#0A0A0B]/80 px-4 py-3">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${autoSyncEnabled ? 'bg-[#b8fc4b] animate-pulse' : 'bg-orange-500'}`}
               />
-              <span className="font-medium">Sync Status</span>
+              <span className="font-mono-label text-[9px] uppercase tracking-widest text-[#8c947c]">
+                Sync Engine
+              </span>
             </div>
-            <div className="text-sm">
-              <div className={autoSyncEnabled ? 'text-green-600' : 'text-gray-500'}>
-                {autoSyncEnabled ? 'Live' : 'Manual'}
+            <div className="text-xs font-mono text-[#e0e4d2]">
+              <div>{autoSyncEnabled ? 'ACTIVE RELAY' : 'MANUAL HOLD'}</div>
+              <div className="text-[#8c947c] text-[10px] mt-0.5">
+                {lastSyncTime.toLocaleTimeString()}
               </div>
-              <div className="text-purple-300/70">Last: {lastSyncTime.toLocaleTimeString()}</div>
             </div>
           </div>
 
           {/* Current Astro Info */}
           {currentAstroInfo && (
             <>
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Sun className="w-4 h-4 text-amber-500" />
-                  <span className="font-medium">Dominant Element</span>
+              <div className="rounded-lg border border-[#23262B] bg-[#0A0A0B]/80 px-4 py-3">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="font-mono-label text-[9px] uppercase tracking-widest text-[#8c947c]">
+                    Dominant Element
+                  </span>
                 </div>
-                <Badge variant="outline">{currentAstroInfo.dominantElement}</Badge>
+                <div className="text-xs font-mono text-[#b8fc4b]">
+                  {currentAstroInfo.dominantElement.toUpperCase()}
+                </div>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <Moon className="w-4 h-4 text-blue-500" />
-                  <span className="font-medium">Lunar Phase</span>
+              <div className="rounded-lg border border-[#23262B] bg-[#0A0A0B]/80 px-4 py-3">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Moon className="w-3.5 h-3.5 text-[#7bd1fa]" />
+                  <span className="font-mono-label text-[9px] uppercase tracking-widest text-[#8c947c]">
+                    Lunar Phase
+                  </span>
                 </div>
-                <div className="text-sm">{currentAstroInfo.lunarPhase}</div>
+                <div className="text-xs font-mono text-[#c2cab0] truncate">
+                  {currentAstroInfo.lunarPhase}
+                </div>
               </div>
 
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertCircle className="w-4 h-4 text-orange-500" />
-                  <span className="font-medium">Retrogrades</span>
+              <div className="rounded-lg border border-[#23262B] bg-[#0A0A0B]/80 px-4 py-3">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 text-orange-400" />
+                  <span className="font-mono-label text-[9px] uppercase tracking-widest text-[#8c947c]">
+                    Retrogrades
+                  </span>
                 </div>
-                <div className="text-sm">
+                <div className="text-xs font-mono text-orange-300">
                   {currentAstroInfo.retrogradeCount === 0
-                    ? 'None'
-                    : `${currentAstroInfo.retrogradeCount} active`}
+                    ? 'STABLE DIRECT'
+                    : `${currentAstroInfo.retrogradeCount} FLUX NODES`}
                 </div>
               </div>
             </>
@@ -453,24 +503,41 @@ export function PlanetaryWisdomChat({
 
         {/* Active Council */}
         {activePlanetIds.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-white/10">
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4" />
-              <span className="font-medium">Active Council</span>
-              {selectedPreset && <Badge variant="outline">{selectedPreset.name}</Badge>}
+          <div className="mt-4 pt-4 border-t border-[#23262B]/55">
+            <div className="flex items-center gap-2 mb-2.5">
+              <Users className="w-3.5 h-3.5 text-[#8c947c]" />
+              <span className="font-mono-label text-[10px] uppercase tracking-widest text-[#8c947c]">
+                Active Council Linkage
+              </span>
+              {selectedPreset && (
+                <Badge
+                  variant="outline"
+                  className="border-purple-500/30 bg-[#1A0C2B] text-purple-300 font-mono-label text-[9px]"
+                >
+                  {selectedPreset.name}
+                </Badge>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2.5">
               {activePlanetaryConfigs.map(config => (
-                <div key={config.planet} className="flex items-center gap-1 text-sm">
-                  <span style={{ color: config.color }}>{config.symbol}</span>
-                  <span>{config.planet}</span>
-                  <span className="text-purple-300/70">in {config.sign}</span>
+                <div
+                  key={config.planet}
+                  className="flex items-center gap-2 rounded-lg border border-[#23262B]/75 bg-black/45 px-3 py-1.5 text-xs font-mono"
+                >
+                  <span style={{ color: config.color }} className="text-sm">
+                    {config.symbol}
+                  </span>
+                  <span className="text-[#e0e4d2] font-semibold">{config.planet}</span>
+                  <span className="text-[#8c947c] text-[10px]">in {config.sign}</span>
                 </div>
               ))}
               {selectedPreset?.includeMonica && (
-                <div className="flex items-center gap-1 text-sm">
-                  <Crown className="w-3 h-3 text-purple-500" />
-                  <span>Monica ({selectedPreset.monicaRole})</span>
+                <div className="flex items-center gap-2 rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-1.5 text-xs font-mono">
+                  <Crown className="w-3.5 h-3.5 text-purple-400" />
+                  <span className="text-purple-300 font-semibold">Monica</span>
+                  <span className="text-purple-400/70 text-[10px]">
+                    ({selectedPreset.monicaRole})
+                  </span>
                 </div>
               )}
             </div>
