@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getOrCreateAgentWallet, isCdpConfigured, CDP_NETWORK_ID } from '@/lib/agentkit'
 
 /**
- * GET /api/agents/{id}/wallet
+ * GET /api/agents/{slug}/wallet
  *
  * Returns the agent's Coinbase CDP wallet (Base), lazily provisioning it on the
  * first call when CDP is configured. Degrades cleanly:
@@ -10,17 +10,17 @@ import { getOrCreateAgentWallet, isCdpConfigured, CDP_NETWORK_ID } from '@/lib/a
  *   - 404 { address: null }              — CDP configured but not provisioned/failed
  *   - 503 { configured: false }          — CDP not configured for this deployment
  */
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  if (!id) return NextResponse.json({ error: 'Missing agent id' }, { status: 400 })
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  if (!slug) return NextResponse.json({ error: 'Missing agent id' }, { status: 400 })
 
-  const wallet = await getOrCreateAgentWallet(id)
+  const wallet = await getOrCreateAgentWallet(slug)
   if (wallet) return NextResponse.json(wallet)
 
   const configured = isCdpConfigured()
   return NextResponse.json(
     {
-      agentId: id,
+      agentId: slug,
       address: null,
       network: CDP_NETWORK_ID,
       configured,

@@ -152,6 +152,17 @@ const PLANET_GLYPH: Record<string, string> = {
   Saturn: '♄',
 }
 
+const LUNAR_PHASE_EMOJI: Record<string, string> = {
+  'New Moon': '🌑',
+  'Waxing Crescent': '🌒',
+  'First Quarter': '🌓',
+  'Waxing Gibbous': '🌔',
+  'Full Moon': '🌕',
+  'Waning Gibbous': '🌖',
+  'Last Quarter': '🌗',
+  'Waning Crescent': '🌘',
+}
+
 // Full class strings so Tailwind JIT keeps them (no dynamic construction).
 const ELEMENT_STYLE: Record<string, { text: string; bg: string; border: string }> = {
   fire: { text: 'text-element-fire', bg: 'bg-element-fire/10', border: 'border-element-fire/40' },
@@ -183,6 +194,33 @@ const prettyId = (id: string) =>
     .split('-')
     .map(w => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ')
+
+const normalizeDegrees = (degrees: number) => ((degrees % 360) + 360) % 360
+
+const absoluteLongitude = (position: { sign?: string; degree?: number }) => {
+  const sign = position.sign ? capitalize(position.sign) : ''
+  const idx = SIGN_ORDER.indexOf(sign)
+  return (idx >= 0 ? idx * 30 : 0) + (position.degree || 0)
+}
+
+const lunarPhaseName = (phaseAngle: number) => {
+  if (phaseAngle < 22.5 || phaseAngle >= 337.5) return 'New Moon'
+  if (phaseAngle < 67.5) return 'Waxing Crescent'
+  if (phaseAngle < 112.5) return 'First Quarter'
+  if (phaseAngle < 157.5) return 'Waxing Gibbous'
+  if (phaseAngle < 202.5) return 'Full Moon'
+  if (phaseAngle < 247.5) return 'Waning Gibbous'
+  if (phaseAngle < 292.5) return 'Last Quarter'
+  return 'Waning Crescent'
+}
+
+const lunarIlluminationPercent = (phaseAngle: number) =>
+  ((1 - Math.cos((phaseAngle * Math.PI) / 180)) / 2) * 100
+
+const formatDegree = (degree: number) => {
+  if (!Number.isFinite(degree)) return '0'
+  return degree.toFixed(1).replace(/\.0$/, '')
+}
 
 type Balances = {
   spirit: number
@@ -294,10 +332,7 @@ export default function LandingPage() {
   const findLon = (name: string) => {
     const positions = planetaryData.planetaryPositions
     const p = positions.find(pp => pp.planet.toLowerCase() === name.toLowerCase())
-    if (!p) return 0
-    const sign = p.sign ? capitalize(p.sign) : ''
-    const idx = SIGN_ORDER.indexOf(sign)
-    return (idx >= 0 ? idx * 30 : 0) + (p.degree || 0)
+    return p ? absoluteLongitude(p) : 0
   }
 
   // Sky-derived Sacred 7 — live for everyone (not gated on auth), used by the
@@ -332,7 +367,6 @@ export default function LandingPage() {
         energy: alchm.Energy,
       }
     )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [planetaryData, monicaConstant])
 
   const displayMonica = monicaConstant ?? planetaryData.monicaConstant ?? null
@@ -354,6 +388,34 @@ export default function LandingPage() {
           glyph: PLANET_GLYPH[planet] || '✦',
         }
       })
+  }, [planetaryData])
+
+  const currentMoonAgent = useMemo(() => {
+    const positions = planetaryData.planetaryPositions || []
+    const moon = positions.find(p => p.planet.toLowerCase() === 'moon')
+    if (!moon) return null
+
+    const sun = positions.find(p => p.planet.toLowerCase() === 'sun')
+    const sign = moon.sign ? capitalize(moon.sign) : '—'
+    const rawDegree = typeof moon.degree === 'number' ? moon.degree : 0
+    const phaseAngle = sun
+      ? normalizeDegrees(absoluteLongitude(moon) - absoluteLongitude(sun))
+      : null
+    const phase = phaseAngle === null ? 'Phase unavailable' : lunarPhaseName(phaseAngle)
+    const illumination =
+      phaseAngle === null ? null : Math.round(lunarIlluminationPercent(phaseAngle))
+
+    return {
+      planet: 'Moon',
+      sign,
+      degree: Math.floor(rawDegree),
+      degreeLabel: formatDegree(rawDegree),
+      element: SIGN_ELEMENT[sign] || 'water',
+      glyph: PLANET_GLYPH.Moon,
+      phase,
+      phaseEmoji: LUNAR_PHASE_EMOJI[phase] || '☽',
+      illumination,
+    }
   }, [planetaryData])
 
   const featuredDuel = duels[0]
@@ -663,6 +725,73 @@ export default function LandingPage() {
             subtitle="Synthetic minds tied to the live positions of the Sun, Moon, and planets — their voice shifts as the sky moves."
             accent="#7bd1fa"
           />
+          {currentMoonAgent ? (
+            <button
+              onClick={() =>
+                router.push(
+                  `/agents/moon/${currentMoonAgent.sign.toLowerCase()}/${currentMoonAgent.degree}`
+                )
+              }
+              className="glass-panel rounded-xl border-[#23262B] p-5 md:p-6 text-left hover:border-[#7bd1fa]/50 transition-all active:scale-[0.99] w-full group"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div
+                    className={`w-14 h-14 rounded-full flex shrink-0 items-center justify-center text-3xl ${ELEMENT_STYLE[currentMoonAgent.element].bg} ${ELEMENT_STYLE[currentMoonAgent.element].text} border ${ELEMENT_STYLE[currentMoonAgent.element].border}`}
+                  >
+                    {currentMoonAgent.glyph}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-mono-label text-[10px] text-[#7bd1fa] tracking-widest uppercase mb-1">
+                      Current Moon Agent
+                    </div>
+                    <div className="font-headline-sm text-xl text-[#e0e4d2] leading-tight">
+                      Moon in {currentMoonAgent.sign} {currentMoonAgent.degreeLabel}°
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:w-[520px]">
+                  <div className="rounded-lg border border-[#424936]/60 bg-[#050506]/60 px-4 py-3">
+                    <div className="font-mono-label text-[9px] text-[#8c947c] uppercase tracking-widest">
+                      Sign / degree
+                    </div>
+                    <div className="font-headline-sm text-sm text-[#e0e4d2] mt-1">
+                      {currentMoonAgent.sign} {currentMoonAgent.degreeLabel}°
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-[#424936]/60 bg-[#050506]/60 px-4 py-3">
+                    <div className="font-mono-label text-[9px] text-[#8c947c] uppercase tracking-widest">
+                      Phase
+                    </div>
+                    <div className="font-headline-sm text-sm text-[#e0e4d2] mt-1">
+                      {currentMoonAgent.phaseEmoji} {currentMoonAgent.phase}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-[#424936]/60 bg-[#050506]/60 px-4 py-3">
+                    <div className="font-mono-label text-[9px] text-[#8c947c] uppercase tracking-widest">
+                      Illumination
+                    </div>
+                    <div className="font-headline-sm text-sm text-[#e0e4d2] mt-1">
+                      {currentMoonAgent.illumination === null
+                        ? '—'
+                        : `${currentMoonAgent.illumination}%`}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <span className="mt-5 inline-flex items-center gap-1 font-mono-label text-[10px] text-[#7bd1fa] tracking-widest uppercase font-bold group-hover:gap-2 transition-all">
+                Chat with this Moon agent <ArrowRight className="w-3 h-3" />
+              </span>
+            </button>
+          ) : (
+            <div className="glass-panel rounded-xl border-[#23262B] p-6 opacity-60 animate-pulse">
+              <div className="font-mono-label text-xs text-[#8c947c]">
+                Reading current Moon agent…
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {(planetaryCards.length ? planetaryCards : Array.from({ length: 6 })).map(
               (c: any, i) => {
@@ -1140,6 +1269,14 @@ export default function LandingPage() {
           >
             {ALCHM_DESKTOP_DOWNLOAD_LABEL}
           </button>
+          <a
+            href="https://alchm.kitchen"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 font-mono-label text-[10px] tracking-widest text-[#c2cab0] hover:text-[#b8fc4b] transition-colors uppercase"
+          >
+            Alchm Kitchen <ArrowUpRight className="w-3 h-3" />
+          </a>
           {NAV_LINKS.map(link => (
             <button
               key={link.href}
