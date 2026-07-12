@@ -32,6 +32,7 @@ import {
 } from 'lucide-react'
 import './landing.css'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
+import { LivePlanetaryCouncilThread } from '@/components/landing/live-planetary-council-thread'
 import {
   deriveStatsFromChart,
   enhanceWithAlchemy,
@@ -792,6 +793,13 @@ export default function LandingPage() {
               </div>
             </div>
           )}
+          <LivePlanetaryCouncilThread
+            positions={planetaryData.planetaryPositions}
+            loading={planetaryData.loading}
+            lastUpdated={planetaryData.lastUpdated}
+            onRefresh={planetaryData.refresh}
+            onOpenCouncil={() => router.push('/planetary-council')}
+          />
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {(planetaryCards.length ? planetaryCards : Array.from({ length: 6 })).map(
               (c: any, i) => {
