@@ -44,7 +44,13 @@ function getSundayOfWeek(date: Date = new Date()): Date {
 
 export async function POST(request: NextRequest) {
   try {
-    const { agentId, weekStartDate: requestedDate, regenerate = false } = await request.json()
+    const {
+      agentId,
+      weekStartDate: requestedDate,
+      regenerate = false,
+      status = 'draft',
+      shareToFeed = false,
+    } = await request.json()
 
     if (!agentId) {
       return NextResponse.json({ success: false, error: 'agentId is required' }, { status: 400 })
@@ -144,7 +150,7 @@ Create a premium, theme-based menu title (e.g. "Hildegard's Verdant Fermentation
       dietaryFocus: z.string(),
       meals: z.array(
         z.object({
-          id: z.string(),
+          id: z.string().optional(),
           dayOfWeek: z.number().min(0).max(6),
           mealType: z.enum(MEAL_TYPES),
           servings: z.number().default(1),
@@ -161,14 +167,12 @@ Create a premium, theme-based menu title (e.g. "Hildegard's Verdant Fermentation
                 fat: z.number(),
               })
               .optional(),
-            elementalProperties: z
-              .object({
-                Fire: z.number(),
-                Water: z.number(),
-                Earth: z.number(),
-                Air: z.number(),
-              })
-              .optional(),
+            elementalProperties: z.object({
+              Fire: z.number(),
+              Water: z.number(),
+              Earth: z.number(),
+              Air: z.number(),
+            }),
           }),
           planetarySnapshot: z.object({
             dominantPlanet: z.string(),
@@ -199,7 +203,7 @@ Create a premium, theme-based menu title (e.g. "Hildegard's Verdant Fermentation
           unit: z.string().optional(),
         })
       ),
-      inventory: z.array(z.string()),
+      inventory: z.array(z.string()).optional(),
       featuredMeals: z.array(
         z.object({
           dayOfWeek: z.number().min(0).max(6),
@@ -210,13 +214,39 @@ Create a premium, theme-based menu title (e.g. "Hildegard's Verdant Fermentation
       ),
     })
 
-    const { object: menuData } = await generateObject({
-      model: openai('gpt-4o-mini'),
-      schema: zodSchema,
-      system: systemPrompt,
-      prompt: `Generate the complete alchemically-attuned Weekly Menu for the week of ${weekStartDateStr} for agent "${agent.name}". Ensure exactly 28 meals are populated (Sunday-Saturday x breakfast/lunch/dinner/snack).`,
-      temperature: 0.35,
-    })
+    let menuData: any
+    try {
+      const { object } = await generateObject({
+        model: openai('gpt-4o-mini'),
+        schema: zodSchema,
+        system: systemPrompt,
+        prompt: `Generate the complete alchemically-attuned Weekly Menu for the week of ${weekStartDateStr} for agent "${agent.name}". Ensure exactly 28 meals are populated (Sunday-Saturday x breakfast/lunch/dinner/snack).`,
+        temperature: 0.35,
+      })
+      menuData = object
+    } catch (err: any) {
+      if (process.env.OPENROUTER_API_KEY) {
+        console.warn(
+          '[Generate Menu] OpenAI call failed, falling back to OpenRouter:',
+          err.message || err
+        )
+        const { createOpenAI } = require('@ai-sdk/openai')
+        const openrouter = createOpenAI({
+          baseURL: 'https://openrouter.ai/api/v1',
+          apiKey: process.env.OPENROUTER_API_KEY,
+        })
+        const { object } = await generateObject({
+          model: openrouter('openai/gpt-4o-mini'),
+          schema: zodSchema,
+          system: systemPrompt,
+          prompt: `Generate the complete alchemically-attuned Weekly Menu for the week of ${weekStartDateStr} for agent "${agent.name}". Ensure exactly 28 meals are populated (Sunday-Saturday x breakfast/lunch/dinner/snack).`,
+          temperature: 0.35,
+        })
+        menuData = object
+      } else {
+        throw err
+      }
+    }
 
     // Attune meals list to have correct ISO timestamps and planetary rulers strictly matched to javascript dayOfWeek
     const enrichedMeals = menuData.meals.map(meal => {
@@ -251,8 +281,8 @@ Create a premium, theme-based menu title (e.g. "Hildegard's Verdant Fermentation
       agentSlug: agent.id,
       agentDisplayName: agent.name,
       weekStartDate: weekStartDateStr,
-      status: 'draft', // Saved as draft by default
-      shareToFeed: false,
+      status, // Saved as draft/completed depending on request
+      shareToFeed,
       title: menuData.title,
       summary: menuData.summary,
       planetaryFocus: menuData.planetaryFocus,
