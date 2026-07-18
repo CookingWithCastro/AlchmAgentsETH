@@ -49,24 +49,26 @@ export default function McpInvocationsPanel({ data }: McpPanelProps) {
   useEffect(() => {
     async function fetchTelemetry() {
       try {
-        const [statusRes, summaryRes, errorsRes] = await Promise.all([
-          fetch('/api/admin/mcp-status'),
-          fetch('/api/admin/mcp-summary?windowMinutes=60'),
-          fetch('/api/admin/alchm-mcp-errors?windowMinutes=5'),
+        const results = await Promise.allSettled([
+          fetch('/api/admin/mcp-status').then(r =>
+            r.ok ? r.json() : Promise.reject(r.statusText)
+          ),
+          fetch('/api/admin/mcp-summary?windowMinutes=60').then(r =>
+            r.ok ? r.json() : Promise.reject(r.statusText)
+          ),
+          fetch('/api/admin/alchm-mcp-errors?windowMinutes=5').then(r =>
+            r.ok ? r.json() : Promise.reject(r.statusText)
+          ),
         ])
 
-        if (statusRes.ok) {
-          const statusData = await statusRes.json()
-          setMcpStatus(statusData)
-        }
-        if (summaryRes.ok) {
-          const summaryData = await summaryRes.json()
-          setMcpSummary(summaryData)
-        }
-        if (errorsRes.ok) {
-          const errorsData = await errorsRes.json()
-          setAlchmMcpErrors(errorsData)
-        }
+        if (results[0].status === 'fulfilled') setMcpStatus(results[0].value)
+        else setMcpStatus({ success: false, error: 'MCP Status telemetry offline' })
+
+        if (results[1].status === 'fulfilled') setMcpSummary(results[1].value)
+        else setMcpSummary({ success: false, error: 'MCP Summary telemetry offline' })
+
+        if (results[2].status === 'fulfilled') setAlchmMcpErrors(results[2].value)
+        else setAlchmMcpErrors({ success: false, error: 'Alchm MCP Error telemetry offline' })
       } catch (err) {
         console.error('Error fetching MCP telemetry:', err)
       } finally {

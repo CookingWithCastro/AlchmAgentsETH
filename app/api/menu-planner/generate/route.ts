@@ -249,30 +249,32 @@ Create a premium, theme-based menu title (e.g. "Hildegard's Verdant Fermentation
     }
 
     // Attune meals list to have correct ISO timestamps and planetary rulers strictly matched to javascript dayOfWeek
-    const enrichedMeals = menuData.meals.map(meal => {
-      const targetDate = new Date(sundayDate)
-      targetDate.setUTCDate(targetDate.getUTCDate() + meal.dayOfWeek)
-      // Estimate reasonable hour based on mealType
-      const hours =
-        meal.mealType === 'breakfast'
-          ? 8
-          : meal.mealType === 'lunch'
-            ? 12
-            : meal.mealType === 'dinner'
-              ? 19
-              : 15
-      targetDate.setUTCHours(hours, 0, 0, 0)
+    const enrichedMeals = menuData.meals.map(
+      (meal: { dayOfWeek: number; mealType: string; [key: string]: any }) => {
+        const targetDate = new Date(sundayDate)
+        targetDate.setUTCDate(targetDate.getUTCDate() + meal.dayOfWeek)
+        // Estimate reasonable hour based on mealType
+        const hours =
+          meal.mealType === 'breakfast'
+            ? 8
+            : meal.mealType === 'lunch'
+              ? 12
+              : meal.mealType === 'dinner'
+                ? 19
+                : 15
+        targetDate.setUTCHours(hours, 0, 0, 0)
 
-      const ruler = PLANETARY_RULERS[meal.dayOfWeek as keyof typeof PLANETARY_RULERS] || 'Moon'
-      const element = PLANETARY_ELEMENTS[ruler as keyof typeof PLANETARY_ELEMENTS] || 'Water'
+        const ruler = PLANETARY_RULERS[meal.dayOfWeek as keyof typeof PLANETARY_RULERS] || 'Moon'
+        const element = PLANETARY_ELEMENTS[ruler as keyof typeof PLANETARY_ELEMENTS] || 'Water'
 
-      // Set standard fields
-      meal.planetarySnapshot.dominantPlanet = ruler
-      meal.planetarySnapshot.timestamp = targetDate.toISOString()
-      meal.planetarySnapshot.zodiacSign = currentZodiacSign
-      meal.id = `${DAYS[meal.dayOfWeek]}-${meal.mealType}`
-      return meal
-    })
+        // Set standard fields
+        meal.planetarySnapshot.dominantPlanet = ruler
+        meal.planetarySnapshot.timestamp = targetDate.toISOString()
+        meal.planetarySnapshot.zodiacSign = currentZodiacSign
+        meal.id = `${DAYS[meal.dayOfWeek]}-${meal.mealType}`
+        return meal
+      }
+    )
 
     const weekRuler = PLANETARY_RULERS[0]
     const weekElement = PLANETARY_ELEMENTS[weekRuler] || 'Fire'
