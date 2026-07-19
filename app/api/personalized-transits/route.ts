@@ -82,9 +82,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert natal chart planets to NatalPlacement format
+    // (stored charts use `label` + within-sign `degree`; older shapes may use
+    // `name`/`planet` and absolute `longitude` — the scorer normalizes both)
     const natalPlacements: NatalPlacement[] = (chart.planets as any[]).map(p => ({
-      planet: p.name || p.planet,
-      degree: p.degree,
+      planet: p.name || p.label || p.planet,
+      degree: Number(p.degree ?? p.longitude) || 0,
       sign: p.sign,
       house: p.house,
       element: getElementForSign(p.sign),

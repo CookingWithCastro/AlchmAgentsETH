@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/db'
 import { generateAccurateHoroscope } from '../monica/horoscope-generator'
+import { signDegreeToLongitude } from '../enhanced-astronomical-calculator'
 import { alchemize } from '../alchemizer'
 
 export interface CreateNatalChartInput {
@@ -368,13 +369,21 @@ function calculateNatalChart({
   }
 
   return {
-    planets: horoscope.tropical.CelestialBodies.all.map((body: any) => ({
-      label: body.label,
-      longitude: body.ChartPosition?.Ecliptic?.ArcDegreesFormatted30 || 0,
-      sign: body.Sign?.label || '',
-      house: body.House?.label || '',
-      retrograde: body.ChartPosition?.Retrograde || false,
-    })),
+    planets: horoscope.tropical.CelestialBodies.all.map((body: any) => {
+      const sign = body.Sign?.label || ''
+      // generateAccurateHoroscope returns `degrees` (within-sign 0-30); the
+      // ChartPosition path covers the circular-natal-horoscope-js shape.
+      const signDegree =
+        Number(body.degrees ?? body.ChartPosition?.Ecliptic?.ArcDegreesFormatted30) || 0
+      return {
+        label: body.label,
+        degree: signDegree, // within-sign 0-30
+        longitude: signDegreeToLongitude(sign, signDegree) ?? signDegree, // absolute 0-360
+        sign,
+        house: body.House?.label || '',
+        retrograde: body.retrograde ?? body.ChartPosition?.Retrograde ?? false,
+      }
+    }),
     houses: horoscope.tropical.Houses
       ? Object.entries(horoscope.tropical.Houses).map(([number, house]: [string, any]) => ({
           number: parseInt(number),
