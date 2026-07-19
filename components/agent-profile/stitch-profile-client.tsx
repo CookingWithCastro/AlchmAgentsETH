@@ -55,10 +55,9 @@ export function StitchProfileClient({
 
   // Generate scrolling alchemical telemetry logs
   useEffect(() => {
+    // Only claims backed by real data (props) — no fabricated integration status.
     const defaultLogs = [
       `SYSTEM: Initializing cognitive telemetry stream...`,
-      `CONNECTION: Gated by Circle Arc/x402 payments engine`,
-      `INTEGRATION: Recall snapshots synced with MemWal/Walrus storage`,
       `RESOLVED: Dominant elemental affinity => ${dominantElement.toUpperCase()}`,
       `CALCULATED: Monica Constant calibrated to ${monicaConstant.toFixed(2)}/10.00`,
       `COGNITION: Processing astral transits for natal alignment...`,
@@ -103,11 +102,11 @@ export function StitchProfileClient({
         setLogs(prev => [...prev, combined[currentIdx]])
         currentIdx++
       } else {
-        // Add random system tick logs periodically to keep it alive
+        // Ambient decorative ticks — phrased as ambience, never as claims about
+        // integrations or persistence that aren't actually running.
         const ticks = [
           `TICK: Orbit transit aspect adjusted (+0.03°)`,
-          `MEMORY: Memory indexes ingested to vector store`,
-          `KINETICS: Momentum rate stable at ${(0.6 + Math.random() * 0.3).toFixed(2)} dE/dt`,
+          `COGNITION: Re-weighing elemental resonance`,
           `CALCULUS: Vector resonance rectified`,
         ]
         const randomTick = ticks[Math.floor(Math.random() * ticks.length)]
