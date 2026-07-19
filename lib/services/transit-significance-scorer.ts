@@ -7,7 +7,10 @@
 
 import { getDegreeAgents, DegreeAgentMapping } from '../degree-agent-mapping'
 import { agentKineticProfiles } from '../agents/kinetic-profiles'
-// import { getExactSunDegreeForDate } from '../enhanced-astronomical-calculator'
+import {
+  getExactSunDegreeForDate,
+  signDegreeToLongitude,
+} from '../enhanced-astronomical-calculator'
 
 export interface TransitSignificanceScores {
   overallScore: number // 0-1 combined score
@@ -84,12 +87,15 @@ export function calculateTransitSignificance(
   transitDate: Date,
   userProfile?: UserConsciousnessProfile
 ): DetailedTransitSignificance | null {
-  // Get current Sun degree for this date
-  // const transitDegree = getExactSunDegreeForDate(transitDate)
-  const transitDegree = 15 // Temporary placeholder
+  // Get current Sun degree for this date (absolute ecliptic longitude, 0-360)
+  const transitDegree = getExactSunDegreeForDate(transitDate)
+
+  // Natal charts store within-sign degrees (0-30); the orb math and the
+  // 360-degree agent mapping both need absolute longitude.
+  const natalDegree = toAbsoluteNatalDegree(natalPlacement)
 
   // Calculate orb (angular distance)
-  const orb = calculateOrb(natalPlacement.degree, transitDegree)
+  const orb = calculateOrb(natalDegree, transitDegree)
 
   // Only consider conjunctions within 5 degrees
   if (orb > 5) return null
@@ -164,7 +170,7 @@ export function calculateTransitSignificance(
     transitDate,
     transitDegree,
     transitPlanet: 'Sun', // Currently only Sun transits
-    natalDegree: natalPlacement.degree,
+    natalDegree,
     natalPlanet: natalPlacement.planet,
     natalSign: natalPlacement.sign,
     natalHouse: natalPlacement.house,
@@ -193,6 +199,17 @@ export function calculateTransitSignificance(
 function calculateOrb(degree1: number, degree2: number): number {
   const diff = Math.abs(degree1 - degree2)
   return Math.min(diff, 360 - diff)
+}
+
+/**
+ * Natal placements may carry a within-sign degree (0-30, the stored chart
+ * format) or an absolute longitude (0-360). Degrees >= 30 are unambiguously
+ * absolute; below 30 the sign disambiguates (absolute < 30 is always Aries,
+ * for which the conversion is the identity).
+ */
+function toAbsoluteNatalDegree(placement: NatalPlacement): number {
+  if (placement.degree >= 30) return placement.degree % 360
+  return signDegreeToLongitude(placement.sign, placement.degree) ?? placement.degree
 }
 
 /**

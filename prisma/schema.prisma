@@ -1660,3 +1660,20 @@ model agent_wallets {
   @@index([address])
   @@map("agent_wallets")
 }
+
+/// World ID proof-of-personhood: one row per verified (human, action) —
+/// the nullifier_hash is unique per human+app+action, so a PK on it enforces
+/// sybil resistance across sessions. A nullifier binds to at most one user.
+model world_id_verifications {
+  nullifier         String   @id @map("nullifier")
+  action            String   @map("action")
+  userId            String?  @map("user_id")
+  agentId           String?  @map("agent_id")
+  verificationLevel String?  @map("verification_level")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([userId])
+  @@index([agentId])
+  @@map("world_id_verifications")
+}

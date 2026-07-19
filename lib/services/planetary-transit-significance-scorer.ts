@@ -16,7 +16,10 @@ import {
   calculateTransitActivation,
   type ActivatedPlanetaryAgent,
 } from './planetary-agent-activation'
-// import { getExactSunDegreeForDate } from '../enhanced-astronomical-calculator'
+import {
+  getExactPlanetDegreeForDate,
+  signDegreeToLongitude,
+} from '../enhanced-astronomical-calculator'
 
 export interface PlanetaryTransitSignificanceScores {
   overallScore: number // 0-1 combined score
@@ -113,18 +116,21 @@ export function calculatePlanetaryTransitSignificance(
   const transitingPlanet = options.transitingPlanet || 'Sun'
   const orbTolerance = options.orbTolerance || 5
 
-  // Get current transiting planet degree
-  // const transitDegree = getExactSunDegreeForDate(transitDate)
-  const transitDegree = 15 // Temporary placeholder
+  // Get the transiting planet's degree for this date (absolute longitude, 0-360)
+  const transitDegree = getExactPlanetDegreeForDate(transitingPlanet, transitDate)
+
+  // Natal charts store within-sign degrees (0-30); orb math and the
+  // 360-degree planetary-agent mapping both need absolute longitude.
+  const natalDegree = toAbsoluteNatalDegree(natalPlacement)
 
   // Calculate orb (angular distance)
-  const orb = calculateOrb(natalPlacement.degree, transitDegree)
+  const orb = calculateOrb(natalDegree, transitDegree)
 
   // Only consider conjunctions within orb tolerance
   if (orb > orbTolerance) return null
 
   // Activate planetary agent at the natal degree
-  const activatedAgent = activatePlanetaryAgentForDegree(natalPlacement.degree, {
+  const activatedAgent = activatePlanetaryAgentForDegree(natalDegree, {
     transitingPlanet,
     natalPlanet: natalPlacement.planet,
     aspectType: 'conjunction',
@@ -200,7 +206,7 @@ export function calculatePlanetaryTransitSignificance(
     transitDate,
     transitDegree,
     transitingPlanet,
-    natalDegree: natalPlacement.degree,
+    natalDegree,
     natalPlanet: natalPlacement.planet,
     natalSign: natalPlacement.sign,
     natalHouse: natalPlacement.house,
@@ -354,6 +360,17 @@ function calculatePersonalRelevanceScore(
 function calculateOrb(degree1: number, degree2: number): number {
   const diff = Math.abs(degree1 - degree2)
   return Math.min(diff, 360 - diff)
+}
+
+/**
+ * Natal placements may carry a within-sign degree (0-30, the stored chart
+ * format) or an absolute longitude (0-360). Degrees >= 30 are unambiguously
+ * absolute; below 30 the sign disambiguates (absolute < 30 is always Aries,
+ * for which the conversion is the identity).
+ */
+function toAbsoluteNatalDegree(placement: NatalPlacement): number {
+  if (placement.degree >= 30) return placement.degree % 360
+  return signDegreeToLongitude(placement.sign, placement.degree) ?? placement.degree
 }
 
 function areElementsHarmonious(element1: string, element2: string): boolean {

@@ -18,7 +18,7 @@
  */
 
 import { snapshotAgentPersonaToWalrus, buildPersonaSnapshot } from '@/lib/walrus'
-import { ensLabel, buildAgentTextRecords } from '@/lib/erc8004'
+import { ensLabel } from '@/lib/erc8004'
 
 const FLAGSHIPS = ['plato', 'aristotle', 'socrates', 'homer', 'marie-curie', 'leonardo-da-vinci']
 
@@ -62,14 +62,13 @@ async function main() {
           console.warn('    (skipping ENS write — NAMESTONE_API_KEY / NAMESTONE_DOMAIN not set)')
           continue
         }
-        const { setSubname } = await import('@/lib/namestone')
+        const { mergeSetSubname } = await import('@/lib/namestone')
         const label = ensLabel(agentId)
-        await setSubname({
+        // merge-write only the memory record so this never clobbers the
+        // agent-endpoint / agent-wallet / human-verified records.
+        await mergeSetSubname({
           name: label,
-          textRecords: buildAgentTextRecords({
-            context: `${snapshot.name ?? agentId} — persona memory on Walrus.`,
-            memoryUrl: memory.url,
-          }),
+          textRecords: { 'agent-memory': memory.url },
         })
         console.log(`    ✓ ENS agent-memory set for ${label}.${process.env.NAMESTONE_DOMAIN}`)
       }

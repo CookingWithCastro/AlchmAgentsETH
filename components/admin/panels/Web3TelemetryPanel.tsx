@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { createPublicClient, http, parseAbi, formatEther } from 'viem'
 import { ARC_ESMS_ADDRESS, STAR_VAULT_ADDRESS } from '@/lib/staking/arc'
+import { ARC_TESTNET } from '@/lib/erc8004/registry'
 import { CONSTELLATION_AMM_ADDRESS, CONSTELLATION_DEED_ADDRESS } from '@/lib/staking/amm'
 import { PENTACLES_BASE_SEPOLIA_DEPLOYMENT } from '@/lib/staking/deployment'
 
@@ -650,8 +651,8 @@ export default function Web3TelemetryPanel() {
                   <a
                     href={
                       reg.chain.includes('Base')
-                        ? `https://sepolia.etherscan.io/address/${reg.addr}`
-                        : `https://rpc.testnet.arc.io/address/${reg.addr}` // placeholder or actual explorer link
+                        ? `https://sepolia.basescan.org/address/${reg.addr}`
+                        : `${ARC_TESTNET.explorer}/address/${reg.addr}`
                     }
                     target="_blank"
                     rel="noreferrer"

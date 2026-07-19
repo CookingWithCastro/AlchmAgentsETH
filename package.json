@@ -71,9 +71,7 @@
     "sync:chromadb": "OPENAI_API_KEY=\"${OPENAI_API_KEY}\" CHROMADB_URL=http://localhost:8001 bun run lib/llamaindex/ingestion-pipeline.ts --force",
     "sync:all": "bun run scripts/sync-all-systems.ts",
     "sync:validate": "bun run scripts/validate-agent-sync.ts",
-    "sync:clear-chroma": "bun run scripts/clear-chromadb.ts",
-    "render:validate": "bun run scripts/validate-render-config.ts",
-    "render:test-mcp": "bun run scripts/test-render-mcp.ts"
+    "sync:clear-chroma": "bun run scripts/clear-chromadb.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.41",

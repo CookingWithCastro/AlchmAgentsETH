@@ -16,11 +16,12 @@ import {
   EyeOff,
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import NatalWheelSvg from './natal-wheel-svg'
 
 // Local type matching the proxy `/api/astrologize` response. The Railway
-// backend no longer renders an SVG/image wheel — `svg`/`imageUrl` are kept
-// optional for forward compatibility and to preserve existing render paths.
-// TODO: restore svg/imageUrl when backend exposes a chart renderer.
+// backend no longer renders an SVG/image wheel — when `svg`/`imageUrl` are
+// absent, the wheel is drawn CLIENT-SIDE from `planetary_positions` by
+// NatalWheelSvg (backend fields kept optional for forward compatibility).
 interface AstrologizeWheelResponse {
   svg?: string
   imageUrl?: string
@@ -263,25 +264,35 @@ export default function CircularNatalHoroscope({
                   }}
                 />
               </div>
-            ) : horoscope?.meta?.localGenerationFailed ? (
-              <div className="flex flex-col items-center justify-center h-48 text-center space-y-2">
-                <div className="text-cosmic-starlight-lavender">
-                  Chart generation temporarily unavailable
+            ) : horoscope?.planetary_positions &&
+              Object.keys(horoscope.planetary_positions).length > 0 ? (
+              <div className="flex justify-center">
+                <div
+                  className="w-full max-w-md aspect-square"
+                  style={{
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'center',
+                    transition: 'transform 0.3s ease',
+                    filter: isDarkMode ? 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.15))' : 'none',
+                  }}
+                >
+                  <NatalWheelSvg
+                    positions={horoscope.planetary_positions}
+                    showPlanets={showPlanets}
+                    selectedPlanet={selectedPlanet}
+                    onSelectPlanet={setSelectedPlanet}
+                  />
                 </div>
-                <div className="text-sm text-cosmic-starlight-lavender opacity-70">
-                  Both external service and local generation failed
-                </div>
-                {horoscope.meta.error && (
-                  <div className="text-xs text-red-400 max-w-xs">Error: {horoscope.meta.error}</div>
-                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-48 text-center space-y-2">
                 <div className="text-cosmic-starlight-lavender">
-                  Chart data processed but no visualization generated
+                  Chart positions are temporarily unavailable
                 </div>
                 <div className="text-sm text-cosmic-starlight-lavender opacity-70">
-                  This may indicate a temporary service issue
+                  {horoscope?.meta?.error
+                    ? `Error: ${horoscope.meta.error}`
+                    : 'The planetary position service could not be reached'}
                 </div>
               </div>
             )}

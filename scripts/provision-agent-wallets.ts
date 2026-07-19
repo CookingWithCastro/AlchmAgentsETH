@@ -66,7 +66,13 @@ async function main() {
       try {
         await registerAgentSubnameOnCreate(
           { id, name, walletAddress: wallet.address },
-          { walletAddress: wallet.address }
+          {
+            walletAddress: wallet.address,
+            // The CDP wallet is the agent's x402 payment wallet — publish it
+            // as agent-wallet[x402] (this is what the log line claims).
+            paymentAddress: wallet.address,
+            paymentChain: wallet.network?.includes('sepolia') ? 'base-sepolia' : 'base',
+          }
         )
         console.log('      ↳ published ENS agent-wallet record')
       } catch (e) {

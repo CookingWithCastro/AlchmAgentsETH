@@ -255,6 +255,11 @@ export default function LandingPage() {
 
   const [isVerified, setIsVerified] = useState(false)
   const [nullifier, setNullifier] = useState<string | null>(null)
+  const [memoryRecord, setMemoryRecord] = useState<{
+    blobId: string
+    url: string
+    agentName?: string
+  } | null>(null)
 
   const planetaryData = usePlanetaryPositions({ refreshInterval: 60000 })
 
@@ -266,12 +271,32 @@ export default function LandingPage() {
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('world_id_verified')
       const storedNullifier = localStorage.getItem('world_id_nullifier')
-      if (stored === 'true') {
+      // Only trust a stored verification that carries its real nullifier —
+      // never fabricate one for display.
+      if (stored === 'true' && storedNullifier) {
         setIsVerified(true)
-        setNullifier(storedNullifier || '0x2a91f4d0e980...4cb3')
+        setNullifier(storedNullifier)
       }
     }
   }, [])
+
+  // Signed-in users get the durable server-side verdict (world_id_verifications);
+  // it overrides the localStorage fast-path in both directions.
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    let active = true
+    fetch('/api/world-id/verify')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!active || !d) return
+        setIsVerified(Boolean(d.verified))
+        setNullifier(d.verified ? (d.nullifier ?? null) : null)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [status])
 
   // Arena — live duels, degrade silently to the static fallback on error/empty.
   useEffect(() => {
@@ -280,6 +305,21 @@ export default function LandingPage() {
       .then(r => (r.ok ? r.json() : null))
       .then(d => {
         if (active && Array.isArray(d?.duels)) setDuels(d.duels)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // Reference memory record — a real Walrus persona snapshot; the card hides
+  // entirely when no record can be published (never show a fabricated address).
+  useEffect(() => {
+    let active = true
+    fetch('/api/walrus/reference-record')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (active && d?.success && d.record?.blobId) setMemoryRecord(d.record)
       })
       .catch(() => {})
     return () => {
@@ -1205,18 +1245,26 @@ export default function LandingPage() {
               </button>
             </div>
 
-            {/* Reference memory record */}
-            <div className="col-span-12 lg:col-span-4 glass-panel rounded-xl border-[#23262B] p-6 flex flex-col items-center justify-center text-center">
-              <div className="font-mono-label text-[10px] text-[#7bd1fa] mb-2 tracking-widest font-bold uppercase">
-                Reference memory record
+            {/* Reference memory record — a real Walrus persona snapshot (hidden until published) */}
+            {memoryRecord && (
+              <div className="col-span-12 lg:col-span-4 glass-panel rounded-xl border-[#23262B] p-6 flex flex-col items-center justify-center text-center">
+                <div className="font-mono-label text-[10px] text-[#7bd1fa] mb-2 tracking-widest font-bold uppercase">
+                  Reference memory record
+                </div>
+                <a
+                  href={memoryRecord.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono-label text-xs text-[#c2cab0] break-all border border-[#424936] bg-[#050506]/80 p-3 rounded hover:border-[#7bd1fa] transition-colors"
+                  title={`Persona snapshot${memoryRecord.agentName ? ` of ${memoryRecord.agentName}` : ''} — resolves on the Walrus testnet aggregator`}
+                >
+                  {memoryRecord.blobId}
+                </a>
+                <span className="font-mono-label text-[10px] text-[#8c947c] mt-3 uppercase">
+                  Walrus testnet retrieval
+                </span>
               </div>
-              <div className="font-mono-label text-xs text-[#c2cab0] break-all border border-[#424936] bg-[#050506]/80 p-3 rounded">
-                0x7E35fA3c29f4a9fCdB34d582e6c8004F92B1cE
-              </div>
-              <span className="font-mono-label text-[10px] text-[#8c947c] mt-3 uppercase">
-                Walrus testnet retrieval
-              </span>
-            </div>
+            )}
           </div>
 
           {/* Fund wallet (onramp) */}

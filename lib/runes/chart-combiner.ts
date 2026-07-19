@@ -8,6 +8,7 @@
 import { BirthChart, ChartCombination, ChartComplexity } from './multi-chart-runes'
 import { generateAlchmForBirthInfo } from '../alchemizer'
 import { generateAlchmForCurrentMoment } from '../alchemizer'
+import { calculateAllPlanets } from '../enhanced-astronomical-calculator'
 
 export interface ChartAnalysisResult {
   elementalCompatibility: number // 0-100
@@ -414,10 +415,11 @@ export function analyzeChartCompatibility(chartCombination: ChartCombination): C
   const charts = chartCombination.charts
   const synergy = chartCombination.synergy
 
-  // Calculate specific compatibility metrics
+  // Calculate specific compatibility metrics — all derived from real chart
+  // data (elemental balances + ephemeris planet positions), never constants.
   const elementalCompatibility = calculateElementalCompatibilityScore(charts)
-  const modalCompatibility = 75 // Placeholder - would need modal analysis
-  const planetaryHarmony = 80 // Placeholder - would need planetary aspect analysis
+  const modalCompatibility = calculateModalCompatibilityScore(charts)
+  const planetaryHarmony = calculatePlanetaryHarmonyScore(charts)
 
   // Generate themes, challenges, and strengths
   const dominantThemes = generateDominantThemes(chartCombination)
@@ -436,8 +438,121 @@ export function analyzeChartCompatibility(chartCombination: ChartCombination): C
 }
 
 function calculateElementalCompatibilityScore(charts: BirthChart[]): number {
-  // Implementation would analyze elemental distribution
-  return 75 // Placeholder
+  const balances = charts
+    .map(c => c.elementalBalance)
+    .filter((b): b is NonNullable<typeof b> => Boolean(b))
+  if (balances.length < 2) return 100
+
+  let total = 0
+  let pairs = 0
+  for (let i = 0; i < balances.length; i++) {
+    for (let j = i + 1; j < balances.length; j++) {
+      total += calculateElementalCompatibility(balances[i], balances[j])
+      pairs++
+    }
+  }
+  return pairs > 0 ? Math.round(total / pairs) : 100
+}
+
+// ---------------------------------------------------------------------------
+// Ephemeris-derived metrics (modality + synastry aspects)
+// ---------------------------------------------------------------------------
+
+/** Absolute planet longitudes for a chart's birth moment (location-independent). */
+function chartPlanetLongitudes(chart: BirthChart): number[] | null {
+  const date = new Date(chart.birthDate)
+  if (Number.isNaN(date.getTime())) return null
+  const [h, m] = (chart.birthTime ?? '12:00').split(':').map(Number)
+  const { planets } = calculateAllPlanets({
+    year: date.getUTCFullYear(),
+    month: date.getUTCMonth() + 1,
+    day: date.getUTCDate(),
+    hour: Number.isFinite(h) ? h : 12,
+    minute: Number.isFinite(m) ? m : 0,
+    latitude: 0,
+    longitude: 0,
+  })
+  return Object.values(planets).map(p => p.longitude)
+}
+
+function angularSeparation(a: number, b: number): number {
+  const diff = Math.abs(a - b) % 360
+  return diff > 180 ? 360 - diff : diff
+}
+
+/** Normalized [cardinal, fixed, mutable] weights from planet longitudes. */
+function modalityDistribution(longitudes: number[]): [number, number, number] {
+  const counts: [number, number, number] = [0, 0, 0]
+  for (const lon of longitudes) {
+    const signIndex = Math.floor((((lon % 360) + 360) % 360) / 30)
+    counts[signIndex % 3]++ // signs cycle cardinal → fixed → mutable
+  }
+  const total = counts[0] + counts[1] + counts[2]
+  return total > 0 ? [counts[0] / total, counts[1] / total, counts[2] / total] : counts
+}
+
+/**
+ * Modal compatibility: how much the charts' cardinal/fixed/mutable emphasis
+ * overlaps (shared modality reads as mutual understanding of pace and style).
+ * Overlap 0..1 is mapped onto 40..95 — even fully disjoint modal styles are
+ * complementary rather than incompatible in traditional synastry.
+ */
+function calculateModalCompatibilityScore(charts: BirthChart[]): number {
+  const dists = charts
+    .map(chartPlanetLongitudes)
+    .filter((l): l is number[] => Boolean(l))
+    .map(modalityDistribution)
+  if (dists.length < 2) return 100
+
+  let overlapTotal = 0
+  let pairs = 0
+  for (let i = 0; i < dists.length; i++) {
+    for (let j = i + 1; j < dists.length; j++) {
+      overlapTotal +=
+        Math.min(dists[i][0], dists[j][0]) +
+        Math.min(dists[i][1], dists[j][1]) +
+        Math.min(dists[i][2], dists[j][2])
+      pairs++
+    }
+  }
+  return Math.round(40 + (overlapTotal / pairs) * 55)
+}
+
+const SYNASTRY_ASPECTS = [
+  { angle: 0, orb: 8, weight: 1.0 }, // conjunction — strong blend
+  { angle: 60, orb: 4, weight: 1.0 }, // sextile — harmonious
+  { angle: 120, orb: 6, weight: 1.0 }, // trine — harmonious
+  { angle: 90, orb: 6, weight: 0.35 }, // square — friction (still growthful)
+  { angle: 180, orb: 8, weight: 0.35 }, // opposition — polarity
+] as const
+
+/**
+ * Planetary harmony: real cross-chart synastry — every planet of one chart
+ * aspected against every planet of the other, scored by the harmonious share
+ * of the aspects found. No aspects at all reads as neutral (50).
+ */
+function calculatePlanetaryHarmonyScore(charts: BirthChart[]): number {
+  const sets = charts.map(chartPlanetLongitudes).filter((l): l is number[] => Boolean(l))
+  if (sets.length < 2) return 100
+
+  let weighted = 0
+  let aspectCount = 0
+  for (let i = 0; i < sets.length; i++) {
+    for (let j = i + 1; j < sets.length; j++) {
+      for (const lonA of sets[i]) {
+        for (const lonB of sets[j]) {
+          const sep = angularSeparation(lonA, lonB)
+          const hit = SYNASTRY_ASPECTS.find(a => Math.abs(sep - a.angle) <= a.orb)
+          if (hit) {
+            weighted += hit.weight
+            aspectCount++
+          }
+        }
+      }
+    }
+  }
+  if (aspectCount === 0) return 50
+  return Math.round((weighted / aspectCount) * 100)
 }
 
 function generateDominantThemes(combination: ChartCombination): string[] {

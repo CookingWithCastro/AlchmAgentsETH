@@ -35,8 +35,9 @@ const AGENTS_BACKEND_URL =
 const KITCHEN_BACKEND_URL =
   process.env.NEXT_PUBLIC_WTEN_BACKEND_URL || 'https://whattoeatnext-production.up.railway.app'
 
-const INTERNAL_API_SECRET =
-  process.env.INTERNAL_API_SECRET || '882133EA-3D06-4DF2-A63C-F4114AB4EFBC'
+// No fallback: unset means internal-authenticated requests fail closed
+// (see the guard in `request()` below). Set it in Vercel + Railway env.
+const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || ''
 
 // ============================================================================
 // Types — mirrors of FastAPI schemas

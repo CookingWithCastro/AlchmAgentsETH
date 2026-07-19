@@ -24,6 +24,8 @@ export interface WorldIdVerifyResult {
   success: boolean
   /** The nullifier_hash — unique per (human, app, action). Store to block duplicates. */
   nullifier?: string
+  /** True when the dev/staging bypass produced this result — never persist or stamp it. */
+  mock?: boolean
   verificationLevel?: string
   detail?: string
   raw?: unknown
@@ -50,19 +52,27 @@ export async function verifyWorldIdProof(
   const appId = resolveAppId(opts.appId)
   if (!appId) return { success: false, detail: 'WORLD_APP_ID / NEXT_PUBLIC_WORLD_APP_ID not set' }
 
-  // Bypass/mock verification for staging/testing environment to prevent API 400s
-  if (
+  // Bypass/mock verification for staging/testing — NEVER in production. A
+  // mocked success must not be able to mint real human-verified state, so the
+  // gate is hard on NODE_ENV and the returned nullifier is mock-namespaced.
+  const bypassRequested =
     process.env.WORLD_VERIFY_BYPASS === 'true' ||
-    appId === 'app_staging_85012356c3905086d5e7a969f688e1ba' ||
     appId.includes('mock') ||
     appId.includes('staging')
-  ) {
+  if (bypassRequested && process.env.NODE_ENV !== 'production') {
     return {
       success: true,
-      nullifier:
-        proof.nullifier_hash || 'mock_nullifier_hash_' + Math.random().toString(36).substring(2),
+      mock: true,
+      nullifier: `mock_${proof.nullifier_hash || Math.random().toString(36).substring(2)}`,
       verificationLevel: proof.verification_level || 'device',
       raw: { mock: true, detail: 'Bypassed verification for development/testing.' },
+    }
+  }
+  if (bypassRequested && process.env.NODE_ENV === 'production') {
+    return {
+      success: false,
+      detail:
+        'World ID bypass/staging app ids are disabled in production — configure a real World app.',
     }
   }
 

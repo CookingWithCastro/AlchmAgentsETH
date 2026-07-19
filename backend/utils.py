@@ -795,35 +795,80 @@ def detect_rune_context(alchm_data: Dict[str, Any]) -> Dict[str, Any]:
     except Exception:
         return {"active": False, "reason": "detection_error"}
 
-def calculate_enhanced_moment_score(agent_id: str, current_planets: Dict[str, Any], alchm_data: Dict[str, Any], monica_constant: float) -> Dict[str, Any]:
+_SIGN_ELEMENTS = {
+    "aries": "fire", "leo": "fire", "sagittarius": "fire",
+    "taurus": "earth", "virgo": "earth", "capricorn": "earth",
+    "gemini": "air", "libra": "air", "aquarius": "air",
+    "cancer": "water", "scorpio": "water", "pisces": "water",
+}
+_COMPLEMENTARY_ELEMENT = {"fire": "air", "air": "fire", "earth": "water", "water": "earth"}
+
+def calculate_enhanced_moment_score(agent_id: str, current_planets: Dict[str, Any], alchm_data: Dict[str, Any], monica_constant: float, agent: Any = None) -> Dict[str, Any]:
+    """6-component moment score, derived entirely from real data:
+    the agent's stored Sacred quantities (spirit/essence/matter/substance),
+    kalchm + monica constants, its dominant element vs the CURRENT sky's
+    elemental distribution, and the moment's alchemical totals."""
     if monica_constant is None:
         monica_constant = 0.5
-        
-    profile = {
-        "components": {
-            "consciousness_velocity": 0.5,
-            "aspect_sensitivity": 0.5
-        },
-        "velocity_signature": "steady"
-    }
-    
-    # 6-component weighted formula
-    planetary_alignment = 0.25 * 80 # Placeholder logic for planetary alignment
-    kinetic_velocity = 0.20 * (profile["components"]["consciousness_velocity"] * 100)
-    aspect_sensitivity = 0.15 * (profile["components"]["aspect_sensitivity"] * 100)
-    consciousness_score = 0.20 * 75
+
+    # Per-agent kinetic profile from stored Sacred quantities: the volatile
+    # quantities (spirit/essence) drive velocity; the receptive ones
+    # (essence/substance) drive aspect sensitivity.
+    spirit = float(getattr(agent, "spiritScore", None) or 0)
+    essence = float(getattr(agent, "essenceScore", None) or 0)
+    matter = float(getattr(agent, "matterScore", None) or 0)
+    substance = float(getattr(agent, "substanceScore", None) or 0)
+    total_esms = spirit + essence + matter + substance
+    if total_esms > 0:
+        consciousness_velocity = (spirit + essence) / total_esms
+        aspect_sensitivity_ratio = (essence + substance) / total_esms
+    else:
+        consciousness_velocity = 0.5
+        aspect_sensitivity_ratio = 0.5
+    velocity_signature = (
+        "surging" if consciousness_velocity > 0.6
+        else "steady" if consciousness_velocity >= 0.4
+        else "grounded"
+    )
+
+    # Planetary alignment: how much of the current sky sits in signs of the
+    # agent's dominant element (half credit for the complementary element).
+    dominant = str(getattr(agent, "dominantElement", None) or "").lower()
+    same = complementary = counted = 0
+    for body in (current_planets or {}).values():
+        if not isinstance(body, dict):
+            continue
+        element = _SIGN_ELEMENTS.get(str(body.get("sign", "")).lower())
+        if not element:
+            continue
+        counted += 1
+        if element == dominant:
+            same += 1
+        elif _COMPLEMENTARY_ELEMENT.get(element) == dominant:
+            complementary += 1
+    if counted and dominant:
+        alignment_pct = 100.0 * (same + 0.5 * complementary) / counted
+    else:
+        alignment_pct = 50.0  # neutral when the sky or the element is unknown
+
+    kalchm = getattr(agent, "kalchmConstant", None)
+    consciousness_pct = max(0.0, min(100.0, float(kalchm) * 100)) if kalchm is not None else 50.0
+
+    planetary_alignment = 0.25 * alignment_pct
+    kinetic_velocity = 0.20 * (consciousness_velocity * 100)
+    aspect_sensitivity = 0.15 * (aspect_sensitivity_ratio * 100)
+    consciousness_score = 0.20 * consciousness_pct
     mc_bonus = 0.10 * (monica_constant * 100)
-    
-    # Simple element calculation
+
     effects = alchm_data.get("Alchemy Effects", {})
     total_elements = sum([effects.get("Total Spirit", 0), effects.get("Total Essence", 0), effects.get("Total Matter", 0), effects.get("Total Substance", 0)])
     elemental_resonance = 0.10 * min(100, (total_elements * 20))
-    
+
     diversity_bonus = 5
-    
+
     score = planetary_alignment + kinetic_velocity + aspect_sensitivity + consciousness_score + mc_bonus + elemental_resonance + diversity_bonus
     score = max(0, min(100, score))
-    
+
     return {
         "agentId": agent_id,
         "score": score,
@@ -836,7 +881,7 @@ def calculate_enhanced_moment_score(agent_id: str, current_planets: Dict[str, An
             "elemental": elemental_resonance
         },
         "description": "Highly Resonant" if score > 80 else "Resonant" if score > 60 else "Building Momentum",
-        "velocity_signature": profile["velocity_signature"]
+        "velocity_signature": velocity_signature
     }
 
 def calculate_moment_synergy(natal_chart: Dict[str, Any], current_planets: Dict[str, Any]) -> Dict[str, Any]:

@@ -799,6 +799,24 @@ export function getExactSunDegreeForDate(date: Date): number {
 }
 
 /**
+ * Get exact absolute ecliptic longitude (0-360°) for any supported planet on a date
+ */
+export function getExactPlanetDegreeForDate(planet: string, date: Date): number {
+  const jd = dateToJulianDay(date)
+  return normalizeDegrees(calculateEnhancedPlanetPosition(planet, jd).longitude)
+}
+
+/**
+ * Convert a zodiac sign + within-sign degree (0-30) to absolute ecliptic longitude (0-360).
+ * Returns null when the sign is unrecognized.
+ */
+export function signDegreeToLongitude(sign: string, degree: number): number | null {
+  const signIndex = ZODIAC_SIGNS.findIndex(s => s.toLowerCase() === sign?.toLowerCase())
+  if (signIndex === -1) return null
+  return normalizeDegrees(signIndex * 30 + degree)
+}
+
+/**
  * Find date ranges when Sun is at a specific zodiac degree
  * Returns start and end times for when Sun occupies that degree
  */

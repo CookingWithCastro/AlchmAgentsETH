@@ -8,6 +8,7 @@ vi.mock('@/lib/shop/entitlement', () => ({
   listUnlocks: vi.fn(),
 }))
 vi.mock('@/lib/esms-chain/contract', () => ({
+  buildRedeemAuthChallenge: vi.fn(),
   esmsOnchainConfigured: vi.fn(),
   readEsmsBalances: vi.fn(),
   readEsmsRedeemed: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('@/lib/esms-chain/contract', () => ({
 vi.mock('@/lib/esms-chain/redeemer', () => ({
   redeemEsmsFor: vi.fn(),
   redeemerConfigured: vi.fn(),
+  toOnchainAmounts: vi.fn(),
   verifyRedeem: vi.fn(),
 }))
 
@@ -23,11 +25,17 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { hasUnlock, grantPurchase } from '@/lib/shop/entitlement'
 import {
+  buildRedeemAuthChallenge,
   esmsOnchainConfigured,
   readEsmsBalances,
   readEsmsRedeemed,
 } from '@/lib/esms-chain/contract'
-import { redeemEsmsFor, redeemerConfigured, verifyRedeem } from '@/lib/esms-chain/redeemer'
+import {
+  redeemEsmsFor,
+  redeemerConfigured,
+  toOnchainAmounts,
+  verifyRedeem,
+} from '@/lib/esms-chain/redeemer'
 
 const e18 = (n: number) => BigInt(n) * 10n ** 18n
 const FULL = { spirit: e18(100), essence: e18(100), matter: e18(100), substance: e18(100) }
@@ -51,6 +59,13 @@ beforeEach(() => {
   ;(readEsmsBalances as any).mockResolvedValue(FULL)
   ;(redeemerConfigured as any).mockReturnValue(true)
   ;(redeemEsmsFor as any).mockResolvedValue(TXHASH)
+  ;(toOnchainAmounts as any).mockImplementation((amounts: any) => amounts)
+  ;(buildRedeemAuthChallenge as any).mockReturnValue({
+    domain: { name: 'EsmsToken' },
+    types: {},
+    primaryType: 'RedeemAuthorization',
+    message: {},
+  })
   ;(verifyRedeem as any).mockResolvedValue(true)
   ;(hasUnlock as any).mockResolvedValue(false)
   ;(grantPurchase as any).mockResolvedValue(true)
@@ -134,12 +149,37 @@ describe('POST /api/shop/purchase', () => {
     expect(grantPurchase).not.toHaveBeenCalled()
   })
 
-  it('sponsored burn: redeems then grants on success', async () => {
+  it('sponsored burn without a signature returns an EIP-712 signing challenge', async () => {
     const res = await POST(req({ itemId: 'recipe-saturn-slow-braise' }))
+    const data = await res.json()
+    expect(data.mode).toBe('sign')
+    expect(data.challenge).toBeTruthy()
+    expect(data.orderId).toBeTruthy()
+    expect(data.deadline).toBeTruthy()
+    expect(buildRedeemAuthChallenge).toHaveBeenCalledTimes(1)
+    expect(redeemEsmsFor).not.toHaveBeenCalled()
+    expect(grantPurchase).not.toHaveBeenCalled()
+  })
+
+  it('sponsored burn: redeems then grants once the buyer signs the challenge', async () => {
+    const sig = `0x${'c'.repeat(130)}`
+    const deadline = String(Math.floor(Date.now() / 1000) + 600)
+    const res = await POST(req({ itemId: 'recipe-saturn-slow-braise', signature: sig, deadline }))
     const data = await res.json()
     expect(data).toMatchObject({ ok: true, txHash: TXHASH })
     expect(redeemEsmsFor).toHaveBeenCalledTimes(1)
+    expect((redeemEsmsFor as any).mock.calls[0][0]).toMatchObject({ sig })
     expect(grantPurchase).toHaveBeenCalledTimes(1)
+  })
+
+  it('sponsored burn: 400 when the signing window has expired', async () => {
+    const sig = `0x${'c'.repeat(130)}`
+    const deadline = String(Math.floor(Date.now() / 1000) - 10)
+    const res = await POST(req({ itemId: 'recipe-saturn-slow-braise', signature: sig, deadline }))
+    expect(res.status).toBe(400)
+    expect((await res.json()).code).toBe('sig_expired')
+    expect(redeemEsmsFor).not.toHaveBeenCalled()
+    expect(grantPurchase).not.toHaveBeenCalled()
   })
 
   it('user-signed path: verifies the provided txHash, no sponsored burn', async () => {
