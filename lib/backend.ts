@@ -656,6 +656,26 @@ export const backend = {
           auth: false,
         }
       ),
+
+    /** Orchestrate multi-agent group chat (e.g. Constellation Council) */
+    multiChat: (req: {
+      agentIds: string[]
+      message: string
+      sessionId?: string
+      userId?: string
+      context?: any
+      systemPromptOverrides?: Record<string, string>
+      modelTier?: 'free' | 'cheap_fast' | 'primary' | 'reflective'
+    }) =>
+      agentRequest<{
+        responses: Array<{ agentId: string; name: string; element?: string; text: string }>
+        sessionId: string
+        metadata?: any
+      }>('/api/multi_agent_chat', {
+        method: 'POST',
+        body: JSON.stringify(req),
+        auth: false,
+      }),
   },
   moment: {
     recommendations: (limit: number = 5) =>

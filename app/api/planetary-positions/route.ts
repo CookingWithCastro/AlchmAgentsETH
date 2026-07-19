@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAlchemicalQuantitiesLegacy, getLegacyPlanetaryPositions } from '@/lib/backend'
+import { calculateStarHorizonPositions } from '@/lib/enhanced-astronomical-calculator'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -36,8 +37,8 @@ async function buildResponse(params: {
   includeAlchemy?: unknown
 }) {
   const date = parseDate(params.date)
-  const latitude = parseCoordinate(params.latitude)
-  const longitude = parseCoordinate(params.longitude)
+  const latitude = parseCoordinate(params.latitude) ?? 40.7128
+  const longitude = parseCoordinate(params.longitude) ?? -74.006
   const includeAlchemy = params.includeAlchemy !== false && params.includeAlchemy !== 'false'
 
   const [positions, alchmQuantities] = await Promise.all([
@@ -47,10 +48,13 @@ async function buildResponse(params: {
       : Promise.resolve(null),
   ])
 
+  const starPositions = calculateStarHorizonPositions(date, latitude, longitude)
+
   return {
     success: true,
     timestamp: date.toISOString(),
     planetaryPositions: positions.map(normalizePosition),
+    starPositions,
     alchmQuantities,
     source: 'railway-backend',
     accuracy: 'high',

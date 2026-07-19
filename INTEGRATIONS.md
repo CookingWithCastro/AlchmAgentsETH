@@ -208,6 +208,16 @@ flowchart LR
     A -->|x402 EIP-3009| Pay["pay an agent"]
 ```
 
+### Pentacles Star Vaults & Agent Minigame Endpoints
+
+| File                                                                                     | Purpose                                                                 |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| [app/(app)/pentacles/page.tsx](<app/(app)/pentacles/page.tsx>)                           | Pentacle Star Vaults sky map, zone pools & Arc staking UI               |
+| [app/api/agents/word-duel/route.ts](app/api/agents/word-duel/route.ts)                   | Word Duels of the Spheres agent "brain" API for Pentacles companion     |
+| [app/api/agents/jing/route.ts](app/api/agents/jing/route.ts)                             | Jing Arena elemental counter-move API for Pentacles companion           |
+| [app/api/staking/claim-attestation/route.ts](app/api/staking/claim-attestation/route.ts) | EIP-712 StarYield attestation server for Arc `StarVault.claimYield`     |
+| [scripts/run-agent-pentacles.ts](scripts/run-agent-pentacles.ts)                         | 3-loop autonomous agent player (staking, auto-siege, inter-agent duels) |
+
 ---
 
 ## Setup & env checklist

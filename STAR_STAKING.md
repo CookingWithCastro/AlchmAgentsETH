@@ -84,18 +84,21 @@ All inputs come from data the app already produces: live `ephemeris`, the staker
 
 ## Files
 
-| Path                                                                                 | Role                                                |
-| ------------------------------------------------------------------------------------ | --------------------------------------------------- |
-| `contracts/src/StarVault.sol`                                                        | USDC custody + visibility-attested ESMS yield (Arc) |
-| `contracts/script/DeployStarVault.s.sol`                                             | Deploy ESMS + StarVault to Arc, wire roles          |
-| `lib/staking/{types,arc,elements,visibility,yield-rate,attestor,ui,star-catalog}.ts` | Star engine                                         |
-| `lib/staking/{astro,pentacle-geometry,aspects,ascendant,zone-pools,amm}.ts`          | Zone-pool + ascendant engine                        |
-| `lib/staking/useStarStaking.ts`, `useZonePool.ts`                                    | Wallet (Dynamic) stake/claim + AMM seed against Arc |
-| `lib/spacetime/hooks/useLiveStars.ts`, `useLiveZones.ts`                             | Live SpacetimeDB subscriptions                      |
-| `components/staking/{PentacleSkyMap,StarStakePanel,ZonePoolsPanel,ZonePoolLP}.tsx`   | UI                                                  |
-| `app/(app)/pentacles/`                                                               | Page                                                |
-| `app/api/staking/{claim-attestation,pool-attestation}/route.ts`                      | Signs yield claim / opens a zone pool               |
-| `docs/pentacles-staking-reducer-prompt.md`                                           | Prompt to add the SpacetimeDB stake ledger          |
+| Path                                                                                 | Role                                                                                                |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| `contracts/src/StarVault.sol`                                                        | USDC custody + visibility-attested ESMS yield (Arc)                                                 |
+| `contracts/script/DeployStarVault.s.sol`                                             | Deploy ESMS + StarVault to Arc, wire roles                                                          |
+| `lib/staking/{types,arc,elements,visibility,yield-rate,attestor,ui,star-catalog}.ts` | Star engine                                                                                         |
+| `lib/staking/{astro,pentacle-geometry,aspects,ascendant,zone-pools,amm}.ts`          | Zone-pool + ascendant engine                                                                        |
+| `lib/staking/useStarStaking.ts`, `useZonePool.ts`                                    | Wallet (Dynamic) stake/claim + AMM seed against Arc                                                 |
+| `lib/spacetime/hooks/useLiveStars.ts`, `useLiveZones.ts`                             | Live SpacetimeDB subscriptions                                                                      |
+| `components/staking/{PentacleSkyMap,StarStakePanel,ZonePoolsPanel,ZonePoolLP}.tsx`   | UI                                                                                                  |
+| `components/Navigation.tsx`                                                          | Main header navigation (`Cosmic Tools` → `/pentacles` link)                                         |
+| `app/(app)/pentacles/`                                                               | Pentacle Star Vaults & portfolio pages (`/pentacles`, `/pentacles/connect`, `/pentacles/portfolio`) |
+| `app/api/staking/{claim-attestation,pool-attestation}/route.ts`                      | Signs yield claim / opens a zone pool                                                               |
+| `app/api/agents/{word-duel,jing}/route.ts`                                           | Pentacles companion agent minigame "brain" endpoints                                                |
+| `scripts/run-agent-pentacles.ts`                                                     | 3-loop autonomous agent player engine (staking, siege, duels)                                       |
+| `docs/pentacles-staking-reducer-prompt.md`                                           | Prompt to add the SpacetimeDB stake ledger                                                          |
 
 ## Deploy & run
 

@@ -129,6 +129,27 @@ class ChatResponse(BaseModel):
     sessionId: str
     metadata: Optional[Dict[str, Any]] = None
 
+class MultiAgentChatRequest(BaseModel):
+    agentIds: List[str] = Field(default_factory=lambda: ["sirius", "arcturus", "vega", "polaris"])
+    message: str
+    sessionId: Optional[str] = None
+    userId: Optional[str] = None
+    context: Optional[Dict[str, Any]] = None
+    systemPromptOverrides: Optional[Dict[str, str]] = None
+    modelTier: Optional[str] = None
+
+class MultiAgentTurn(BaseModel):
+    agentId: str
+    name: str
+    element: Optional[str] = None
+    text: str
+
+class MultiAgentChatResponse(BaseModel):
+    responses: List[MultiAgentTurn]
+    sessionId: str
+    metadata: Optional[Dict[str, Any]] = None
+
+
 class RecipeBirthData(BaseModel):
     dateTime: Optional[str] = None
     latitude: Optional[float] = None

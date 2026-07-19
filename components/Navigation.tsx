@@ -29,6 +29,11 @@ const navigationGroups = [
         description: 'Forge a new vessel in the Techno-Occult shell.',
       },
       {
+        href: '/pentacles',
+        label: 'Pentacle Star Vaults',
+        description: 'Stake USDC on stars and earn ESMS yield on Circle Arc.',
+      },
+      {
         href: 'https://alchm.kitchen/quantities',
         label: 'Time Lab',
         description: 'Explore cosmic timing and events.',

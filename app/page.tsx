@@ -31,6 +31,7 @@ import {
   Activity,
 } from 'lucide-react'
 import './landing.css'
+import ResonantStarVaultsWidget from '@/components/staking/ResonantStarVaultsWidget'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
 import { LivePlanetaryCouncilThread } from '@/components/landing/live-planetary-council-thread'
 import {
@@ -1306,6 +1307,9 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        {/* Resonant Stars of the Moment Landing Section */}
+        <ResonantStarVaultsWidget />
       </main>
 
       {/* Footer */}

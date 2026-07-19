@@ -45,6 +45,16 @@ export function TopNavBar() {
       </div>
       <div className="flex items-center gap-4">
         <Link
+          href="/pentacles"
+          aria-label="Pentacle Star Vaults"
+          title="Pentacle Star Vaults"
+          className="text-on-surface-variant hover:text-st-primary transition-colors flex items-center gap-1"
+        >
+          <span className="material-symbols-outlined text-[20px]" aria-hidden>
+            stars
+          </span>
+        </Link>
+        <Link
           href="/attunement-circle"
           aria-label="Attune"
           className="text-on-surface-variant hover:text-st-primary transition-colors"

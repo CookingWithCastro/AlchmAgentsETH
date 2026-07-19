@@ -1,13 +1,13 @@
 # Web3 / On-Chain Status — Pentacle Star Vaults + ESMS Economy
 
-_Last verified: 2026-06-21. Source of truth for the on-chain deployment + wiring._
+_Last verified: 2026-07-19. Source of truth for the on-chain deployment + wiring._
 
 ## TL;DR
 
 The hardened contracts are **deployed and live on Arc testnet + Base Sepolia** (testnet-first).
 Arc is **fully verified correct**. On Base Sepolia the shop ESMS token works and the active
 settlement wallet (`0x8a332B…`) holds **both MINTER and BURNER** (verified on-chain) and is funded
-with gas — the full mint→burn loop is proven on-chain (see below). The off-chain claim debit still
+with gas — the full mint→burn loop is proven on-chain (see below). All 93 contract tests pass (`forge test`) and 700 vitest integration tests pass cleanly with 0 TypeScript errors (`bun run check`). The off-chain claim debit still
 needs `ALCHM_KITCHEN_SYNC_URL` + `ALCHM_KITCHEN_SYNC_SECRET` set (matched to WTEN's secret) for the
 app-level claim, or the claim route 503s before minting. **Nothing is on mainnet.** All privileged
 keys in use are chat-exposed testnet throwaways and **must be regenerated before mainnet** — do it as

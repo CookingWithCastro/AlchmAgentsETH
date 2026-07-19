@@ -1191,6 +1191,8 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
         persona_block = prompts.build_monica_prompt(context)
     elif request.agentId == "alchemical-chef":
         persona_block = prompts.build_alchemical_chef_prompt(context)
+    elif request.agentId.lower() in ("sirius", "arcturus", "vega", "polaris"):
+        persona_block = prompts.build_star_agent_prompt(request.agentId, context)
     elif db_agent:
         persona_block = prompts.get_agent_system_prompt(db_agent.__dict__)
     else:
@@ -1314,6 +1316,96 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
             "mcp": mcp_metadata,
         },
     }
+
+
+STAR_AGENT_ELEMENTS = {
+    "sirius": "Fire",
+    "arcturus": "Air",
+    "vega": "Water",
+    "polaris": "Earth",
+}
+
+STAR_AGENT_NAMES = {
+    "sirius": "Sirius",
+    "arcturus": "Arcturus",
+    "vega": "Vega",
+    "polaris": "Polaris",
+}
+
+@app.post("/api/multi_agent_chat", response_model=schemas.MultiAgentChatResponse)
+async def multi_agent_chat(request: schemas.MultiAgentChatRequest, db: Session = Depends(database.get_db)):
+    session_id = request.sessionId or f"council-session-{datetime.utcnow().timestamp()}"
+    agent_ids = request.agentIds or ["sirius", "arcturus", "vega", "polaris"]
+    tier = _resolve_tier(request.modelTier)
+    anthropic_model = ANTHROPIC_TIER_MODEL.get(tier)
+    chain = providers.build_chain(tier, anthropic_model)
+
+    overrides = request.systemPromptOverrides or {}
+    context = request.context or {}
+
+    responses: List[schemas.MultiAgentTurn] = []
+    dialogue_history = []
+
+    for agent_id in agent_ids:
+        lowered_id = agent_id.lower().strip()
+        agent_name = STAR_AGENT_NAMES.get(lowered_id, agent_id.replace("-", " ").title())
+        element = STAR_AGENT_ELEMENTS.get(lowered_id, "Spirit")
+
+        # System prompt for this agent turn
+        if lowered_id in overrides:
+            p_block = overrides[lowered_id]
+        elif lowered_id in prompts.STAR_AGENT_PROMPTS:
+            p_block = prompts.build_star_agent_prompt(lowered_id, context)
+        else:
+            db_a = crud.get_agent(db, agent_id=agent_id)
+            if db_a:
+                p_block = prompts.get_agent_system_prompt(db_a.__dict__)
+            else:
+                p_block = f"You are {agent_name}, a wise celestial star agent."
+
+        # Dynamic turn message includes prior agents' contributions
+        if dialogue_history:
+            history_str = "\n".join(f"{h['name']} ({h['element']}): \"{h['text']}\"" for h in dialogue_history)
+            turn_message = (
+                f"Original User Question: \"{request.message}\"\n\n"
+                f"Prior Council Contributions:\n{history_str}\n\n"
+                f"As {agent_name} ({element} element), provide your concise perspective in 2-3 sentences responding to the seeker and building upon the council's dialogue."
+            )
+        else:
+            turn_message = (
+                f"User Inquiry to the Constellation Council: \"{request.message}\"\n\n"
+                f"As {agent_name} ({element} element), initiate the council's response in 2-3 sentences presenting your elemental perspective and staking vault guidance."
+            )
+
+        res = await providers.run_chain(
+            chain=chain,
+            persona_block=p_block,
+            rag_block="",
+            user_message=turn_message,
+            agent_id=agent_id,
+            tier=tier,
+        )
+
+        reply_text = res.text if res and res.text else f"{agent_name}: Channeling {element} essence into your celestial vault."
+        turn = schemas.MultiAgentTurn(
+            agentId=agent_id,
+            name=agent_name,
+            element=element,
+            text=reply_text,
+        )
+        responses.append(turn)
+        dialogue_history.append({"name": agent_name, "element": element, "text": reply_text})
+
+    return {
+        "responses": responses,
+        "sessionId": session_id,
+        "metadata": {
+            "timestamp": datetime.utcnow().isoformat(),
+            "tier": tier,
+            "agentCount": len(responses),
+        },
+    }
+
 
 
 @app.post(

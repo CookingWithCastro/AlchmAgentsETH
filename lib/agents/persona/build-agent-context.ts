@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { HISTORICAL_AGENTS, getHistoricalAgent } from '@/lib/agents/historical'
+import { STAR_AGENTS, getStarAgent } from '@/lib/agents/star-agents'
 import type { CraftedAgent } from '@/lib/agent-types'
 import { formatPersonaBlock } from './format-persona-block'
 
@@ -13,11 +14,14 @@ export interface AgentContext {
 const cache = new Map<string, AgentContext>()
 
 function findAgent(agentId: string): CraftedAgent | undefined {
+  const star = getStarAgent(agentId)
+  if (star) return star
   const byId = getHistoricalAgent(agentId)
   if (byId) return byId
   const lowered = agentId.toLowerCase()
-  return HISTORICAL_AGENTS.find(
-    a => a.id.toLowerCase() === lowered || a.name.toLowerCase() === lowered
+  return (
+    STAR_AGENTS.find(a => a.id.toLowerCase() === lowered || a.name.toLowerCase() === lowered) ||
+    HISTORICAL_AGENTS.find(a => a.id.toLowerCase() === lowered || a.name.toLowerCase() === lowered)
   )
 }
 

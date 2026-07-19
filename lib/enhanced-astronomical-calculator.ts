@@ -897,3 +897,115 @@ function refineDegreeTime(nearTime: Date, targetDegree: number, isEntry: boolean
 
   return isEntry ? high : low
 }
+
+export interface StarHorizonPosition {
+  name: string
+  hipId: number
+  element: 'Fire' | 'Air' | 'Water' | 'Earth'
+  esmsToken: 'Spirit' | 'Substance' | 'Essence' | 'Matter'
+  rightAscension: number
+  declination: number
+  altitude: number
+  azimuth: number
+  isRisen: boolean
+  baseApy: number
+  multiplier: number
+  effectiveApy: number
+}
+
+export const STAR_CATALOG_DATA = [
+  {
+    hipId: 32349,
+    name: 'Sirius',
+    element: 'Fire' as const,
+    esmsToken: 'Spirit' as const,
+    baseApy: 248,
+    ra: 6.7525,
+    dec: -16.7161,
+  },
+  {
+    hipId: 69673,
+    name: 'Arcturus',
+    element: 'Air' as const,
+    esmsToken: 'Substance' as const,
+    baseApy: 195,
+    ra: 14.2612,
+    dec: 19.1825,
+  },
+  {
+    hipId: 91262,
+    name: 'Vega',
+    element: 'Water' as const,
+    esmsToken: 'Essence' as const,
+    baseApy: 210,
+    ra: 18.6156,
+    dec: 38.7837,
+  },
+  {
+    hipId: 11767,
+    name: 'Polaris',
+    element: 'Earth' as const,
+    esmsToken: 'Matter' as const,
+    baseApy: 180,
+    ra: 2.5303,
+    dec: 89.2641,
+  },
+]
+
+export function calculateStarHorizonPositions(
+  date: Date = new Date(),
+  latitude = 40.7128,
+  longitude = -74.006
+): StarHorizonPosition[] {
+  const jd = dateToJulianDay(date)
+  const d = jd - 2451545.0
+  const T = d / 36525.0
+
+  let gmst = 280.46061837 + 360.98564736629 * d + 0.000387933 * T * T - (T * T * T) / 38710000.0
+  gmst = normalizeDegrees(gmst)
+
+  const lst = normalizeDegrees(gmst + longitude)
+  const latRad = (latitude * Math.PI) / 180
+
+  return STAR_CATALOG_DATA.map(star => {
+    const raDeg = star.ra * 15
+    const decRad = (star.dec * Math.PI) / 180
+
+    let ha = normalizeDegrees(lst - raDeg)
+    if (ha > 180) ha -= 360
+    const haRad = (ha * Math.PI) / 180
+
+    const sinAlt =
+      Math.sin(latRad) * Math.sin(decRad) + Math.cos(latRad) * Math.cos(decRad) * Math.cos(haRad)
+    const altRad = Math.asin(Math.max(-1, Math.min(1, sinAlt)))
+    const altitude = Number(((altRad * 180) / Math.PI).toFixed(2))
+
+    const cosAz =
+      (Math.sin(decRad) - Math.sin(latRad) * Math.sin(altRad)) /
+      (Math.cos(latRad) * Math.cos(altRad))
+    const sinAz = (-Math.cos(decRad) * Math.sin(haRad)) / Math.cos(altRad)
+    const azRad = Math.atan2(sinAz, cosAz)
+    const azimuth = Number(normalizeDegrees((azRad * 180) / Math.PI).toFixed(2))
+
+    const isRisen = altitude > 0
+    const multiplier = isRisen
+      ? Number((1.2 + 0.8 * Math.sin(Math.max(0, altRad))).toFixed(2))
+      : 1.0
+    const effectiveApy = Math.round(star.baseApy * multiplier)
+
+    return {
+      name: star.name,
+      hipId: star.hipId,
+      element: star.element,
+      esmsToken: star.esmsToken,
+      rightAscension: star.ra,
+      declination: star.dec,
+      altitude,
+      azimuth,
+      isRisen,
+      baseApy: star.baseApy,
+      multiplier,
+      effectiveApy,
+    }
+  })
+}
