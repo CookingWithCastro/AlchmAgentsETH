@@ -280,6 +280,24 @@ export default function LandingPage() {
     }
   }, [])
 
+  // Signed-in users get the durable server-side verdict (world_id_verifications);
+  // it overrides the localStorage fast-path in both directions.
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    let active = true
+    fetch('/api/world-id/verify')
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => {
+        if (!active || !d) return
+        setIsVerified(Boolean(d.verified))
+        setNullifier(d.verified ? (d.nullifier ?? null) : null)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [status])
+
   // Arena — live duels, degrade silently to the static fallback on error/empty.
   useEffect(() => {
     let active = true
