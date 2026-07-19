@@ -1536,18 +1536,28 @@ async def get_moment_recommendations(limit: int = 5, db: Session = Depends(datab
     agents = crud.get_all_agents(db)
     if not agents:
         return {"recommendations": [], "summary": "No agents found"}
-        
-    alchm_data = {"Alchemy Effects": {"Total Spirit": 1.0, "Total Essence": 2.0, "Total Matter": 1.5, "Total Substance": 0.5}} # Mock
-    current_planets = {} # Mock
-    
+
+    # Real, time-varying inputs: the current computed sky + the moment's
+    # alchemical totals (no mocks — scores now differ by agent and by moment).
+    now = datetime.utcnow()
+    current_planets = _planetary_positions_for(now)
+    moment = _elemental_scores(now)
+    alchm_data = {"Alchemy Effects": {
+        "Total Spirit": moment["spirit_score"],
+        "Total Essence": moment["essence_score"],
+        "Total Matter": moment["matter_score"],
+        "Total Substance": moment["substance_score"],
+    }}
+
     scored_agents = []
     for agent in agents:
         mc = agent.monicaConstant if getattr(agent, 'monicaConstant', None) is not None else 0.5
         score = utils.calculate_enhanced_moment_score(
-            agent.agentId, 
-            current_planets, 
-            alchm_data, 
-            mc
+            agent.agentId,
+            current_planets,
+            alchm_data,
+            mc,
+            agent=agent,
         )
         scored_agents.append({
             "agent": {
@@ -1571,13 +1581,14 @@ async def post_moment_recommendations(request: Dict[str, Any], db: Session = Dep
         return {"scores": []}
         
     alchm_data = request.get("alchmData", {})
-    current_planets = request.get("currentPlanets", {})
-    
+    # Fall back to the real computed sky when the caller doesn't supply one.
+    current_planets = request.get("currentPlanets") or _planetary_positions_for(datetime.utcnow())
+
     scores = []
     for agent_id in agent_ids:
         agent = crud.get_agent(db, agent_id)
         mc = agent.monicaConstant if agent and getattr(agent, 'monicaConstant', None) is not None else 0.5
-        score = utils.calculate_enhanced_moment_score(agent_id, current_planets, alchm_data, mc)
+        score = utils.calculate_enhanced_moment_score(agent_id, current_planets, alchm_data, mc, agent=agent)
         scores.append(score)
         
     return {"scores": scores}

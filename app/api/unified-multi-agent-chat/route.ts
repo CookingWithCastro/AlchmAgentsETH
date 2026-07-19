@@ -34,6 +34,7 @@ import {
 } from '@/lib/rag/rag-generator'
 import { auth } from '@/lib/auth'
 import { EconomyService } from '@/lib/services/economyService'
+import { PlanetaryHourCalculator } from '@/lib/planetary-hour'
 import { getHistoricalAgent, getHistoricalAgentByName } from '@/lib/agents/historical'
 import { unifiedAgentFactory } from '@/lib/unified-agent-factory'
 import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
@@ -1486,18 +1487,29 @@ function calculateGroupDynamics(
   _previousDynamics?: GroupDynamics
 ): GroupDynamics {
   // Build connections matrix
+  const responseByAgent = new Map(responses.map(r => [r.agentId, r]))
   const connections = []
   for (let i = 0; i < agents.length; i++) {
     for (let j = i + 1; j < agents.length; j++) {
       const agent1 = agents[i]
       const agent2 = agents[j]
+      const compatibility = calculateCompatibility(agent1, agent2)
+
+      // Strength = static compatibility blended with how engaged both agents
+      // actually were this round (their real consciousness shifts).
+      const r1 = responseByAgent.get(agent1.id)
+      const r2 = responseByAgent.get(agent2.id)
+      const engagement =
+        r1 && r2
+          ? Math.min(1, 0.5 + ((r1.consciousnessShift || 0) + (r2.consciousnessShift || 0)) / 2)
+          : 0.4
 
       connections.push({
         agent1: agent1.id,
         agent2: agent2.id,
-        compatibility: calculateCompatibility(agent1, agent2),
+        compatibility,
         resonanceType: getResonanceType(agent1, agent2),
-        strength: 0.5 + Math.random() * 0.5, // Placeholder for dynamic calculation
+        strength: Math.min(1, compatibility * 0.6 + engagement * 0.4),
       })
     }
   }
@@ -1509,7 +1521,7 @@ function calculateGroupDynamics(
       groupConsciousness: calculateGroupConsciousness(agents),
       dominantElements: identifyDominantElements(agents),
       synergies: identifyCurrentSynergies(responses),
-      tensions: [], // Placeholder
+      tensions: identifyCurrentTensions(agents),
     },
     communicationPatterns: {
       messageFlow: {},
@@ -1537,6 +1549,36 @@ function getResonanceType(agent1: UnifiedAgent, agent2: UnifiedAgent): string {
   if (agent1.type === 'monica' || agent2.type === 'monica') return 'Guided'
   if (agent1.type === 'historical' && agent2.type === 'planetary') return 'Temporal-Celestial'
   return 'Complementary'
+}
+
+/**
+ * Real tension detection: classical elemental polarities (Fire–Water, Earth–Air)
+ * and large consciousness-level gaps between active agents.
+ */
+function identifyCurrentTensions(agents: UnifiedAgent[]): string[] {
+  const OPPOSING: Record<string, string> = {
+    Fire: 'Water',
+    Water: 'Fire',
+    Earth: 'Air',
+    Air: 'Earth',
+  }
+  const tensions: string[] = []
+  for (let i = 0; i < agents.length; i++) {
+    for (let j = i + 1; j < agents.length; j++) {
+      const a = agents[i]
+      const b = agents[j]
+      const e1 = a.consciousness.dominantElement
+      const e2 = b.consciousness.dominantElement
+      if (OPPOSING[e1] === e2) {
+        tensions.push(`${a.name} ↔ ${b.name}: ${e1}–${e2} elemental polarity`)
+      }
+      const gap = Math.abs(a.consciousness.monicaConstant - b.consciousness.monicaConstant)
+      if (gap > 2) {
+        tensions.push(`${a.name} ↔ ${b.name}: consciousness-level gap (${gap.toFixed(1)})`)
+      }
+    }
+  }
+  return tensions
 }
 
 function generateSessionInsights(_responses: AgentResponse[], dynamics: GroupDynamics): string[] {
@@ -1583,11 +1625,27 @@ function generateRecommendedActions(
   return actions
 }
 
-function calculateNextOptimalTiming(_cosmicContext: CosmicContext, _agents: UnifiedAgent[]): Date {
-  // Placeholder - would integrate with planetary hour calculations
-  const nextHour = new Date()
-  nextHour.setHours(nextHour.getHours() + 1)
-  return nextHour
+function calculateNextOptimalTiming(_cosmicContext: CosmicContext, agents: UnifiedAgent[]): Date {
+  // Real planetary-hour scan: the next hour ruled by one of the group's own
+  // planets (planetary agents), else the next benefic (Jupiter/Venus) hour.
+  const calculator = new PlanetaryHourCalculator()
+  const groupPlanets = new Set(
+    agents.map(a => a.planetaryData?.planet).filter((p): p is string => Boolean(p))
+  )
+  const benefics = new Set(['Jupiter', 'Venus'])
+  const now = new Date()
+  let firstBenefic: Date | null = null
+  for (let minutes = 20; minutes <= 24 * 60; minutes += 20) {
+    const t = new Date(now.getTime() + minutes * 60_000)
+    try {
+      const { planet } = calculator.getPlanetaryHour(t)
+      if (groupPlanets.has(planet)) return t
+      if (!firstBenefic && benefics.has(planet)) firstBenefic = t
+    } catch {
+      break
+    }
+  }
+  return firstBenefic ?? new Date(now.getTime() + 60 * 60_000)
 }
 
 /**
@@ -1626,18 +1684,26 @@ function consolidateMemories(responses: AgentResponse[]): string[] {
 async function updateAgentMemories(
   agents: UnifiedAgent[],
   message: string,
-  _responses: AgentResponse[],
+  responses: AgentResponse[],
   _sessionHistory: Message[]
 ): Promise<AgentMemoryEvolution[]> {
-  // Placeholder for memory persistence system
-  return agents.map(agent => ({
-    agentId: agent.id,
-    memoryUpdate: {
-      interaction: message,
-      timestamp: new Date().toISOString(),
-      contextLearned: 'Group interaction patterns',
-    },
-  }))
+  // Session-scoped memory summary derived from what each agent ACTUALLY said
+  // this round. Durable cross-session persistence is the MemWal integration
+  // (lib/walrus) and activates when that backend is configured.
+  const responseByAgent = new Map(responses.map(r => [r.agentId, r]))
+  return agents.map(agent => {
+    const own = responseByAgent.get(agent.id)
+    return {
+      agentId: agent.id,
+      memoryUpdate: {
+        interaction: message,
+        timestamp: new Date().toISOString(),
+        contextLearned: own
+          ? `Responded: "${own.content.slice(0, 120).replace(/\s+/g, ' ')}…"`
+          : 'Observed the exchange without responding',
+      },
+    }
+  })
 }
 
 function toTeachingStyle(value: string): TeachingStyle {
