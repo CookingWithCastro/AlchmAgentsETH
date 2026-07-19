@@ -168,7 +168,7 @@ Verified locally:
 - `bunx tsc --noEmit` clean; `/pentacles` renders the 11 canonical zones + live
   star_node/zone/ephemeris feed (10 planets) + planets-in-zones + ascendant line + live
   aspect pools + per-star multiplicative APYs + chart-affinity reactivity + the zone-pool LP panel.
-- **`forge test` — 74/74 pass**, including **`StarVault.t.sol` (39 tests)**: custody &
+- **`forge test` — 93/93 pass**, including **`StarVault.t.sol` (39 tests)**: custody &
   pro-rata shares, unstake round-trips with no cross-staker loss, attested ESMS yield, and every
   attestation failure mode (bad signer, revoked attestor, expired, bad/replayed nonce, staker
   mismatch, bad element), plus 2 fuzz tests (`forge test --match-contract StarVaultTest`).

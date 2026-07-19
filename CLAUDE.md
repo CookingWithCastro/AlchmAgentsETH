@@ -23,10 +23,10 @@ bun run check    # lint + format:check + typecheck combined
 ### Testing
 
 ```bash
-# Integration & unit tests (vitest, jsdom)
+# Integration & unit tests (vitest, jsdom) — the default config runs test/
 bunx vitest run test/                                # All tests in test/
 bunx vitest run test/monica.spec.ts                  # Single spec file
-bunx vitest run --config vitest.unit.config.ts       # Unit config (no storybook project)
+bunx vitest run --config vitest.storybook.config.ts  # Storybook browser tests (chromium)
 
 # Chat system test aliases
 bun run test:chat              # All chat-system tests
@@ -46,12 +46,14 @@ cd backend && ruff check .             # Lint
 ```bash
 bunx prisma studio                        # Prisma DB browser
 bun run prisma:generate                   # Generate Prisma client (with query engine — frontend talks to Neon directly)
-bunx prisma migrate dev                   # Run migrations locally
+bunx prisma db push                       # Apply schema to a DB (the de-facto deploy mechanism — see warning below)
 bun run scripts/seed-historical-agents.ts # Seed agent data
 bun run sync:all                          # Sync DB + ChromaDB
 bun run sync:chromadb                     # Ingest agents into ChromaDB
 bun run verify-db                         # Verify Prisma connection
 ```
+
+⚠️ **Schema deploys via `db push`, and `prisma/migrations/` is FAR BEHIND `schema.prisma`** — the live databases were never migrate-managed. Consequences: `migrate deploy` will NOT reproduce the real schema; new migration files are written by hand for the record (see `20260719120000_add_agent_wallets`). **NEVER pass a real database URL as `--shadow-database-url`** — Prisma RESETS the shadow database (drops everything); this wiped the tramway dev DB on 2026-07-19. To diff a live DB, use the read-only form: `prisma migrate diff --from-url <db> --to-schema-datamodel prisma/schema.prisma --script`.
 
 ### Backend (Python FastAPI)
 
@@ -239,7 +241,7 @@ Planetary Agents now participates in a two-layer MCP network:
 
 FastAPI consumes the Alchm server through `backend/alchm_mcp.py`, appending deterministic tool output to the chat reference block after RAG. External MCP clients can launch the Planetary Agents server directly for persona/cognitive tools.
 
-**MCP telemetry — cross-repo dependency, no in-repo UI consumer (by design, for now).** The backend exposes operator telemetry at `/api/admin/mcp-summary`, `/api/admin/mcp-status`, and `/api/admin/alchm-mcp-errors` (all gated by `INTERNAL_API_SECRET`). These are consumed by **WTEN's external admin panel**, not by this repo's `/admin` console — there is **no Next.js proxy route** for them today. To add an in-repo tile: create a secret-gated proxy route under `app/api/admin/` and a tab/panel in `AdminOperatorConsole.tsx` (which already has the tab + `MetricPanel`/`Panel` pattern). It depends on `INTERNAL_API_SECRET` being set and matched on the backend (see deploy ops), so build it after that secret is in place.
+**MCP telemetry.** The backend exposes operator telemetry at `/api/admin/mcp-summary`, `/api/admin/mcp-status`, and `/api/admin/alchm-mcp-errors` (all gated by `INTERNAL_API_SECRET`). Consumed by WTEN's external admin panel AND by this repo's `/admin` console: secret-gated proxy routes exist under `app/api/admin/{mcp-summary,mcp-status,alchm-mcp-errors}` and `McpInvocationsPanel` renders them under the admin "MCP Invocations" tab. The proxies fail closed (503) when `INTERNAL_API_SECRET` is unset — there is deliberately no fallback value in code; set the same value on Vercel and Railway.
 
 ### TypeScript Errors
 

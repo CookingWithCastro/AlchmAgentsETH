@@ -24,7 +24,7 @@ Deployer + attestor: `0x554F991D030aDF539CBD2ff3D896951C6f089804` (deploy via `s
 | `ConstellationAMM`       | `0x34d860Cb460ecD2595584138d22Ad6fe7DAeA3BB` | 6 ESMS element-pair pools, aspect-gated                       |
 | ERC-8004 registry (Arc)  | `0x8004A818…`                                | Agent identity / reputation                                   |
 
-> Contracts: `contracts/src/` — `forge test` → **43/43 passing** (25 on `StarVault.sol`: pro-rata custody, no cross-staker loss, and every attestation failure mode + 2 fuzz tests).
+> Contracts: `contracts/src/` — `forge test` → **93/93 passing** (39 on `StarVault.sol`: pro-rata custody, no cross-staker loss, and every attestation failure mode + fuzz tests).
 
 ## Bounty map (what we built → how to verify)
 
@@ -70,7 +70,7 @@ engine. UI: **`/pentacles`**.
 ```bash
 bun install
 bun dev            # → http://localhost:3000/pentacles
-cd contracts && forge test     # 43/43
+cd contracts && forge test     # 93/93
 ```
 
 Deploy contracts to Arc: fill `contracts/.env` (see `contracts/.env.example`) then `bash scripts/deploy-arc.sh`.
