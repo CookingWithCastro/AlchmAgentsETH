@@ -83,8 +83,10 @@ async function main() {
       console.warn('  (skipping ENS write — NAMESTONE_API_KEY / NAMESTONE_DOMAIN not set)')
       return
     }
-    const { setSubname } = await import('@/lib/namestone')
-    await setSubname({
+    const { mergeSetSubname } = await import('@/lib/namestone')
+    // merge-write: preserves records other flows already set for this name
+    // (agent-memory, human-verified, agent-wallet) while adding registration.
+    await mergeSetSubname({
       name: label,
       textRecords: buildAgentTextRecords({
         context: file.description,

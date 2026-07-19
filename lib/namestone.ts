@@ -170,6 +170,57 @@ export async function deleteName(name: string, opts?: { domain?: string }): Prom
 }
 
 /**
+ * Exact-match lookup of a single subname (with its text records) via
+ * GET /search-names?exact_match=1. Returns null when the name doesn't exist.
+ */
+export async function getSubname(
+  name: string,
+  opts?: { domain?: string }
+): Promise<NameStoneSubname | null> {
+  const p = new URLSearchParams()
+  p.set('domain', requireDomain(opts?.domain))
+  p.set('name', name)
+  p.set('exact_match', '1')
+  p.set('text_records', '1')
+  p.set('limit', '1')
+  const rows = await nsFetch<NameStoneSubname[]>(`/search-names?${p.toString()}`, {
+    method: 'GET',
+  })
+  return Array.isArray(rows) && rows.length > 0 ? rows[0] : null
+}
+
+/**
+ * Read-merge-write subname upsert. NameStone does NOT document whether
+ * /set-name merges or replaces text_records on update, so partial writers
+ * (agent-create, world-id stamp, memory snapshot, on-chain registration) MUST
+ * go through this — a plain setSubname with a partial record set could silently
+ * erase the other flows' records (e.g. a human-verified stamp deleting
+ * agent-endpoint[a2a] and agent-wallet[x402]). New keys win; existing keys and
+ * the existing address are preserved unless overridden.
+ */
+export async function mergeSetSubname(input: SetSubnameInput): Promise<void> {
+  let existing: NameStoneSubname | null = null
+  try {
+    existing = await getSubname(input.name, { domain: input.domain })
+  } catch {
+    // Lookup failure degrades to a plain upsert — better a partial write than
+    // no write at all (the name may simply not exist yet).
+  }
+
+  const existingRecords =
+    (existing as { text_records?: Record<string, string>; textRecords?: Record<string, string> })
+      ?.text_records ??
+    (existing as { textRecords?: Record<string, string> })?.textRecords ??
+    {}
+
+  await setSubname({
+    ...input,
+    address: input.address ?? (existing as { address?: string })?.address,
+    textRecords: { ...existingRecords, ...(input.textRecords ?? {}) },
+  })
+}
+
+/**
  * On-demand hook: assign a newly-created agent its gasless ENS subname.
  * Best-effort + non-blocking — silently no-ops if NameStone isn't configured
  * or no address is resolvable, so it never breaks agent creation.
@@ -179,7 +230,14 @@ export async function registerAgentSubnameOnCreate(
     | { id?: string; agentId?: string; slug?: string; name?: string; walletAddress?: string }
     | null
     | undefined,
-  params?: { walletAddress?: string; slug?: string; id?: string } | null
+  params?: {
+    walletAddress?: string
+    slug?: string
+    id?: string
+    /** Per-agent x402 payment wallet — published as agent-wallet[x402]. */
+    paymentAddress?: string
+    paymentChain?: string
+  } | null
 ): Promise<void> {
   if (!process.env.NAMESTONE_API_KEY || !process.env.NAMESTONE_DOMAIN) return
   const slug = agent?.slug ?? agent?.agentId ?? agent?.id ?? params?.slug ?? params?.id
@@ -190,7 +248,10 @@ export async function registerAgentSubnameOnCreate(
 
   const label = ensLabel(String(slug))
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '')
-  await setSubname({
+  // merge (not plain set): other flows write their own partial records for
+  // this name (human-verified, agent-memory, agent-registration) and NameStone
+  // upsert semantics are undocumented — never clobber them.
+  await mergeSetSubname({
     name: label,
     address,
     textRecords: buildAgentTextRecords({
@@ -198,6 +259,8 @@ export async function registerAgentSubnameOnCreate(
         ? `${agent.name} — an Alchm planetary/historical agent.`
         : `Alchm agent ${label}.`,
       webUrl: site ? `${site}/agents/${label}` : undefined,
+      paymentAddress: params?.paymentAddress,
+      paymentChain: params?.paymentChain ?? (params?.paymentAddress ? 'base' : undefined),
     }),
   })
 }
