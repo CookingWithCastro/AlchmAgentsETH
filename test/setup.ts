@@ -49,6 +49,11 @@ vi.mock('next/navigation', () => ({
   }),
   usePathname: () => '/',
   useSearchParams: () => new URLSearchParams(),
+  // Real impl rethrows only Next.js-internal control-flow errors (redirect,
+  // notFound); those never occur under vitest, so a no-op is faithful here.
+  unstable_rethrow: () => {},
+  redirect: vi.fn(),
+  notFound: vi.fn(),
 }))
 
 // Mock Next.js dynamic imports

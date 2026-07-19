@@ -1,10 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+// The real wake helper polls the hibernating Render backend for up to 75s;
+// unmocked it would blow through the test timeout on the failure path.
+vi.mock('@/lib/agents/render-wake', () => ({
+  wakeRenderBackend: vi.fn(),
+}))
+
 import { fetchRenderSupplementalData } from '@/lib/agents/render-supplemental'
+import { wakeRenderBackend } from '@/lib/agents/render-wake'
 
 describe('Render supplemental data integration', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     process.env.ALCHM_RENDER_BACKEND_URL = 'https://render.test'
+    ;(wakeRenderBackend as any).mockResolvedValue({ awake: false, attempts: 1 })
   })
 
   it('calls Render alchmize-public with skip: true and formats month correctly', async () => {
