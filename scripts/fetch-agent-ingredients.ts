@@ -21,7 +21,11 @@ async function main() {
     process.env.NEXT_PUBLIC_BACKEND_URL ||
     'https://whattoeatnext-production.up.railway.app'
 
-  const API_SECRET = process.env.INTERNAL_API_SECRET || '882133EA-3D06-4DF2-A63C-F4114AB4EFBC'
+  const API_SECRET = process.env.INTERNAL_API_SECRET
+  if (!API_SECRET) {
+    console.error('INTERNAL_API_SECRET is not set — refusing to run with a committed fallback.')
+    process.exit(1)
+  }
 
   const OUTPUT_DIR = path.join(import.meta.dirname || '.', 'output')
   if (!fs.existsSync(OUTPUT_DIR)) {

@@ -6,14 +6,22 @@ const AGENTS_BACKEND_URL =
   process.env.BACKEND_URL ||
   'https://api.agents.alchm.kitchen'
 
-const INTERNAL_API_SECRET =
-  process.env.INTERNAL_API_SECRET || '882133EA-3D06-4DF2-A63C-F4114AB4EFBC'
+// No fallback: unset means the proxy fails closed instead of authenticating
+// with a secret that lives in git history. Set it in Vercel + Railway env.
+const INTERNAL_API_SECRET = process.env.INTERNAL_API_SECRET || ''
 
 export async function GET(req: NextRequest) {
   try {
     const admin = await requireAdmin()
     if (!admin.ok) {
       return adminErrorResponse(admin)
+    }
+
+    if (!INTERNAL_API_SECRET) {
+      return NextResponse.json(
+        { success: false, error: 'INTERNAL_API_SECRET is not configured' },
+        { status: 503 }
+      )
     }
 
     const { searchParams } = new URL(req.url)
