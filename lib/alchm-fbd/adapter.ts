@@ -61,6 +61,25 @@ function realSpeed(speed: number | undefined): number | undefined {
 }
 
 /**
+ * Retrograde state, or `undefined` when it genuinely isn't known.
+ *
+ * ⚠️ This repo cannot currently determine retrograde motion at all. Its speed
+ * values are absolute (`Math.abs`), heliocentric, and time-invariant, so a
+ * negative longitude rate — the thing that DEFINES retrograde from an Earth
+ * observer — is structurally unrepresentable. Deriving it from that speed would
+ * always yield "direct", which is a fabricated answer, not a measured one.
+ *
+ * So: trust an explicit flag if a caller supplies one, trust a genuinely signed
+ * speed if one ever arrives, and otherwise claim nothing.
+ */
+function retrogradeOf(pos: WheelPosition): boolean | undefined {
+  if (typeof pos.isRetrograde === 'boolean') return pos.isRetrograde
+  const speed = realSpeed(pos.speed)
+  if (speed === undefined) return undefined
+  return speed < 0
+}
+
+/**
  * Absolute ecliptic longitude, or null when unusable.
  *
  * `0` is genuinely ambiguous: it is both 0°00′ Aries and the "unknown" value a
@@ -114,7 +133,12 @@ export function buildFBDFromWheelPositions(
       sign: String(pos.sign).toLowerCase(),
       degree: longitude % 30,
       exactLongitude: longitude,
-      isRetrograde: pos.isRetrograde ?? (realSpeed(pos.speed) ?? 0) < 0,
+      // Only claim retrograde when we actually know it. `?? false` would
+      // assert DIRECT motion for every planet, since this repo supplies
+      // neither an explicit flag nor a usable signed speed — a false-direct
+      // claim on bodies that may well be retrograde. Undefined means "not
+      // claimed", which is the honest reading of no data.
+      isRetrograde: retrogradeOf(pos),
       longitudeSpeed: realSpeed(pos.speed),
     }
   }
