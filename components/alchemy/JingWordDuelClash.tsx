@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { JING_MOVES, type JingMoveName } from '@/lib/agents/duel/jing-move'
+import { JING_MOVES, type JingMoveName } from '@/lib/agents/duel/jing-rules'
 import { PLANETS, type Planet } from '@/lib/agents/planetary-traits'
 import { Button } from '@/components/ui/button'
 import { Sparkles, Swords, Zap, RefreshCw, Trophy, ShieldAlert } from 'lucide-react'
