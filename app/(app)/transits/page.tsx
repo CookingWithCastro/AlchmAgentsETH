@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,8 @@ import { fetchCurrentPlanetaryPositions } from '@/lib/monica/fetch-current-posit
 import { degreeAgentMatcher } from '@/lib/degree-agent-matcher'
 import { DEMO_AGENTS } from '@/lib/demo-agents-data'
 import { ZodiacWheel } from '@/components/zodiac-wheel'
+import { PlanetFBDCard } from '@/components/planet-fbd-card'
+import { buildFBDFromWheelPositions, isDiurnal } from '@/lib/alchm-fbd/adapter'
 import dynamic from 'next/dynamic'
 import type { CraftedAgent } from '@/lib/agent-types'
 
@@ -44,6 +46,23 @@ export default function TransitsPage() {
     Array<{ planet: string; longitude: number; sign: string }>
   >([])
   const [activatedAgentIds, setActivatedAgentIds] = useState<string[]>([])
+
+  // Free-body diagrams for the current sky. Recomputed only when positions
+  // change — the engine does a full aspect pass plus a three-layer ESMS
+  // decomposition, which is wasted work on every unrelated re-render.
+  const fbd = useMemo(
+    () => buildFBDFromWheelPositions(wheelTransits, { diurnal: isDiurnal(new Date()) }),
+    [wheelTransits]
+  )
+  // ESMS the ten cards don't carry (Ascendant grounding + the far half of any
+  // aspect to a body without a card). Surfaced rather than hidden, so the grid
+  // never implies "ten cards = the whole sky".
+  const fbdOffCard = fbd
+    ? fbd.totals.unattributed.Spirit +
+      fbd.totals.unattributed.Essence +
+      fbd.totals.unattributed.Matter +
+      fbd.totals.unattributed.Substance
+    : 0
   const [loading, setLoading] = useState(true)
   const [showGroupChat, setShowGroupChat] = useState(false)
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date())
@@ -304,6 +323,34 @@ export default function TransitsPage() {
                 currentTransits={wheelTransits}
                 natalChart={{ planets: [] }} // Empty natal chart to keep the wheel purely focused on current transits
               />
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Free-body diagrams — every force acting on each planet right now */}
+      {fbd && fbd.cards.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">Planetary Free-Body Diagrams</CardTitle>
+            <CardDescription>
+              Every force acting on each planet, drawn at the exact arc minute it occupies — aspects
+              at true ecliptic bearings, elemental sign and sect pulls, dignity, and momentum. The
+              violet resultant is the planet&apos;s net alchemical tendency.
+              {fbdOffCard > 0.005 && (
+                <span className="block mt-1 opacity-70">
+                  {fbdOffCard.toFixed(2)} ESMS sits off-card (the Ascendant grounding vessel is not
+                  a planet and gets no diagram), so the cards deliberately do not sum to the sky
+                  total.
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="alchm-fbd-root grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {fbd.cards.map(card => (
+                <PlanetFBDCard key={card.planet} fbd={card} />
+              ))}
             </div>
           </CardContent>
         </Card>

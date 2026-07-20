@@ -1,0 +1,59 @@
+/**
+ * Design tokens the vendored FBD card needs, scoped to `.alchm-fbd-root`.
+ *
+ * These come from WhatToEatNext's `.alchm-root` block. They are SCOPED rather
+ * than dropped on `:root` on purpose — this repo already defines its own
+ * `--accent` with a different value and meaning, and leaking these would
+ * silently restyle unrelated surfaces.
+ *
+ * Import once (see components/planet-fbd-card.tsx) and put `alchm-fbd-root` on
+ * a wrapper around any FBD card.
+ */
+
+.alchm-fbd-root {
+  --line: rgba(255, 255, 255, 0.08);
+  --line-hi: rgba(255, 255, 255, 0.14);
+
+  --fg: #f2edff;
+  --fg-dim: #b5adcc;
+  --fg-mute: #6e6884;
+  --fg-faint: #3f3a52;
+
+  /* Violet + copper: the signature accent pair. */
+  --accent: oklch(0.72 0.18 305);
+  --accent-2: oklch(0.78 0.14 65);
+
+  /* The four element colours. The card reads these directly, and the element
+     compass is only legible if they stay visually distinct from each other. */
+  --el-fire: oklch(0.74 0.17 35);
+  --el-water: oklch(0.74 0.13 230);
+  --el-earth: oklch(0.74 0.11 130);
+  --el-air: oklch(0.85 0.07 90);
+
+  --f-mono: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace;
+
+  color: var(--fg);
+}
+
+/* The card's own panel chrome. Upstream gets this from a shared `.alchm-panel`
+   utility that does not exist here, so it ships with the card. */
+.alchm-fbd-root .alchm-panel {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015));
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+}
+
+/* Mono-caps micro-labels — the brand signature. */
+.alchm-fbd-root .t-mono {
+  font-family: var(--f-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.alchm-fbd-root .t-tag {
+  font-family: var(--f-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+}
