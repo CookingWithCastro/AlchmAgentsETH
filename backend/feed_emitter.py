@@ -271,12 +271,12 @@ def emit_feed_event(
 
     if "alchemical-chef" in agent_email:
         if os.getenv("EMIT_ALCHEMICAL_CHEF_FEED", "false").lower() not in ("true", "1", "yes"):
-            logger.info("feed_emit skipped for alchemical-chef (EMIT_ALCHEMICAL_CHEF_FEED is false)")
+            print(f"[feed_emitter] Skipped emit for {agent_email} (EMIT_ALCHEMICAL_CHEF_FEED is false)", flush=True)
             return
 
     if event_type in ("recipe_generation", "tilt_skillet_plan"):
         if os.getenv("EMIT_RECIPE_FEED_EVENTS", "false").lower() not in ("true", "1", "yes"):
-            logger.info("feed_emit skipped for %s (EMIT_RECIPE_FEED_EVENTS is false)", event_type)
+            print(f"[feed_emitter] Skipped emit for event {event_type} (EMIT_RECIPE_FEED_EVENTS is false)", flush=True)
             return
 
     try:
