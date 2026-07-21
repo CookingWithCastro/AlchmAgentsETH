@@ -269,6 +269,16 @@ def emit_feed_event(
 
     agent_email = agent_id_to_email(agent_id_or_email)
 
+    if "alchemical-chef" in agent_email:
+        if os.getenv("EMIT_ALCHEMICAL_CHEF_FEED", "false").lower() not in ("true", "1", "yes"):
+            logger.info("feed_emit skipped for alchemical-chef (EMIT_ALCHEMICAL_CHEF_FEED is false)")
+            return
+
+    if event_type in ("recipe_generation", "tilt_skillet_plan"):
+        if os.getenv("EMIT_RECIPE_FEED_EVENTS", "false").lower() not in ("true", "1", "yes"):
+            logger.info("feed_emit skipped for %s (EMIT_RECIPE_FEED_EVENTS is false)", event_type)
+            return
+
     try:
         loop = asyncio.get_running_loop()
     except RuntimeError:

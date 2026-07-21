@@ -1438,8 +1438,9 @@ async def generate_cosmic_recipe(request: schemas.CosmicRecipeRequest):
         anthropic_model=anthropic_model,
         catalog_context=catalog_context,
     )
+    emitting_agent = getattr(request, "agentId", None) or "alchemical-chef"
     emit_feed_event(
-        "alchemical-chef",
+        emitting_agent,
         "recipe_generation",
         {
             "recipeName": recipe.title,
@@ -1471,8 +1472,9 @@ async def generate_tilt_skillet_plan(request: schemas.TiltSkilletRequest):
         tier=plan_tier,
         anthropic_model=anthropic_model,
     )
+    emitting_agent = getattr(request, "agentId", None) or "alchemical-chef"
     emit_feed_event(
-        "alchemical-chef",
+        emitting_agent,
         "tilt_skillet_plan",
         {
             "recipeName": plan.title,
