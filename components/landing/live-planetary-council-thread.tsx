@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import {
   Activity,
   ChevronDown,
@@ -54,16 +54,6 @@ const PLANET_GLYPH: Record<string, string> = {
   Mars: '♂',
   Jupiter: '♃',
   Saturn: '♄',
-}
-
-const PLANET_CALLSIGN: Record<string, string> = {
-  Sun: 'SUN_PRIME',
-  Moon: 'LUNAR_CORE',
-  Mercury: 'MERCURY_RELAY',
-  Venus: 'VENUS_HARMONIC',
-  Mars: 'MARS_VECTOR',
-  Jupiter: 'JUPITER_ORACLE',
-  Saturn: 'SATURN_GATE',
 }
 
 const SIGN_ORDER = [
@@ -215,16 +205,17 @@ function buildAgent(position: PlanetaryPosition): CouncilAgent {
   const sign = position.sign ? capitalize(position.sign) : 'Aries'
   const element = SIGN_ELEMENT[sign] || 'air'
   const style = ELEMENT_STYLE[element]
+  const degree = typeof position.degree === 'number' ? position.degree : 0
 
   return {
     planet,
     sign,
-    degree: typeof position.degree === 'number' ? position.degree : 0,
+    degree,
     glyph: PLANET_GLYPH[planet] || '✦',
     accent: style.accent,
     border: style.border,
     glow: style.glow,
-    callSign: PLANET_CALLSIGN[planet] || `${planet.toUpperCase()}_NODE`,
+    callSign: `${planet.toUpperCase()} ${sign.toUpperCase()} ${formatDegree(degree)}°`,
   }
 }
 
@@ -280,6 +271,7 @@ export function LivePlanetaryCouncilThread({
   const [messages, setMessages] = useState<ThreadMessage[]>([])
   const [inputText, setInputText] = useState('')
   const [isSending, setIsSending] = useState(false)
+  const hasSeededRef = useRef(false)
 
   const council = useMemo(() => {
     const normalized = positions
@@ -338,49 +330,34 @@ export function LivePlanetaryCouncilThread({
       } tightened to ${council.strongestAspect.orb.toFixed(1)}° orb.`
     : 'The council is listening for the next angular handoff.'
 
-  // Seeding effect
-  useEffect(() => {
-    if (messages.length === 0 && council.activeAgents.length > 0) {
-      const activePlanets = council.activeAgents.slice(0, 2)
-      const seeded = activePlanets.map((agent, index) => ({
-        id: `seeded-${agent.planet}-${index}`,
-        role: 'agent' as const,
-        agentId: `planetary-${agent.planet.toLowerCase()}-${agent.sign.toLowerCase()}-${agent.degree}`,
-        agentName: agent.planet,
-        agentColor: PLANET_COLORS_LOCAL[agent.planet] || '#6b7280',
-        agentSymbol: agent.glyph,
-        content: AGENT_LINES[agent.planet] || 'The council signal is assembling.',
-        timestamp: new Date(Date.now() - (2 - index) * 60000),
-      }))
-      setMessages(seeded)
+  const latestAgentMessage = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === 'agent' && messages[i].content) {
+        return messages[i]
+      }
     }
-  }, [council.activeAgents, messages.length])
+    return null
+  }, [messages])
 
-  // Refresh handler
-  const handleRefresh = (event: React.MouseEvent) => {
-    event.stopPropagation()
-    setMessages([]) // Clear local messages to trigger re-seed
-    onRefresh?.()
-  }
+  // Spontaneous LLM chat generator for active degree agents
+  const triggerCouncilChat = async (promptText: string, isInitialOpening = false) => {
+    if (isSending || council.activeAgents.length === 0) return
 
-  // Send message to council
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputText.trim() || isSending || council.activeAgents.length === 0) return
-
-    const userMessage: ThreadMessage = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      agentName: 'You',
-      content: inputText.trim(),
-      timestamp: new Date(),
+    let userMessage: ThreadMessage | null = null
+    if (!isInitialOpening) {
+      userMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        agentName: 'You',
+        content: promptText,
+        timestamp: new Date(),
+      }
+      setMessages(prev => [...prev, userMessage!])
     }
 
-    setMessages(prev => [...prev, userMessage])
-    setInputText('')
     setIsSending(true)
 
-    // Build the UnifiedAgent representations for the active planets
+    // Build the UnifiedAgent representations for the active degree agents
     const activeAgentsToChat = council.activeAgents.slice(0, 2).map(agent => {
       const config = {
         planet: agent.planet,
@@ -396,14 +373,14 @@ export function LivePlanetaryCouncilThread({
     })
 
     try {
-      const priorHistory = [...messages, userMessage]
+      const priorHistory = userMessage ? [...messages, userMessage] : [...messages]
 
       const response = await fetch('/api/unified-multi-agent-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           agents: activeAgentsToChat,
-          message: userMessage.content,
+          message: promptText,
           context: {
             sessionHistory: priorHistory.map(m => ({
               role: m.role,
@@ -464,7 +441,9 @@ export function LivePlanetaryCouncilThread({
                   id: `msg-${Date.now()}-${agentId}`,
                   role: 'agent',
                   agentId: agentId,
-                  agentName: agent?.planet || 'Planetary Agent',
+                  agentName: agent
+                    ? `${agent.planet} ${agent.sign} ${formatDegree(agent.degree)}°`
+                    : 'Planetary Agent',
                   agentColor: agent ? PLANET_COLORS_LOCAL[agent.planet] : '#6b7280',
                   agentSymbol: agent?.glyph || '✦',
                   content: '',
@@ -507,6 +486,39 @@ export function LivePlanetaryCouncilThread({
     } finally {
       setIsSending(false)
     }
+  }
+
+  // Spontaneous seeding effect on initial load / sky position sync
+  useEffect(() => {
+    if (
+      messages.length === 0 &&
+      council.activeAgents.length > 0 &&
+      !hasSeededRef.current &&
+      !isSending
+    ) {
+      hasSeededRef.current = true
+      triggerCouncilChat(
+        'Synthesize current live sky transits and open the planetary council thread for this moment with spontaneous celestial perspectives.',
+        true
+      )
+    }
+  }, [council.activeAgents, messages.length, isSending])
+
+  // Refresh handler
+  const handleRefresh = (event: React.MouseEvent) => {
+    event.stopPropagation()
+    hasSeededRef.current = false
+    setMessages([]) // Clear local messages to trigger spontaneous re-seed
+    onRefresh?.()
+  }
+
+  // Send user message to council
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inputText.trim() || isSending || council.activeAgents.length === 0) return
+    const textToSend = inputText.trim()
+    setInputText('')
+    await triggerCouncilChat(textToSend, false)
   }
 
   return (
@@ -570,9 +582,11 @@ export function LivePlanetaryCouncilThread({
                 Latest relay
               </div>
               <div className="mt-1 max-w-[320px] truncate font-body-md text-xs text-[#c2cab0]">
-                {primaryAgent
-                  ? `${primaryAgent.planet}: ${AGENT_LINES[primaryAgent.planet]}`
-                  : 'Council thread booting...'}
+                {latestAgentMessage
+                  ? `${latestAgentMessage.agentName}: ${latestAgentMessage.content}`
+                  : isSending
+                    ? 'Synthesizing live sky transits...'
+                    : 'Awaiting live council signal...'}
               </div>
             </div>
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#7bd1fa]/30 text-[#7bd1fa]">
@@ -647,7 +661,7 @@ export function LivePlanetaryCouncilThread({
                           className="font-mono-label text-[10px]"
                           style={{ color: side ? '#b8fc4b' : color }}
                         >
-                          {side ? 'YOU' : `${message.agentName.toUpperCase()}_NODE`}
+                          {side ? 'YOU' : message.agentName.toUpperCase()}
                         </span>
                         <span className="font-mono-label text-[9px] text-[#8c947c]">
                           {message.timestamp.toLocaleTimeString([], {
