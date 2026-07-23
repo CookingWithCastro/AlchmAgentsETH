@@ -8,12 +8,12 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default __t.row({
   identity: __t.identity().primaryKey(),
-  roundIndex: __t.u64().name("round_index"),
+  roundIndex: __t.u64().name('round_index'),
   wins: __t.u32(),
   fights: __t.u32(),
-  lastResolvedAt: __t.timestamp().name("last_resolved_at"),
-});
+  lastResolvedAt: __t.timestamp().name('last_resolved_at'),
+})

@@ -8,15 +8,13 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
-import {
-  Planet,
-} from "./types";
+import { Planet } from './types'
 
 export default {
   word: __t.string(),
   get opponent() {
-    return Planet;
+    return Planet
   },
-};
+}

@@ -8,19 +8,16 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
-import {
-  Planet,
-  NatalChart,
-} from "./types";
+import { Planet, NatalChart } from './types'
 
 export default {
   handle: __t.string(),
   get chart() {
-    return NatalChart;
+    return NatalChart
   },
   get faction() {
-    return Planet;
+    return Planet
   },
-};
+}

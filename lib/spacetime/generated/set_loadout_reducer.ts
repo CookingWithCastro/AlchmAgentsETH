@@ -8,15 +8,13 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
-import {
-  Loadout,
-} from "./types";
+import { Loadout } from './types'
 
 export default {
   cardId: __t.u64(),
   get loadout() {
-    return Loadout;
+    return Loadout
   },
-};
+}

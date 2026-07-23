@@ -50,6 +50,8 @@ export interface ContextCardSynthesis {
   elementTally: Record<string, number>
   modalityTally: Record<string, number>
   signature: string
+  signComposition?: Record<string, number>
+  weightedSignComposition?: Record<string, number>
 }
 
 export interface ContextCardAlchm {
@@ -75,6 +77,7 @@ export interface TransitAspect {
   n: string
   type: string
   orb: number
+  applying?: boolean
 }
 
 export interface TransitMeta {
@@ -130,6 +133,25 @@ export const SIGN_ORDER = [
   'Aquarius',
   'Pisces',
 ]
+
+/** Canonical sign normalization helper */
+export function normalizeSign(sign: string): string {
+  if (!sign) return 'Aries'
+  const clean = sign.trim().toLowerCase()
+  const found = SIGN_ORDER.find(s => s.toLowerCase() === clean)
+  return found || 'Aries'
+}
+
+export const ELEMENT_COLORS: Record<string, string> = {
+  Fire: '#ef5d4e',
+  Earth: '#8aa56a',
+  Air: '#7ad1c4',
+  Water: '#60a5fa',
+  fire: '#ef5d4e',
+  earth: '#8aa56a',
+  air: '#7ad1c4',
+  water: '#60a5fa',
+}
 
 export const SIGN_ELEMENTS: Record<string, string> = {
   Aries: 'Fire',
@@ -199,59 +221,24 @@ export const BODY_GLYPHS: Record<string, string> = {
 
 export const ASPECT_SYMBOLS: Record<string, string> = {
   conjunction: '☌',
-  sextile: '⚹',
-  square: '□',
-  trine: '△',
   opposition: '☍',
+  trine: '△',
+  square: '□',
+  sextile: '⚹',
   quincunx: '⚻',
   semisextile: '⚺',
   semisquare: '∠',
   sesquiquadrate: '⚼',
-  quintile: 'Q',
 }
 
 export const ASPECT_ANGLES: Record<string, number> = {
   conjunction: 0,
+  opposition: 180,
+  trine: 120,
+  square: 90,
+  sextile: 60,
+  quincunx: 150,
   semisextile: 30,
   semisquare: 45,
-  sextile: 60,
-  quintile: 72,
-  square: 90,
-  trine: 120,
   sesquiquadrate: 135,
-  quincunx: 150,
-  opposition: 180,
-}
-
-export const ELEMENT_COLORS: Record<string, string> = {
-  Fire: '#ef5d4e',
-  Water: '#5e9bd6',
-  Earth: '#8aa56a',
-  Air: '#d9c87a',
-}
-
-export const PLANET_COLORS: Record<string, string> = {
-  Sun: '#f5b542',
-  Moon: '#cfd6e8',
-  Mercury: '#9bd0ff',
-  Venus: '#f4a8c8',
-  Mars: '#ef5d4e',
-  Jupiter: '#c89b6a',
-  Saturn: '#8a8aa3',
-  Uranus: '#7ad1c4',
-  Neptune: '#7ea0e8',
-  Pluto: '#8d7ab5',
-}
-
-export const PLANET_GLYPHS: Record<string, string> = {
-  Sun: '☉',
-  Moon: '☽',
-  Mercury: '☿',
-  Venus: '♀',
-  Mars: '♂',
-  Jupiter: '♃',
-  Saturn: '♄',
-  Uranus: '♅',
-  Neptune: '♆',
-  Pluto: '♇',
 }

@@ -10,7 +10,7 @@ import {
   DEMO_SKY,
   type SkySource,
 } from '@/lib/context-card/transit-engine'
-import { buildOutput, fmtDegree } from '@/lib/context-card/serializers'
+import { buildOutput, buildMultiChartOutput, fmtDegree } from '@/lib/context-card/serializers'
 import { DEMO_CARD_DATA } from '@/lib/context-card/demo-data'
 import type { ContextCardData, ExportOptions } from '@/lib/context-card/types'
 
@@ -533,5 +533,44 @@ describe('weightedAmounts (inline reimplementation)', () => {
       expect(v).toBeGreaterThanOrEqual(0)
       expect(Number.isInteger(v)).toBe(true)
     }
+  })
+})
+
+describe('buildMultiChartOutput', () => {
+  const DEFAULT_OPTS: ExportOptions = {
+    promptHeader: true,
+    synopsis: true,
+    houses: true,
+    aspects: true,
+    minorAspects: true,
+    transits: true,
+    alchm: true,
+    annotated: true,
+  }
+
+  it('builds combined markdown report for multiple chart profiles', () => {
+    const chart1 = DEMO_CARD_DATA
+    const chart2 = {
+      ...DEMO_CARD_DATA,
+      birth: { ...DEMO_CARD_DATA.birth, handle: 'Partner Chart' },
+    }
+    const output = buildMultiChartOutput([chart1, chart2], 'md', DEFAULT_OPTS)
+    expect(output).toContain('# MULTI-CHART ASTROLOGICAL CONTEXT ATTACHMENT')
+    expect(output).toContain('## INCLUDED CHARTS (2)')
+    expect(output).toContain('# CHART 1: SELF · COUNCIL NATIVE')
+    expect(output).toContain('# CHART 2: PARTNER CHART')
+    expect(output).toContain('# MULTI-CHART SYNASTRY & ELEMENTAL OVERLAY')
+  })
+
+  it('builds combined JSON report for multiple chart profiles', () => {
+    const chart1 = DEMO_CARD_DATA
+    const chart2 = {
+      ...DEMO_CARD_DATA,
+      birth: { ...DEMO_CARD_DATA.birth, handle: 'Partner Chart' },
+    }
+    const output = buildMultiChartOutput([chart1, chart2], 'json', DEFAULT_OPTS)
+    const json = JSON.parse(output)
+    expect(json._meta.chartCount).toBe(2)
+    expect(json.charts).toHaveLength(2)
   })
 })

@@ -8,21 +8,17 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Planet,
-  ZoneKind,
-} from "./types";
-
+} from 'spacetimedb'
+import { Planet, ZoneKind } from './types'
 
 export default __t.row({
-  zoneId: __t.u8().primaryKey().name("zone_id"),
+  zoneId: __t.u8().primaryKey().name('zone_id'),
   get kind() {
-    return ZoneKind;
+    return ZoneKind
   },
   get owner() {
-    return __t.option(Planet);
+    return __t.option(Planet)
   },
   control: __t.i32(),
-  updatedAt: __t.timestamp().name("updated_at"),
-});
+  updatedAt: __t.timestamp().name('updated_at'),
+})

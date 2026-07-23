@@ -101,11 +101,11 @@ export function buildRegistrationFile(input: BuildRegistrationFileInput): Erc800
 export function withRegistration(
   file: Erc8004RegistrationFile,
   agentId: number,
-  registry: Address = IDENTITY_REGISTRY,
+  registry: Address = IDENTITY_REGISTRY
 ): Erc8004RegistrationFile {
   const agentRegistry = agentRegistryCaip(registry)
   const registrations = [
-    ...file.registrations.filter((r) => r.agentRegistry !== agentRegistry),
+    ...file.registrations.filter(r => r.agentRegistry !== agentRegistry),
     { agentId, agentRegistry },
   ]
   return { ...file, registrations }

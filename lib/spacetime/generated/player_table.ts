@@ -8,21 +8,18 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Planet,
-} from "./types";
-
+} from 'spacetimedb'
+import { Planet } from './types'
 
 export default __t.row({
   identity: __t.identity().primaryKey(),
   handle: __t.string(),
   get faction() {
-    return Planet;
+    return Planet
   },
-  deckSeed: __t.u64().name("deck_seed"),
-  createdAt: __t.timestamp().name("created_at"),
-  lastActive: __t.timestamp().name("last_active"),
+  deckSeed: __t.u64().name('deck_seed'),
+  createdAt: __t.timestamp().name('created_at'),
+  lastActive: __t.timestamp().name('last_active'),
   tokens: __t.u64(),
-  wordWins: __t.u32().name("word_wins"),
-});
+  wordWins: __t.u32().name('word_wins'),
+})

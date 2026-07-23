@@ -8,9 +8,9 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default {
   keepId: __t.u64(),
   consumeId: __t.u64(),
-};
+}

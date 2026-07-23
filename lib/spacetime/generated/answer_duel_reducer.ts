@@ -8,11 +8,11 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default {
   challengeId: __t.u64(),
   agentWord: __t.string(),
   agentRationale: __t.string(),
   agentScore: __t.u32(),
-};
+}

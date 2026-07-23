@@ -31,8 +31,7 @@ import {
 } from './registry'
 
 /** The only table that matters: decoded-friendly raw logs for all of mainnet. */
-export const ETHEREUM_LOGS_TABLE =
-  'bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs'
+export const ETHEREUM_LOGS_TABLE = 'bigquery-public-data.goog_blockchain_ethereum_mainnet_us.logs'
 
 /** ERC-8004 launch date — the partition-pruning floor appended to every query. */
 export const ERC8004_LAUNCH_DATE = '2026-01-28'
@@ -74,8 +73,7 @@ const HEX_TO_INT_UDF = `CREATE TEMP FUNCTION HEX_TO_INT(h STRING) RETURNS INT64 
 const uintFromTopic = (i: number) => `HEX_TO_INT(SUBSTR(topics[SAFE_OFFSET(${i})], 3))`
 
 /** Decode an indexed address topic (rightmost 20 bytes / 40 hex chars). */
-const addressFromTopic = (i: number) =>
-  `CONCAT('0x', SUBSTR(topics[SAFE_OFFSET(${i})], 27))`
+const addressFromTopic = (i: number) => `CONCAT('0x', SUBSTR(topics[SAFE_OFFSET(${i})], 27))`
 
 /**
  * Decode the FIRST dynamic `string` in `data` (single-string ABI layout):
@@ -182,7 +180,13 @@ export interface UriUpdatedQueryOptions extends EventQueryOptions {
 
 /** `URIUpdated(uint256 indexed agentId, string newURI, address indexed by)`. */
 export function buildUriUpdatedQuery(opts: UriUpdatedQueryOptions = {}): BigQuerySpec {
-  const where = opts.agentId != null ? { sql: 'AND topics[SAFE_OFFSET(1)] = @agentIdTopic', params: { agentIdTopic: uintTopic(opts.agentId) } } : undefined
+  const where =
+    opts.agentId != null
+      ? {
+          sql: 'AND topics[SAFE_OFFSET(1)] = @agentIdTopic',
+          params: { agentIdTopic: uintTopic(opts.agentId) },
+        }
+      : undefined
   return buildCore({
     registry: opts.registry ?? IDENTITY_REGISTRY,
     topic0: TOPIC0.URIUpdated,
@@ -319,11 +323,14 @@ export function buildNewFeedbackQuery(opts: FeedbackQueryOptions = {}): BigQuery
 
 /** `FeedbackRevoked(uint256 indexed agentId, address indexed clientAddress, uint64 indexed feedbackIndex)`. */
 export function buildFeedbackRevokedQuery(
-  opts: { agentId?: bigint | number } & EventQueryOptions = {},
+  opts: { agentId?: bigint | number } & EventQueryOptions = {}
 ): BigQuerySpec {
   const where =
     opts.agentId != null
-      ? { sql: 'AND topics[SAFE_OFFSET(1)] = @agentIdTopic', params: { agentIdTopic: uintTopic(opts.agentId) } }
+      ? {
+          sql: 'AND topics[SAFE_OFFSET(1)] = @agentIdTopic',
+          params: { agentIdTopic: uintTopic(opts.agentId) },
+        }
       : undefined
   return buildCore({
     registry: opts.registry ?? REPUTATION_REGISTRY,
@@ -348,7 +355,10 @@ export interface ValidationQueryOptions extends EventQueryOptions {
 export function buildValidationRequestQuery(opts: ValidationQueryOptions = {}): BigQuerySpec {
   const where =
     opts.agentId != null
-      ? { sql: 'AND topics[SAFE_OFFSET(2)] = @agentIdTopic', params: { agentIdTopic: uintTopic(opts.agentId) } }
+      ? {
+          sql: 'AND topics[SAFE_OFFSET(2)] = @agentIdTopic',
+          params: { agentIdTopic: uintTopic(opts.agentId) },
+        }
       : undefined
   return buildCore({
     registry: opts.registry ?? VALIDATION_REGISTRY,
@@ -372,7 +382,10 @@ export function buildValidationRequestQuery(opts: ValidationQueryOptions = {}): 
 export function buildValidationResponseQuery(opts: ValidationQueryOptions = {}): BigQuerySpec {
   const where =
     opts.agentId != null
-      ? { sql: 'AND topics[SAFE_OFFSET(2)] = @agentIdTopic', params: { agentIdTopic: uintTopic(opts.agentId) } }
+      ? {
+          sql: 'AND topics[SAFE_OFFSET(2)] = @agentIdTopic',
+          params: { agentIdTopic: uintTopic(opts.agentId) },
+        }
       : undefined
   return buildCore({
     registry: opts.registry ?? VALIDATION_REGISTRY,
@@ -394,7 +407,7 @@ export function buildValidationResponseQuery(opts: ValidationQueryOptions = {}):
 export function buildRawEventQuery(
   registry: Address,
   topic0: Hex,
-  opts: EventQueryOptions = {},
+  opts: EventQueryOptions = {}
 ): BigQuerySpec {
   return buildCore({ registry, topic0, selectExtras: [], opts })
 }

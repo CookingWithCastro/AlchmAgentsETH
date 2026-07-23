@@ -8,12 +8,12 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default __t.row({
   qhash: __t.u64().primaryKey(),
   question: __t.string(),
   text: __t.string(),
   model: __t.string(),
-  createdAt: __t.timestamp().name("created_at"),
-});
+  createdAt: __t.timestamp().name('created_at'),
+})

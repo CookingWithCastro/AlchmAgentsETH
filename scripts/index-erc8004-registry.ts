@@ -102,7 +102,7 @@ async function main() {
             `x402=${e.prizeEligible}  score=${e.score.toFixed(1)}  ` +
             `feedback=${e.avgFeedback?.toFixed(1) ?? '—'}(${e.feedbackCount})  ` +
             `validation=${e.validationPassRate != null ? Math.round(e.validationPassRate * 100) + '%' : '—'}(${e.validationCount})  ` +
-            `trust=[${e.supportedTrust.join(',')}]`,
+            `trust=[${e.supportedTrust.join(',')}]`
         )
       }
       break
@@ -110,29 +110,36 @@ async function main() {
     case 'feedback': {
       const fb = await indexer.getFeedback({ agentId, limit })
       console.log(`Feedback — ${fb.length}:`)
-      for (const f of fb) console.log(`  #${f.agentId}  rating=${f.normValue}  tag1=${f.tag1 ?? ''}  client=${f.client}`)
+      for (const f of fb)
+        console.log(
+          `  #${f.agentId}  rating=${f.normValue}  tag1=${f.tag1 ?? ''}  client=${f.client}`
+        )
       break
     }
     case 'validations': {
       const vs = await indexer.getValidationResponses({ agentId, limit })
       console.log(`Validation responses — ${vs.length}:`)
-      for (const v of vs) console.log(`  #${v.agentId}  response=${v.response}  validator=${v.validator}`)
+      for (const v of vs)
+        console.log(`  #${v.agentId}  response=${v.response}  validator=${v.validator}`)
       break
     }
     case 'registrations': {
       const regs = await indexer.getRegistrations({ agentId, limit })
       console.log(`Registrations — ${regs.length}:`)
-      for (const r of regs) console.log(`  #${r.agentId}  ${r.agentURI}  owner=${r.owner}  (${r.timestamp})`)
+      for (const r of regs)
+        console.log(`  #${r.agentId}  ${r.agentURI}  owner=${r.owner}  (${r.timestamp})`)
       break
     }
     case 'transfers': {
       const xs = await indexer.getTransfers({ limit })
-      for (const t of xs) console.log(`  token #${t.tokenId}  ${t.from} → ${t.to}  (${t.timestamp})`)
+      for (const t of xs)
+        console.log(`  token #${t.tokenId}  ${t.from} → ${t.to}  (${t.timestamp})`)
       break
     }
     case 'metadata': {
       const md = await indexer.getMetadata({ agentId, key, limit })
-      for (const m of md) console.log(`  #${m.agentId}  key=${m.key}  value=${m.valueUtf8 ?? m.value}`)
+      for (const m of md)
+        console.log(`  #${m.agentId}  key=${m.key}  value=${m.valueUtf8 ?? m.value}`)
       break
     }
     default:
@@ -140,7 +147,7 @@ async function main() {
   }
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('index-erc8004-registry failed:', err instanceof Error ? err.message : err)
   process.exit(1)
 })

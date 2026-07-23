@@ -8,20 +8,17 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Planet,
-} from "./types";
-
+} from 'spacetimedb'
+import { Planet } from './types'
 
 export default __t.row({
-  hipId: __t.u32().primaryKey().name("hip_id"),
+  hipId: __t.u32().primaryKey().name('hip_id'),
   name: __t.string(),
   ra: __t.f64(),
   dec: __t.f64(),
   magnitude: __t.f32(),
   get heldBy() {
-    return __t.option(Planet).name("held_by");
+    return __t.option(Planet).name('held_by')
   },
-  regionHint: __t.u8().name("region_hint"),
-});
+  regionHint: __t.u8().name('region_hint'),
+})

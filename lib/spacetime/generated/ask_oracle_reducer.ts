@@ -8,10 +8,10 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default {
   question: __t.string(),
   context: __t.string(),
   cacheable: __t.bool(),
-};
+}

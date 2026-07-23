@@ -24,7 +24,7 @@ import {
   RefreshCw,
   CheckCircle2,
 } from 'lucide-react'
-import { buildOutput } from '@/lib/context-card/serializers'
+import { buildOutput, buildMultiChartOutput } from '@/lib/context-card/serializers'
 import { DEMO_CARD_DATA } from '@/lib/context-card/demo-data'
 import type { ContextCardData, ExportFormat, ExportOptions } from '@/lib/context-card/types'
 
@@ -42,10 +42,18 @@ export interface UserChartProfile {
   data?: ContextCardData
 }
 
-const FORMATS: { id: ExportFormat; label: string; ext: string; mime: string }[] = [
-  { id: 'md', label: 'Markdown', ext: '.md', mime: 'text/markdown' },
-  { id: 'txt', label: 'Plain Text', ext: '.txt', mime: 'text/plain' },
-  { id: 'json', label: 'JSON', ext: '.json', mime: 'application/json' },
+const STORAGE_KEY = 'alchm_saved_user_charts'
+
+const FORMATS: Array<{
+  id: ExportFormat
+  label: string
+  icon: typeof FileText
+  ext: string
+  mime: string
+}> = [
+  { id: 'md', label: 'Markdown (.md)', icon: FileText, ext: '.md', mime: 'text/markdown' },
+  { id: 'txt', label: 'Plain Text (.txt)', icon: FileText, ext: '.txt', mime: 'text/plain' },
+  { id: 'json', label: 'JSON (.json)', icon: Code, ext: '.json', mime: 'application/json' },
 ]
 
 const DEFAULT_OPTS: ExportOptions = {
@@ -56,48 +64,41 @@ const DEFAULT_OPTS: ExportOptions = {
   minorAspects: true,
   transits: true,
   alchm: true,
-  annotated: false,
+  annotated: true,
 }
 
-const OPTION_KEYS: { key: keyof ExportOptions; label: string; desc: string }[] = [
-  { key: 'promptHeader', label: 'LLM Prompt Header', desc: 'Adds system guidance for AI' },
-  { key: 'transits', label: 'Live Transits', desc: 'Current sky overlay' },
-  { key: 'alchm', label: 'Alchm Energy Layer', desc: 'Sacred 7 & ESMS scores' },
-  { key: 'synopsis', label: 'Astrological Synopsis', desc: 'Big Three summary' },
-  { key: 'aspects', label: 'Major Aspects', desc: 'Planetary relationships' },
-  { key: 'houses', label: 'House Cusps', desc: 'Life domains mapping' },
-  { key: 'annotated', label: 'Plain-English Notes', desc: 'Descriptive explanations' },
-]
-
-const CITY_COORDS: Record<string, { lat: number; lon: number }> = {
-  'new york': { lat: 40.7128, lon: -74.006 },
-  brooklyn: { lat: 40.6782, lon: -73.9442 },
-  manhattan: { lat: 40.7831, lon: -73.9712 },
-  'los angeles': { lat: 34.0522, lon: -118.2437 },
-  london: { lat: 51.5074, lon: -0.1278 },
-  paris: { lat: 48.8566, lon: 2.3522 },
-  tokyo: { lat: 35.6762, lon: 139.6503 },
-  sydney: { lat: -33.8688, lon: 151.2093 },
-  chicago: { lat: 41.8781, lon: -87.6298 },
-  miami: { lat: 25.7617, lon: -80.1918 },
-  'san francisco': { lat: 37.7749, lon: -122.4194 },
-  austin: { lat: 30.2672, lon: -97.7431 },
-  berlin: { lat: 52.52, lon: 13.405 },
-  toronto: { lat: 43.6532, lon: -79.3832 },
-  rome: { lat: 41.9028, lon: 12.4964 },
-  barcelona: { lat: 41.3851, lon: 2.1734 },
-  amsterdam: { lat: 52.3676, lon: 4.9041 },
-}
-
+// Background lookup mapping common city names to ephemeris coordinates
 function resolveCoordinates(locationStr: string): { lat: number; lon: number } {
-  const lower = (locationStr || '').toLowerCase()
-  for (const [key, coords] of Object.entries(CITY_COORDS)) {
-    if (lower.includes(key)) return coords
+  const clean = (locationStr || '').toLowerCase().trim()
+  if (clean.includes('brooklyn') || clean.includes('new york') || clean.includes('nyc')) {
+    return { lat: 40.6782, lon: -73.9442 }
+  }
+  if (clean.includes('los angeles') || clean.includes('la') || clean.includes('california')) {
+    return { lat: 34.0522, lon: -118.2437 }
+  }
+  if (clean.includes('london') || clean.includes('uk') || clean.includes('england')) {
+    return { lat: 51.5074, lon: -0.1278 }
+  }
+  if (clean.includes('paris') || clean.includes('france')) {
+    return { lat: 48.8566, lon: 2.3522 }
+  }
+  if (clean.includes('tokyo') || clean.includes('japan')) {
+    return { lat: 35.6762, lon: 139.6503 }
+  }
+  if (clean.includes('sydney') || clean.includes('australia')) {
+    return { lat: -33.8688, lon: 151.2093 }
+  }
+  if (clean.includes('berlin') || clean.includes('germany')) {
+    return { lat: 52.52, lon: 13.405 }
+  }
+  if (clean.includes('chicago')) {
+    return { lat: 41.8781, lon: -87.6298 }
+  }
+  if (clean.includes('toronto') || clean.includes('canada')) {
+    return { lat: 43.6532, lon: -79.3832 }
   }
   return { lat: 40.7128, lon: -74.006 }
 }
-
-const STORAGE_KEY = 'alchm_saved_user_charts'
 
 export function QuickChartAttachmentGenerator() {
   const router = useRouter()
@@ -105,48 +106,56 @@ export function QuickChartAttachmentGenerator() {
   const [format, setFormat] = useState<ExportFormat>('md')
   const [opts, setOpts] = useState<ExportOptions>(DEFAULT_OPTS)
   const [copied, setCopied] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
-  const [showForm, setShowForm] = useState(true)
+  const [showPreview, setShowPreview] = useState(true)
   const [calculating, setCalculating] = useState(false)
+  const [showForm, setShowForm] = useState(false)
 
-  // Chart List Management
-  const [charts, setCharts] = useState<UserChartProfile[]>([])
-  const [activeChartId, setActiveChartId] = useState<string>('demo')
+  const [charts, setCharts] = useState<UserChartProfile[]>([
+    {
+      id: 'demo',
+      chartName: 'Primary Birth Chart',
+      birthDate: '1990-06-01',
+      birthTime: '10:17 AM',
+      birthLocation: { name: 'Brooklyn, NY, USA', lat: 40.6782, lon: -73.9442 },
+      isPrimary: true,
+      data: DEMO_CARD_DATA,
+    },
+  ])
+  const [selectedChartIds, setSelectedChartIds] = useState<string[]>(['demo'])
 
-  // Form State for Adding / Editing Chart Inputs
-  const [formName, setFormName] = useState('My Natal Chart')
-  const [formDate, setFormDate] = useState('1995-06-21')
-  const [formTime, setFormTime] = useState('10:17')
-  const [formLocName, setFormLocName] = useState('New York, NY, USA')
+  // Form Inputs
+  const [formName, setFormName] = useState('Partner / Second Chart')
+  const [formDate, setFormDate] = useState('1992-10-14')
+  const [formTime, setFormTime] = useState('16:30')
+  const [formLocName, setFormLocName] = useState('Los Angeles, CA, USA')
 
-  // Initialize and load charts
+  // Load Saved Charts & User Primary Chart from API
   useEffect(() => {
     let unmounted = false
-
-    async function initChartContext() {
+    const initChartContext = async () => {
       let savedLocal: UserChartProfile[] = []
       try {
-        const stored = localStorage.getItem(STORAGE_KEY)
-        if (stored) savedLocal = JSON.parse(stored)
-      } catch (err) {
-        console.warn('[QuickChartAttachmentGenerator] Failed to parse local stored charts:', err)
+        const rawLocal = localStorage.getItem(STORAGE_KEY)
+        if (rawLocal) savedLocal = JSON.parse(rawLocal)
+      } catch {
+        /* ignore storage read error */
       }
 
       try {
-        const res = await fetch('/api/context-card/generate')
+        const res = await fetch('/api/context-card/generate', { method: 'GET' })
         if (res.ok) {
           const body = await res.json()
-          if (body.success && body.data && !unmounted) {
+          if (!unmounted && body.success && body.data) {
             setData(body.data)
-            const serverCharts: UserChartProfile[] = (body.userCharts || []).map((c: any) => ({
-              id: c.id || `server_${Date.now()}`,
-              chartName: c.chartName || 'Primary Chart',
-              birthDate: typeof c.birthDate === 'string' ? c.birthDate.split('T')[0] : '1990-06-01',
-              birthTime: c.birthTime || '10:17',
-              birthLocation: c.birthLocation || {
-                name: 'Brooklyn, NY',
-                lat: 40.6782,
-                lon: -73.9442,
+            const serverCharts: UserChartProfile[] = (body.savedCharts || []).map((c: any) => ({
+              id: c.id,
+              chartName: c.chartName,
+              birthDate: c.birthDate,
+              birthTime: c.birthTime,
+              birthLocation: {
+                name: c.birthLocation?.name || 'Saved Location',
+                lat: c.birthLocation?.lat || 40.7128,
+                lon: c.birthLocation?.lon || -74.006,
               },
               isPrimary: c.isPrimary,
               data: body.data,
@@ -176,10 +185,7 @@ export function QuickChartAttachmentGenerator() {
             }
 
             setCharts(merged)
-            setActiveChartId(merged[0].id)
-            if (body.isPrimaryChart) {
-              setShowForm(false)
-            }
+            setSelectedChartIds([merged[0].id])
           }
         }
       } catch (err) {
@@ -193,13 +199,28 @@ export function QuickChartAttachmentGenerator() {
     }
   }, [])
 
-  // Switch Active Chart
-  const handleSelectChart = (chart: UserChartProfile) => {
-    setActiveChartId(chart.id)
+  // Toggle chart selection for multi-chart reports
+  const handleToggleChart = (chart: UserChartProfile) => {
+    setSelectedChartIds(prev => {
+      if (prev.includes(chart.id)) {
+        if (prev.length === 1) return prev
+        return prev.filter(id => id !== chart.id)
+      } else {
+        return [...prev, chart.id]
+      }
+    })
     if (chart.data) {
       setData(chart.data)
     } else {
       calculateChartAttachment(chart)
+    }
+  }
+
+  const handleSelectAllCharts = () => {
+    if (selectedChartIds.length === charts.length) {
+      setSelectedChartIds([charts[0].id])
+    } else {
+      setSelectedChartIds(charts.map(c => c.id))
     }
   }
 
@@ -247,13 +268,16 @@ export function QuickChartAttachmentGenerator() {
                 STORAGE_KEY,
                 JSON.stringify(updated.filter(c => c.id !== 'demo'))
               )
-            } catch {
-              /* ignore localStorage write error */
-            }
+            } catch {}
             return updated
           })
-          setActiveChartId(newChart.id)
+          setSelectedChartIds(prev => Array.from(new Set([...prev, newChart.id])))
           setShowForm(false)
+          // Prepare form defaults for next additional chart entry
+          setFormName(`Chart ${charts.length + 1}`)
+          setFormDate('1995-06-21')
+          setFormTime('12:00')
+          setFormLocName('New York, NY, USA')
         }
       }
     } catch (err) {
@@ -271,15 +295,33 @@ export function QuickChartAttachmentGenerator() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.filter(c => c.id !== 'demo')))
     } catch {}
-    if (activeChartId === id && filtered.length > 0) {
-      handleSelectChart(filtered[0])
-    }
+    setSelectedChartIds(prev => {
+      const updated = prev.filter(i => i !== id)
+      return updated.length > 0 ? updated : [filtered[0]?.id || 'demo']
+    })
   }
 
-  // Output text string formatting
+  // Output text string formatting (supports multi-chart reports!)
   const outputText = useMemo(() => {
-    return buildOutput(data, format, opts)
-  }, [data, format, opts])
+    const selectedProfiles = charts.filter(c => selectedChartIds.includes(c.id) && c.data)
+    if (selectedProfiles.length > 1) {
+      return buildMultiChartOutput(
+        selectedProfiles.map(c => c.data!),
+        format,
+        opts
+      )
+    }
+    const currentData = selectedProfiles[0]?.data || data
+    return buildOutput(currentData, format, opts)
+  }, [charts, selectedChartIds, data, format, opts])
+
+  useEffect(() => {
+    if (outputText && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('alchm_active_chart_context', outputText)
+      } catch {}
+    }
+  }, [outputText])
 
   const lineCount = useMemo(() => outputText.split('\n').length, [outputText])
   const charCount = useMemo(() => outputText.length, [outputText])
@@ -310,10 +352,12 @@ export function QuickChartAttachmentGenerator() {
 
   const handleDownload = () => {
     const fmtDef = FORMATS.find(f => f.id === format) || FORMATS[0]
-    const activeChart = charts.find(c => c.id === activeChartId)
-    const slug = (activeChart?.chartName || 'alchm-chart-context')
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+    const slug =
+      selectedChartIds.length > 1
+        ? `alchm-multi-chart-report-${selectedChartIds.length}-charts`
+        : (charts.find(c => c.id === selectedChartIds[0])?.chartName || 'alchm-chart-context')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
     const blob = new Blob([outputText], { type: `${fmtDef.mime};charset=utf-8` })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -325,7 +369,6 @@ export function QuickChartAttachmentGenerator() {
     setTimeout(() => URL.revokeObjectURL(url), 1500)
   }
 
-  const activeChart = charts.find(c => c.id === activeChartId) || charts[0]
   const bigThree = data.birth?.bigThree || { sun: 'Aries', moon: 'Cancer', rising: 'Leo' }
 
   return (
@@ -354,7 +397,9 @@ export function QuickChartAttachmentGenerator() {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#b8fc4b] animate-pulse" />
             <span className="font-mono-label text-xs text-[#b8fc4b] font-semibold truncate max-w-[160px]">
-              {activeChart?.chartName || 'Active Chart'}
+              {selectedChartIds.length > 1
+                ? `Multi-Chart (${selectedChartIds.length} Selected)`
+                : charts.find(c => c.id === selectedChartIds[0])?.chartName || 'Active Chart'}
             </span>
           </div>
           <div className="text-xs text-[#e0e4d2] font-mono font-bold">
@@ -385,43 +430,65 @@ export function QuickChartAttachmentGenerator() {
 
         <button
           onClick={() => setShowForm(prev => !prev)}
-          className="px-4 py-2 rounded-lg text-xs font-mono font-bold bg-[#b8fc4b] text-black hover:bg-[#c9fe6b] transition-all shrink-0 active:scale-95 shadow-md"
+          className="px-4 py-2 rounded-lg text-xs font-mono font-bold bg-[#b8fc4b] text-black hover:bg-[#c9fe6b] transition-all shrink-0 active:scale-95 shadow-md flex items-center gap-1.5"
         >
-          {showForm ? 'Hide Birth Form' : '✏️ Input Birth Details'}
+          {showForm
+            ? 'Hide Birth Form'
+            : charts.length > 1
+              ? '+ Add Additional Chart'
+              : '✏️ Input Birth Details'}
         </button>
       </div>
 
-      {/* Saved Chart Selection Bar */}
+      {/* Saved Chart Multi-Selection Bar */}
       <div className="mb-6 space-y-3">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <label className="font-mono-label text-xs uppercase tracking-wider text-[#8c947c] flex items-center gap-2">
-            <Compass className="w-3.5 h-3.5 text-[#b8fc4b]" /> Select / Switch Active Chart
+            <Compass className="w-3.5 h-3.5 text-[#b8fc4b]" /> Select Charts to Include (
+            {selectedChartIds.length} / {charts.length} selected)
           </label>
 
-          <button
-            onClick={() => setShowForm(prev => !prev)}
-            className="py-1.5 px-3 rounded-lg text-xs font-mono text-[#b8fc4b] bg-[#b8fc4b]/10 border border-[#b8fc4b]/30 hover:bg-[#b8fc4b]/20 transition-all flex items-center gap-1.5"
-          >
-            {showForm ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
-            {showForm ? 'Close Input Form' : '+ Input New Birth Details'}
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSelectAllCharts}
+              className="text-xs font-mono text-[#b8fc4b] hover:underline"
+            >
+              {selectedChartIds.length === charts.length
+                ? 'Select Single Chart'
+                : '✦ Combine All Charts into 1 Report'}
+            </button>
+            <button
+              onClick={() => setShowForm(prev => !prev)}
+              className="py-1.5 px-3 rounded-lg text-xs font-mono text-[#b8fc4b] bg-[#b8fc4b]/10 border border-[#b8fc4b]/30 hover:bg-[#b8fc4b]/20 transition-all flex items-center gap-1.5 font-bold"
+            >
+              {showForm ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+              {showForm ? 'Close Input Form' : '+ Add Additional Chart'}
+            </button>
+          </div>
         </div>
 
-        {/* Saved Chart Pills */}
+        {/* Multi-Selectable Chart Pills */}
         <div className="flex flex-wrap gap-2">
           {charts.map(c => {
-            const active = c.id === activeChartId
+            const isSelected = selectedChartIds.includes(c.id)
             return (
               <div
                 key={c.id}
-                onClick={() => handleSelectChart(c)}
+                onClick={() => handleToggleChart(c)}
                 className={`py-2 px-3.5 rounded-xl text-xs font-mono transition-all flex items-center gap-2 cursor-pointer border ${
-                  active
+                  isSelected
                     ? 'bg-[#1d2319] border-[#b8fc4b] text-[#b8fc4b] font-bold shadow-[0_0_15px_rgba(184,252,75,0.15)]'
                     : 'bg-[#16181d] border-[#23262B] text-[#8c947c] hover:border-[#8c947c]/50 hover:text-[#e0e4d2]'
                 }`}
               >
-                <span>✦ {c.chartName}</span>
+                <span className="flex items-center gap-1.5">
+                  {isSelected ? (
+                    <Check className="w-3.5 h-3.5 text-[#b8fc4b]" />
+                  ) : (
+                    <span className="opacity-40">✦</span>
+                  )}
+                  {c.chartName}
+                </span>
                 {c.id !== 'demo' && (
                   <button
                     onClick={e => handleDeleteChart(c.id, e)}
@@ -437,254 +504,243 @@ export function QuickChartAttachmentGenerator() {
         </div>
       </div>
 
-      {/* Primary Birth Information Input Form (Cleaned without Lat/Lon) */}
+      {/* Primary Birth Information Input Form */}
       {showForm && (
         <div className="mb-6 p-5 md:p-6 rounded-xl bg-[#090b0e] border border-[#b8fc4b]/40 space-y-4 animate-fadeIn shadow-2xl relative">
           <div className="flex items-center justify-between border-b border-[#23262B] pb-3">
-            <h3 className="font-headline-sm text-sm text-[#e0e4d2] font-semibold flex items-center gap-2">
-              <Edit3 className="w-4 h-4 text-[#b8fc4b]" /> Enter Birth Date, Time & Location
+            <h3 className="text-sm font-headline-sm font-bold text-[#b8fc4b] flex items-center gap-2">
+              <Calendar className="w-4 h-4" /> Birth Parameters Form
             </h3>
-            <span className="font-mono-label text-[10px] text-[#b8fc4b] font-bold uppercase tracking-wider">
-              * Required for Natal Report
+            <span className="text-[11px] font-mono text-[#8c947c]">
+              Generates high-precision Ascendant & Placidus houses
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Chart Name */}
             <div>
-              <label className="font-mono-label text-[11px] text-[#8c947c] mb-1 block">
-                Chart Name / Subject *
+              <label className="block text-[11px] font-mono text-[#8c947c] uppercase tracking-wider mb-1.5">
+                Chart Name / Label
               </label>
               <input
                 type="text"
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
-                placeholder="e.g. My Birth Chart"
-                className="w-full bg-[#16181d] border border-[#23262B] rounded-lg px-3 py-2 text-xs text-[#e0e4d2] font-mono focus:border-[#b8fc4b] outline-none"
+                placeholder="e.g. Partner, Secondary, Friend"
+                className="w-full bg-[#16181d] border border-[#23262B] focus:border-[#b8fc4b] rounded-lg px-3 py-2 text-xs font-mono text-[#e0e4d2] outline-none transition-all"
               />
             </div>
 
-            {/* Birth Date */}
             <div>
-              <label className="font-mono-label text-[11px] text-[#8c947c] mb-1 block flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-[#7bd1fa]" /> Birth Date *
+              <label className="block text-[11px] font-mono text-[#8c947c] uppercase tracking-wider mb-1.5">
+                Birth Date <span className="text-[#b8fc4b]">*</span>
               </label>
-              <input
-                type="date"
-                value={formDate}
-                onChange={e => setFormDate(e.target.value)}
-                className="w-full bg-[#16181d] border border-[#23262B] rounded-lg px-3 py-2 text-xs text-[#e0e4d2] font-mono focus:border-[#b8fc4b] outline-none"
-              />
+              <div className="relative">
+                <input
+                  type="date"
+                  value={formDate}
+                  onChange={e => setFormDate(e.target.value)}
+                  className="w-full bg-[#16181d] border border-[#23262B] focus:border-[#b8fc4b] rounded-lg px-3 py-2 text-xs font-mono text-[#e0e4d2] outline-none transition-all"
+                />
+              </div>
             </div>
 
-            {/* Birth Time */}
             <div>
-              <label className="font-mono-label text-[11px] text-[#8c947c] mb-1 block flex items-center gap-1">
-                <Clock className="w-3 h-3 text-[#a855f7]" /> Exact Birth Time *
+              <label className="block text-[11px] font-mono text-[#8c947c] uppercase tracking-wider mb-1.5">
+                Exact Birth Time <span className="text-[#b8fc4b]">*</span>
               </label>
-              <input
-                type="time"
-                value={formTime}
-                onChange={e => setFormTime(e.target.value)}
-                className="w-full bg-[#16181d] border border-[#23262B] rounded-lg px-3 py-2 text-xs text-[#e0e4d2] font-mono focus:border-[#b8fc4b] outline-none"
-              />
-              <span className="text-[10px] text-[#8c947c] mt-0.5 block">
-                Determines Ascendant & Houses
-              </span>
+              <div className="relative">
+                <input
+                  type="time"
+                  value={formTime}
+                  onChange={e => setFormTime(e.target.value)}
+                  className="w-full bg-[#16181d] border border-[#23262B] focus:border-[#b8fc4b] rounded-lg px-3 py-2 text-xs font-mono text-[#e0e4d2] outline-none transition-all"
+                />
+              </div>
             </div>
 
-            {/* Location Name */}
             <div>
-              <label className="font-mono-label text-[11px] text-[#8c947c] mb-1 block flex items-center gap-1">
-                <MapPin className="w-3 h-3 text-[#b8fc4b]" /> City / Location *
+              <label className="block text-[11px] font-mono text-[#8c947c] uppercase tracking-wider mb-1.5">
+                City / Location <span className="text-[#b8fc4b]">*</span>
               </label>
-              <input
-                type="text"
-                value={formLocName}
-                onChange={e => setFormLocName(e.target.value)}
-                placeholder="e.g. New York, London, Tokyo"
-                className="w-full bg-[#16181d] border border-[#23262B] rounded-lg px-3 py-2 text-xs text-[#e0e4d2] font-mono focus:border-[#b8fc4b] outline-none"
-              />
-              <span className="text-[10px] text-[#8c947c] mt-0.5 block">
-                Auto-maps ephemeris location
-              </span>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formLocName}
+                  onChange={e => setFormLocName(e.target.value)}
+                  placeholder="e.g. New York, London, Tokyo, Los Angeles"
+                  className="w-full bg-[#16181d] border border-[#23262B] focus:border-[#b8fc4b] rounded-lg px-3 py-2 text-xs font-mono text-[#e0e4d2] outline-none transition-all"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-3 border-t border-[#23262B]">
-            <span className="text-xs text-[#8c947c] font-mono flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#b8fc4b]" />
-              Fills natal placements, Sacred 7 scores & live transit overlay
-            </span>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2 rounded-lg text-xs font-mono text-[#8c947c] hover:text-[#e0e4d2]"
-              >
-                Close
-              </button>
-              <button
-                onClick={() => calculateChartAttachment()}
-                disabled={calculating}
-                className="px-6 py-2.5 rounded-lg text-xs font-mono font-bold bg-[#b8fc4b] text-black hover:bg-[#c9fe6b] transition-all flex items-center gap-2 active:scale-95 disabled:opacity-50 shadow-lg shadow-[#b8fc4b]/20"
-              >
-                {calculating ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Calculating Chart...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3.5 h-3.5" /> Generate Attachment Report
-                  </>
-                )}
-              </button>
-            </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <button
+              onClick={() => setShowForm(false)}
+              className="px-4 py-2 rounded-lg text-xs font-mono text-[#8c947c] hover:text-[#e0e4d2] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => calculateChartAttachment()}
+              disabled={calculating}
+              className="px-5 py-2 rounded-lg text-xs font-mono font-bold bg-[#b8fc4b] text-black hover:bg-[#c9fe6b] transition-all flex items-center gap-2 disabled:opacity-50 active:scale-95 shadow-lg"
+            >
+              {calculating ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Calculating Ephemeris...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" /> ✨ Calculate & Add Chart to Report
+                </>
+              )}
+            </button>
           </div>
         </div>
       )}
 
-      {/* Controls & Formatting Toolbar */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Format Selection */}
-        <div className="space-y-3">
-          <label className="font-mono-label text-xs uppercase tracking-wider text-[#8c947c] flex items-center gap-2">
-            <FileText className="w-3.5 h-3.5 text-[#7bd1fa]" /> Attachment File Format
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {FORMATS.map(f => (
+      {/* Primary Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6 bg-[#16181d] p-4 rounded-xl border border-[#23262B]">
+        <div className="flex flex-wrap items-center gap-2">
+          {FORMATS.map(f => {
+            const Icon = f.icon
+            const active = format === f.id
+            return (
               <button
                 key={f.id}
                 onClick={() => setFormat(f.id)}
-                className={`py-2 px-3 rounded-lg text-xs font-mono transition-all flex flex-col items-center justify-center border ${
-                  format === f.id
-                    ? 'bg-[#b8fc4b]/15 border-[#b8fc4b] text-[#b8fc4b] font-bold shadow-[0_0_15px_rgba(184,252,75,0.15)]'
-                    : 'bg-[#16181d] border-[#23262B] text-[#8c947c] hover:border-[#8c947c]/50 hover:text-[#e0e4d2]'
+                className={`px-3 py-2 rounded-lg text-xs font-mono flex items-center gap-2 transition-all ${
+                  active
+                    ? 'bg-[#b8fc4b] text-black font-bold shadow-md'
+                    : 'bg-[#0e1015] text-[#8c947c] hover:text-[#e0e4d2] border border-[#23262B]'
                 }`}
               >
-                <span>{f.label}</span>
-                <span className="text-[10px] opacity-70">{f.ext}</span>
+                <Icon className="w-3.5 h-3.5" />
+                {f.label}
               </button>
-            ))}
-          </div>
-          <div className="text-[11px] text-[#8c947c] font-mono flex items-center gap-3 pt-1">
-            <span>{lineCount} lines</span>
-            <span>·</span>
-            <span>{charCount.toLocaleString()} chars</span>
-            <span>·</span>
-            <span className="text-[#b8fc4b]">~{tokenEstimate.toLocaleString()} tokens</span>
-          </div>
+            )
+          })}
         </div>
 
-        {/* Section Toggles */}
-        <div className="lg:col-span-2 space-y-3">
-          <label className="font-mono-label text-xs uppercase tracking-wider text-[#8c947c] flex items-center gap-2">
-            <Layers className="w-3.5 h-3.5 text-[#a855f7]" /> Included Attachment Sections
-          </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-            {OPTION_KEYS.map(o => {
-              const active = opts[o.key]
-              return (
-                <button
-                  key={o.key}
-                  onClick={() => toggleOption(o.key)}
-                  className={`py-1.5 px-2.5 rounded-lg text-xs font-mono transition-all text-left flex items-center gap-2 border ${
-                    active
-                      ? 'bg-[#1e232a] border-[#7bd1fa]/50 text-[#7bd1fa]'
-                      : 'bg-[#16181d]/60 border-[#23262B] text-[#8c947c] opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <span
-                    className={`w-3.5 h-3.5 rounded flex items-center justify-center text-[10px] border ${
-                      active
-                        ? 'bg-[#7bd1fa]/20 border-[#7bd1fa] text-[#7bd1fa]'
-                        : 'border-[#8c947c]/40 text-transparent'
-                    }`}
-                  >
-                    ✓
-                  </span>
-                  <span className="truncate">{o.label}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Actions Row */}
-      <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#23262B]">
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
-          {/* Copy Button */}
+        <div className="flex items-center gap-3">
           <button
             onClick={handleCopy}
-            className={`flex-1 sm:flex-none py-3 px-6 rounded-xl font-headline-sm text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 shadow-lg ${
+            className={`flex-1 sm:flex-none px-5 py-2.5 rounded-xl font-mono text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${
               copied
-                ? 'bg-[#22c55e] text-black shadow-[0_0_20px_rgba(34,197,94,0.4)]'
+                ? 'bg-emerald-500 text-black shadow-[0_0_20px_rgba(16,185,129,0.4)]'
                 : 'bg-[#b8fc4b] text-black hover:bg-[#c9fe6b] shadow-[0_0_20px_rgba(184,252,75,0.25)]'
             }`}
           >
             {copied ? (
               <>
-                <Check className="w-4 h-4" /> Copied to Clipboard!
+                <Check className="w-4 h-4" /> Copied{' '}
+                {selectedChartIds.length > 1 ? `Multi-Chart Report` : 'Attachment'}!
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4" /> Copy Chart Attachment
+                <Copy className="w-4 h-4" /> Copy{' '}
+                {selectedChartIds.length > 1
+                  ? `Multi-Chart Report (${selectedChartIds.length})`
+                  : 'Chart Attachment'}
               </>
             )}
           </button>
 
-          {/* Download Button */}
           <button
             onClick={handleDownload}
-            className="flex-1 sm:flex-none py-3 px-5 rounded-xl font-headline-sm text-sm font-semibold bg-[#16181d] border border-[#23262B] text-[#e0e4d2] hover:border-[#7bd1fa]/60 hover:text-[#7bd1fa] transition-all flex items-center justify-center gap-2 active:scale-95"
+            className="px-4 py-2.5 rounded-xl bg-[#0e1015] border border-[#23262B] text-[#e0e4d2] hover:border-[#b8fc4b]/50 hover:text-[#b8fc4b] font-mono text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95"
+            title="Download file to computer"
           >
-            <Download className="w-4 h-4 text-[#7bd1fa]" /> Download File (
-            {FORMATS.find(f => f.id === format)?.ext})
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-          {/* Toggle Live Preview */}
-          <button
-            onClick={() => setShowPreview(prev => !prev)}
-            className="py-2.5 px-4 rounded-xl text-xs font-mono text-[#8c947c] hover:text-[#e0e4d2] bg-[#16181d]/80 border border-[#23262B] hover:border-[#8c947c]/40 transition-all flex items-center gap-2"
-          >
-            <Code className="w-3.5 h-3.5 text-[#a855f7]" />
-            {showPreview ? 'Hide Preview' : 'Preview Output'}
-            {showPreview ? (
-              <ChevronUp className="w-3.5 h-3.5" />
-            ) : (
-              <ChevronDown className="w-3.5 h-3.5" />
-            )}
-          </button>
-
-          {/* Open Full Studio Link */}
-          <button
-            onClick={() => router.push('/context-card')}
-            className="py-2.5 px-4 rounded-xl text-xs font-mono text-[#7bd1fa] hover:text-[#9be1ff] bg-[#7bd1fa]/10 border border-[#7bd1fa]/30 hover:border-[#7bd1fa]/60 transition-all flex items-center gap-1.5"
-          >
-            Studio View <ExternalLink className="w-3 h-3" />
+            <Download className="w-4 h-4" /> Download
           </button>
         </div>
       </div>
 
-      {/* Collapsible Live Code Preview Drawer */}
-      {showPreview && (
-        <div className="mt-6 pt-4 border-t border-[#23262B]/80 animate-fadeIn">
-          <div className="flex items-center justify-between mb-2">
-            <span className="font-mono-label text-xs text-[#8c947c] flex items-center gap-2">
-              <Compass className="w-3.5 h-3.5 text-[#b8fc4b]" /> Live Attachment Payload Preview
-            </span>
-            <span className="font-mono text-[10px] text-[#8c947c]">
-              Format: <span className="text-[#b8fc4b] uppercase">{format}</span>
-            </span>
-          </div>
-          <div className="bg-[#090b0e] border border-[#23262B] rounded-xl p-4 max-h-72 overflow-y-auto font-mono text-xs text-[#b8fc4b]/90 leading-relaxed shadow-inner">
-            <pre className="whitespace-pre-wrap break-words">{outputText}</pre>
-          </div>
+      {/* Included Sections Checkboxes */}
+      <div className="mb-6 space-y-3">
+        <label className="font-mono-label text-xs uppercase tracking-wider text-[#8c947c] flex items-center gap-2">
+          <Layers className="w-3.5 h-3.5 text-[#b8fc4b]" /> Included Report Sections
+        </label>
+        <div className="flex flex-wrap gap-2 text-xs font-mono">
+          {[
+            { key: 'promptHeader', label: 'LLM Prompt Header' },
+            { key: 'synopsis', label: 'Astrological Synopsis' },
+            { key: 'houses', label: 'House Cusps' },
+            { key: 'aspects', label: 'Major Aspects' },
+            { key: 'minorAspects', label: 'Minor Aspects' },
+            { key: 'transits', label: 'Live Transits Overlay' },
+            { key: 'alchm', label: 'Alchm Energy Layer' },
+            { key: 'annotated', label: 'Placement Annotations' },
+          ].map(item => {
+            const k = item.key as keyof ExportOptions
+            const active = opts[k]
+            return (
+              <button
+                key={item.key}
+                onClick={() => toggleOption(k)}
+                className={`px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${
+                  active
+                    ? 'bg-[#1b2118] border-[#b8fc4b]/50 text-[#b8fc4b]'
+                    : 'bg-[#16181d] border-[#23262B] text-[#8c947c] hover:text-[#e0e4d2]'
+                }`}
+              >
+                <div
+                  className={`w-3 h-3 rounded-sm border flex items-center justify-center ${
+                    active ? 'bg-[#b8fc4b] border-[#b8fc4b]' : 'border-[#8c947c]'
+                  }`}
+                >
+                  {active && <Check className="w-2.5 h-2.5 text-black stroke-[3]" />}
+                </div>
+                {item.label}
+              </button>
+            )
+          })}
         </div>
-      )}
+      </div>
+
+      {/* Collapsible Live Preview Drawer */}
+      <div className="border border-[#23262B] rounded-xl bg-[#090b0e] overflow-hidden">
+        <button
+          onClick={() => setShowPreview(prev => !prev)}
+          className="w-full px-4 py-3 bg-[#16181d] flex items-center justify-between text-xs font-mono text-[#8c947c] hover:text-[#e0e4d2] transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-[#b8fc4b]" />
+            <span className="text-[#e0e4d2] font-semibold">
+              Live Attachment Payload Preview{' '}
+              {selectedChartIds.length > 1 ? `(${selectedChartIds.length} Charts Combined)` : ''}
+            </span>
+            <span className="text-[10px] text-[#8c947c]">
+              ({lineCount} lines · {charCount.toLocaleString()} chars · ~
+              {tokenEstimate.toLocaleString()} tokens)
+            </span>
+          </div>
+          {showPreview ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+
+        {showPreview && (
+          <div className="p-4 bg-[#090b0e] border-t border-[#23262B]">
+            <pre className="font-mono text-[11px] text-[#c2cab0] leading-relaxed overflow-x-auto max-h-[360px] p-4 bg-[#050608] rounded-lg border border-[#23262B] select-all scrollbar-thin scrollbar-thumb-[#23262B] scrollbar-track-transparent">
+              {outputText}
+            </pre>
+          </div>
+        )}
+      </div>
+
+      {/* Footer link to Context Card Studio */}
+      <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono text-[#8c947c] pt-4 border-t border-[#23262B]">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-[#b8fc4b]" />
+          <span>Attachment payload optimized for GPT-4o, Claude 3.5 Sonnet, DeepSeek & Gemini</span>
+        </div>
+        <button
+          onClick={() => router.push('/context-card')}
+          className="text-[#b8fc4b] hover:underline flex items-center gap-1 font-semibold shrink-0"
+        >
+          Open Context Card Studio <ExternalLink className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </div>
   )
 }

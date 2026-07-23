@@ -1,4 +1,28 @@
-// Planetary dignities data
+// Planetary dignities and astrological lookup tables
+
+export const CANONICAL_SIGNS = [
+  'Aries',
+  'Taurus',
+  'Gemini',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagittarius',
+  'Capricorn',
+  'Aquarius',
+  'Pisces',
+] as const
+
+/** Canonical normalization helper to ensure case-insensitive sign matching */
+export function normalizeSign(sign: string): string {
+  if (!sign) return 'Aries'
+  const clean = sign.trim().toLowerCase()
+  const found = CANONICAL_SIGNS.find(s => s.toLowerCase() === clean)
+  return found || 'Aries'
+}
+
 export const planetaryDignities = {
   Sun: {
     domicile: ['Leo'],
@@ -14,9 +38,9 @@ export const planetaryDignities = {
   },
   Mercury: {
     domicile: ['Gemini', 'Virgo'],
-    exaltation: ['Virgo'], // Some traditions
+    exaltation: ['Virgo'],
     detriment: ['Sagittarius', 'Pisces'],
-    fall: ['Pisces'], // Some traditions
+    fall: ['Pisces'],
   },
   Venus: {
     domicile: ['Taurus', 'Libra'],
@@ -43,26 +67,25 @@ export const planetaryDignities = {
     fall: ['Aries'],
   },
   Uranus: {
-    domicile: ['Aquarius'], // Modern rulership
-    exaltation: ['Scorpio'], // Some modern systems
+    domicile: ['Aquarius'],
+    exaltation: ['Scorpio'],
     detriment: ['Leo'],
     fall: ['Taurus'],
   },
   Neptune: {
-    domicile: ['Pisces'], // Modern rulership
-    exaltation: ['Cancer'], // Some modern systems
+    domicile: ['Pisces'],
+    exaltation: ['Cancer'],
     detriment: ['Virgo'],
     fall: ['Capricorn'],
   },
   Pluto: {
-    domicile: ['Scorpio'], // Modern rulership
-    exaltation: ['Leo'], // Some modern systems
+    domicile: ['Scorpio'],
+    exaltation: ['Leo'],
     detriment: ['Taurus'],
     fall: ['Aquarius'],
   },
 }
 
-// Zodiac sign elements
 export const signElements = {
   Aries: 'Fire',
   Taurus: 'Earth',
@@ -78,7 +101,6 @@ export const signElements = {
   Pisces: 'Water',
 }
 
-// Zodiac sign modalities
 export const signModalities = {
   Aries: 'Cardinal',
   Taurus: 'Fixed',
@@ -94,7 +116,6 @@ export const signModalities = {
   Pisces: 'Mutable',
 }
 
-// Planetary elemental associations (diurnal/nocturnal)
 export const planetaryElements = {
   Sun: { diurnal: 'Fire', nocturnal: 'Fire' },
   Moon: { diurnal: 'Water', nocturnal: 'Water' },
@@ -109,53 +130,41 @@ export const planetaryElements = {
   Ascendant: { diurnal: 'Earth', nocturnal: 'Earth' },
 }
 
-// Get the dignity of a planet in a specific sign
 export function getPlanetaryDignity(planet: string, sign: string): string {
+  const normSign = normalizeSign(sign)
   const dignities = planetaryDignities[planet as keyof typeof planetaryDignities]
 
   if (!dignities) return 'peregrine'
 
-  if (dignities.domicile.includes(sign)) {
+  if (dignities.domicile.includes(normSign)) {
     return 'domicile'
-  } else if (dignities.exaltation.includes(sign)) {
+  } else if (dignities.exaltation.includes(normSign)) {
     return 'exaltation'
-  } else if (dignities.detriment.includes(sign)) {
+  } else if (dignities.detriment.includes(normSign)) {
     return 'detriment'
-  } else if (dignities.fall.includes(sign)) {
+  } else if (dignities.fall.includes(normSign)) {
     return 'fall'
   } else {
     return 'peregrine'
   }
 }
 
-// Get the element of a sign
 export function getSignElement(sign: string): 'Fire' | 'Water' | 'Air' | 'Earth' | 'Unknown' {
-  return (signElements[sign as keyof typeof signElements] || 'Unknown') as
-    | 'Fire'
-    | 'Water'
-    | 'Air'
-    | 'Earth'
-    | 'Unknown'
+  const normSign = normalizeSign(sign)
+  return (signElements[normSign as keyof typeof signElements] || 'Unknown') as any
 }
 
-// Get the modality of a sign
 export function getSignModality(sign: string): 'Cardinal' | 'Fixed' | 'Mutable' | 'Unknown' {
-  return (signModalities[sign as keyof typeof signModalities] || 'Unknown') as
-    | 'Cardinal'
-    | 'Fixed'
-    | 'Mutable'
-    | 'Unknown'
+  const normSign = normalizeSign(sign)
+  return (signModalities[normSign as keyof typeof signModalities] || 'Unknown') as any
 }
 
-// Get the planetary element based on time of day
 export function getPlanetaryElement(planet: string, isDiurnal: boolean = true): string {
   const planetElement = planetaryElements[planet as keyof typeof planetaryElements]
   if (!planetElement) return 'Unknown'
-
   return isDiurnal ? planetElement.diurnal : planetElement.nocturnal
 }
 
-// Calculate elemental affinity between a planet and its sign
 export function calculateElementalAffinity(
   planet: string,
   sign: string,
@@ -163,32 +172,24 @@ export function calculateElementalAffinity(
 ): number {
   const signElement = getSignElement(sign)
   const planetElement = getPlanetaryElement(planet, isDiurnal)
-
-  // Same element has highest affinity
-  if (signElement === planetElement) {
-    return 0.9
-  }
-
-  // All elements work well together according to elementallogic
+  if (signElement === planetElement) return 0.9
   return 0.7
 }
 
-// Get specific degree meanings (simplified example)
 export function getDegreeMeaning(sign: string, degree: number): string {
-  // This would be expanded with actual degree meanings from traditional sources
+  const normSign = normalizeSign(sign)
   const decanate = Math.ceil(degree / 10)
-  return `${sign} ${degree}° (${decanate}rd decanate)`
+  return `${normSign} ${degree}° (${decanate}rd decanate)`
 }
 
-// Calculate decan based on degree
 export function getDecan(degree: number): string {
   if (degree < 10) return '1st Decan'
   if (degree < 20) return '2nd Decan'
   return '3rd Decan'
 }
 
-// Get the ruling planet of a sign
 export function getRulingPlanet(sign: string): string {
+  const normSign = normalizeSign(sign)
   const rulerMap: Record<string, string> = {
     Aries: 'Mars',
     Taurus: 'Venus',
@@ -197,12 +198,11 @@ export function getRulingPlanet(sign: string): string {
     Leo: 'Sun',
     Virgo: 'Mercury',
     Libra: 'Venus',
-    Scorpio: 'Mars', // Traditional ruler (or Pluto in modern)
+    Scorpio: 'Pluto',
     Sagittarius: 'Jupiter',
     Capricorn: 'Saturn',
-    Aquarius: 'Saturn', // Traditional ruler (or Uranus in modern)
-    Pisces: 'Jupiter', // Traditional ruler (or Neptune in modern)
+    Aquarius: 'Uranus',
+    Pisces: 'Neptune',
   }
-
-  return rulerMap[sign] || 'Unknown'
+  return rulerMap[normSign] || 'Sun'
 }

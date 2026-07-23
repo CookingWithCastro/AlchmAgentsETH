@@ -37,8 +37,8 @@ export function useCircleAppKit() {
         sources: { adapter: newAdapter },
       })
 
-      const formattedBalances = balanceResult.breakdown.flatMap((accountBreakdown) =>
-        accountBreakdown.breakdown.map((chainBreakdown) => ({
+      const formattedBalances = balanceResult.breakdown.flatMap(accountBreakdown =>
+        accountBreakdown.breakdown.map(chainBreakdown => ({
           chainName: chainBreakdown.chain,
           amount: chainBreakdown.confirmedBalance,
           symbol: 'USDC',
@@ -79,8 +79,8 @@ export function useCircleAppKit() {
             sources: { adapter },
           })
 
-          const formattedBalances = balanceResult.breakdown.flatMap((accountBreakdown) =>
-            accountBreakdown.breakdown.map((chainBreakdown) => ({
+          const formattedBalances = balanceResult.breakdown.flatMap(accountBreakdown =>
+            accountBreakdown.breakdown.map(chainBreakdown => ({
               chainName: chainBreakdown.chain,
               amount: chainBreakdown.confirmedBalance,
               symbol: 'USDC',

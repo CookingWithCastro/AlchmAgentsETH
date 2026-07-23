@@ -8,11 +8,11 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default {
   duelId: __t.u64(),
   lane0: __t.u64(),
   lane1: __t.u64(),
   lane2: __t.u64(),
-};
+}

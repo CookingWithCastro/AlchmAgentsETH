@@ -8,23 +8,20 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  TradeState,
-} from "./types";
-
+} from 'spacetimedb'
+import { TradeState } from './types'
 
 export default __t.row({
-  tradeId: __t.u64().primaryKey().name("trade_id"),
+  tradeId: __t.u64().primaryKey().name('trade_id'),
   proposer: __t.identity(),
   partner: __t.identity(),
   offer: __t.array(__t.u64()),
   request: __t.array(__t.u64()),
-  proposerOk: __t.bool().name("proposer_ok"),
-  partnerOk: __t.bool().name("partner_ok"),
+  proposerOk: __t.bool().name('proposer_ok'),
+  partnerOk: __t.bool().name('partner_ok'),
   get state() {
-    return TradeState;
+    return TradeState
   },
-  createdAt: __t.timestamp().name("created_at"),
-  updatedAt: __t.timestamp().name("updated_at"),
-});
+  createdAt: __t.timestamp().name('created_at'),
+  updatedAt: __t.timestamp().name('updated_at'),
+})

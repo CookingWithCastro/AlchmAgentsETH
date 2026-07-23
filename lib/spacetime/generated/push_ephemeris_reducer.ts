@@ -8,7 +8,7 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default {
   bodyIdx: __t.u8(),
@@ -16,4 +16,4 @@ export default {
   dec: __t.f64(),
   transitingZone: __t.u8(),
   retrograde: __t.bool(),
-};
+}

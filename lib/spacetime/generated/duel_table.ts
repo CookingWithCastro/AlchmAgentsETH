@@ -8,34 +8,30 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Planet,
-  DuelState,
-} from "./types";
-
+} from 'spacetimedb'
+import { Planet, DuelState } from './types'
 
 export default __t.row({
-  duelId: __t.u64().primaryKey().name("duel_id"),
-  zoneId: __t.u8().name("zone_id"),
-  playerA: __t.identity().name("player_a"),
-  playerB: __t.identity().name("player_b"),
+  duelId: __t.u64().primaryKey().name('duel_id'),
+  zoneId: __t.u8().name('zone_id'),
+  playerA: __t.identity().name('player_a'),
+  playerB: __t.identity().name('player_b'),
   get factionA() {
-    return Planet.name("faction_a");
+    return Planet.name('faction_a')
   },
   get factionB() {
-    return Planet.name("faction_b");
+    return Planet.name('faction_b')
   },
-  aCards: __t.array(__t.u64()).name("a_cards"),
-  bCards: __t.array(__t.u64()).name("b_cards"),
-  aCommitted: __t.bool().name("a_committed"),
-  bCommitted: __t.bool().name("b_committed"),
+  aCards: __t.array(__t.u64()).name('a_cards'),
+  bCards: __t.array(__t.u64()).name('b_cards'),
+  aCommitted: __t.bool().name('a_committed'),
+  bCommitted: __t.bool().name('b_committed'),
   get state() {
-    return DuelState;
+    return DuelState
   },
-  lanesA: __t.u8().name("lanes_a"),
-  lanesB: __t.u8().name("lanes_b"),
+  lanesA: __t.u8().name('lanes_a'),
+  lanesB: __t.u8().name('lanes_b'),
   winner: __t.option(__t.identity()),
-  createdAt: __t.timestamp().name("created_at"),
-  updatedAt: __t.timestamp().name("updated_at"),
-});
+  createdAt: __t.timestamp().name('created_at'),
+  updatedAt: __t.timestamp().name('updated_at'),
+})

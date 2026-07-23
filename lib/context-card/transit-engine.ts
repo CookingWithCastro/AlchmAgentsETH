@@ -1,4 +1,5 @@
 import type { ContextCardPlacement, ContextCardTransits, TransitAspect, TransitMeta } from './types'
+import { normalizeSign } from './types'
 
 const SIGN_ORDER = [
   'Aries',
@@ -16,7 +17,8 @@ const SIGN_ORDER = [
 ]
 
 const signIndex = (sign: string) => {
-  const i = SIGN_ORDER.indexOf(sign)
+  const norm = normalizeSign(sign)
+  const i = SIGN_ORDER.indexOf(norm)
   return i < 0 ? 0 : i
 }
 
@@ -86,9 +88,32 @@ export interface SkySource {
   meta: TransitMeta
 }
 
+export const DEMO_SKY: SkySource = {
+  positions: [
+    { planet: 'Sun', sign: 'Leo', degree: 0.8 },
+    { planet: 'Moon', sign: 'Scorpio', degree: 25.2 },
+    { planet: 'Mercury', sign: 'Cancer', degree: 16.3 },
+    { planet: 'Venus', sign: 'Virgo', degree: 15.2 },
+    { planet: 'Mars', sign: 'Gemini', degree: 17.4 },
+    { planet: 'Jupiter', sign: 'Cancer', degree: 12.1 },
+    { planet: 'Saturn', sign: 'Aries', degree: 1.5, retrograde: true },
+    { planet: 'Uranus', sign: 'Gemini', degree: 0.9 },
+    { planet: 'Neptune', sign: 'Aries', degree: 3.2, retrograde: true },
+    { planet: 'Pluto', sign: 'Aquarius', degree: 3.1, retrograde: true },
+  ],
+  meta: {
+    when: 'Live Transit Sky',
+    location: 'Global Observer',
+    planetaryHour: 'Mercury',
+    moonPhase: 'Waning Gibbous',
+    moonIllumination: 0.71,
+    dominantPlanet: 'Mercury',
+    dominantSign: 'Cancer',
+  },
+}
+
 /**
- * Computes the transit→natal aspect grid: the current sky overlaid on a natal
- * chart. Pure function — feed it live positions or static demo data.
+ * Computes the transit→natal aspect grid using normalized 0-360° longitudes.
  */
 export function computeTransits(
   natalPoints: ContextCardPlacement[],
@@ -97,11 +122,17 @@ export function computeTransits(
 ): ContextCardTransits {
   const natalTargets = natalPoints
     .filter(p => TARGET_NAMES.includes(p.body))
-    .map(p => ({ body: p.body, lon: abs(p.sign, p.deg) }))
+    .map(p => ({ body: p.body, sign: normalizeSign(p.sign), deg: p.deg, lon: abs(p.sign, p.deg) }))
 
   const transitBodies = sky.positions
     .filter(p => TRANSIT_BODIES.includes(p.planet))
-    .map(p => ({ body: p.planet, lon: abs(p.sign, p.degree), retro: !!p.retrograde }))
+    .map(p => ({
+      body: p.planet,
+      sign: normalizeSign(p.sign),
+      deg: p.degree,
+      lon: abs(p.sign, p.degree),
+      retro: !!p.retrograde,
+    }))
 
   const aspects: TransitAspect[] = []
   for (const t of transitBodies) {
@@ -110,7 +141,16 @@ export function computeTransits(
       if (sep > 180) sep = 360 - sep
       const asp = closestAspect(sep)
       if (asp) {
-        aspects.push({ t: t.body, tRetro: t.retro, n: n.body, type: asp.type, orb: asp.orb })
+        const diff = (t.lon - n.lon + 360) % 360
+        const applying = t.retro ? diff < asp.angle : diff > asp.angle
+        aspects.push({
+          t: t.body,
+          tRetro: t.retro,
+          n: n.body,
+          type: asp.type,
+          orb: asp.orb,
+          applying,
+        })
       }
     }
   }
@@ -120,9 +160,6 @@ export function computeTransits(
   return { meta: sky.meta, aspects: aspects.slice(0, cap) }
 }
 
-/**
- * Authored one-line framing of the live synergy, built from the tightest contacts.
- */
 const ASPECT_VERB: Record<string, string> = {
   conjunction: 'is meeting',
   opposition: 'is opposing',
@@ -138,40 +175,19 @@ export function synergyLead(transits: ContextCardTransits): string {
   lead.push(
     `Right now — ${m.when}, ${m.planetaryHour} hour, ${m.moonPhase} Moon — the sky is activating this chart's most charged points.`
   )
-  const top = transits.aspects
-    .slice(0, 3)
-    .map(
-      a => `transiting ${a.t} ${ASPECT_VERB[a.type] || 'is contacting'} natal ${a.n} (${a.orb}°)`
-    )
-  if (top.length) lead.push('Tightest contacts: ' + top.join('; ') + '.')
-  return lead.join(' ')
-}
 
-/**
- * Static fallback sky — the current-moment positions used when live planetary
- * data is unavailable. Mirrors the Council Feed's chart-of-the-moment vibe
- * (Mars in Scorpio ruling) so the card always renders a complete overlay.
- */
-export const DEMO_SKY: SkySource = {
-  positions: [
-    { planet: 'Sun', sign: 'Taurus', degree: 28.4, retrograde: false },
-    { planet: 'Moon', sign: 'Libra', degree: 12.1, retrograde: false },
-    { planet: 'Mercury', sign: 'Taurus', degree: 15.7, retrograde: false },
-    { planet: 'Venus', sign: 'Aries', degree: 6.2, retrograde: false },
-    { planet: 'Mars', sign: 'Scorpio', degree: 14.0, retrograde: false },
-    { planet: 'Jupiter', sign: 'Cancer', degree: 3.5, retrograde: false },
-    { planet: 'Saturn', sign: 'Pisces', degree: 28.9, retrograde: false },
-    { planet: 'Uranus', sign: 'Gemini', degree: 2.8, retrograde: false },
-    { planet: 'Neptune', sign: 'Aries', degree: 4.1, retrograde: false },
-    { planet: 'Pluto', sign: 'Aquarius', degree: 3.7, retrograde: true },
-  ],
-  meta: {
-    when: 'the current moment',
-    location: 'New York, NY · 40.71°N 74.01°W',
-    planetaryHour: 'Mars',
-    moonPhase: 'Waxing Gibbous',
-    moonIllumination: 0.78,
-    dominantPlanet: 'Mars',
-    dominantSign: 'Scorpio',
-  },
+  if (transits.aspects && transits.aspects.length > 0) {
+    const top = transits.aspects.slice(0, 3)
+    const contacts = top
+      .map(
+        a =>
+          `${a.t}${a.tRetro ? ' (Rx)' : ''} ${ASPECT_VERB[a.type] || 'aspects'} natal ${a.n} (${a.orb}° orb)`
+      )
+      .join('; ')
+    lead.push(`Key active contacts: ${contacts}.`)
+  } else {
+    lead.push('No major exact transits are currently active.')
+  }
+
+  return lead.join(' ')
 }

@@ -3,3 +3,7 @@ desktop-shell/dist/**
 .venv/**
 backend/.venv/**
 .next/**
+node_modules/**
+contracts/**
+design/**
+public/mockServiceWorker.js

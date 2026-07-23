@@ -8,14 +8,14 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default __t.row({
-  battleId: __t.u64().primaryKey().name("battle_id"),
-  starId: __t.u32().name("star_id"),
+  battleId: __t.u64().primaryKey().name('battle_id'),
+  starId: __t.u32().name('star_id'),
   attacker: __t.identity(),
   won: __t.bool(),
-  attackerScore: __t.u32().name("attacker_score"),
-  defenseRating: __t.u32().name("defense_rating"),
-  createdAt: __t.timestamp().name("created_at"),
-});
+  attackerScore: __t.u32().name('attacker_score'),
+  defenseRating: __t.u32().name('defense_rating'),
+  createdAt: __t.timestamp().name('created_at'),
+})

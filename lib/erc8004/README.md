@@ -10,12 +10,12 @@ the agent **ranking app** surface for the Google Cloud prize track.
 
 ## Files
 
-| File | Purpose |
-| --- | --- |
-| `registry.ts` | Singleton addresses (mainnet + Arc testnet), ABIs (verbatim v2.0.0), event topic0s, id helpers |
+| File                   | Purpose                                                                                                  |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- |
+| `registry.ts`          | Singleton addresses (mainnet + Arc testnet), ABIs (verbatim v2.0.0), event topic0s, id helpers           |
 | `registration-file.ts` | The agent "homepage" JSON (`x402Support` / `active` / `supportedTrust` / `services`) + builder/validator |
-| `bigquery-queries.ts` | **SQL generator** — partition-pruned, SUBSTR/SAFE_CAST decode, named params |
-| `bigquery-indexer.ts` | **Node.js indexing service** — runs queries, viem-decodes logs, builds the leaderboard |
+| `bigquery-queries.ts`  | **SQL generator** — partition-pruned, SUBSTR/SAFE_CAST decode, named params                              |
+| `bigquery-indexer.ts`  | **Node.js indexing service** — runs queries, viem-decodes logs, builds the leaderboard                   |
 
 ## Setup
 
@@ -25,11 +25,11 @@ bun add @google-cloud/bigquery          # lazy-loaded; only needed for live runs
 
 Env:
 
-| Var | Purpose |
-| --- | --- |
-| `GOOGLE_CLOUD_PROJECT` (or `GCP_PROJECT`) | billing/quota project (1 TB/month free) |
-| `GOOGLE_APPLICATION_CREDENTIALS` | path to a service-account JSON (ADC) |
-| `IPFS_GATEWAY` (optional) | gateway for `ipfs://` registration files (default `https://ipfs.io/ipfs/`) |
+| Var                                       | Purpose                                                                    |
+| ----------------------------------------- | -------------------------------------------------------------------------- |
+| `GOOGLE_CLOUD_PROJECT` (or `GCP_PROJECT`) | billing/quota project (1 TB/month free)                                    |
+| `GOOGLE_APPLICATION_CREDENTIALS`          | path to a service-account JSON (ADC)                                       |
+| `IPFS_GATEWAY` (optional)                 | gateway for `ipfs://` registration files (default `https://ipfs.io/ipfs/`) |
 
 ## Usage
 
@@ -58,7 +58,7 @@ HTTP: `GET /api/erc8004/registry?type=leaderboard&limit=50` (also `registrations
 ## SQL decode rules (per the BigQuery prize slide)
 
 - `address = LOWER(registry)`, `topics[OFFSET(0)] = topic0`, always `block_timestamp >= '2026-01-28'` (partition prune).
-- indexed uint  → `HEX_TO_INT(SUBSTR(topic, 3))`; indexed address → `CONCAT('0x', SUBSTR(topic, 27))`.
+- indexed uint → `HEX_TO_INT(SUBSTR(topic, 3))`; indexed address → `CONCAT('0x', SUBSTR(topic, 27))`.
 - dynamic string in `data` → `SAFE_CONVERT_BYTES_TO_STRING(FROM_HEX(SUBSTR(...)))`.
 
 ## Caveats

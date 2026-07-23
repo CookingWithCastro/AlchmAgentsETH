@@ -10,9 +10,11 @@ async function settle(page, ms) {
 
 // Hide Next.js dev-mode overlay (the "N · 1 issue" badge) so it stays out of shots.
 async function hideDevChrome(page) {
-  await page.addStyleTag({
-    content: `nextjs-portal, [data-nextjs-toast], #__next-build-watcher { display: none !important; }`,
-  }).catch(() => {})
+  await page
+    .addStyleTag({
+      content: `nextjs-portal, [data-nextjs-toast], #__next-build-watcher { display: none !important; }`,
+    })
+    .catch(() => {})
 }
 
 ;(async () => {

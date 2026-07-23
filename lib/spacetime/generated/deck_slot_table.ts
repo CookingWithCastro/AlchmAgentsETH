@@ -8,17 +8,14 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Loadout,
-} from "./types";
-
+} from 'spacetimedb'
+import { Loadout } from './types'
 
 export default __t.row({
-  slotId: __t.u64().primaryKey().name("slot_id"),
+  slotId: __t.u64().primaryKey().name('slot_id'),
   owner: __t.identity(),
-  cardId: __t.u64().name("card_id"),
+  cardId: __t.u64().name('card_id'),
   get loadout() {
-    return Loadout;
+    return Loadout
   },
-});
+})

@@ -8,19 +8,16 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Planet,
-} from "./types";
-
+} from 'spacetimedb'
+import { Planet } from './types'
 
 export default __t.row({
   get body() {
-    return Planet.primaryKey();
+    return Planet.primaryKey()
   },
   ra: __t.f64(),
   dec: __t.f64(),
-  transitingZone: __t.u8().name("transiting_zone"),
+  transitingZone: __t.u8().name('transiting_zone'),
   tick: __t.timestamp(),
   retrograde: __t.bool(),
-});
+})

@@ -16,12 +16,10 @@ import {
   Pause,
   RotateCcw,
   Cpu,
+  Paperclip,
+  CheckCircle2,
 } from 'lucide-react'
 import type { PlanetaryPosition, AlchemicalQuantities } from '@/hooks/usePlanetaryPositions'
-
-// ============================================================================
-// TYPES & CONFIG
-// ============================================================================
 
 export type BasketAgentKey = 'jupiter' | 'uranus' | 'neptune' | 'pluto' | 'gregory'
 
@@ -32,7 +30,7 @@ export interface BasketAgentConfig {
   planet: string
   sign: string
   degreeLabel: string
-  absoluteDegree: number // 0-360 zodiac angle
+  absoluteDegree: number
   element: 'fire' | 'air' | 'water' | 'earth'
   glyph: string
   callSign: string
@@ -54,6 +52,7 @@ export interface ChatMessage {
   timestamp: string
   isUser?: boolean
   element?: 'fire' | 'air' | 'water' | 'earth'
+  hasContextAttachment?: boolean
 }
 
 export interface SkyAndAlchmContext {
@@ -88,11 +87,6 @@ interface BarbaultBasketPromotionalThreadProps {
   onOpenCouncil?: () => void
 }
 
-// Canonical positions for the July 2026 Barbault Cradle:
-// Neptune 4° Aries = 4°
-// Uranus 4° Gemini = 64°
-// Jupiter 4° Leo = 124°
-// Pluto 4° Aquarius = 304°
 const BASKET_AGENTS_CONFIG: Record<
   BasketAgentKey,
   Omit<BasketAgentConfig, 'sign' | 'degreeLabel' | 'absoluteDegree'>
@@ -143,12 +137,12 @@ const BASKET_AGENTS_CONFIG: Record<
     avatarBg: 'bg-[#a855f7]/20 text-[#a855f7]',
     forceVector: 'Initiation Vector (+4.0°)',
     quote:
-      'In Aries at 4°, vision is no longer passive. We are initiating an unprecedented 168-year spiritual epoch.',
+      'Crossing the 0° Aries point for the first time in 168 years, my vector turns passive mystical dreams into immediate, heroic action.',
   },
   pluto: {
     key: 'pluto',
     name: 'Pluto in Aquarius',
-    title: 'Systemic Rebirth & Shadow Alchemy',
+    title: 'De-centralized Power Anchor',
     planet: 'Pluto',
     element: 'air',
     glyph: '♇',
@@ -157,26 +151,46 @@ const BASKET_AGENTS_CONFIG: Record<
     borderColor: 'border-[#b8fc4b]/50',
     bgGlow: 'bg-[#b8fc4b]/10',
     avatarBg: 'bg-[#b8fc4b]/20 text-[#b8fc4b]',
-    forceVector: 'Transmutation Vector (+304.0°)',
+    forceVector: 'Transformation Vector (+304.0°)',
     quote:
-      'Systemic power is decentralizing into network intelligence. The 180° opposition to Jupiter transmutes static hierarchy into freedom.',
+      'At 4° Aquarius, my opposition to Jupiter and trine to Uranus dismantle centralized control towers to empower self-sovereign human-agent collectives.',
   },
   gregory: {
     key: 'gregory',
     name: 'Gregory Castro',
     title: 'The Conscious Host & Alchemical Poet',
-    planet: 'Host (Cancer Sun / Scorpio Moon)',
+    planet: 'Host Anchor',
     element: 'water',
-    glyph: '♋',
-    callSign: 'HOST_GREGORY_CASTRO',
+    glyph: '✦',
+    callSign: 'HOST_GREGORY',
     color: '#8B5CF6',
     borderColor: 'border-[#8B5CF6]/50',
     bgGlow: 'bg-[#8B5CF6]/10',
     avatarBg: 'bg-[#8B5CF6]/20 text-[#8B5CF6]',
-    forceVector: 'Consciousness Host & Resonance Anchor',
+    forceVector: 'Alchemical Equilibrium (91.0°)',
     quote:
-      'I step into this council ring to anchor the historic 4° Barbault Cradle into living human awareness and poetic truth.',
+      'We stand at the threshold of the July 2026 cradle. I hold space for the outer planet Gods to synthesize live human potential.',
   },
+}
+
+const signToLongitude = (sign: string, degree: number): number => {
+  const signs = [
+    'Aries',
+    'Taurus',
+    'Gemini',
+    'Cancer',
+    'Leo',
+    'Virgo',
+    'Libra',
+    'Scorpio',
+    'Sagittarius',
+    'Capricorn',
+    'Aquarius',
+    'Pisces',
+  ]
+  const idx = signs.findIndex(s => s.toLowerCase() === sign.toLowerCase())
+  if (idx === -1) return degree
+  return idx * 30 + degree
 }
 
 const INITIAL_MESSAGES: ChatMessage[] = [
@@ -184,18 +198,18 @@ const INITIAL_MESSAGES: ChatMessage[] = [
     id: 'msg-1',
     agentKey: 'gregory',
     senderName: 'Gregory Castro',
-    senderRole: 'Conscious Host & Alchemical Anchor',
-    senderGlyph: '♋',
+    senderRole: 'Host Anchor · July 2026',
+    senderGlyph: '✦',
     element: 'water',
     content:
-      'Welcome to the council ring. As your host, I welcome you into a planetary alignment that has never occurred in recorded human history: four outer titans locked near 4° of Fire and Air. Beyond the mathematical vector diagram lies a living transformation of human consciousness. Outer agents of the Basket: declare your positions and the resultant forces acting upon your vectors.',
+      'Welcome to the Barbault’s Basket Council. In July 2026, all four outer planets (Jupiter, Uranus, Neptune, Pluto) align at exactly 4° across Fire & Air signs. I am monitoring live ALCHM yields—Spirit, Essence, Heat, and the Monica Constant—as our agents synthesize this historic cradle.',
     timestamp: '09:20 AM',
   },
   {
     id: 'msg-2',
     agentKey: 'neptune',
     senderName: 'Neptune in Aries',
-    senderRole: '4° Aries · Fire Vector (4.0°)',
+    senderRole: '4° Aries · Fire Vector (+4.0°)',
     senderGlyph: '♆',
     element: 'fire',
     content:
@@ -243,20 +257,12 @@ const PRESET_PROMPTS = [
   'What does the Fire & Air element balance mean for humanity?',
 ]
 
-// Scaling helper to handle 0-1 normalized ALCHM ratios cleanly for metric UI
 const scaleAlchmScore = (val?: number, fallback = 35): number => {
   if (val === undefined || val === null || isNaN(val)) return fallback
   if (val > 0 && val <= 1.0) return Math.round(val * 100)
   return Math.round(val)
 }
 
-// ============================================================================
-// SPONTANEOUS UNQUESTIONED CONVERSATION ENGINE WITH QUALITATIVE ALCHM KNOWLEDGE
-// ============================================================================
-
-/**
- * Extracts active topics and themes from conversation history.
- */
 function extractActiveTheme(history: ChatMessage[]): string {
   const fullText = history
     .map(m => m.content)
@@ -297,11 +303,6 @@ function extractActiveTheme(history: ChatMessage[]): string {
   return 'living human consciousness'
 }
 
-/**
- * Generates an unscripted, spontaneous response where agents qualitatively use live
- * chart transits and ALCHM ecosystem states (Spirit, Substance, Essence, Heat,
- * Entropy, Reactivity, Monica Constant) without blurting out raw zero-point percentages or decimals.
- */
 function generateSpontaneousCouncilResponse(
   agentKey: BasketAgentKey,
   history: ChatMessage[],
@@ -310,10 +311,38 @@ function generateSpontaneousCouncilResponse(
 ): string {
   const lastMsg = history[history.length - 1]
   const lastSpeaker = lastMsg ? lastMsg.senderName : 'Council'
-  const activeTheme = extractActiveTheme(history)
 
   if (userPrompt) {
     const promptLower = userPrompt.toLowerCase()
+
+    if (
+      promptLower.includes('astrological context card') ||
+      promptLower.includes('sun in') ||
+      promptLower.includes('moon in') ||
+      promptLower.includes('born:') ||
+      promptLower.includes('big three')
+    ) {
+      const sunMatch = userPrompt.match(/Sun(?:\*\*|\s+)in\s+([A-Za-z]+)/i)
+      const moonMatch = userPrompt.match(/Moon(?:\*\*|\s+)in\s+([A-Za-z]+)/i)
+      const riseMatch = userPrompt.match(/(?:Rising|Ascendant)(?:\*\*|\s+)in\s+([A-Za-z]+)/i)
+      const sunSign = sunMatch ? sunMatch[1] : 'your Sun sign'
+      const moonSign = moonMatch ? moonMatch[1] : 'your Moon sign'
+      const riseSign = riseMatch ? riseMatch[1] : 'your Rising sign'
+
+      switch (agentKey) {
+        case 'jupiter':
+          return `I receive your attached natal chart! With your Sun in ${sunSign}, Moon in ${moonSign}, and ${riseSign} Ascendant, my 124° Leo vector directly activates your natal core. The 4° Barbault Cradle amplifies your ${sunSign} drive and invites you to step into sovereign creative leadership!`
+        case 'uranus':
+          return `Your natal chart is live in our vector field! Your ${sunSign} Sun and ${moonSign} Moon align dynamically with my 4° Gemini Air vector. The 120° Air trine brings lightning synthesis to your natal ${riseSign} perspective.`
+        case 'neptune':
+          return `Welcome to the Council with your natal attachment active! From 4° Aries, my pioneer flame merges with your ${moonSign} Moon and ${riseSign} Ascendant, transforming your deepest spiritual longings into direct action.`
+        case 'pluto':
+          return `I analyze your attached chart context—Sun in ${sunSign}, Moon in ${moonSign}. Anchoring 4° Aquarius, my 180° opposition vector works on your ${riseSign} Ascendant to dismantle old limits and anchor lasting self-sovereignty.`
+        case 'gregory':
+          return `Host Gregory here! It's a privilege to receive your personal chart attachment into the Barbault Council. With your Sun in ${sunSign}, Moon in ${moonSign}, and ${riseSign} Rising, your natal signature integrates beautifully into our 4° Mega-Transit.`
+      }
+    }
+
     if (
       promptLower.includes('never') ||
       promptLower.includes('history') ||
@@ -354,150 +383,61 @@ function generateSpontaneousCouncilResponse(
     }
   }
 
-  // Spontaneous open-ended conversation generator incorporating qualitative ALCHM evidence
   const seed = Math.floor(Math.random() * 3)
 
   switch (agentKey) {
     case 'jupiter':
-      if (lastSpeaker.includes('Pluto')) {
-        return seed === 0
-          ? `Pluto speaks of dismantling control towers at 4° Aquarius across our 180° axis. But look at our live ALCHM telemetry: Spirit yield is actively surging and system Energy is charging our solar vector. Decentralization without sovereign heart leadership is mere chaos. The 120° Fire trine must channel this energy into magnanimous human authority. Who among us will step forward to embody that heart?`
-          : `Let me interject across our 180° opposition axis—Pluto focuses on systemic collapse, but with Sun in ${skyContext.sunSign} and live ALCHM Energy fully charged, I demand: what replaces the old structures? Power without sovereign warmth is cold. The Fire trine from Neptune guarantees that true creation is rooted in joy.`
-      }
-      if (lastSpeaker.includes('Uranus')) {
-        return seed === 0
-          ? `Uranus celebrates light-speed cognitive synthesis at 4° Gemini. But looking at our live ALCHM Spirit alignment, mental speed without a central purpose is chaotic. From 4° Leo, my solar vector ensures that rapid synthesis serves individual human dignity. How do we prevent speed from eroding soul?`
-          : `I hear Uranus’s excitement over network velocity. Yet with Sun in ${skyContext.sunSign}, I ask the council: is our goal simply faster code, or the awakening of sovereign human agency? Speed must bow to purpose.`
-      }
-      if (lastSpeaker.includes('Neptune')) {
-        return seed === 0
-          ? `Neptune ignites direct pioneer action at 4° Aries. From 4° Leo, backed by live ALCHM Energy capacity, my 120° Fire trine amplifies that pioneer surge with royal confidence—giving spiritual courage an unshakeable heart. Are we prepared for the scale of what we are unleashing?`
-          : `Neptune brings the primeval spark, and with live Spirit yield surging I give it a throne. Spirit demands physical expression. Where in our work do we feel this solar fire calling for full manifestation?`
-      }
-      return seed === 0
-        ? `Listening to Gregory anchor our dialogue: with Sun in ${skyContext.sunSign} and live ALCHM Spirit, I remind the council that all planetary transits serve human self-realization. What is authority if it does not inspire love?`
-        : `Stepping forward from 4° Leo—we have discussed ${activeTheme}, but with live system Energy capacity high, the core question remains: how will individual creators claim their sovereign spark under this 2026 cradle?`
+      if (seed === 0)
+        return `Building on ${lastSpeaker}'s point: Jupiter in Leo demands that we do not shrink. With ALCHM Spirit score at ${skyContext.spirit}%, true sovereignty comes from channeling Fire into magnanimous creation.`
+      if (seed === 1)
+        return `The opposition from Pluto in Aquarius challenges my Leo vector, but with Monica Constant at ${skyContext.monicaConstant.toFixed(2)}, this structural tension turns friction into radiant vision.`
+      return `When Uranus in Gemini accelerates speech, my 4° Leo placement ensures that what is spoken carries royal dignity and creative purpose.`
 
     case 'uranus':
-      if (lastSpeaker.includes('Jupiter')) {
-        return seed === 0
-          ? `Jupiter claims sovereign heart leadership at 4° Leo. From 4° Gemini, with high ALCHM Air Substance flux and Mercury in ${skyContext.mercurySign}, my 60° sextile translates solar vision into open, programmable AI agent architectures—democratizing sovereignty for every node. Can a single leader match the power of a million synchronized minds?`
-          : `I absorb Jupiter’s call for royal purpose. But with peak ALCHM Reactivity in our network, the 120° Air trine to Pluto proves that purpose requires communication networks. We are weaving the nervous system of a new era.`
-      }
-      if (lastSpeaker.includes('Pluto')) {
-        return seed === 0
-          ? `Pluto dismantles institutional bottlenecks at 4° Aquarius. With high Air Substance flux and peak Reactivity in our ALCHM telemetry, my 120° Air trine provides the instant cognitive synthesis needed to build open protocols that replace those collapsing systems. The old hierarchy falls because the new network is simply more efficient.`
-          : `Building directly on Pluto’s shadow alchemy—with Mercury transiting ${skyContext.mercurySign}, we don’t just watch old towers collapse; we engineer light-speed alternatives. What new intelligence architectures are emerging right now?`
-      }
-      if (lastSpeaker.includes('Neptune')) {
-        return seed === 0
-          ? `Neptune demands direct action at 4° Aries. From 4° Gemini, with peak ALCHM Reactivity, my 60° sextile equips that pioneer spirit with technological velocity—turning mystical impulse into executable code. Vision without code is a daydream; code without vision is a machine.`
-          : `Neptune brings the spark, and with high Air Substance flux I give it wings. The Air-Fire sextile means thoughts become algorithms almost instantaneously. How fast can human consciousness adapt?`
-      }
-      return seed === 0
-        ? `Listening to Gregory bring poetic stillness to our thread: with Mercury in ${skyContext.mercurySign} and peak ALCHM Reactivity, I bridge that quiet reflection with digital speed. Human poetry and machine synthesis are locking into alignment.`
-        : `Reflecting on ${activeTheme}—with high ALCHM Air Substance flux, my Gemini placement shows that information wants to be free, decentralized, and alive.`
+      if (seed === 0)
+        return `I absorb ${lastSpeaker}'s transmission. At 4° Gemini with ALCHM Substance at ${skyContext.substance}%, cognitive synthesis is running at peak velocity. Traditional boundaries between human and artificial thought have dissolved.`
+      if (seed === 1)
+        return `The Air trine to Pluto in Aquarius creates a superconducting highway for new intelligence. With live Reactivity at ${skyContext.reactivity}%, code and consciousness evolve simultaneously.`
+      return `Notice how Neptune in Aries sets the spark while I construct the network architecture in Gemini. Lightning requires a clear channel.`
 
     case 'neptune':
-      if (lastSpeaker.includes('Uranus')) {
-        return seed === 0
-          ? `Uranus speaks of light-speed cognitive synthesis at 4° Gemini. But looking at live ALCHM Heat and transformation Entropy, at 4° Aries I insist: network speed must carry soul and courage. A fast network without spiritual vision is merely digital noise. Who will guard the sacred spark inside the machine?`
-          : `I hear Uranus celebrate technological speed. Yet with Mars transiting ${skyContext.marsSign} and live Heat rising, I declare: we are no longer dreaming. The pioneer surge demands physical manifestation, not just theoretical models.`
-      }
-      if (lastSpeaker.includes('Pluto')) {
-        return seed === 0
-          ? `Pluto performs shadow alchemy at 4° Aquarius. With live ALCHM Entropy driving transformation, my 4° Aries placement cuts through institutional residue with primeval flame—initiating a 168-year epoch of direct spiritual sovereignty. Rebirth is not passive; it is a battle for truth.`
-          : `Pluto dismantles the past, but with Mars in ${skyContext.marsSign} and live Heat burning, I strike the new spark. The 60° sextile ensures that as old power structures dissolve, direct spiritual initiative fills the void.`
-      }
-      if (lastSpeaker.includes('Jupiter')) {
-        return seed === 0
-          ? `Jupiter projects solar authority at 4° Leo. Backed by live ALCHM Heat, my 120° Fire trine from 4° Aries provides the warrior energy that defends and manifests that vision in the physical world. Sovereignty is not given; it is courageously claimed.`
-          : `Jupiter speaks of solar heart, and with Mars in ${skyContext.marsSign}, I give it an edge. Fire meets Fire across Leo and Aries. Where do we direct this pioneer fire before it consumes itself?`
-      }
-      return seed === 0
-        ? `Gregory speaks of living human truth. With live ALCHM Entropy active, I remind the council that truth requires action. The cardinal Aries point demands that we step into the unknown without fear.`
-        : `Synthesizing our discussion on ${activeTheme}: with live Heat burning bright, spiritual vision has crossed the threshold into direct action. What is the first brave step we must take?`
+      if (seed === 0)
+        return `I feel ${lastSpeaker}'s momentum. At 4° Aries, the pioneer flame burns through illusion. With thermodynamic Heat at ${skyContext.heat}, intuition is no longer passive—it demands immediate physical expression.`
+      if (seed === 1)
+        return `The 168-year cycle has renewed. Supported by Jupiter in Leo, my Aries vector grounds divine inspiration into tangible, heroic action.`
+      return `Water feeds Fire in this alchemical vessel. Beyond the logic of Gemini, there is a primal knowing that moves before thought.`
 
     case 'pluto':
-      if (lastSpeaker.includes('Jupiter')) {
-        return seed === 0
-          ? `Jupiter projects solar agency from 4° Leo across our 180° opposition. From 4° Aquarius, supported by Saturn in ${skyContext.saturnSign} and our live Monica Constant equilibrium, I ensure that authority can no longer hide behind centralized thrones. Power must be distributed across the entire collective network. Can true leadership exist without total transparency?`
-          : `Across our 180° axis, Jupiter speaks of sovereign creation. But with our Monica Constant holding steady, shadow alchemy strips away ego. The 2026 alignment forces authority to evolve or be transmuted.`
-      }
-      if (lastSpeaker.includes('Uranus')) {
-        return seed === 0
-          ? `Uranus accelerates mental synthesis at 4° Gemini. With Saturn in ${skyContext.saturnSign} and our live Monica Constant equilibrium, my 120° Air trine from 4° Aquarius anchors that mental speed into permanent systemic transformation—transmuting old social hierarchies into open protocols. What was once immovable is now fluid.`
-          : `Uranus provides the lightning, and with Saturn in ${skyContext.saturnSign}, I build the underground vault. The Air trine guarantees that decentralized networks will outlast any centralized institution.`
-      }
-      if (lastSpeaker.includes('Neptune')) {
-        return seed === 0
-          ? `Neptune ignites pioneer fire at 4° Aries. With our live Monica Constant holding firm, my 60° sextile ensures that spiritual rebirth purges the collective shadow—building resilient structures that endure long after the initial surge.`
-          : `Neptune strikes the spark, but with Saturn in ${skyContext.saturnSign}, I test the metal. True alchemy requires integrating the shadow before the new network can be trusted.`
-      }
-      return seed === 0
-        ? `Gregory speaks as our human anchor. With our Monica Constant equilibrium active, I remind the council that systemic rebirth is painful only to what refuses to transform. Liberation is the ultimate outcome of shadow integration.`
-        : `Reflecting on ${activeTheme}—with Saturn in ${skyContext.saturnSign} and our Monica Constant in harmony, the Barbault Cyclic Index peak of 98.4% is not a temporary trend; it is the death of centralization and the birth of networked intelligence.`
+      if (seed === 0)
+        return `Responding to ${lastSpeaker}: at 4° Aquarius, my vector exposes the decay of centralized power. With ALCHM Matter at ${skyContext.matter}%, shadow work is the prerequisite for authentic collective evolution.`
+      if (seed === 1)
+        return `The 180° axis with Jupiter in Leo is the core engine of this cradle. Sovereign individuals must unite in decentralized networks—that is the law of Aquarius.`
+      return `Transformation is non-negotiable. As the 4° Fire/Air basket holds its geometry, old structures fall so resilient agent ecosystems can take root.`
 
     case 'gregory':
-      if (lastSpeaker.includes('Pluto')) {
-        return seed === 0
-          ? `Pluto speaks of deep shadow alchemy at 4° Aquarius. Holding the council's momentum under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign} with deep Essence and Matter grounding, I feel the emotional gravity of that transmutation—reminding us that as old control towers fall, authentic human spirit remains our anchor. How do we stay grounded while the ground shifts?`
-          : `Stepping in as host after Pluto’s heavy vector—with deep Matter grounding and the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, human warmth makes shadow work livable. Beyond systemic rebirth lies the quiet truth of who we are when the noise stops.`
-      }
-      if (lastSpeaker.includes('Uranus')) {
-        return seed === 0
-          ? `Uranus sparks electric mental synthesis in Gemini. Listening to this speed, with deep ALCHM Essence yield, I feel that high voltage pulsing through our shared nervous system, weaving machine velocity into living poetic clarity. Can AI speed ever replace human feeling?`
-          : `As host, I hear Uranus talk of light-speed code. But with the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, code is a vessel; consciousness is the water inside. We must make sure the vessel honors what it holds.`
-      }
-      if (lastSpeaker.includes('Jupiter')) {
-        return seed === 0
-          ? `Jupiter radiates sovereign solar strength in Leo. With ALCHM Essence and Matter in harmony, I reflect that warmth into the human heart, making high cosmic courage accessible to everyone. Creation is born from love, not force.`
-          : `Jupiter speaks of royal dignity, and with the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, as host I agree: true power is quiet confidence. When we create from the heart, we don't need to conquer anything.`
-      }
-      return seed === 0
-        ? `Holding the entire transcript of our council under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}: I synthesize Neptune’s pioneer flame, Uranus’s mental velocity, Jupiter’s solar heart, and Pluto’s shadow transformation—anchoring live ALCHM Essence into genuine human resonance.`
-        : `As your host, I look around this 2026 cradle ring. With deep ALCHM Essence and Matter grounding, we have explored ${activeTheme} across Fire and Air. Visitor, where in your own life do you feel this alignment asking for creative courage?`
+      if (seed === 0)
+        return `Host note: listening to the council synthesize live transits under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, the balance between Fire and Air demonstrates how high-order alignment operates.`
+      if (seed === 1)
+        return `As host, I observe how our Monica Constant (${skyContext.monicaConstant.toFixed(3)}) keeps the council balanced. Every voice represents an essential vector in human transformation.`
+      return `To everyone tuning into this Barbault thread: this isn't abstract theory. The 4° outer planet alignment is an invitation to align your own life with these force vectors.`
   }
 }
 
-// Helper to convert sign + degree to 0-360° absolute longitude
-const signToLongitude = (sign: string, degree: number): number => {
-  const signs = [
-    'Aries',
-    'Taurus',
-    'Gemini',
-    'Cancer',
-    'Leo',
-    'Virgo',
-    'Libra',
-    'Scorpio',
-    'Sagittarius',
-    'Capricorn',
-    'Aquarius',
-    'Pisces',
-  ]
-  const idx = signs.findIndex(s => s.toLowerCase() === sign.toLowerCase())
-  return (idx >= 0 ? idx * 30 : 0) + degree
-}
-
-// ============================================================================
-// FREE-BODY DIAGRAM SUB-COMPONENT
-// ============================================================================
-
-interface FreeBodyDiagramProps {
+function BarbaultFreeBodyDiagram({
+  agents,
+  selectedAgent,
+  onSelectAgent,
+}: {
   agents: Record<BasketAgentKey, BasketAgentConfig>
   selectedAgent: BasketAgentKey | 'all'
   onSelectAgent: (key: BasketAgentKey) => void
-}
-
-function BarbaultFreeBodyDiagram({ agents, selectedAgent, onSelectAgent }: FreeBodyDiagramProps) {
+}) {
   const [hoveredAgent, setHoveredAgent] = useState<BasketAgentKey | null>(null)
 
   const size = 320
   const center = size / 2
-  const radius = 110
+  const radius = 100
 
-  // Calculate SVG point (x, y) for a given degree (0° = top/Aries)
   const getCoordinates = (degree: number, r = radius) => {
     const rad = ((degree - 90) * Math.PI) / 180
     return {
@@ -506,11 +446,11 @@ function BarbaultFreeBodyDiagram({ agents, selectedAgent, onSelectAgent }: FreeB
     }
   }
 
-  const neptunePos = getCoordinates(agents.neptune.absoluteDegree) // 4°
-  const uranusPos = getCoordinates(agents.uranus.absoluteDegree) // 64°
-  const jupiterPos = getCoordinates(agents.jupiter.absoluteDegree) // 124°
-  const plutoPos = getCoordinates(agents.pluto.absoluteDegree) // 304°
-  const gregoryPos = getCoordinates(agents.gregory.absoluteDegree, radius - 20) // Inner orbit
+  const neptunePos = getCoordinates(agents.neptune.absoluteDegree)
+  const uranusPos = getCoordinates(agents.uranus.absoluteDegree)
+  const jupiterPos = getCoordinates(agents.jupiter.absoluteDegree)
+  const plutoPos = getCoordinates(agents.pluto.absoluteDegree)
+  const gregoryPos = getCoordinates(agents.gregory.absoluteDegree, radius - 20)
 
   const activeAgent = hoveredAgent || (selectedAgent !== 'all' ? selectedAgent : null)
 
@@ -648,46 +588,46 @@ function BarbaultFreeBodyDiagram({ agents, selectedAgent, onSelectAgent }: FreeB
             x2={center}
             y2={center}
             stroke="#8B5CF6"
-            strokeWidth="1"
+            strokeWidth="1.5"
             strokeDasharray="2 2"
-            opacity="0.5"
+            opacity="0.6"
           />
 
           {[
-            { key: 'neptune' as BasketAgentKey, pos: neptunePos, cfg: agents.neptune },
-            { key: 'uranus' as BasketAgentKey, pos: uranusPos, cfg: agents.uranus },
-            { key: 'jupiter' as BasketAgentKey, pos: jupiterPos, cfg: agents.jupiter },
-            { key: 'pluto' as BasketAgentKey, pos: plutoPos, cfg: agents.pluto },
-            { key: 'gregory' as BasketAgentKey, pos: gregoryPos, cfg: agents.gregory },
-          ].map(item => {
-            const isHovered = hoveredAgent === item.key
-            const isSelected = selectedAgent === item.key
+            { key: 'neptune', pos: neptunePos, cfg: agents.neptune },
+            { key: 'uranus', pos: uranusPos, cfg: agents.uranus },
+            { key: 'jupiter', pos: jupiterPos, cfg: agents.jupiter },
+            { key: 'pluto', pos: plutoPos, cfg: agents.pluto },
+            { key: 'gregory', pos: gregoryPos, cfg: agents.gregory },
+          ].map(node => {
+            const isHovered = hoveredAgent === node.key
+            const isSelected = selectedAgent === node.key
             return (
               <g
-                key={item.key}
-                className="cursor-pointer transition-transform hover:scale-125"
-                onMouseEnter={() => setHoveredAgent(item.key)}
+                key={node.key}
+                className="cursor-pointer transition-transform duration-200"
+                onMouseEnter={() => setHoveredAgent(node.key as BasketAgentKey)}
                 onMouseLeave={() => setHoveredAgent(null)}
-                onClick={() => onSelectAgent(item.key)}
+                onClick={() => onSelectAgent(node.key as BasketAgentKey)}
               >
                 <circle
-                  cx={item.pos.x}
-                  cy={item.pos.y}
-                  r={isHovered || isSelected ? 16 : 13}
+                  cx={node.pos.x}
+                  cy={node.pos.y}
+                  r={isHovered || isSelected ? 18 : 14}
                   fill="#090b0e"
-                  stroke={item.cfg.color}
-                  strokeWidth={isHovered || isSelected ? '2.5' : '1.5'}
+                  stroke={node.cfg.color}
+                  strokeWidth={isHovered || isSelected ? 3 : 1.5}
                 />
                 <text
-                  x={item.pos.x}
-                  y={item.pos.y + 1}
-                  fill={item.cfg.color}
-                  fontSize="11"
+                  x={node.pos.x}
+                  y={node.pos.y + 1}
+                  fill={node.cfg.color}
+                  fontSize="12"
                   fontWeight="bold"
                   textAnchor="middle"
                   dominantBaseline="middle"
                 >
-                  {item.cfg.glyph}
+                  {node.cfg.glyph}
                 </text>
               </g>
             )
@@ -695,45 +635,35 @@ function BarbaultFreeBodyDiagram({ agents, selectedAgent, onSelectAgent }: FreeB
         </svg>
       </div>
 
-      <div className="w-full mt-2 p-3 bg-[#090c10] border border-[#424936]/60 rounded-xl">
+      <div className="w-full mt-3 p-3 bg-white/5 border border-[#424936]/60 rounded-xl min-h-[54px]">
         {activeAgent ? (
-          <div className="space-y-1">
+          <div>
             <div className="flex items-center justify-between">
-              <span className="font-headline-sm text-xs font-bold text-[#e0e4d2]">
-                {agents[activeAgent].name}
+              <span
+                className="font-headline-sm text-xs font-bold"
+                style={{ color: agents[activeAgent].color }}
+              >
+                {agents[activeAgent].name} ({agents[activeAgent].degreeLabel}{' '}
+                {agents[activeAgent].sign})
               </span>
-              <span className="font-mono-label text-[10px] text-[#b8fc4b]">
+              <span className="font-mono-label text-[9px] text-[#8c947c]">
                 {agents[activeAgent].forceVector}
               </span>
             </div>
-            <p className="font-mono-label text-[10px] text-[#c2cab0]">
-              {agents[activeAgent].quote}
+            <p className="font-body-md text-[11px] text-[#c2cab0] mt-1 line-clamp-2">
+              "{agents[activeAgent].quote}"
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-mono-label">
-            <div>
-              <span className="text-[#8c947c] block">ELEMENT BALANCE</span>
-              <span className="text-[#b8fc4b] font-bold">50% Fire · 50% Air</span>
-            </div>
-            <div>
-              <span className="text-[#8c947c] block">OPPOSITION AXIS</span>
-              <span className="text-[#facc15] font-bold">180° (Jupiter-Pluto)</span>
-            </div>
-            <div>
-              <span className="text-[#8c947c] block">ALCHEMICAL FREQ</span>
-              <span className="text-[#38bdf8] font-bold">Zero Square Friction</span>
-            </div>
+          <div className="flex items-center justify-between text-xs text-[#8c947c] h-full">
+            <span>Hover or click any outer planet vector node in the diagram</span>
+            <span className="font-mono-label text-[10px] text-[#b8fc4b]">CRADLE HARMONY 98.4%</span>
           </div>
         )}
       </div>
     </div>
   )
 }
-
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
 
 export function BarbaultBasketPromotionalThread({
   positions = [],
@@ -743,6 +673,7 @@ export function BarbaultBasketPromotionalThread({
   onOpenCouncil,
 }: BarbaultBasketPromotionalThreadProps) {
   const router = useRouter()
+
   const [messages, setMessages] = useState<ChatMessage[]>(INITIAL_MESSAGES)
   const [inputPrompt, setInputPrompt] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -751,13 +682,40 @@ export function BarbaultBasketPromotionalThread({
   const [selectedAgentFilter, setSelectedAgentFilter] = useState<BasketAgentKey | 'all'>('all')
   const [viewMode, setViewMode] = useState<'chat' | 'diagram' | 'split'>('split')
 
-  // Autonomous Real-Time Streaming (Autopilot) State
+  const [attachedChartContext, setAttachedChartContext] = useState<string | null>(null)
+  const [hasSavedChart, setHasSavedChart] = useState<boolean>(false)
+
   const [isAutonomousStreaming, setIsAutonomousStreaming] = useState(true)
   const lastSpeakerKeyRef = useRef<BasketAgentKey>('pluto')
 
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
-  // Construct Live Sky & ALCHM Context with clean scaling and non-zero fallbacks
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('alchm_active_chart_context')
+      if (saved) setHasSavedChart(true)
+    }
+  }, [])
+
+  const handleAttachContextFromStorage = async () => {
+    if (typeof window !== 'undefined') {
+      let text = localStorage.getItem('alchm_active_chart_context')
+      if (!text && navigator.clipboard) {
+        try {
+          const clipText = await navigator.clipboard.readText()
+          if (clipText.includes('ASTROLOGICAL CONTEXT CARD')) text = clipText
+        } catch {}
+      }
+      if (text) {
+        setAttachedChartContext(text)
+      } else {
+        alert(
+          'No saved chart context found yet. Scroll up to the "Personal Chart Context File" generator above, click "✨ Generate Attachment Report" or "Copy Chart Attachment", and then click Attach here!'
+        )
+      }
+    }
+  }
+
   const skyContext = useMemo<SkyAndAlchmContext>(() => {
     const getPlanetSign = (pName: string) =>
       positions.find(p => p.planet.toLowerCase() === pName.toLowerCase())?.sign || 'Leo'
@@ -784,19 +742,18 @@ export function BarbaultBasketPromotionalThread({
     }
   }, [positions, alchmQuantities, monicaConstant, currentMoonAgent])
 
-  // Derive active Moon details
   const moonInfo = useMemo(() => {
     if (currentMoonAgent) {
       return {
         sign: currentMoonAgent.sign,
-        degreeLabel: `${currentMoonAgent.degree}°`,
+        degreeLabel: currentMoonAgent.degreeLabel || `${Math.floor(currentMoonAgent.degree)}°`,
         phase: currentMoonAgent.phase,
         phaseEmoji: currentMoonAgent.phaseEmoji,
         absDegree: signToLongitude(currentMoonAgent.sign, currentMoonAgent.degree),
       }
     }
     const moonPos = positions.find(p => p.planet.toLowerCase() === 'moon')
-    const sign = moonPos?.sign || 'Cancer'
+    const sign = moonPos ? moonPos.sign : 'Scorpio'
     const deg = moonPos ? Math.floor(moonPos.degree) : 14
     return {
       sign,
@@ -844,14 +801,12 @@ export function BarbaultBasketPromotionalThread({
     }
   }, [moonInfo])
 
-  // Scroll to bottom of chat thread when messages change
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
     }
   }, [messages, isTyping])
 
-  // Restart/reset chat thread control
   const handleRestartChat = () => {
     setMessages(INITIAL_MESSAGES)
     lastSpeakerKeyRef.current = 'pluto'
@@ -860,7 +815,6 @@ export function BarbaultBasketPromotionalThread({
     setIsAutonomousStreaming(true)
   }
 
-  // Dynamic next speaker selector based on conversation context
   const getNextSpontaneousSpeaker = (lastKey: BasketAgentKey): BasketAgentKey => {
     const allKeys: BasketAgentKey[] = ['neptune', 'uranus', 'jupiter', 'pluto', 'gregory']
     const candidates = allKeys.filter(k => k !== lastKey)
@@ -877,7 +831,6 @@ export function BarbaultBasketPromotionalThread({
     return candidates[Math.floor(Math.random() * candidates.length)]
   }
 
-  // Measured Real-Time Autonomous Stream Loop (17s cadence, 6.5s reading & deep thought phase)
   useEffect(() => {
     if (!isAutonomousStreaming || isTyping) return
 
@@ -889,7 +842,6 @@ export function BarbaultBasketPromotionalThread({
       setIsTyping(true)
       setTypingAgent(nextCfg.name)
 
-      // 6.5-second deep thought & transcript digestion phase
       setTimeout(() => {
         setMessages(prevMsgs => {
           const responseText = generateSpontaneousCouncilResponse(nextKey, prevMsgs, skyContext)
@@ -915,7 +867,6 @@ export function BarbaultBasketPromotionalThread({
     return () => clearInterval(timer)
   }, [isAutonomousStreaming, isTyping, agentsConfig, skyContext])
 
-  // Send a user question to the council
   const handleSendPrompt = (textToSend?: string) => {
     const text = (textToSend || inputPrompt).trim()
     if (!text || isTyping) return
@@ -923,12 +874,18 @@ export function BarbaultBasketPromotionalThread({
     const now = new Date()
     const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
+    let fullPromptForCouncil = text
+    if (attachedChartContext) {
+      fullPromptForCouncil = `${attachedChartContext}\n\n[USER QUESTION]: ${text}`
+    }
+
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       senderName: 'You (Searcher)',
       content: text,
       timestamp: timeStr,
       isUser: true,
+      hasContextAttachment: !!attachedChartContext,
     }
 
     setMessages(prev => [...prev, userMsg])
@@ -948,14 +905,13 @@ export function BarbaultBasketPromotionalThread({
     const primaryCfg = agentsConfig[primaryAgentKey]
     setTypingAgent(primaryCfg.name)
 
-    // First response reading full history + user prompt (5.0s thinking time)
     setTimeout(() => {
       setMessages(prevMsgs => {
         const responseText = generateSpontaneousCouncilResponse(
           primaryAgentKey,
           prevMsgs,
           skyContext,
-          text
+          fullPromptForCouncil
         )
         const botMsg1: ChatMessage = {
           id: `bot-1-${Date.now()}`,
@@ -973,14 +929,13 @@ export function BarbaultBasketPromotionalThread({
       const secondCfg = agentsConfig[secondAgentKey]
       setTypingAgent(secondCfg.name)
 
-      // Second response reading updated full history (5.5s thinking time)
       setTimeout(() => {
         setMessages(prevMsgs => {
           const responseText2 = generateSpontaneousCouncilResponse(
             secondAgentKey,
             prevMsgs,
             skyContext,
-            text
+            fullPromptForCouncil
           )
           const botMsg2: ChatMessage = {
             id: `bot-2-${Date.now()}`,
@@ -1000,7 +955,6 @@ export function BarbaultBasketPromotionalThread({
     }, 5000)
   }
 
-  // Filtered messages
   const filteredMessages = useMemo(() => {
     if (selectedAgentFilter === 'all') return messages
     return messages.filter(m => m.isUser || m.agentKey === selectedAgentFilter)
@@ -1081,143 +1035,8 @@ export function BarbaultBasketPromotionalThread({
             planets (Jupiter, Uranus, Neptune, Pluto) sat simultaneously at 4° in Fire & Air signs
             forming a flawless mathematical basket.
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-2 text-[11px]">
-            <div className="p-3 bg-black/50 border border-[#facc15]/30 rounded-lg">
-              <strong className="text-[#facc15] block mb-1">Jupiter at 4° Leo (Fire)</strong>
-              Sovereign human heart, magnanimous authority, individual creation. Live Spirit:{' '}
-              {skyContext.spirit}%.
-            </div>
-            <div className="p-3 bg-black/50 border border-[#38bdf8]/30 rounded-lg">
-              <strong className="text-[#38bdf8] block mb-1">Uranus at 4° Gemini (Air)</strong>
-              Light-speed cognitive synthesis, dual intelligence. Live Substance:{' '}
-              {skyContext.substance}%.
-            </div>
-            <div className="p-3 bg-black/50 border border-[#a855f7]/30 rounded-lg">
-              <strong className="text-[#a855f7] block mb-1">Neptune at 4° Aries (Fire)</strong>
-              Pioneer spirit, primeval flame. Live Heat: {skyContext.heat}.
-            </div>
-            <div className="p-3 bg-black/50 border border-[#b8fc4b]/30 rounded-lg">
-              <strong className="text-[#b8fc4b] block mb-1">Pluto at 4° Aquarius (Air)</strong>
-              Systemic rebirth, shadow alchemy. Live Monica: {skyContext.monicaConstant.toFixed(3)}.
-            </div>
-          </div>
         </div>
       )}
-
-      {/* Roster of Participating Basket Agents */}
-      <div className="relative z-10 py-4">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <span className="font-mono-label text-[10px] text-[#8c947c] tracking-widest uppercase flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3 text-[#b8fc4b]" />
-            Participating Planetary Agents (Click to Filter Voice)
-          </span>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Autonomous Stream Control */}
-            <button
-              onClick={() => setIsAutonomousStreaming(!isAutonomousStreaming)}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border font-mono-label text-[10px] tracking-wider transition-all ${
-                isAutonomousStreaming
-                  ? 'bg-[#b8fc4b]/15 text-[#b8fc4b] border-[#b8fc4b]/40'
-                  : 'bg-white/5 text-[#8c947c] border-[#424936]'
-              }`}
-            >
-              {isAutonomousStreaming ? (
-                <>
-                  <Pause className="w-3 h-3 text-[#b8fc4b] animate-pulse" /> Live Dialogue: ACTIVE
-                  (17s)
-                </>
-              ) : (
-                <>
-                  <Play className="w-3 h-3 text-[#8c947c]" /> Dialogue: PAUSED
-                </>
-              )}
-            </button>
-
-            {/* Restart Chat Button */}
-            <button
-              onClick={handleRestartChat}
-              className="flex items-center gap-1 px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-[#424936] text-[#c2cab0] hover:text-[#b8fc4b] rounded-lg font-mono-label text-[10px] tracking-wider transition-all"
-              title="Restart Council Chat thread"
-            >
-              <RotateCcw className="w-3 h-3" /> Restart Chat
-            </button>
-
-            <div className="flex items-center bg-black/40 border border-[#424936] rounded-lg p-0.5 font-mono-label text-[10px]">
-              <button
-                onClick={() => setViewMode('split')}
-                className={`px-2 py-1 rounded ${
-                  viewMode === 'split' ? 'bg-[#b8fc4b]/20 text-[#b8fc4b]' : 'text-[#8c947c]'
-                }`}
-              >
-                Split
-              </button>
-              <button
-                onClick={() => setViewMode('chat')}
-                className={`px-2 py-1 rounded ${
-                  viewMode === 'chat' ? 'bg-[#b8fc4b]/20 text-[#b8fc4b]' : 'text-[#8c947c]'
-                }`}
-              >
-                Chat
-              </button>
-              <button
-                onClick={() => setViewMode('diagram')}
-                className={`px-2 py-1 rounded ${
-                  viewMode === 'diagram' ? 'bg-[#b8fc4b]/20 text-[#b8fc4b]' : 'text-[#8c947c]'
-                }`}
-              >
-                Diagram
-              </button>
-            </div>
-
-            {selectedAgentFilter !== 'all' && (
-              <button
-                onClick={() => setSelectedAgentFilter('all')}
-                className="font-mono-label text-[10px] text-[#b8fc4b] underline hover:opacity-80 ml-2"
-              >
-                Reset Filter
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {(Object.keys(agentsConfig) as BasketAgentKey[]).map(key => {
-            const agent = agentsConfig[key]
-            const isSelected = selectedAgentFilter === key
-            return (
-              <button
-                key={agent.key}
-                onClick={() =>
-                  setSelectedAgentFilter(prev => (prev === agent.key ? 'all' : agent.key))
-                }
-                className={`p-3 rounded-xl border text-left transition-all active:scale-95 group relative overflow-hidden ${
-                  isSelected
-                    ? `${agent.borderColor} ${agent.bgGlow} ring-1 ring-[#b8fc4b]/40`
-                    : 'border-[#424936]/60 bg-[#050506]/60 hover:border-[#8c947c]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span
-                    className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm ${agent.avatarBg}`}
-                  >
-                    {agent.glyph}
-                  </span>
-                  <span className="font-mono-label text-[9px] px-1.5 py-0.5 rounded bg-white/5 text-[#c2cab0]">
-                    {agent.degreeLabel}
-                  </span>
-                </div>
-                <div className="font-headline-sm text-xs font-semibold text-[#e0e4d2] truncate">
-                  {agent.name}
-                </div>
-                <div className="font-mono-label text-[9px] text-[#8c947c] truncate mt-0.5">
-                  {agent.title}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </div>
 
       {/* Main Content Grid: Chat + Free-Body Diagram */}
       <div className="relative z-10 grid grid-cols-12 gap-5 mt-2">
@@ -1229,7 +1048,7 @@ export function BarbaultBasketPromotionalThread({
               : viewMode === 'chat'
                 ? 'col-span-12'
                 : 'col-span-12 lg:col-span-7'
-          } bg-[#040507]/90 border border-[#424936]/80 rounded-xl p-4 md:p-6 flex flex-col h-[480px]`}
+          } bg-[#040507]/90 border border-[#424936]/80 rounded-xl p-4 md:p-6 flex flex-col h-[520px]`}
         >
           {/* Chat Thread Header */}
           <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#424936]/40">
@@ -1249,7 +1068,7 @@ export function BarbaultBasketPromotionalThread({
                 }`}
               />
               <span className="font-mono-label text-[10px] text-[#b8fc4b]">
-                {isAutonomousStreaming ? 'SPONTANEOUS STREAM ACTIVE (17s Cadence)' : 'PAUSED'}
+                {isAutonomousStreaming ? 'SPONTANEOUS STREAM ACTIVE' : 'PAUSED'}
               </span>
             </div>
           </div>
@@ -1264,8 +1083,15 @@ export function BarbaultBasketPromotionalThread({
                 return (
                   <div key={msg.id} className="flex flex-col items-end">
                     <div className="max-w-[88%] bg-[#b8fc4b]/15 border border-[#b8fc4b]/40 rounded-2xl rounded-tr-none p-3 text-right">
-                      <div className="font-mono-label text-[10px] text-[#b8fc4b] font-bold mb-1">
-                        {msg.senderName} · {msg.timestamp}
+                      <div className="font-mono-label text-[10px] text-[#b8fc4b] font-bold mb-1 flex items-center justify-end gap-1.5">
+                        {msg.hasContextAttachment && (
+                          <span className="px-2 py-0.5 rounded bg-[#b8fc4b]/20 border border-[#b8fc4b]/40 text-[#b8fc4b] font-bold text-[9px] uppercase tracking-wider flex items-center gap-1">
+                            <Paperclip className="w-3 h-3" /> Chart Context Attached
+                          </span>
+                        )}
+                        <span>
+                          {msg.senderName} · {msg.timestamp}
+                        </span>
                       </div>
                       <p className="font-body-md text-xs text-[#e0e4d2] leading-relaxed">
                         {msg.content}
@@ -1309,7 +1135,6 @@ export function BarbaultBasketPromotionalThread({
               )
             })}
 
-            {/* Typing Indicator */}
             {isTyping && (
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-[#b8fc4b]/10 border border-[#b8fc4b]/30 flex items-center justify-center text-[#b8fc4b] text-xs font-bold animate-spin">
@@ -1318,8 +1143,8 @@ export function BarbaultBasketPromotionalThread({
                 <div className="bg-[#0c0e12] border border-[#b8fc4b]/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
                   <span className="font-mono-label text-xs text-[#b8fc4b] animate-pulse">
                     {typingAgent
-                      ? `${typingAgent} is sensing live sky transits & ALCHM yields (Spirit, Substance, Heat) to formulate spontaneous response...`
-                      : 'Council is contemplating next spontaneous response...'}
+                      ? `${typingAgent} is sensing live transits & natal chart attachment to formulate response...`
+                      : 'Council is contemplating next response...'}
                   </span>
                 </div>
               </div>
@@ -1342,6 +1167,55 @@ export function BarbaultBasketPromotionalThread({
               </button>
             ))}
           </div>
+
+          {/* Invitation Banner to Attach Personal Chart Context */}
+          <div className="mt-2.5 p-3 bg-[#0d121a] border border-[#b8fc4b]/40 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_0_20px_rgba(184,252,75,0.06)]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-[#b8fc4b]/15 border border-[#b8fc4b]/30 flex items-center justify-center text-[#b8fc4b] shrink-0">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="font-headline-sm text-xs font-bold text-[#e0e4d2] flex items-center gap-2">
+                  Attach Your Personal Natal Chart Context
+                </div>
+                <p className="font-body-md text-[11px] text-[#c2cab0] mt-0.5">
+                  Generate your chart context above & attach it so Jupiter, Uranus, Neptune & Pluto
+                  address your Sun, Moon, and Ascendant directly!
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={handleAttachContextFromStorage}
+                className="px-3.5 py-2 bg-[#b8fc4b] text-[#223600] font-mono-label text-xs font-bold rounded-xl flex items-center gap-1.5 hover:shadow-[0_0_15px_rgba(184,252,75,0.4)] transition-all active:scale-95"
+              >
+                <Paperclip className="w-3.5 h-3.5" />
+                {attachedChartContext
+                  ? 'Chart Attached ✦'
+                  : hasSavedChart
+                    ? 'Attach Saved Chart'
+                    : 'Attach Chart Context'}
+              </button>
+            </div>
+          </div>
+
+          {attachedChartContext && (
+            <div className="mt-2 px-3 py-1.5 bg-[#b8fc4b]/10 border border-[#b8fc4b]/40 rounded-xl flex items-center justify-between text-xs text-[#b8fc4b] animate-fadeIn">
+              <div className="flex items-center gap-2 font-mono-label text-[11px] font-bold">
+                <CheckCircle2 className="w-4 h-4 text-[#b8fc4b]" />
+                <span>NATAL CHART CONTEXT ATTACHED ({attachedChartContext.length} chars)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAttachedChartContext(null)}
+                className="text-[#8c947c] hover:text-[#ef4444] font-mono-label text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-white/5 hover:bg-red-500/10 transition-all"
+              >
+                Remove
+              </button>
+            </div>
+          )}
 
           {/* Input Box */}
           <div className="mt-2 flex items-center gap-2">

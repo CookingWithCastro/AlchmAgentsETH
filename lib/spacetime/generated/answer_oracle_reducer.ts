@@ -8,10 +8,10 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
 export default {
   requestId: __t.u64(),
   text: __t.string(),
   model: __t.string(),
-};
+}

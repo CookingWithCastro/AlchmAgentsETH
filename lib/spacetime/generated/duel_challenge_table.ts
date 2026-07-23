@@ -8,22 +8,19 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
-import {
-  Planet,
-} from "./types";
-
+} from 'spacetimedb'
+import { Planet } from './types'
 
 export default __t.row({
-  challengeId: __t.u64().primaryKey().name("challenge_id"),
+  challengeId: __t.u64().primaryKey().name('challenge_id'),
   player: __t.identity(),
   get opponent() {
-    return Planet;
+    return Planet
   },
-  playerWord: __t.string().name("player_word"),
-  playerScore: __t.u32().name("player_score"),
-  agentRack: __t.string().name("agent_rack"),
+  playerWord: __t.string().name('player_word'),
+  playerScore: __t.u32().name('player_score'),
+  agentRack: __t.string().name('agent_rack'),
   candidates: __t.string(),
   answered: __t.bool(),
-  createdAt: __t.timestamp().name("created_at"),
-});
+  createdAt: __t.timestamp().name('created_at'),
+})

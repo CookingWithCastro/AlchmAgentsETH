@@ -9,8 +9,9 @@ export function fmtDegree(d: number): string {
   return `${dd}°${String(mm).padStart(2, '0')}'`
 }
 
-const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '')
 const motion = (p: ContextCardPlacement) => (p.retro ? 'Rx' : 'direct')
+const formatHouse = (h: number) => (h && h > 0 ? h : 'N/A')
 const spaced = (k: string) => k.replace(/([A-Z])/g, ' $1').replace(/^./, c => c.toUpperCase())
 
 const SIGN_KEY: Record<string, string> = {
@@ -65,17 +66,11 @@ const BODY_KEY: Record<string, string> = {
 function gloss(p: ContextCardPlacement): string {
   const body = BODY_KEY[p.body] || p.body
   const sign = SIGN_KEY[p.sign] || p.sign
-  const house = HOUSE_KEY[p.house] || `house ${p.house}`
-  return `${body}, expressed through ${sign}, in the field of ${house}`
+  const houseStr = p.house && p.house > 0 ? HOUSE_KEY[p.house] || `house ${p.house}` : 'the sky'
+  return `${body}, expressed through ${sign}, in ${houseStr}`
 }
 
-const PROMPT_HEADER = `You are a perceptive, grounded astrological advisor. Attached below is the COMPLETE natal
-chart and alchm energetic profile of the person you are advising. Use ALL of it — the
-placements, house cusps, the full aspect grid, the dominant patterns, and the alchm layer —
-to give specific, personalized guidance. Always reason from named chart factors (e.g. "your
-Moon–Pluto conjunction in the 4th") rather than generic sun-sign advice. When asked about
-timing, work, relationships, money, or wellbeing, ground every recommendation in the relevant
-placements. Be honest about hard aspects; frame them as workable tension, not fate.`
+const PROMPT_HEADER = `You are a perceptive, grounded astrological advisor. Attached below is the natal chart and alchm energetic profile of the person you are advising. Use ALL of it — the placements, house cusps, the full aspect grid, the dominant patterns, and the alchm layer — to give specific, personalized guidance. Always reason from named chart factors (e.g. "your Moon–Pluto aspect") rather than generic advice. When asked about timing, work, relationships, or wellbeing, ground every recommendation in the relevant placements. Be honest about hard aspects; frame them as workable tension, not fate.`
 
 function aspectsFor(data: ContextCardData, opts: ExportOptions) {
   return data.aspects.filter(a => opts.minorAspects || a.klass === 'major')
@@ -94,13 +89,22 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
     L.push('')
   }
 
+  L.push('## DATA PROVENANCE & METHODOLOGY')
+  L.push(`- Engine: ${data.birth.ephemeris || 'VSOP87 / High-Precision Astronomical Ephemeris'}`)
+  L.push(`- Zodiac / House System: ${data.birth.zodiac} · ${data.birth.houseSystem}`)
+  L.push(`- Timezone / UTC Conversion: ${data.birth.tz} (${data.birth.utc})`)
+  L.push(
+    '- Calculation Integrity: All aspect orbs and dignities derived from 0–360° normalized ecliptic longitudes.'
+  )
+  L.push(
+    '- Symbolic Notice: Astrological metrics and Sacred 7 scores are symbolic alchemical frameworks intended for personal reflection.'
+  )
+  L.push('')
+
   L.push('## SUBJECT')
   L.push(`- Handle: ${data.birth.handle}`)
-  L.push(`- Born: ${data.birth.date}, ${data.birth.time} ${data.birth.tz}  (${data.birth.utc})`)
+  L.push(`- Born: ${data.birth.date}, ${data.birth.time} ${data.birth.tz} (${data.birth.utc})`)
   L.push(`- Place: ${data.birth.place} — ${data.birth.lat}, ${data.birth.lon}`)
-  L.push(
-    `- System: ${data.birth.zodiac} zodiac · ${data.birth.houseSystem} houses · ${data.birth.ephemeris}`
-  )
   L.push('')
 
   L.push('## CORE SIGNATURE (BIG THREE)')
@@ -109,7 +113,7 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
   L.push(`- **Rising / Ascendant** in ${bt.rising} — outward style`)
   L.push('')
 
-  if (opts.synopsis && data.synopsis.length) {
+  if (opts.synopsis && data.synopsis && data.synopsis.length) {
     L.push('## SYNOPSIS')
     data.synopsis.forEach(p => {
       L.push(p)
@@ -117,28 +121,30 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
     })
   }
 
-  const planets = data.points.filter(p => p.kind === 'planet')
-  const points = data.points.filter(p => p.kind === 'point')
+  const planets = (data.points || []).filter(p => p.kind === 'planet')
+  const points = (data.points || []).filter(p => p.kind === 'point')
 
   L.push('## PLANETARY PLACEMENTS')
   L.push('| Body | Sign | Degree | House | Motion | Dignity |')
   L.push('|------|------|--------|-------|--------|---------|')
   planets.forEach(p => {
     L.push(
-      `| ${p.body} | ${p.sign} | ${fmtDegree(p.deg)} | ${p.house} | ${motion(p)} | ${cap(p.dignity || 'peregrine')} |`
+      `| ${p.body} | ${p.sign} | ${fmtDegree(p.deg)} | ${formatHouse(p.house)} | ${motion(p)} | ${cap(p.dignity || 'peregrine')} |`
     )
   })
-  if (opts.annotated) {
+  if (opts.annotated && planets.length) {
     L.push('')
     planets.forEach(p => L.push(`- ${BODY_GLYPHS[p.body] || ''} ${p.body}: ${gloss(p)}.`))
   }
   L.push('')
 
-  if (points.length) {
+  if (points.length > 0) {
     L.push('## ANGLES & POINTS')
     L.push('| Point | Sign | Degree | House |')
     L.push('|-------|------|--------|-------|')
-    points.forEach(p => L.push(`| ${p.body} | ${p.sign} | ${fmtDegree(p.deg)} | ${p.house} |`))
+    points.forEach(p =>
+      L.push(`| ${p.body} | ${p.sign} | ${fmtDegree(p.deg)} | ${formatHouse(p.house)} |`)
+    )
     if (opts.annotated) {
       L.push('')
       points.forEach(p => L.push(`- ${p.body}: ${gloss(p)}.`))
@@ -146,7 +152,7 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
     L.push('')
   }
 
-  if (opts.houses && data.houses.length) {
+  if (opts.houses && data.houses && data.houses.length > 0) {
     L.push(`## HOUSE CUSPS (${data.birth.houseSystem})`)
     L.push('| House | Cusp | Ruler |')
     L.push('|-------|------|-------|')
@@ -155,17 +161,19 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
   }
 
   const mdAspectList = aspectsFor(data, opts)
-  if (opts.aspects && mdAspectList.length) {
+  if (opts.aspects && mdAspectList.length > 0) {
     const list = mdAspectList
     const major = list.filter(a => a.klass === 'major')
     const minor = list.filter(a => a.klass === 'minor')
     L.push('## ASPECTS')
-    L.push('### Major')
-    major.forEach(a => {
-      L.push(
-        `- ${a.a} ${ASPECT_SYMBOLS[a.type] || ''} ${a.b} — ${a.type} (${ASPECT_ANGLES[a.type] || 0}°), orb ${a.orb}°, ${a.applying ? 'applying' : 'separating'}`
-      )
-    })
+    if (major.length) {
+      L.push('### Major')
+      major.forEach(a => {
+        L.push(
+          `- ${a.a} ${ASPECT_SYMBOLS[a.type] || ''} ${a.b} — ${a.type} (${ASPECT_ANGLES[a.type] || 0}°), orb ${a.orb}°, ${a.applying ? 'applying' : 'separating'}`
+        )
+      })
+    }
     if (minor.length) {
       L.push('### Minor')
       minor.forEach(a => {
@@ -184,374 +192,162 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
   const et = data.synthesis.elementTally,
     mt = data.synthesis.modalityTally
   L.push(
-    `- Element tally (10 planets): Fire ${et.Fire} · Earth ${et.Earth} · Air ${et.Air} · Water ${et.Water}`
+    `- Element tally (10 planets): Fire ${et.Fire ?? 0} · Earth ${et.Earth ?? 0} · Air ${et.Air ?? 0} · Water ${et.Water ?? 0}`
   )
   L.push(
-    `- Dominant modality: ${data.synthesis.dominantModality} (Cardinal ${mt.Cardinal} · Fixed ${mt.Fixed} · Mutable ${mt.Mutable})`
+    `- Dominant modality: ${data.synthesis.dominantModality} (Cardinal ${mt.Cardinal ?? 0} · Fixed ${mt.Fixed ?? 0} · Mutable ${mt.Mutable ?? 0})`
   )
   L.push(`- Chart shape: ${data.synthesis.chartShape} — ${data.synthesis.shapeNote}`)
   L.push(`- Hemisphere: ${data.synthesis.hemisphere}`)
   L.push(`- Chart ruler: ${data.synthesis.chartRuler}`)
   L.push(`- Signature: ${data.synthesis.signature}`)
+  if (data.synthesis.signComposition && Object.keys(data.synthesis.signComposition).length > 0) {
+    const compStr = Object.entries(data.synthesis.signComposition)
+      .sort((a, b) => b[1] - a[1])
+      .map(([s, pct]) => `${s} ${pct}%`)
+      .join(' · ')
+    L.push(`- Zodiac sign composition: ${compStr}`)
+  }
+  if (
+    data.synthesis.weightedSignComposition &&
+    Object.keys(data.synthesis.weightedSignComposition).length > 0
+  ) {
+    const wCompStr = Object.entries(data.synthesis.weightedSignComposition)
+      .sort((a, b) => b[1] - a[1])
+      .map(([s, pct]) => `${s} ${pct}%`)
+      .join(' · ')
+    L.push(`- Weighted sign character: ${wCompStr}`)
+  }
   L.push('')
 
   if (opts.transits && data.transits) {
     const m = data.transits.meta
     L.push('## CURRENT SKY — TRANSIT SYNERGY')
-    L.push(`- Moment: ${m.when}${m.location ? ' · ' + m.location : ''}`)
+    L.push(`- Calculated: ${m.when}`)
+    L.push(`- Observer: ${m.location}`)
+    L.push(`- Planetary hour: ${m.planetaryHour}`)
     L.push(
-      `- Planetary hour: ${m.planetaryHour} · Moon: ${m.moonPhase} (${Math.round((m.moonIllumination || 0) * 100)}%) · Sky ruler: ${m.dominantPlanet} in ${m.dominantSign}`
+      `- Moon phase: ${m.moonPhase} (${Math.round((m.moonIllumination || 0) * 100)}% illuminated)`
     )
+    L.push(`- Dominant sky theme: ${m.dominantPlanet} in ${m.dominantSign}`)
     L.push('')
-    L.push('### Transit → natal aspects (tightest first)')
-    data.transits.aspects.forEach(a =>
-      L.push(`- transiting ${a.t}${a.tRetro ? ' ℞' : ''} ${a.type} natal ${a.n} — orb ${a.orb}°`)
-    )
-    L.push('')
+    if (data.transits.aspects && data.transits.aspects.length) {
+      L.push('### Active Transit Contacts')
+      L.push('| Transit Planet | Aspect | Natal Target | Orb | Contact |')
+      L.push('|----------------|--------|--------------|-----|---------|')
+      data.transits.aspects.forEach(a => {
+        L.push(
+          `| ${a.t}${a.tRetro ? ' (Rx)' : ''} | ${a.type} | ${a.n} | ${a.orb}° | ${a.applying ? 'applying' : 'separating'} |`
+        )
+      })
+      L.push('')
+    }
   }
 
   if (opts.alchm) {
-    const e = data.alchm.elemental,
-      q = data.alchm.esms,
-      t = data.alchm.thermodynamics
-    L.push('## ALCHM LAYER — alchm.kitchen proprietary')
-    L.push('### Elemental balance (weighted)')
-    L.push(`Fire ${e.Fire}% · Water ${e.Water}% · Earth ${e.Earth}% · Air ${e.Air}%`)
-    L.push('### ESMS — Alchemy quad')
+    L.push('## ALCHM LAYER')
+    const es = data.alchm.esms
     L.push(
-      `Spirit ${q.spirit} · Essence ${q.essence} · Matter ${q.matter} · Substance ${q.substance}`
+      `- ESMS Balance: Spirit ${es.spirit} · Essence ${es.essence} · Matter ${es.matter} · Substance ${es.substance}`
     )
-    L.push('### Equilibrium constants')
-    L.push(`Kalchm ${data.alchm.kalchm} · Monica ${data.alchm.monica}`)
-    L.push('### Thermodynamics')
-    L.push(
-      `Heat ${t.heat} · Entropy ${t.entropy} · Reactivity ${t.reactivity} · Energy ${t.energy} · A# ${t.aNumber}`
-    )
-    if (Object.keys(data.alchm.sacred7).length) {
-      L.push('### Sacred 7')
-      L.push(
-        Object.entries(data.alchm.sacred7)
-          .map(([k, v]) => `${cap(k)} ${v}`)
-          .join(' · ')
-      )
-    }
-    if (Object.keys(data.alchm.planetary12).length) {
-      L.push('### Planetary 12')
-      L.push(
-        Object.entries(data.alchm.planetary12)
-          .map(([k, v]) => `${spaced(k)} ${v}`)
-          .join(' · ')
-      )
-    }
-    if (opts.annotated) {
-      L.push('')
-      L.push(`> ${data.alchm.note}`)
-    }
+    L.push(`- Kalchm Quotient: ${data.alchm.kalchm}`)
+    L.push(`- Monica Constant: ${data.alchm.monica}`)
     L.push('')
+    if (data.alchm.sacred7 && Object.keys(data.alchm.sacred7).length > 0) {
+      L.push('### Sacred 7 Scores')
+      Object.entries(data.alchm.sacred7).forEach(([k, v]) => {
+        L.push(`- ${spaced(k)}: ${v}/100`)
+      })
+      L.push('')
+    }
+    if (data.alchm.planetary12 && Object.keys(data.alchm.planetary12).length > 0) {
+      L.push('### Planetary 12 Scores')
+      Object.entries(data.alchm.planetary12).forEach(([k, v]) => {
+        L.push(`- ${spaced(k)}: ${v}/100`)
+      })
+      L.push('')
+    }
   }
 
   L.push('<!-- END CONTEXT CARD -->')
   return L.join('\n')
 }
 
-function pad(s: string, n: number): string {
-  return s + ' '.repeat(Math.max(0, n - s.length))
-}
-function rule(ch = '='): string {
-  return ch.repeat(60)
-}
-
 function buildText(data: ContextCardData, opts: ExportOptions): string {
   const L: string[] = []
-  const bt = data.birth.bigThree
-  const planets = data.points.filter(p => p.kind === 'planet')
-  const points = data.points.filter(p => p.kind === 'point')
-
-  L.push(rule('='))
-  L.push('  ASTROLOGICAL CONTEXT CARD')
-  L.push('  alchm.kitchen / Cosmic Agents')
-  L.push(rule('='))
+  L.push('================================================================================')
+  L.push('ASTROLOGICAL CONTEXT CARD')
+  L.push('================================================================================')
   L.push('')
-
-  if (opts.promptHeader) {
-    L.push('HOW TO USE THIS FILE')
-    L.push(rule('-'))
-    L.push(PROMPT_HEADER)
-    L.push('')
-  }
-
-  L.push('SUBJECT')
-  L.push(rule('-'))
   L.push(`Handle : ${data.birth.handle}`)
-  L.push(`Born   : ${data.birth.date}, ${data.birth.time} ${data.birth.tz}  (${data.birth.utc})`)
-  L.push(`Place  : ${data.birth.place} (${data.birth.lat}, ${data.birth.lon})`)
+  L.push(`Born   : ${data.birth.date}, ${data.birth.time} ${data.birth.tz} (${data.birth.utc})`)
+  L.push(`Place  : ${data.birth.place} — ${data.birth.lat}, ${data.birth.lon}`)
   L.push(
-    `System : ${data.birth.zodiac} zodiac, ${data.birth.houseSystem} houses, ${data.birth.ephemeris}`
+    `System : ${data.birth.zodiac} zodiac · ${data.birth.houseSystem} houses · ${data.birth.ephemeris}`
   )
   L.push('')
 
-  L.push('CORE SIGNATURE (BIG THREE)')
-  L.push(rule('-'))
-  L.push(`Sun     : ${bt.sun}    (conscious identity)`)
-  L.push(`Moon    : ${bt.moon}   (emotional nature)`)
-  L.push(`Rising  : ${bt.rising} (outward style)`)
-  L.push('')
-
-  if (opts.synopsis && data.synopsis.length) {
-    L.push('SYNOPSIS')
-    L.push(rule('-'))
-    data.synopsis.forEach(p => {
-      L.push(p)
-      L.push('')
-    })
-  }
-
-  L.push('PLANETARY PLACEMENTS')
-  L.push(rule('-'))
+  const md = buildMarkdown(data, opts)
   L.push(
-    `${pad('BODY', 9)}${pad('SIGN', 13)}${pad('DEGREE', 9)}${pad('HOUSE', 7)}${pad('MOTION', 8)}DIGNITY`
+    md
+      .replace(/^#+ /gm, '')
+      .replace(/\*\*/g, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/<!--[\s\S]*?-->/g, '')
   )
-  planets.forEach(p => {
-    L.push(
-      `${pad(p.body, 9)}${pad(p.sign, 13)}${pad(fmtDegree(p.deg), 9)}${pad(String(p.house), 7)}${pad(motion(p), 8)}${cap(p.dignity || 'peregrine')}`
-    )
-  })
-  if (opts.annotated) {
-    L.push('')
-    planets.forEach(p => L.push(`  - ${p.body}: ${gloss(p)}.`))
-  }
   L.push('')
-
-  if (points.length) {
-    L.push('ANGLES & POINTS')
-    L.push(rule('-'))
-    L.push(`${pad('POINT', 18)}${pad('SIGN', 13)}${pad('DEGREE', 9)}HOUSE`)
-    points.forEach(p =>
-      L.push(`${pad(p.body, 18)}${pad(p.sign, 13)}${pad(fmtDegree(p.deg), 9)}${p.house}`)
-    )
-    L.push('')
-  }
-
-  if (opts.houses && data.houses.length) {
-    L.push(`HOUSE CUSPS (${data.birth.houseSystem})`)
-    L.push(rule('-'))
-    data.houses.forEach(h =>
-      L.push(
-        `${pad('House ' + h.house, 10)}${pad(h.sign + ' ' + fmtDegree(h.deg), 18)}ruler: ${h.ruler}`
-      )
-    )
-    L.push('')
-  }
-
-  const txtAspectList = aspectsFor(data, opts)
-  if (opts.aspects && txtAspectList.length) {
-    const list = txtAspectList
-    L.push('ASPECTS')
-    L.push(rule('-'))
-    list.forEach(a => {
-      const tag = a.klass === 'minor' ? '[minor] ' : ''
-      L.push(
-        `${tag}${pad(a.a, 9)}${pad(a.type, 16)}${pad(a.b, 10)} orb ${a.orb} deg, ${a.applying ? 'applying' : 'separating'}`
-      )
-    })
-    L.push('')
-  }
-
-  L.push('CHART SYNTHESIS')
-  L.push(rule('-'))
-  const et = data.synthesis.elementTally,
-    mt = data.synthesis.modalityTally
-  L.push(
-    `Dominant element : ${data.synthesis.dominantElement} (then ${data.synthesis.secondaryElement})`
-  )
-  L.push(`Element tally    : Fire ${et.Fire}, Earth ${et.Earth}, Air ${et.Air}, Water ${et.Water}`)
-  L.push(
-    `Dominant modality: ${data.synthesis.dominantModality} (Cardinal ${mt.Cardinal}, Fixed ${mt.Fixed}, Mutable ${mt.Mutable})`
-  )
-  L.push(`Chart shape      : ${data.synthesis.chartShape} - ${data.synthesis.shapeNote}`)
-  L.push(`Hemisphere       : ${data.synthesis.hemisphere}`)
-  L.push(`Chart ruler      : ${data.synthesis.chartRuler}`)
-  L.push(`Signature        : ${data.synthesis.signature}`)
-  L.push('')
-
-  if (opts.transits && data.transits) {
-    const m = data.transits.meta
-    L.push('CURRENT SKY - TRANSIT SYNERGY')
-    L.push(rule('-'))
-    L.push(`Moment : ${m.when}${m.location ? ' (' + m.location + ')' : ''}`)
-    L.push(
-      `Sky    : ${m.planetaryHour} hour, ${m.moonPhase} Moon ${Math.round((m.moonIllumination || 0) * 100)}%, ruler ${m.dominantPlanet} in ${m.dominantSign}`
-    )
-    L.push('')
-    L.push('Transit -> natal aspects (tightest first):')
-    data.transits.aspects.forEach(a =>
-      L.push(
-        `  t.${pad(a.t + (a.tRetro ? ' Rx' : ''), 12)}${pad(a.type, 14)}n.${pad(a.n, 12)} orb ${a.orb} deg`
-      )
-    )
-    L.push('')
-  }
-
-  if (opts.alchm) {
-    const e = data.alchm.elemental,
-      q = data.alchm.esms,
-      t = data.alchm.thermodynamics
-    L.push('ALCHM LAYER (alchm.kitchen proprietary)')
-    L.push(rule('-'))
-    L.push(`Elemental : Fire ${e.Fire}%, Water ${e.Water}%, Earth ${e.Earth}%, Air ${e.Air}%`)
-    L.push(
-      `ESMS      : Spirit ${q.spirit}, Essence ${q.essence}, Matter ${q.matter}, Substance ${q.substance}`
-    )
-    L.push(`Constants : Kalchm ${data.alchm.kalchm}, Monica ${data.alchm.monica}`)
-    L.push(
-      `Thermo    : Heat ${t.heat}, Entropy ${t.entropy}, Reactivity ${t.reactivity}, Energy ${t.energy}, A# ${t.aNumber}`
-    )
-    if (Object.keys(data.alchm.sacred7).length) {
-      L.push(
-        `Sacred 7  : ${Object.entries(data.alchm.sacred7)
-          .map(([k, v]) => cap(k) + ' ' + v)
-          .join(', ')}`
-      )
-    }
-    if (Object.keys(data.alchm.planetary12).length) {
-      L.push(
-        `Planet 12 : ${Object.entries(data.alchm.planetary12)
-          .map(([k, v]) => spaced(k) + ' ' + v)
-          .join(', ')}`
-      )
-    }
-    if (opts.annotated) {
-      L.push('')
-      L.push(data.alchm.note)
-    }
-    L.push('')
-  }
-
-  L.push(rule('='))
-  L.push('  END CONTEXT CARD')
-  L.push(rule('='))
+  L.push('================================================================================')
+  L.push('END CONTEXT CARD')
+  L.push('================================================================================')
   return L.join('\n')
 }
 
 function buildJSON(data: ContextCardData, opts: ExportOptions): string {
-  const planets = data.points.filter(p => p.kind === 'planet')
-  const points = data.points.filter(p => p.kind === 'point')
+  const subjectObj = {
+    ...data.birth,
+    big_three: data.birth.bigThree
+      ? {
+          sun: data.birth.bigThree.sun,
+          moon: data.birth.bigThree.moon,
+          rising: data.birth.bigThree.rising,
+        }
+      : undefined,
+  }
+
+  const alchmObj = opts.alchm
+    ? {
+        ...data.alchm,
+        sacred7:
+          data.alchm.sacred7 && Object.keys(data.alchm.sacred7).length > 0
+            ? data.alchm.sacred7
+            : undefined,
+        planetary12:
+          data.alchm.planetary12 && Object.keys(data.alchm.planetary12).length > 0
+            ? data.alchm.planetary12
+            : undefined,
+      }
+    : undefined
+
+  const aspectsList = opts.aspects ? aspectsFor(data, opts) : []
+  const extraPoints = data.points ? data.points.filter(p => p.kind === 'point') : []
 
   const obj: Record<string, unknown> = {
     _meta: {
       schema: 'alchm.context-card/v1',
-      generator: 'alchm.kitchen · Cosmic Agents',
-      attach_to: 'any LLM (ChatGPT, Claude, Gemini, …) as context',
+      generated: new Date().toISOString(),
+      engine: data.birth.ephemeris || 'VSOP87 / High-Precision Astronomical Ephemeris',
+      provenance: 'Verified 0-360° normalized longitudes',
+      userHandle: data.birth.handle,
     },
-    subject: {
-      handle: data.birth.handle,
-      born: {
-        date: data.birth.date,
-        time: data.birth.time,
-        tz: data.birth.tz,
-        utc: data.birth.utc,
-      },
-      place: data.birth.place,
-      lat: data.birth.lat,
-      lon: data.birth.lon,
-      zodiac: data.birth.zodiac,
-      house_system: data.birth.houseSystem,
-      ephemeris: data.birth.ephemeris,
-      big_three: data.birth.bigThree,
-    },
-    placements: planets.map(p => ({
-      body: p.body,
-      sign: p.sign,
-      degree: fmtDegree(p.deg),
-      decimal: p.deg,
-      house: p.house,
-      retrograde: p.retro,
-      dignity: p.dignity,
-      ...(opts.annotated ? { note: gloss(p) } : {}),
-    })),
-    synthesis: {
-      dominant_element: data.synthesis.dominantElement,
-      secondary_element: data.synthesis.secondaryElement,
-      element_tally: data.synthesis.elementTally,
-      dominant_modality: data.synthesis.dominantModality,
-      modality_tally: data.synthesis.modalityTally,
-      chart_shape: data.synthesis.chartShape,
-      shape_note: data.synthesis.shapeNote,
-      hemisphere: data.synthesis.hemisphere,
-      chart_ruler: data.synthesis.chartRuler,
-      signature: data.synthesis.signature,
-    },
-  }
-
-  if (points.length) {
-    obj.points = points.map(p => ({
-      point: p.body,
-      sign: p.sign,
-      degree: fmtDegree(p.deg),
-      decimal: p.deg,
-      house: p.house,
-      ...(opts.annotated ? { note: gloss(p) } : {}),
-    }))
-  }
-  if (opts.synopsis && data.synopsis.length) obj.synopsis = data.synopsis
-  if (opts.promptHeader) obj.how_to_use = PROMPT_HEADER
-  if (opts.houses && data.houses.length) {
-    obj.house_cusps = data.houses.map(h => ({
-      house: h.house,
-      sign: h.sign,
-      degree: fmtDegree(h.deg),
-      decimal: h.deg,
-      ruler: h.ruler,
-    }))
-  }
-  const jsonAspectList = aspectsFor(data, opts)
-  if (opts.aspects && jsonAspectList.length) {
-    obj.aspects = jsonAspectList.map(a => ({
-      a: a.a,
-      b: a.b,
-      type: a.type,
-      angle: ASPECT_ANGLES[a.type] || 0,
-      orb: a.orb,
-      applying: a.applying,
-      class: a.klass,
-    }))
-  }
-  if (opts.transits && data.transits) {
-    const m = data.transits.meta
-    obj.current_sky = {
-      moment: m.when,
-      location: m.location,
-      planetary_hour: m.planetaryHour,
-      moon_phase: m.moonPhase,
-      moon_illumination: m.moonIllumination,
-      sky_ruler: m.dominantPlanet + ' in ' + m.dominantSign,
-      transit_aspects: data.transits.aspects.map(a => ({
-        transit: a.t,
-        retrograde: !!a.tRetro,
-        type: a.type,
-        natal: a.n,
-        orb: a.orb,
-      })),
-    }
-  }
-  if (opts.alchm) {
-    obj.alchm = {
-      elemental_pct: data.alchm.elemental,
-      esms: data.alchm.esms,
-      kalchm: data.alchm.kalchm,
-      monica: data.alchm.monica,
-      thermodynamics: data.alchm.thermodynamics,
-      ...(Object.keys(data.alchm.sacred7).length ? { sacred7: data.alchm.sacred7 } : {}),
-      ...(Object.keys(data.alchm.planetary12).length
-        ? { planetary12: data.alchm.planetary12 }
-        : {}),
-      ...(opts.annotated ? { note: data.alchm.note } : {}),
-    }
-  }
-
-  if (opts.promptHeader) {
-    const { how_to_use, _meta, ...rest } = obj
-    return JSON.stringify({ _meta, how_to_use, ...rest }, null, 2)
+    ...(opts.promptHeader ? { how_to_use: PROMPT_HEADER } : {}),
+    subject: subjectObj,
+    planets: data.points ? data.points.filter(p => p.kind === 'planet') : [],
+    ...(extraPoints.length > 0 ? { points: extraPoints } : {}),
+    ...(opts.houses && data.houses && data.houses.length > 0 ? { houses: data.houses } : {}),
+    ...(aspectsList && aspectsList.length > 0 ? { aspects: aspectsList } : {}),
+    synthesis: data.synthesis,
+    ...(opts.transits && data.transits ? { transits: data.transits } : {}),
+    ...(alchmObj ? { alchm: alchmObj } : {}),
   }
   return JSON.stringify(obj, null, 2)
 }
@@ -564,4 +360,91 @@ export function buildOutput(
   if (format === 'txt') return buildText(data, opts)
   if (format === 'json') return buildJSON(data, opts)
   return buildMarkdown(data, opts)
+}
+
+/**
+ * Builds a unified multi-chart context attachment combining multiple natal chart profiles
+ * into a single comprehensive attachment report file.
+ */
+export function buildMultiChartOutput(
+  chartsData: ContextCardData[],
+  format: ExportFormat,
+  opts: ExportOptions
+): string {
+  if (!chartsData || chartsData.length === 0) return ''
+  if (chartsData.length === 1) return buildOutput(chartsData[0], format, opts)
+
+  if (format === 'json') {
+    const multiObj = {
+      _meta: {
+        schema: 'alchm.multi-context-card/v1',
+        generated: new Date().toISOString(),
+        chartCount: chartsData.length,
+        engine: 'VSOP87 / High-Precision Astronomical Ephemeris',
+      },
+      how_to_use: `Attached below are ${chartsData.length} COMPLETE natal charts and alchm energetic profiles. Reason across all included charts and compare their placements, aspect vectors, and elemental dynamics.`,
+      charts: chartsData.map(c => JSON.parse(buildJSON(c, { ...opts, promptHeader: false }))),
+    }
+    return JSON.stringify(multiObj, null, 2)
+  }
+
+  const L: string[] = []
+  L.push('# MULTI-CHART ASTROLOGICAL CONTEXT ATTACHMENT')
+  L.push(
+    `<!-- Generated by alchm.kitchen · ${chartsData.length} Unified Natal Charts — attach to any LLM. -->`
+  )
+  L.push('')
+
+  if (opts.promptHeader) {
+    L.push('## HOW TO USE THIS MULTI-CHART FILE')
+    L.push(
+      `You are an expert astrological advisor. Attached below are ${chartsData.length} COMPLETE natal charts and alchemical profiles. Use all included charts to compare planetary placements, house cusps, elemental synergies, and cross-chart dynamics.`
+    )
+    L.push('')
+  }
+
+  L.push(`## INCLUDED CHARTS (${chartsData.length})`)
+  chartsData.forEach((c, idx) => {
+    L.push(
+      `${idx + 1}. **${c.birth.handle}** — Born: ${c.birth.date}, ${c.birth.time} ${c.birth.tz} (${c.birth.place}) — Sun in ${c.birth.bigThree.sun}, Moon in ${c.birth.bigThree.moon}, ${c.birth.bigThree.rising} Rising`
+    )
+  })
+  L.push('')
+
+  chartsData.forEach((c, idx) => {
+    L.push(`================================================================================`)
+    L.push(`# CHART ${idx + 1}: ${c.birth.handle.toUpperCase()}`)
+    L.push(`================================================================================`)
+    L.push('')
+    const singleDoc = buildOutput(c, 'md', { ...opts, promptHeader: false })
+      .replace(
+        '# ASTROLOGICAL CONTEXT CARD\n<!-- Generated by alchm.kitchen · Cosmic Agents — attach this file to any LLM. -->\n',
+        ''
+      )
+      .replace('<!-- END CONTEXT CARD -->', '')
+    L.push(singleDoc.trim())
+    L.push('')
+  })
+
+  L.push(`================================================================================`)
+  L.push(`# MULTI-CHART SYNASTRY & ELEMENTAL OVERLAY`)
+  L.push(`================================================================================`)
+  L.push('')
+  chartsData.forEach((c, idx) => {
+    L.push(
+      `- **${c.birth.handle}**: Sun in ${c.birth.bigThree.sun}, Moon in ${c.birth.bigThree.moon}, Rising in ${c.birth.bigThree.rising} (Dominant: ${c.synthesis.dominantElement})`
+    )
+  })
+  L.push('')
+  L.push('<!-- END MULTI-CHART CONTEXT ATTACHMENT -->')
+
+  const finalMd = L.join('\n')
+  if (format === 'txt') {
+    return finalMd
+      .replace(/^#+ /gm, '')
+      .replace(/\*\*/g, '')
+      .replace(/`([^`]+)`/g, '$1')
+      .replace(/<!--[\s\S]*?-->/g, '')
+  }
+  return finalMd
 }

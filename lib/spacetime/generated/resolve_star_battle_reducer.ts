@@ -8,15 +8,13 @@ import {
   t as __t,
   type AlgebraicTypeType as __AlgebraicTypeType,
   type Infer as __Infer,
-} from "spacetimedb";
+} from 'spacetimedb'
 
-import {
-  BattleLog,
-} from "./types";
+import { BattleLog } from './types'
 
 export default {
   hipId: __t.u32(),
   get log() {
-    return BattleLog;
+    return BattleLog
   },
-};
+}
