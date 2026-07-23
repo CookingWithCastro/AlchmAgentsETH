@@ -49,7 +49,12 @@ flowchart TB
         BQ["BigQuery → ERC-8004 mainnet logs<br/>ranking UI /erc8004"]
     end
 
-    TOOLROUTER["🛰️ Tool Router<br/>paid MCP tool"]
+    subgraph JEPA["🔮 JEPA Predictive Engine — Latent PRM & On-Chain State"]
+        PRM["Latent PRM Gate (Domicile > Exaltation)<br/>Beelink SER9 TCP Worker (Port 9091)"]
+        EMA["EMA Persona Stabilizer Matrix<br/>O(1) memory, tau=0.99"]
+        REGISTRY["PlanetaryRegistry.sol<br/>TargetPersonaHash & EpochHash commitments"]
+        PRM --> EMA --> REGISTRY
+    end
 
     User -->|1 resolve ENS| ENS
     REC -->|a2a endpoint| A2A

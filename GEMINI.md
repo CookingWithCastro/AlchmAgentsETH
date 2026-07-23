@@ -47,6 +47,15 @@ This document outlines the specialized agentic workflows and LangChain integrati
   - Seamlessly falls back to backup providers if the primary (Groq) is rate-limited (e.g. hitting Daily Token Limits).
   - Integrates with the sibling Pentacles game via `PLANETARY_AGENTS_BACKEND_URL` pointing to the production deployment.
 
+### 6. Joint Embedding Predictive Architecture (JEPA) Engine
+
+- **Purpose:** Deterministic pre-generation action scoring, persona drift stabilization, and raw `pg` cosmic context encoding.
+- **Components:**
+  - **Latent PRM Gate (`lib/jepa/latent-prm.ts`):** Validates proposed action vectors before downstream LLM generation. Hardcodes `Domicile > Exaltation` symbolic precedence. Supports offloading to Beelink SER9 compute node (`lib/jepa/beelink-prm-server.ts`).
+  - **EMA Persona Matrix (`lib/jepa/ema-memory.ts`):** Zero-GC $O(1)$ memory matrix tracking `contextPersona` and `targetPersona` using EMA smoothing ($\tau = 0.99$).
+  - **Async Context Encoder (`lib/jepa/cosmic-context-encoder.ts`):** Raw PostgreSQL query engine (`pg`) fetching transits and Domiciles into high-density JSON cache.
+  - **On-Chain State Sync (`contracts/PlanetaryRegistry.sol`, `lib/jepa/onchain-sync.ts`):** Submits 64-dim `targetPersonaHash` and `epochHash` commitments to Base Sepolia / Circle Arc via `viem`.
+
 ## ⛓️ On-Chain & Agent Economy
 
 A bounty-driven layer that puts agents on-chain. **Canonical doc + diagrams + demo steps: [`INTEGRATIONS.md`](INTEGRATIONS.md).** In brief:
