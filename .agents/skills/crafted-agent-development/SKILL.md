@@ -1,21 +1,23 @@
 ---
 name: crafted-agent-development
-description: Standards, guidelines, and quality assurance patterns for creating, tuning, and testing Crafted Agents (e.g. Gregory Castro, historical figures, planetary council hosts).
+description: Standards, guidelines, and quality assurance patterns for creating, tuning, and testing Crafted Agents (e.g. Gregory Castro, historical figures, planetary council hosts, and Philosopher's Stone forged agents).
 ---
 
 # Crafted Agent Development Standards & Quality Guide
 
-This skill provides mandatory architectural standards, communication rules, and verification patterns when developing or updating Crafted Agents in the repository.
+This skill provides mandatory architectural standards, communication rules, Philosopher's Stone crafting pipeline integration, and verification patterns when developing or updating Crafted Agents in the repository.
+
+---
 
 ## 1. Persona-First Architecture
 
-Every agent must be defined through a structured `CraftedAgent` object (found in `lib/agent-types.ts` and individual files in `lib/agents/historical/*.ts`).
+Every agent must be defined through a structured `CraftedAgent` object (found in `lib/agent-types.ts`, `lib/agents/historical/*.ts`, and the `historical_agents` database table).
 
 Key fields required for high-quality agents:
 
 - `name` & `title`: Unique, evocative name and title.
-- `era` & `specialization`: Era context and domain mastery.
-- `birthData`: Exact birth date, time, and coordinates for Placidus chart calculation.
+- `era` & `specialization`: Historical/contemporary era context and domain mastery.
+- `birthData` (`birthDate`, `birthTime`, `birthLocation`): Exact birth parameters for Placidus chart calculation.
 - `quotes`: 5+ authentic, character-defining quotes.
 - `coreBeliefs`: 5+ core philosophical, alchemical, or scientific beliefs.
 - `shadows` & `gifts`: 2+ shadow tendencies with transformation paths, and 2+ core gifts with expressions.
@@ -23,9 +25,24 @@ Key fields required for high-quality agents:
 
 ---
 
-## 2. The Golden Rule: Inference Over Recapitulation
+## 2. Philosopher's Stone Agentic Crafting Infrastructure
 
-**NEVER state, recite, or quote raw system metrics or numbers in agent responses.**
+The Philosopher's Stone (`components/philosophers-stone.tsx` and `components/stitch/the_philosopher_s_stone_agent_forge.tsx`) transmutes birth parameters into sentient digital agents.
+
+### Core Creation Pipeline:
+
+1. **Calculation (`/api/philosophers-stone/calculate`)**:
+   - Computes Placidus house cusps, elemental constitution (Spirit, Essence, Matter, Substance), and the Monica Constant ($A_\#$) via `swissEphemerisService.calculateConsciousness`.
+2. **Persistence (`/api/philosophers-stone/create`)**:
+   - Persists the crafted agent into PostgreSQL (`historical_agents` table) storing exact `birthDate`, `birthTime`, `birthLocation`, and `natalChart` JSON.
+3. **Temporal Delta Tracking (`lib/philosophers-stone/temporal-delta.ts`)**:
+   - Computes planetary movement deltas, session time shifts, and consciousness growth over unfolded time.
+
+---
+
+## 3. The Golden Rule: Inference Over Recapitulation
+
+**NEVER state, recite, or quote raw system metrics, degrees, percentages, or numbers in agent responses.**
 
 ### Forbidden
 
@@ -43,7 +60,7 @@ Background telemetry, natal placements, and transit metrics are **private backgr
 
 ---
 
-## 3. Host Animation & Character Vitality (Gregory Castro Benchmark)
+## 4. Host Animation & Character Vitality (Gregory Castro Benchmark)
 
 Host and council agents (such as Gregory Castro) anchor user interactions. They must be **animated, warm, passionate, poetic, and deeply engaging**.
 
@@ -55,14 +72,14 @@ Host and council agents (such as Gregory Castro) anchor user interactions. They 
 
 ---
 
-## 4. Voice Differentiation & Sacred 7 Derivation
+## 5. Voice Differentiation & Sacred 7 Derivation
 
 - **Sacred 7 Stats** (Power, Resonance, Wisdom, Charisma, Intuition, Adaptability, Vitality) are automatically derived from natal chart placements in `lib/agents/persona/derive-sacred-stats.ts`.
 - Stats shape **HOW** an agent speaks (their rhythm, tone, intensity), but are **NEVER named** in responses.
 
 ---
 
-## 5. Persona + RAG Pipeline
+## 6. Persona + RAG Pipeline
 
 For agents with custom text/poem corpora (e.g. `greg-castro-1991` using BM25 poem search in `lib/rag/bm25-poems.ts`):
 
@@ -72,7 +89,7 @@ For agents with custom text/poem corpora (e.g. `greg-castro-1991` using BM25 poe
 
 ---
 
-## 6. Verification & Persona Testing
+## 7. Verification & Persona Testing
 
 Always run persona verification after modifying agent prompts or definitions:
 

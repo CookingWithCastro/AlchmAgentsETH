@@ -15,6 +15,9 @@ const CreateAgentSchema = z.object({
   name: z.string(),
   title: z.string(),
   specialty: z.string(),
+  birthDate: z.string().optional(),
+  birthTime: z.string().optional(),
+  birthLocation: z.union([z.string(), z.record(z.any())]).optional(),
   consciousness: z.object({
     monicaConstant: z.number(),
     consciousnessLevel: z.string(),
@@ -64,7 +67,15 @@ export async function POST(req: Request) {
         },
       })
 
-      // We must use raw pg query as per the directive
+      const rawBirthDate = data.birthDate ? new Date(data.birthDate) : new Date()
+      const safeBirthDate = isNaN(rawBirthDate.getTime()) ? new Date() : rawBirthDate
+      const birthTime = data.birthTime || '12:00'
+      const birthLocationJson =
+        typeof data.birthLocation === 'string'
+          ? JSON.stringify({ name: data.birthLocation })
+          : JSON.stringify(data.birthLocation || {})
+      const natalChartJson = JSON.stringify(data.birthChart || {})
+
       const query = `
         INSERT INTO historical_agents (
           id, "agentId", "name", "title", "birthDate", "birthTime", "birthLocation", 
@@ -77,14 +88,14 @@ export async function POST(req: Request) {
           "natalChart", "traits", "craftedBy", "updatedAt"
         )
         VALUES (
-          gen_random_uuid(), $1, $2, $3, NOW(), '12:00', '{}', 
-          'MONICA_SPECIAL', 2026, 'Digital', 'Digital Space', $4, 
+          gen_random_uuid(), $1, $2, $3, $23, $24, $25::jsonb, 
+          'MONICA_SPECIAL', EXTRACT(YEAR FROM $23::timestamp), 'Digital', 'Digital Space', $4, 
           $5, $5, $6, $7, 
           $8, $9, $10, $11, 
           $12, '[]', $13, $14, 
           'contemplative', 0, '{}', $15, $16, 
           '{}', $17, 'Spirit', $18, $19, $20, 
-          $21, $22, 'philosopher-stone', NOW()
+          $21::jsonb, $22, 'philosopher-stone', NOW()
         )
         RETURNING id, "agentId", "monicaConstant";
       `
@@ -110,22 +121,24 @@ export async function POST(req: Request) {
         data.uniquePower,
         data.color,
         data.symbol,
-        data.birthChart ? JSON.stringify(data.birthChart) : '{}',
+        natalChartJson,
         JSON.stringify(data.personality.traits),
+        safeBirthDate.toISOString(),
+        birthTime,
+        birthLocationJson,
       ]
 
-      const result = await pool.query(query, values)
-      const insertedAgent = result.rows[0]
-
-      logger.info('Agent successfully persisted to postgres', {
-        system: 'philosophers-stone',
-        operation: 'createAgent',
-        metadata: { agentId: insertedAgent.agentId },
-      })
+      const res = await pool.query(query, values)
+      const createdRecord = res.rows[0]
 
       return {
         success: true,
-        data: insertedAgent,
+        data: {
+          id: createdRecord.id,
+          agentId: createdRecord.agentId,
+          name: data.name,
+          monicaConstant: createdRecord.monicaConstant,
+        },
       }
     },
     {

@@ -1,12 +1,12 @@
 # ✦ Crafted Agents Architecture & Quality Benchmark Guide
 
-This document defines the architecture, prompt engineering standards, and quality benchmark protocols for all **Crafted Agents** in the Planetary Agents & ALCHM network.
+This document defines the architecture, prompt engineering standards, Philosopher's Stone Agentic Crafting pipeline, and quality benchmark protocols for all **Crafted Agents** in the Planetary Agents & ALCHM network.
 
 ---
 
 ## 1. Executive Summary & Core Philosophy
 
-Crafted Agents (such as **Gregory Castro**, historical figures, and planetary council hosts) are designed to bridge high-dimensional cosmic/astrological telemetry with **authentic, character-rich human dialogue**.
+Crafted Agents (such as **Gregory Castro**, historical figures, forged agents, and planetary council hosts) are designed to bridge high-dimensional cosmic/astrological telemetry with **authentic, character-rich human dialogue**.
 
 ### The 3 Core Pillars:
 
@@ -31,7 +31,23 @@ Crafted Agents (such as **Gregory Castro**, historical figures, and planetary co
 
 ---
 
-## 3. Communication Directive: Inference Over Recapitulation
+## 3. Philosopher's Stone Agentic Crafting Infrastructure
+
+The Philosopher's Stone (`components/philosophers-stone.tsx` and `components/stitch/the_philosopher_s_stone_agent_forge.tsx`) allows users to forge custom agents directly from astrological birth parameters.
+
+### Pipeline Workflow:
+
+1. **Birth Data Input**: User inputs Name, Title, Birth Date, Birth Time, and Location.
+2. **Swiss Ephemeris Calculation (`/api/philosophers-stone/calculate`)**:
+   - Calculates exact planetary positions, Placidus house cusps, elemental constitution (Spirit, Essence, Matter, Substance), and the Monica Constant ($A_\#$).
+3. **Agent Persistence (`/api/philosophers-stone/create`)**:
+   - Stores the newly created agent into the PostgreSQL `historical_agents` table along with full `birthDate`, `birthTime`, `birthLocation`, and `natalChart` JSON.
+4. **Temporal Delta Tracking (`lib/philosophers-stone/temporal-delta.ts`)**:
+   - Evaluates session-to-session planetary movement deltas and consciousness growth.
+
+---
+
+## 4. Communication Directive: Inference Over Recapitulation
 
 | Rule                        | Enforcement Strategy                                                                          |
 | :-------------------------- | :-------------------------------------------------------------------------------------------- |
@@ -48,7 +64,7 @@ Crafted Agents (such as **Gregory Castro**, historical figures, and planetary co
 
 ---
 
-## 4. Response Generation & API Architecture
+## 5. Response Generation & API Architecture
 
 ### Two-Layer Response Pipeline:
 
@@ -60,7 +76,7 @@ Crafted Agents (such as **Gregory Castro**, historical figures, and planetary co
 
 ---
 
-## 5. Verification & Testing Protocol
+## 6. Verification & Testing Protocol
 
 To verify that changes to agent personas maintain high quality and voice differentiation:
 
