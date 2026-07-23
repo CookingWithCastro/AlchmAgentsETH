@@ -125,6 +125,7 @@
     "@tauri-apps/plugin-shell": "^2.3.5",
     "@types/jszip": "^3.4.1",
     "@unlink-xyz/sdk": "0.3.0-canary.598",
+    "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^1.2.0",
     "@worldcoin/agentkit": "^0.1.0",
     "@worldcoin/idkit": "^2.0.0",
