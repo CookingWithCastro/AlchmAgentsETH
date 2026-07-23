@@ -10,6 +10,7 @@ import './globals.css'
 import './navigation.css'
 import './techno-occult.css'
 import { Providers } from './providers'
+import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import { RootChrome } from '@/components/RootChrome'
 
@@ -91,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <RootChrome>{children}</RootChrome>
         </Providers>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>
