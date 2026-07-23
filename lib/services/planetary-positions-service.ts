@@ -283,21 +283,21 @@ export class PlanetaryPositionsService {
 
   /**
    * Method 4: Static Fallback Positions (low accuracy, guaranteed availability)
-   * Updated to October 16, 2025 positions as a reasonable default
+   * Updated to July 2026 Barbault Cradle alignment positions
    */
   private getStaticFallbackPositions(date: Date): PlanetaryData {
-    // Current positions as of October 16, 2025
+    // Positions as of July 2026 Barbault Cradle Alignment
     const planetaryPositions: PlanetaryPosition[] = [
-      { planet: 'Sun', sign: 'Libra', degree: 23.07, retrograde: false },
-      { planet: 'Moon', sign: 'Leo', degree: 22.73, retrograde: false },
-      { planet: 'Mercury', sign: 'Scorpio', degree: 13.68, retrograde: false },
-      { planet: 'Venus', sign: 'Libra', degree: 2.85, retrograde: false },
-      { planet: 'Mars', sign: 'Scorpio', degree: 16.32, retrograde: false },
-      { planet: 'Jupiter', sign: 'Cancer', degree: 24.02, retrograde: false },
-      { planet: 'Saturn', sign: 'Pisces', degree: 26.67, retrograde: true },
-      { planet: 'Uranus', sign: 'Gemini', degree: 0.82, retrograde: true },
-      { planet: 'Neptune', sign: 'Aries', degree: 0.15, retrograde: true },
-      { planet: 'Pluto', sign: 'Aquarius', degree: 1.37, retrograde: false },
+      { planet: 'Sun', sign: 'Leo', degree: 0.8, retrograde: false },
+      { planet: 'Moon', sign: 'Scorpio', degree: 25.7, retrograde: false },
+      { planet: 'Mercury', sign: 'Cancer', degree: 16.3, retrograde: true },
+      { planet: 'Venus', sign: 'Virgo', degree: 15.3, retrograde: false },
+      { planet: 'Mars', sign: 'Gemini', degree: 17.4, retrograde: false },
+      { planet: 'Jupiter', sign: 'Leo', degree: 5.1, retrograde: false },
+      { planet: 'Saturn', sign: 'Aries', degree: 14.7, retrograde: false },
+      { planet: 'Uranus', sign: 'Gemini', degree: 4.7, retrograde: false },
+      { planet: 'Neptune', sign: 'Aries', degree: 4.3, retrograde: true },
+      { planet: 'Pluto', sign: 'Aquarius', degree: 4.4, retrograde: true },
     ]
 
     return {
@@ -306,7 +306,7 @@ export class PlanetaryPositionsService {
       source: 'static-fallback',
       accuracy: 'fallback',
       cached: false,
-      error: 'All calculation methods failed, using static fallback positions (Oct 16, 2025)',
+      error: 'All calculation methods failed, using static fallback positions (July 2026)',
     }
   }
 

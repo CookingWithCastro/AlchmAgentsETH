@@ -18,10 +18,21 @@ function findAgent(agentId: string): CraftedAgent | undefined {
   if (star) return star
   const byId = getHistoricalAgent(agentId)
   if (byId) return byId
-  const lowered = agentId.toLowerCase()
+  const lowered = agentId.toLowerCase().trim()
+
+  if (lowered === 'gregory' || lowered === 'greg_castro' || lowered === 'host_gregory') {
+    const greg = getHistoricalAgent('greg-castro') || getHistoricalAgent('greg-castro-1991')
+    if (greg) return greg
+  }
+
   return (
     STAR_AGENTS.find(a => a.id.toLowerCase() === lowered || a.name.toLowerCase() === lowered) ||
-    HISTORICAL_AGENTS.find(a => a.id.toLowerCase() === lowered || a.name.toLowerCase() === lowered)
+    HISTORICAL_AGENTS.find(
+      a =>
+        a.id.toLowerCase() === lowered ||
+        a.name.toLowerCase() === lowered ||
+        a.id.toLowerCase().replace(/-\d+$/, '') === lowered
+    )
   )
 }
 

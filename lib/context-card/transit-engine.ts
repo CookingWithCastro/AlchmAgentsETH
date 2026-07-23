@@ -91,15 +91,15 @@ export interface SkySource {
 export const DEMO_SKY: SkySource = {
   positions: [
     { planet: 'Sun', sign: 'Leo', degree: 0.8 },
-    { planet: 'Moon', sign: 'Scorpio', degree: 25.2 },
-    { planet: 'Mercury', sign: 'Cancer', degree: 16.3 },
-    { planet: 'Venus', sign: 'Virgo', degree: 15.2 },
+    { planet: 'Moon', sign: 'Scorpio', degree: 25.7 },
+    { planet: 'Mercury', sign: 'Cancer', degree: 16.3, retrograde: true },
+    { planet: 'Venus', sign: 'Virgo', degree: 15.3 },
     { planet: 'Mars', sign: 'Gemini', degree: 17.4 },
-    { planet: 'Jupiter', sign: 'Cancer', degree: 12.1 },
-    { planet: 'Saturn', sign: 'Aries', degree: 1.5, retrograde: true },
-    { planet: 'Uranus', sign: 'Gemini', degree: 0.9 },
-    { planet: 'Neptune', sign: 'Aries', degree: 3.2, retrograde: true },
-    { planet: 'Pluto', sign: 'Aquarius', degree: 3.1, retrograde: true },
+    { planet: 'Jupiter', sign: 'Leo', degree: 5.1 },
+    { planet: 'Saturn', sign: 'Aries', degree: 14.7 },
+    { planet: 'Uranus', sign: 'Gemini', degree: 4.7 },
+    { planet: 'Neptune', sign: 'Aries', degree: 4.3, retrograde: true },
+    { planet: 'Pluto', sign: 'Aquarius', degree: 4.4, retrograde: true },
   ],
   meta: {
     when: 'Live Transit Sky',

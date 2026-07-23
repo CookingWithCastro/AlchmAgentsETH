@@ -765,30 +765,52 @@ export function BarbaultBasketPromotionalThread({
   }, [currentMoonAgent, positions])
 
   const agentsConfig = useMemo(() => {
+    const getPos = (pName: string, fallbackSign: string, fallbackDeg: number) => {
+      const found = positions.find(p => p.planet.toLowerCase() === pName.toLowerCase())
+      if (found && found.sign) {
+        const deg = Math.floor(found.degree)
+        return {
+          sign: found.sign,
+          degreeLabel: `${deg}°`,
+          absoluteDegree: signToLongitude(found.sign, found.degree),
+        }
+      }
+      return {
+        sign: fallbackSign,
+        degreeLabel: `${fallbackDeg}°`,
+        absoluteDegree: signToLongitude(fallbackSign, fallbackDeg),
+      }
+    }
+
+    const jupPos = getPos('jupiter', 'Leo', 4)
+    const uraPos = getPos('uranus', 'Gemini', 4)
+    const nepPos = getPos('neptune', 'Aries', 4)
+    const pluPos = getPos('pluto', 'Aquarius', 4)
+
     return {
       jupiter: {
         ...BASKET_AGENTS_CONFIG.jupiter,
-        sign: 'Leo',
-        degreeLabel: '4°',
-        absoluteDegree: 124,
+        sign: jupPos.sign,
+        degreeLabel: jupPos.degreeLabel,
+        absoluteDegree: jupPos.absoluteDegree,
       },
       uranus: {
         ...BASKET_AGENTS_CONFIG.uranus,
-        sign: 'Gemini',
-        degreeLabel: '4°',
-        absoluteDegree: 64,
+        sign: uraPos.sign,
+        degreeLabel: uraPos.degreeLabel,
+        absoluteDegree: uraPos.absoluteDegree,
       },
       neptune: {
         ...BASKET_AGENTS_CONFIG.neptune,
-        sign: 'Aries',
-        degreeLabel: '4°',
-        absoluteDegree: 4,
+        sign: nepPos.sign,
+        degreeLabel: nepPos.degreeLabel,
+        absoluteDegree: nepPos.absoluteDegree,
       },
       pluto: {
         ...BASKET_AGENTS_CONFIG.pluto,
-        sign: 'Aquarius',
-        degreeLabel: '4°',
-        absoluteDegree: 304,
+        sign: pluPos.sign,
+        degreeLabel: pluPos.degreeLabel,
+        absoluteDegree: pluPos.absoluteDegree,
       },
       gregory: {
         ...BASKET_AGENTS_CONFIG.gregory,
@@ -799,7 +821,7 @@ export function BarbaultBasketPromotionalThread({
         title: 'The Conscious Host & Alchemical Poet',
       },
     }
-  }, [moonInfo])
+  }, [positions, moonInfo])
 
   useEffect(() => {
     if (chatContainerRef.current) {

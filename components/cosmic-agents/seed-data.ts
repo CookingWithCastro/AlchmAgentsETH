@@ -22,7 +22,7 @@ export const SEED_CHART: ChartOfMoment = {
     { planet: 'Mercury', sign: 'Taurus', degree: 15.7, retrograde: false, dignity: 'peregrine' },
     { planet: 'Venus', sign: 'Aries', degree: 6.2, retrograde: false, dignity: 'detriment' },
     { planet: 'Mars', sign: 'Scorpio', degree: 14.0, retrograde: false, dignity: 'domicile' },
-    { planet: 'Jupiter', sign: 'Cancer', degree: 3.5, retrograde: false, dignity: 'exaltation' },
+    { planet: 'Jupiter', sign: 'Leo', degree: 5.1, retrograde: false, dignity: 'peregrine' },
     { planet: 'Saturn', sign: 'Pisces', degree: 28.9, retrograde: false, dignity: 'peregrine' },
     { planet: 'Uranus', sign: 'Gemini', degree: 2.8, retrograde: false, dignity: 'peregrine' },
     { planet: 'Neptune', sign: 'Aries', degree: 4.1, retrograde: false, dignity: 'peregrine' },
