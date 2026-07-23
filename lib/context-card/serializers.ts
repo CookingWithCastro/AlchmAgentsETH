@@ -1,5 +1,5 @@
 import type { ContextCardData, ExportOptions, ExportFormat, ContextCardPlacement } from './types'
-import { ASPECT_SYMBOLS, ASPECT_ANGLES, BODY_GLYPHS } from './types'
+import { ASPECT_SYMBOLS, ASPECT_ANGLES, BODY_GLYPHS, normalizeSign } from './types'
 
 export function fmtDegree(d: number): string {
   const deg = Math.floor(d)
@@ -362,9 +362,147 @@ export function buildOutput(
   return buildMarkdown(data, opts)
 }
 
+// ---------------------------------------------------------------------------
+// SYNASTRY & MULTI-CHART COMPARATIVE ANALYSIS ENGINE
+// ---------------------------------------------------------------------------
+
+const SIGN_ORDER = [
+  'Aries',
+  'Taurus',
+  'Gemini',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagittarius',
+  'Capricorn',
+  'Aquarius',
+  'Pisces',
+]
+
+const signIndex = (sign: string) => {
+  const norm = normalizeSign(sign)
+  const i = SIGN_ORDER.indexOf(norm)
+  return i < 0 ? 0 : i
+}
+
+const absLong = (sign: string, deg: number) => signIndex(sign) * 30 + deg
+
+const TARGET_BODIES = [
+  'Sun',
+  'Moon',
+  'Mercury',
+  'Venus',
+  'Mars',
+  'Jupiter',
+  'Saturn',
+  'Uranus',
+  'Neptune',
+  'Pluto',
+  'Ascendant',
+  'Midheaven',
+]
+
+const INTER_ASPECTS = [
+  { type: 'Conjunction', symbol: '☌', angle: 0, orb: 8 },
+  { type: 'Opposition', symbol: '☍', angle: 180, orb: 8 },
+  { type: 'Trine', symbol: '△', angle: 120, orb: 8 },
+  { type: 'Square', symbol: '□', angle: 90, orb: 7 },
+  { type: 'Sextile', symbol: '⚹', angle: 60, orb: 6 },
+  { type: 'Quincunx', symbol: '⚻', angle: 150, orb: 4 },
+]
+
+function getInterAspectMeaning(type: string, bodyA: string, bodyB: string): string {
+  const pair = [bodyA, bodyB].sort().join('-')
+  if (type === 'Conjunction') {
+    if (pair === 'Sun-Sun') return 'Unified ego focus & shared creative identity'
+    if (pair === 'Moon-Moon') return 'Profound emotional resonance & instinctual comfort'
+    if (pair === 'Moon-Sun') return 'Soulmate synergy — vitality directly fuels emotional core'
+    if (pair === 'Mars-Venus') return 'High romantic & magnetic attraction'
+    if (pair === 'Mercury-Mercury') return 'Telepathic intellectual alignment & shared vocabulary'
+    if (pair === 'Ascendant-Sun') return 'Vibrant personal magnetism & instant recognition'
+    if (pair === 'Ascendant-Venus') return 'Mutual affection, grace & aesthetic harmony'
+    return 'Strong energetic fusion & focused mutual emphasis'
+  }
+  if (type === 'Trine' || type === 'Sextile') {
+    if (pair === 'Sun-Sun') return 'Harmonious self-expression & mutual encouragement'
+    if (pair === 'Moon-Moon') return 'Easy emotional understanding & domestic ease'
+    if (pair === 'Moon-Sun') return 'Natural rapport & supportive flow between feeling and action'
+    if (pair === 'Mars-Venus') return 'Smooth romantic harmony & effortless creative flow'
+    if (pair === 'Mercury-Sun' || pair === 'Mercury-Mercury')
+      return 'Fluid intellectual exchange & shared ideas'
+    if (pair === 'Jupiter-Sun' || pair === 'Jupiter-Moon')
+      return 'Abundant optimism, shared luck & spiritual growth'
+    return 'Supportive alignment & easy energetic flow'
+  }
+  if (type === 'Opposition' || type === 'Square') {
+    if (pair === 'Sun-Sun') return 'Dynamic polarity — balancing opposing perspectives'
+    if (pair === 'Moon-Moon') return 'Emotional friction requiring patient empathy'
+    if (pair === 'Moon-Sun') return 'Tension between head and heart — opportunity for integration'
+    if (pair === 'Mars-Saturn') return 'Patience test — impulse meets structural boundary'
+    if (pair === 'Mars-Mars') return 'Competitive sparks & high energetic drive'
+    return 'Growth-oriented tension & constructive challenge'
+  }
+  return 'Minor energetic nuance requiring conscious awareness'
+}
+
+export interface InterAspectResult {
+  bodyA: string
+  signA: string
+  degA: number
+  bodyB: string
+  signB: string
+  degB: number
+  type: string
+  symbol: string
+  orb: number
+  meaning: string
+}
+
+export function computeSynastryInterAspects(
+  chartA: ContextCardData,
+  chartB: ContextCardData
+): InterAspectResult[] {
+  const pointsA = (chartA.points || []).filter(p => TARGET_BODIES.includes(p.body))
+  const pointsB = (chartB.points || []).filter(p => TARGET_BODIES.includes(p.body))
+
+  const results: InterAspectResult[] = []
+
+  for (const pa of pointsA) {
+    const absA = absLong(pa.sign, pa.deg)
+    for (const pb of pointsB) {
+      const absB = absLong(pb.sign, pb.deg)
+      let diff = Math.abs(absA - absB)
+      if (diff > 180) diff = 360 - diff
+
+      for (const def of INTER_ASPECTS) {
+        const orb = Math.abs(diff - def.angle)
+        if (orb <= def.orb) {
+          results.push({
+            bodyA: pa.body,
+            signA: pa.sign,
+            degA: pa.deg,
+            bodyB: pb.body,
+            signB: pb.sign,
+            degB: pb.deg,
+            type: def.type,
+            symbol: def.symbol,
+            orb: Math.round(orb * 10) / 10,
+            meaning: getInterAspectMeaning(def.type, pa.body, pb.body),
+          })
+          break
+        }
+      }
+    }
+  }
+
+  return results.sort((a, b) => a.orb - b.orb)
+}
+
 /**
  * Builds a unified multi-chart context attachment combining multiple natal chart profiles
- * into a single comprehensive attachment report file.
+ * into a single comprehensive attachment report file with deep comparative synastry analysis.
  */
 export function buildMultiChartOutput(
   chartsData: ContextCardData[],
@@ -375,15 +513,32 @@ export function buildMultiChartOutput(
   if (chartsData.length === 1) return buildOutput(chartsData[0], format, opts)
 
   if (format === 'json') {
+    const synastryPairs: Array<{
+      chartA: string
+      chartB: string
+      contacts: InterAspectResult[]
+    }> = []
+
+    for (let i = 0; i < chartsData.length; i++) {
+      for (let j = i + 1; j < chartsData.length; j++) {
+        synastryPairs.push({
+          chartA: chartsData[i].birth.handle,
+          chartB: chartsData[j].birth.handle,
+          contacts: computeSynastryInterAspects(chartsData[i], chartsData[j]),
+        })
+      }
+    }
+
     const multiObj = {
       _meta: {
-        schema: 'alchm.multi-context-card/v1',
+        schema: 'alchm.multi-context-card/v2',
         generated: new Date().toISOString(),
         chartCount: chartsData.length,
         engine: 'VSOP87 / High-Precision Astronomical Ephemeris',
       },
-      how_to_use: `Attached below are ${chartsData.length} COMPLETE natal charts and alchm energetic profiles. Reason across all included charts and compare their placements, aspect vectors, and elemental dynamics.`,
+      how_to_use: `Attached below are ${chartsData.length} COMPLETE natal charts, alchm energetic profiles, and inter-chart synastry matrices. Reason across all included charts, comparing their planetary placements, cross-chart contacts, and elemental dynamics.`,
       charts: chartsData.map(c => JSON.parse(buildJSON(c, { ...opts, promptHeader: false }))),
+      synastry_inter_aspects: synastryPairs,
     }
     return JSON.stringify(multiObj, null, 2)
   }
@@ -391,14 +546,14 @@ export function buildMultiChartOutput(
   const L: string[] = []
   L.push('# MULTI-CHART ASTROLOGICAL CONTEXT ATTACHMENT')
   L.push(
-    `<!-- Generated by alchm.kitchen · ${chartsData.length} Unified Natal Charts — attach to any LLM. -->`
+    `<!-- Generated by alchm.kitchen · ${chartsData.length} Unified Natal Charts & Synastry Analysis — attach to any LLM. -->`
   )
   L.push('')
 
   if (opts.promptHeader) {
     L.push('## HOW TO USE THIS MULTI-CHART FILE')
     L.push(
-      `You are an expert astrological advisor. Attached below are ${chartsData.length} COMPLETE natal charts and alchemical profiles. Use all included charts to compare planetary placements, house cusps, elemental synergies, and cross-chart dynamics.`
+      `You are an expert astrological advisor. Attached below are ${chartsData.length} COMPLETE natal charts, alchemical profiles, and cross-chart synastry inter-aspect calculations. Use all included charts to compare planetary placements, house cusps, elemental synergies, and inter-chart dynamics.`
     )
     L.push('')
   }
@@ -411,6 +566,7 @@ export function buildMultiChartOutput(
   })
   L.push('')
 
+  // 1. Render Individual Charts
   chartsData.forEach((c, idx) => {
     L.push(`================================================================================`)
     L.push(`# CHART ${idx + 1}: ${c.birth.handle.toUpperCase()}`)
@@ -426,16 +582,113 @@ export function buildMultiChartOutput(
     L.push('')
   })
 
+  // 2. Render Multi-Chart Synastry & Inter-Aspect Analysis Section
   L.push(`================================================================================`)
-  L.push(`# MULTI-CHART SYNASTRY & ELEMENTAL OVERLAY`)
+  L.push(`# MULTI-CHART SYNASTRY & COMPARATIVE ANALYSIS`)
   L.push(`================================================================================`)
   L.push('')
+
+  L.push('## EXECUTIVE COMPARISON SUMMARY')
   chartsData.forEach((c, idx) => {
+    const et = c.synthesis.elementTally
     L.push(
-      `- **${c.birth.handle}**: Sun in ${c.birth.bigThree.sun}, Moon in ${c.birth.bigThree.moon}, Rising in ${c.birth.bigThree.rising} (Dominant: ${c.synthesis.dominantElement})`
+      `- **Chart ${idx + 1}: ${c.birth.handle}** | ☉ Sun in ${c.birth.bigThree.sun} | ☽ Moon in ${c.birth.bigThree.moon} | ⇡ ${c.birth.bigThree.rising} Rising | Dominant Element: ${c.synthesis.dominantElement} (Fire ${et.Fire ?? 0} · Earth ${et.Earth ?? 0} · Air ${et.Air ?? 0} · Water ${et.Water ?? 0})`
     )
   })
   L.push('')
+
+  // 3. Pairwise Cross-Chart Inter-Aspect Matrix
+  for (let i = 0; i < chartsData.length; i++) {
+    for (let j = i + 1; j < chartsData.length; j++) {
+      const cA = chartsData[i]
+      const cB = chartsData[j]
+      const contacts = computeSynastryInterAspects(cA, cB)
+
+      L.push(
+        `## SYNASTRY INTER-ASPECTS: ${cA.birth.handle.toUpperCase()} ✕ ${cB.birth.handle.toUpperCase()}`
+      )
+      L.push(
+        `Calculated 0–360° ecliptic longitudes across primary planets and key angles (${contacts.length} active contacts).`
+      )
+      L.push('')
+
+      if (contacts.length > 0) {
+        L.push(
+          `| ${cA.birth.handle} Planet | Aspect | ${cB.birth.handle} Planet | Orb | Synergy Interpretation |`
+        )
+        L.push(
+          `|${'-'.repeat(cA.birth.handle.length + 9)}|--------|${'-'.repeat(cB.birth.handle.length + 9)}|-----|------------------------|`
+        )
+        contacts.slice(0, 15).forEach(ct => {
+          L.push(
+            `| ${ct.bodyA} in ${ct.signA} | ${ct.symbol} ${ct.type} | ${ct.bodyB} in ${ct.signB} | ${ct.orb}° | ${ct.meaning} |`
+          )
+        })
+        L.push('')
+      } else {
+        L.push('No tight major inter-aspects detected within standard orb limits.')
+        L.push('')
+      }
+    }
+  }
+
+  // 4. Combined Group Elemental & Modality Composition
+  const groupElements = { Fire: 0, Earth: 0, Air: 0, Water: 0 }
+  const groupModalities = { Cardinal: 0, Fixed: 0, Mutable: 0 }
+  let totalPlanets = 0
+
+  chartsData.forEach(c => {
+    const et = c.synthesis.elementTally
+    const mt = c.synthesis.modalityTally
+    groupElements.Fire += et.Fire ?? 0
+    groupElements.Earth += et.Earth ?? 0
+    groupElements.Air += et.Air ?? 0
+    groupElements.Water += et.Water ?? 0
+    groupModalities.Cardinal += mt.Cardinal ?? 0
+    groupModalities.Fixed += mt.Fixed ?? 0
+    groupModalities.Mutable += mt.Mutable ?? 0
+    totalPlanets += 10
+  })
+
+  const getPct = (val: number) => Math.round((val / totalPlanets) * 100)
+  const sortedElem = Object.entries(groupElements).sort((a, b) => b[1] - a[1])
+
+  L.push('## COMBINED GROUP ELEMENTAL & MODALITY COMPOSITION')
+  L.push(
+    `- **Group Element Distribution** (${totalPlanets} total planets): ${sortedElem.map(([e, cnt]) => `${e} ${getPct(cnt)}%`).join(' · ')}`
+  )
+  L.push(
+    `- **Group Modality Distribution**: Cardinal ${getPct(groupModalities.Cardinal)}% · Fixed ${getPct(groupModalities.Fixed)}% · Mutable ${getPct(groupModalities.Mutable)}%`
+  )
+  L.push(
+    `- **Group Synergy Dynamic**: Dominant ${sortedElem[0][0]}–${sortedElem[1][0]} combination provides primary momentum across all participating charts.`
+  )
+  L.push('')
+
+  // 5. Alchemical Group Energy Summary
+  L.push('## GROUP ALCHEMICAL (ESMS) RESONANCE')
+  const avgSpirit = Math.round(
+    chartsData.reduce((acc, c) => acc + (c.alchm.esms.spirit || 0), 0) / chartsData.length
+  )
+  const avgEssence = Math.round(
+    chartsData.reduce((acc, c) => acc + (c.alchm.esms.essence || 0), 0) / chartsData.length
+  )
+  const avgMatter = Math.round(
+    chartsData.reduce((acc, c) => acc + (c.alchm.esms.matter || 0), 0) / chartsData.length
+  )
+  const avgSubstance = Math.round(
+    chartsData.reduce((acc, c) => acc + (c.alchm.esms.substance || 0), 0) / chartsData.length
+  )
+  const avgKalchm = (
+    chartsData.reduce((acc, c) => acc + (c.alchm.kalchm || 0), 0) / chartsData.length
+  ).toFixed(2)
+
+  L.push(
+    `- **Combined Group ESMS Balance**: Spirit ${avgSpirit} · Essence ${avgEssence} · Matter ${avgMatter} · Substance ${avgSubstance}`
+  )
+  L.push(`- **Group Kalchm Quotient**: ${avgKalchm}`)
+  L.push('')
+
   L.push('<!-- END MULTI-CHART CONTEXT ATTACHMENT -->')
 
   const finalMd = L.join('\n')

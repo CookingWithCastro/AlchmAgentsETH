@@ -559,7 +559,9 @@ describe('buildMultiChartOutput', () => {
     expect(output).toContain('## INCLUDED CHARTS (2)')
     expect(output).toContain('# CHART 1: SELF · COUNCIL NATIVE')
     expect(output).toContain('# CHART 2: PARTNER CHART')
-    expect(output).toContain('# MULTI-CHART SYNASTRY & ELEMENTAL OVERLAY')
+    expect(output).toContain('# MULTI-CHART SYNASTRY & COMPARATIVE ANALYSIS')
+    expect(output).toContain('## SYNASTRY INTER-ASPECTS: SELF · COUNCIL NATIVE ✕ PARTNER CHART')
+    expect(output).toContain('## COMBINED GROUP ELEMENTAL & MODALITY COMPOSITION')
   })
 
   it('builds combined JSON report for multiple chart profiles', () => {
