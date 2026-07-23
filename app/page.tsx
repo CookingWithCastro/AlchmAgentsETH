@@ -34,6 +34,7 @@ import './landing.css'
 import ResonantStarVaultsWidget from '@/components/staking/ResonantStarVaultsWidget'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
 import { LivePlanetaryCouncilThread } from '@/components/landing/live-planetary-council-thread'
+import { QuickChartAttachmentGenerator } from '@/components/landing/quick-chart-attachment-generator'
 import { BarbaultBasketPromotionalThread } from '@/components/landing/barbault-basket-promotional-thread'
 import {
   deriveStatsFromChart,
@@ -759,6 +760,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
+
+        <QuickChartAttachmentGenerator />
 
         {/* ======================= PLANETARY AGENTS & SKY COUNCIL ======================= */}
         <section id="planetary" className="space-y-6">
