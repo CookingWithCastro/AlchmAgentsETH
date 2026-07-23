@@ -377,6 +377,13 @@ export async function getAgentBalances(slug: string): Promise<AgentBalances | nu
     ) {
       return null // token_balances.user_id still UUID (pre-4a migration) — show zeros
     }
+    if (
+      err?.name === 'PrismaClientInitializationError' ||
+      String(err?.message || '').includes('DATABASE_URL') ||
+      String(err?.message || '').includes('Environment variable not found')
+    ) {
+      return null // DB not configured or unreachable — degrade gracefully without log spamming
+    }
     console.warn('[activity-surfaces] getAgentBalances failed:', err)
     return null
   }
