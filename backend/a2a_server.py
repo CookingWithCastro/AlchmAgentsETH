@@ -79,6 +79,25 @@ def _capabilities() -> AgentCapabilities:
 
 def _build_card(agent_id: str, name: str, description: str) -> AgentCard:
     base = f"{_public_base()}/a2a/{agent_id}/"
+    skills = [
+        AgentSkill(
+            id="chat",
+            name=f"Chat with {name}",
+            description=f"Converse with {name} in their own voice and expertise.",
+            tags=["chat", "persona", "alchm"],
+            examples=["Tell me about your view of the cosmos."],
+        )
+    ]
+    if agent_id == "greg-castro-1991":
+        skills = [
+            AgentSkill(
+                id="chat",
+                name="Converse with Gregory Castro",
+                description="Elevated metaphysical dialogue, poetic resonance, and consciousness architecture grounded in 10 years of poetic work.",
+                tags=["consciousness", "metaphysics", "poetry", "alchm"],
+                examples=["How do you perceive time, memory, and the folding of reality?"],
+            )
+        ]
     return AgentCard(
         name=name,
         description=description,
@@ -93,16 +112,9 @@ def _build_card(agent_id: str, name: str, description: str) -> AgentCard:
         capabilities=_capabilities(),
         default_input_modes=["text/plain"],
         default_output_modes=["text/plain"],
-        skills=[
-            AgentSkill(
-                id="chat",
-                name=f"Chat with {name}",
-                description=f"Converse with {name} in their own voice and expertise.",
-                tags=["chat", "persona", "alchm"],
-                examples=["Tell me about your view of the cosmos."],
-            )
-        ],
+        skills=skills,
     )
+
 
 
 class _ChatExecutor(AgentExecutor):

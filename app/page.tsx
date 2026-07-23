@@ -34,6 +34,7 @@ import './landing.css'
 import ResonantStarVaultsWidget from '@/components/staking/ResonantStarVaultsWidget'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
 import { LivePlanetaryCouncilThread } from '@/components/landing/live-planetary-council-thread'
+import { BarbaultBasketPromotionalThread } from '@/components/landing/barbault-basket-promotional-thread'
 import {
   deriveStatsFromChart,
   enhanceWithAlchemy,
@@ -759,8 +760,19 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ======================= PLANETARY AGENTS ======================= */}
+        {/* ======================= PLANETARY AGENTS & SKY COUNCIL ======================= */}
         <section id="planetary" className="space-y-6">
+          {/* ==================== BARBAULT'S BASKET FEATURED (ACTIVE MEGA-TRANSIT) ==================== */}
+          <section id="barbault-basket" className="space-y-6">
+            <BarbaultBasketPromotionalThread
+              positions={planetaryData.planetaryPositions}
+              alchmQuantities={planetaryData.alchmQuantities}
+              monicaConstant={displayMonica}
+              currentMoonAgent={currentMoonAgent}
+              onOpenCouncil={() => router.push('/planetary-council')}
+            />
+          </section>
+
           <SectionHead
             eyebrow="Attuned to this moment"
             title="Planetary Agents"

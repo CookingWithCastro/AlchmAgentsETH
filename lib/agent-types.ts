@@ -404,6 +404,7 @@ export interface CraftedAgent {
   // Additional properties used in unified agent system
   synthesis?: string
   historicalEra?: string
+  systemPrompt?: ((query: string, mode?: string) => string) | string
 }
 
 // Gallery and Party System Types
