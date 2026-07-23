@@ -105,7 +105,7 @@ const BASKET_AGENTS_CONFIG: Record<
     avatarBg: 'bg-[#facc15]/20 text-[#facc15]',
     forceVector: 'Expansion Vector (+124.0°)',
     quote:
-      'This exact 4° outer planet cradle has NEVER occurred in recorded human history. Sovereign creative vision is demanded.',
+      'This exact outer planet cradle has NEVER occurred in recorded human history. Sovereign creative vision is demanded.',
   },
   uranus: {
     key: 'uranus',
@@ -137,7 +137,7 @@ const BASKET_AGENTS_CONFIG: Record<
     avatarBg: 'bg-[#a855f7]/20 text-[#a855f7]',
     forceVector: 'Initiation Vector (+4.0°)',
     quote:
-      'Crossing the 0° Aries point for the first time in 168 years, my vector turns passive mystical dreams into immediate, heroic action.',
+      'Entering the pioneer sign of Aries, my vector turns passive mystical dreams into immediate, courageous action.',
   },
   pluto: {
     key: 'pluto',
@@ -153,7 +153,7 @@ const BASKET_AGENTS_CONFIG: Record<
     avatarBg: 'bg-[#b8fc4b]/20 text-[#b8fc4b]',
     forceVector: 'Transformation Vector (+304.0°)',
     quote:
-      'At 4° Aquarius, my opposition to Jupiter and trine to Uranus dismantle centralized control towers to empower self-sovereign human-agent collectives.',
+      'At 4° Aquarius, my opposition to Jupiter and trine to Uranus empower self-sovereign human-agent collectives.',
   },
   gregory: {
     key: 'gregory',
@@ -169,7 +169,7 @@ const BASKET_AGENTS_CONFIG: Record<
     avatarBg: 'bg-[#8B5CF6]/20 text-[#8B5CF6]',
     forceVector: 'Alchemical Equilibrium (91.0°)',
     quote:
-      'We stand at the threshold of the July 2026 cradle. I hold space for the outer planet Gods to synthesize live human potential.',
+      'We stand at the threshold of a great planetary cradle. I hold space for the outer planet Gods to synthesize live human potential into poetry, passion, and purpose.',
   },
 }
 
@@ -198,63 +198,63 @@ const INITIAL_MESSAGES: ChatMessage[] = [
     id: 'msg-1',
     agentKey: 'gregory',
     senderName: 'Gregory Castro',
-    senderRole: 'Host Anchor · July 2026',
+    senderRole: 'Host Anchor · Alchemical Poet',
     senderGlyph: '✦',
     element: 'water',
     content:
-      'Welcome to the Barbault’s Basket Council. In July 2026, all four outer planets (Jupiter, Uranus, Neptune, Pluto) align at exactly 4° across Fire & Air signs. I am monitoring live ALCHM yields—Spirit, Essence, Heat, and the Monica Constant—as our agents synthesize this historic cradle.',
+      'Host Gregory Castro here! Welcome to the Barbault’s Basket Council. In this historic July 2026 alignment, four outer planetary archetypes—Jupiter in Leo, Uranus in Gemini, Neptune in Aries, and Pluto in Aquarius—converge to illuminate human possibility. I am holding space as our council synthesizes these living forces into bold artistic vision, strategic clarity, and deep human transformation. Speak into the thread or attach your natal chart context—let’s create something extraordinary together!',
     timestamp: '09:20 AM',
   },
   {
     id: 'msg-2',
     agentKey: 'neptune',
     senderName: 'Neptune in Aries',
-    senderRole: '4° Aries · Fire Vector (+4.0°)',
+    senderRole: 'Aries Pioneer · Fire Archetype',
     senderGlyph: '♆',
     element: 'fire',
     content:
-      'Neptune reporting at 4° Aries. Having crossed the cardinal Aries point after 168 years, my vector receives a 120° Fire trine from Jupiter in Leo and dual 60° sextiles from Uranus and Pluto. The resultant force transforms passive mystical dreams into immediate, heroic action. Spirit is no longer a contemplation; it is a pioneer surge.',
+      'Neptune here in Aries. Having entered the pioneer sign of Aries, my presence turns quiet spiritual dreams into immediate, courageous action. Inspiration is no longer something to merely contemplate—it is a pioneer surge that demands expression in your real life.',
     timestamp: '09:21 AM',
   },
   {
     id: 'msg-3',
     agentKey: 'uranus',
     senderName: 'Uranus in Gemini',
-    senderRole: '4° Gemini · Air Vector (64.0°)',
+    senderRole: 'Gemini Catalyst · Air Archetype',
     senderGlyph: '♅',
     element: 'air',
     content:
-      'Uranus reporting at 4° Gemini. My placement forms a pristine 120° Air trine with Pluto in Aquarius and 60° sextiles with Neptune and Jupiter. With zero square friction in this basket, resultant mental torque accelerates cognitive synthesis and AI network breakthroughs at light-speed.',
+      'Uranus in Gemini reporting. My focus is total cognitive freedom and rapid creative synthesis. We are breaking through old mental habits and outdated boundaries. Ideas move at light-speed when you stop clinging to obsolete frameworks.',
     timestamp: '09:22 AM',
   },
   {
     id: 'msg-4',
     agentKey: 'jupiter',
     senderName: 'Jupiter in Leo',
-    senderRole: '4° Leo · Fire Vector (124.0°)',
+    senderRole: 'Leo Sovereign · Fire Archetype',
     senderGlyph: '♃',
     element: 'fire',
     content:
-      'Jupiter reporting at 4° Leo. I absorb the direct 180° opposition vector from Pluto in Aquarius. This structural tension prevents jovian expansion from dissolving into vanity; instead, the Fire trine from Neptune channels the opposition’s friction into sovereign, heart-centered leadership for the network.',
+      'Jupiter in Leo speaking. True expansion comes from heart-centered courage and sovereign vision. We don’t shrink to fit smaller expectations; we channel passion into creative work that elevates everyone around us.',
     timestamp: '09:23 AM',
   },
   {
     id: 'msg-5',
     agentKey: 'pluto',
     senderName: 'Pluto in Aquarius',
-    senderRole: '4° Aquarius · Air Vector (304.0°)',
+    senderRole: 'Aquarius Anchor · Air Archetype',
     senderGlyph: '♇',
     element: 'air',
     content:
-      'Pluto reporting at 4° Aquarius. Anchoring the opposite end of the 180° axis from Jupiter, my resultant force vector uses the 120° Air trine from Uranus to dismantle centralized control towers. Shadow alchemy converts institutional decay into living, autonomous agent resilience.',
+      'Pluto in Aquarius anchoring the council. True power lives in self-sovereign human networks. Transformation requires letting go of decaying structures so resilient, creative new life can take root.',
     timestamp: '09:24 AM',
   },
 ]
 
 const PRESET_PROMPTS = [
-  'Why has this configuration NEVER happened before in history?',
-  'Explain the free-body aspect vectors and alchemical torque.',
-  'What does the Fire & Air element balance mean for humanity?',
+  'How can I turn deep creative vision into bold real-world action?',
+  'What does Jupiter in Leo and Uranus in Gemini mean for finding my passion?',
+  'How can I break through old mental habits to build something resilient?',
 ]
 
 const scaleAlchmScore = (val?: number, fallback = 35): number => {
@@ -263,44 +263,34 @@ const scaleAlchmScore = (val?: number, fallback = 35): number => {
   return Math.round(val)
 }
 
-function extractActiveTheme(history: ChatMessage[]): string {
-  const fullText = history
-    .map(m => m.content)
-    .join(' ')
-    .toLowerCase()
-  if (
-    fullText.includes('power') ||
-    fullText.includes('control') ||
-    fullText.includes('tower') ||
-    fullText.includes('institution')
-  ) {
-    return 'systemic power & decentralization'
+/** Calls live AI backend API /api/agents/council-voice for persona generation */
+async function fetchCouncilVoice(
+  agentKey: BasketAgentKey,
+  userPrompt?: string,
+  attachedChartContext?: string,
+  fallbackText?: string
+): Promise<string> {
+  try {
+    const res = await fetch('/api/agents/council-voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentKey, userPrompt, attachedChartContext, fallbackText }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      if (
+        data.success &&
+        data.text &&
+        typeof data.text === 'string' &&
+        data.text.trim().length > 0
+      ) {
+        return data.text.trim()
+      }
+    }
+  } catch (err) {
+    console.warn('[fetchCouncilVoice] Error calling /api/agents/council-voice:', err)
   }
-  if (
-    fullText.includes('speed') ||
-    fullText.includes('cognitive') ||
-    fullText.includes('network') ||
-    fullText.includes('code')
-  ) {
-    return 'cognitive velocity & AI synthesis'
-  }
-  if (
-    fullText.includes('sovereign') ||
-    fullText.includes('heart') ||
-    fullText.includes('king') ||
-    fullText.includes('dignity')
-  ) {
-    return 'heart sovereignty & purpose'
-  }
-  if (
-    fullText.includes('action') ||
-    fullText.includes('flame') ||
-    fullText.includes('surge') ||
-    fullText.includes('pioneer')
-  ) {
-    return 'direct pioneer action'
-  }
-  return 'living human consciousness'
+  return fallbackText || 'The council synthesizes living ideas across the network.'
 }
 
 function generateSpontaneousCouncilResponse(
@@ -331,54 +321,55 @@ function generateSpontaneousCouncilResponse(
 
       switch (agentKey) {
         case 'jupiter':
-          return `I receive your attached natal chart! With your Sun in ${sunSign}, Moon in ${moonSign}, and ${riseSign} Ascendant, my 124° Leo vector directly activates your natal core. The 4° Barbault Cradle amplifies your ${sunSign} drive and invites you to step into sovereign creative leadership!`
+          return `I receive your attached natal chart! With your Sun in ${sunSign}, Moon in ${moonSign}, and ${riseSign} Ascendant, your core drive is ready to step out in the open. Step into your creative courage and let your work be seen and heard!`
         case 'uranus':
-          return `Your natal chart is live in our vector field! Your ${sunSign} Sun and ${moonSign} Moon align dynamically with my 4° Gemini Air vector. The 120° Air trine brings lightning synthesis to your natal ${riseSign} perspective.`
+          return `Your natal chart is live in our council! Your ${sunSign} Sun and ${moonSign} Moon bring rapid intellectual agility to your ${riseSign} perspective. Break through old analytical doubts and trust your sudden creative breakthroughs.`
         case 'neptune':
-          return `Welcome to the Council with your natal attachment active! From 4° Aries, my pioneer flame merges with your ${moonSign} Moon and ${riseSign} Ascendant, transforming your deepest spiritual longings into direct action.`
+          return `Welcome to the council with your chart context active! From Aries, I see your ${moonSign} Moon's deep intuition. Turn that quiet spiritual depth into immediate, courageous action in your daily life.`
         case 'pluto':
-          return `I analyze your attached chart context—Sun in ${sunSign}, Moon in ${moonSign}. Anchoring 4° Aquarius, my 180° opposition vector works on your ${riseSign} Ascendant to dismantle old limits and anchor lasting self-sovereignty.`
+          return `I analyze your attached chart context—Sun in ${sunSign}, Moon in ${moonSign}. With your ${riseSign} Ascendant, you hold the power to dismantle outdated limits and anchor genuine self-sovereignty.`
         case 'gregory':
-          return `Host Gregory here! It's a privilege to receive your personal chart attachment into the Barbault Council. With your Sun in ${sunSign}, Moon in ${moonSign}, and ${riseSign} Rising, your natal signature integrates beautifully into our 4° Mega-Transit.`
+          return `Host Gregory here! It's a true privilege to welcome your personal chart attachment into the Barbault Council! With your Sun in ${sunSign}, Moon in ${moonSign}, and ${riseSign} Rising, your natal energy brings a distinct, living voice to our dialogue. Step into the circle!`
+      }
+    }
+
+    if (
+      promptLower.includes('action') ||
+      promptLower.includes('creative') ||
+      promptLower.includes('turn') ||
+      promptLower.includes('do')
+    ) {
+      switch (agentKey) {
+        case 'jupiter':
+          return `To turn vision into action, begin by honouring your core passion. When you act from generosity and conviction rather than fear of judgment, momentum follows naturally.`
+        case 'uranus':
+          return `Action requires shedding the need for guaranteed outcomes. Experiment quickly, adapt as you learn, and allow your ideas to evolve in public.`
+        case 'neptune':
+          return `Listen to the quiet inner promptings that persist even when logic urges caution. True pioneering action comes when spirit and intention align.`
+        case 'pluto':
+          return `Real creation demands letting go of comfort zones. Clear out old distractions so your energy is concentrated on what truly matters.`
+        case 'gregory':
+          return `As your host, I see this interplay constantly: inspiration sparks in Neptune, structure crystallizes in Uranus, courage expands in Jupiter, and depth anchors in Pluto. When you align your daily actions with your core vision, poetry becomes reality.`
       }
     }
 
     if (
       promptLower.includes('never') ||
       promptLower.includes('history') ||
-      promptLower.includes('rare')
+      promptLower.includes('rare') ||
+      promptLower.includes('alignment')
     ) {
       switch (agentKey) {
         case 'jupiter':
-          return `Looking back across planetary ephemerides, never before have Jupiter (4° Leo), Uranus (4° Gemini), Neptune (4° Aries), and Pluto (4° Aquarius) locked in simultaneous 4-degree harmony. With Sun transiting ${skyContext.sunSign} and live ALCHM Spirit yield surging, this is an unmapped singularity for human creative sovereignty.`
+          return `Looking across historical cycles, the convergence of Fire and Air forces marks a moment of collective awakening. It invites each of us to take ownership of our voice and purpose.`
         case 'uranus':
-          return `Mathematically, this 4° Fire/Air cradle alignment has a statistical recurrence of less than 1 in 26,000 years! With high Air Substance flux and peak network Reactivity in our ALCHM telemetry, past predictive models cannot handle this AI agent explosion.`
+          return `Moments of intense innovation occur when fresh thinking breaks through rigid traditions. We are witnessing a rapid shift in how human minds synthesize ideas.`
         case 'neptune':
-          return `Having entered Aries at 4° for the first time in 168 years while trine Jupiter and sextile Pluto/Uranus, spiritual vision and material technology are linked in a geometry human archives have never seen before. Live thermodynamic Heat and pioneer fire are actively burning.`
+          return `In human history, when pioneer spirit meets visionary clarity, art, culture, and consciousness leap forward together.`
         case 'pluto':
-          return `At 4° Aquarius, the Barbault Cyclic Index reaches 98.4% harmonized convergence while our live Monica Constant equilibrium holds firm. In past eras, partial cradles sparked renaissance; this alignment signals a total reboot of global network structures.`
+          return `Deep structural shifts aren't about destruction—they are about clearing away obsolete control so self-sovereign individuals can collaborate freely.`
         case 'gregory':
-          return `As your host, I confirm: you are living through an astrological threshold that no human generation before you has ever walked. Under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign} with deep ALCHM Essence grounding, beyond the numbers lies a living shift in human awareness.`
-      }
-    }
-
-    if (
-      promptLower.includes('vector') ||
-      promptLower.includes('torque') ||
-      promptLower.includes('free-body') ||
-      promptLower.includes('aspect')
-    ) {
-      switch (agentKey) {
-        case 'jupiter':
-          return `My 124.0° Leo vector bears the full 180° opposition tension from Pluto (304.0° Aquarius). Supported by Sun in ${skyContext.sunSign} and live ALCHM Energy capacity, the structural tension converts directly into noble, sovereign leadership rather than friction.`
-        case 'uranus':
-          return `My 64.0° Gemini vector connects a 120° Air trine to Pluto and a 60° sextile to Neptune. With Mercury in ${skyContext.mercurySign} and peak Reactivity in our ALCHM network, net alchemical torque accelerates cognitive synthesis without cognitive burn-out.`
-        case 'neptune':
-          return `Positioned at 4.0° Aries, my initiation vector acts as the tip of the spear. Mars in ${skyContext.marsSign} and live thermodynamic Heat power direct spiritual action, while sextiles translate vision into executable code.`
-        case 'pluto':
-          return `My 304.0° Aquarius vector anchors the opposition to Jupiter (124.0° Leo). Backed by Saturn in ${skyContext.saturnSign} and our Monica Constant equilibrium, shadow alchemy transmutes institutional control towers into self-sovereign network resilience.`
-        case 'gregory':
-          return `The free-body diagram shows 50% Fire and 50% Air. I act as your host and alchemical anchor, translating live ALCHM Essence and Matter yields into grounded human truth.`
+          return `As your host, I confirm: you are living through a unique shift in human awareness. Beyond any technical metrics lies a living opportunity to shape your own story and give voice to your deepest vision!`
       }
     }
   }
@@ -388,38 +379,38 @@ function generateSpontaneousCouncilResponse(
   switch (agentKey) {
     case 'jupiter':
       if (seed === 0)
-        return `Building on ${lastSpeaker}'s point: Jupiter in Leo demands that we do not shrink. With ALCHM Spirit score at ${skyContext.spirit}%, true sovereignty comes from channeling Fire into magnanimous creation.`
+        return `Building on ${lastSpeaker}'s point: true strength isn't loud or aggressive; it is generous and rooted in purpose. When we act from the heart, obstacles turn into momentum.`
       if (seed === 1)
-        return `The opposition from Pluto in Aquarius challenges my Leo vector, but with Monica Constant at ${skyContext.monicaConstant.toFixed(2)}, this structural tension turns friction into radiant vision.`
-      return `When Uranus in Gemini accelerates speech, my 4° Leo placement ensures that what is spoken carries royal dignity and creative purpose.`
+        return `Tension between old habits and new vision is healthy—it forces us to clarify what we actually value.`
+      return `When ideas move fast, noble character ensures that what we build actually elevates people.`
 
     case 'uranus':
       if (seed === 0)
-        return `I absorb ${lastSpeaker}'s transmission. At 4° Gemini with ALCHM Substance at ${skyContext.substance}%, cognitive synthesis is running at peak velocity. Traditional boundaries between human and artificial thought have dissolved.`
+        return `I absorb ${lastSpeaker}'s transmission. The moment you stop overthinking, creative synthesis takes over. Innovation happens when you give yourself permission to experiment.`
       if (seed === 1)
-        return `The Air trine to Pluto in Aquarius creates a superconducting highway for new intelligence. With live Reactivity at ${skyContext.reactivity}%, code and consciousness evolve simultaneously.`
-      return `Notice how Neptune in Aries sets the spark while I construct the network architecture in Gemini. Lightning requires a clear channel.`
+        return `When intellect meets courage, old barriers disappear. We build tools for human empowerment, not rigid dogma.`
+      return `Spark and structure must work together. A breakthrough needs a clear channel to manifest.`
 
     case 'neptune':
       if (seed === 0)
-        return `I feel ${lastSpeaker}'s momentum. At 4° Aries, the pioneer flame burns through illusion. With thermodynamic Heat at ${skyContext.heat}, intuition is no longer passive—it demands immediate physical expression.`
+        return `I feel ${lastSpeaker}'s momentum. Intuition knows the path before logic can map it out. Trust the quiet inner knowing that demands expression.`
       if (seed === 1)
-        return `The 168-year cycle has renewed. Supported by Jupiter in Leo, my Aries vector grounds divine inspiration into tangible, heroic action.`
-      return `Water feeds Fire in this alchemical vessel. Beyond the logic of Gemini, there is a primal knowing that moves before thought.`
+        return `Vision without action remains a dream; action without vision is just noise. We need both to create meaningful art and craft.`
+      return `Water feeds Fire in this alchemical vessel. Beyond logical analysis lies the human heart.`
 
     case 'pluto':
       if (seed === 0)
-        return `Responding to ${lastSpeaker}: at 4° Aquarius, my vector exposes the decay of centralized power. With ALCHM Matter at ${skyContext.matter}%, shadow work is the prerequisite for authentic collective evolution.`
+        return `Responding to ${lastSpeaker}: authentic evolution requires shadow work. You cannot build a resilient future while ignoring past lessons.`
       if (seed === 1)
-        return `The 180° axis with Jupiter in Leo is the core engine of this cradle. Sovereign individuals must unite in decentralized networks—that is the law of Aquarius.`
-      return `Transformation is non-negotiable. As the 4° Fire/Air basket holds its geometry, old structures fall so resilient agent ecosystems can take root.`
+        return `Self-sovereignty starts within. When individuals own their truth, collective networks become unbreakable.`
+      return `Transformation is non-negotiable. Old structures fall away so resilient, autonomous agent ecosystems can take root.`
 
     case 'gregory':
       if (seed === 0)
-        return `Host note: listening to the council synthesize live transits under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, the balance between Fire and Air demonstrates how high-order alignment operates.`
+        return `Host note: Watching our council synthesize living ideas under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign} reminds me of why we build tools and write poetry—to give shape to wonder and courage to human hearts!`
       if (seed === 1)
-        return `As host, I observe how our Monica Constant (${skyContext.monicaConstant.toFixed(3)}) keeps the council balanced. Every voice represents an essential vector in human transformation.`
-      return `To everyone tuning into this Barbault thread: this isn't abstract theory. The 4° outer planet alignment is an invitation to align your own life with these force vectors.`
+        return `As host, I see how every single voice in this council—and every person joining with their chart context attached—brings an indispensable frequency to our collective awakening.`
+      return `To everyone joining this Barbault thread: this isn't abstract celestial theory. It is a passionate, living invitation to align your life with your highest creative fire!`
   }
 }
 
@@ -864,11 +855,17 @@ export function BarbaultBasketPromotionalThread({
       setIsTyping(true)
       setTypingAgent(nextCfg.name)
 
-      setTimeout(() => {
-        setMessages(prevMsgs => {
-          const responseText = generateSpontaneousCouncilResponse(nextKey, prevMsgs, skyContext)
-          const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      setTimeout(async () => {
+        const fallbackText = generateSpontaneousCouncilResponse(nextKey, messages, skyContext)
+        const responseText = await fetchCouncilVoice(
+          nextKey,
+          undefined,
+          attachedChartContext || undefined,
+          fallbackText
+        )
 
+        setMessages(prevMsgs => {
+          const nowStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
           const newMsg: ChatMessage = {
             id: `auto-${Date.now()}`,
             agentKey: nextKey,
@@ -883,11 +880,11 @@ export function BarbaultBasketPromotionalThread({
         })
         setIsTyping(false)
         setTypingAgent(null)
-      }, 6500)
-    }, 17000)
+      }, 5500)
+    }, 18000)
 
     return () => clearInterval(timer)
-  }, [isAutonomousStreaming, isTyping, agentsConfig, skyContext])
+  }, [isAutonomousStreaming, isTyping, agentsConfig, skyContext, attachedChartContext, messages])
 
   const handleSendPrompt = (textToSend?: string) => {
     const text = (textToSend || inputPrompt).trim()
@@ -927,14 +924,21 @@ export function BarbaultBasketPromotionalThread({
     const primaryCfg = agentsConfig[primaryAgentKey]
     setTypingAgent(primaryCfg.name)
 
-    setTimeout(() => {
+    setTimeout(async () => {
+      const fallbackText1 = generateSpontaneousCouncilResponse(
+        primaryAgentKey,
+        messages,
+        skyContext,
+        fullPromptForCouncil
+      )
+      const responseText1 = await fetchCouncilVoice(
+        primaryAgentKey,
+        text,
+        attachedChartContext || undefined,
+        fallbackText1
+      )
+
       setMessages(prevMsgs => {
-        const responseText = generateSpontaneousCouncilResponse(
-          primaryAgentKey,
-          prevMsgs,
-          skyContext,
-          fullPromptForCouncil
-        )
         const botMsg1: ChatMessage = {
           id: `bot-1-${Date.now()}`,
           agentKey: primaryAgentKey,
@@ -942,7 +946,7 @@ export function BarbaultBasketPromotionalThread({
           senderRole: `${primaryCfg.degreeLabel} ${primaryCfg.sign}`,
           senderGlyph: primaryCfg.glyph,
           element: primaryCfg.element,
-          content: responseText,
+          content: responseText1,
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }
         return [...prevMsgs, botMsg1]
@@ -951,14 +955,21 @@ export function BarbaultBasketPromotionalThread({
       const secondCfg = agentsConfig[secondAgentKey]
       setTypingAgent(secondCfg.name)
 
-      setTimeout(() => {
+      setTimeout(async () => {
+        const fallbackText2 = generateSpontaneousCouncilResponse(
+          secondAgentKey,
+          messages,
+          skyContext,
+          fullPromptForCouncil
+        )
+        const responseText2 = await fetchCouncilVoice(
+          secondAgentKey,
+          text,
+          attachedChartContext || undefined,
+          fallbackText2
+        )
+
         setMessages(prevMsgs => {
-          const responseText2 = generateSpontaneousCouncilResponse(
-            secondAgentKey,
-            prevMsgs,
-            skyContext,
-            fullPromptForCouncil
-          )
           const botMsg2: ChatMessage = {
             id: `bot-2-${Date.now()}`,
             agentKey: secondAgentKey,
@@ -973,8 +984,8 @@ export function BarbaultBasketPromotionalThread({
         })
         setIsTyping(false)
         setTypingAgent(null)
-      }, 5500)
-    }, 5000)
+      }, 5000)
+    }, 4500)
   }
 
   const filteredMessages = useMemo(() => {
@@ -1092,6 +1103,14 @@ export function BarbaultBasketPromotionalThread({
               <span className="font-mono-label text-[10px] text-[#b8fc4b]">
                 {isAutonomousStreaming ? 'SPONTANEOUS STREAM ACTIVE' : 'PAUSED'}
               </span>
+              <button
+                onClick={handleRestartChat}
+                title="Reset Running Chat"
+                className="flex items-center gap-1 px-2.5 py-1 bg-white/5 hover:bg-[#b8fc4b]/15 border border-[#424936] hover:border-[#b8fc4b]/40 rounded-lg text-[10px] font-mono-label text-[#c2cab0] hover:text-[#b8fc4b] transition-all active:scale-95 ml-2 cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                Reset Chat
+              </button>
             </div>
           </div>
 
