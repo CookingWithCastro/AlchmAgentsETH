@@ -293,11 +293,11 @@ export class PlanetaryPositionsService {
       { planet: 'Mercury', sign: 'Cancer', degree: 16.3, retrograde: true },
       { planet: 'Venus', sign: 'Virgo', degree: 15.3, retrograde: false },
       { planet: 'Mars', sign: 'Gemini', degree: 17.4, retrograde: false },
-      { planet: 'Jupiter', sign: 'Leo', degree: 5.1, retrograde: false },
+      { planet: 'Jupiter', sign: 'Leo', degree: 4.0, retrograde: false },
       { planet: 'Saturn', sign: 'Aries', degree: 14.7, retrograde: false },
-      { planet: 'Uranus', sign: 'Gemini', degree: 4.7, retrograde: false },
-      { planet: 'Neptune', sign: 'Aries', degree: 4.3, retrograde: true },
-      { planet: 'Pluto', sign: 'Aquarius', degree: 4.4, retrograde: true },
+      { planet: 'Uranus', sign: 'Gemini', degree: 4.0, retrograde: false },
+      { planet: 'Neptune', sign: 'Aries', degree: 4.0, retrograde: true },
+      { planet: 'Pluto', sign: 'Aquarius', degree: 4.0, retrograde: true },
     ]
 
     return {

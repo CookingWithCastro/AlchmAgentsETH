@@ -228,7 +228,7 @@ export function ChartTransformVisualization({
       { planet: 'Mercury', sign: 'Virgo', degree: 6, house: 1 },
       { planet: 'Venus', sign: 'Leo', degree: 13, house: 12 },
       { planet: 'Mars', sign: 'Pisces', degree: 20, house: 8 },
-      { planet: 'Jupiter', sign: 'Leo', degree: 5, house: 5 },
+      { planet: 'Jupiter', sign: 'Leo', degree: 4, house: 5 },
       { planet: 'Saturn', sign: 'Aries', degree: 3, house: 3 },
     ]
 
