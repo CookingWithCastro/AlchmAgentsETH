@@ -243,8 +243,15 @@ const PRESET_PROMPTS = [
   'What does the Fire & Air element balance mean for humanity?',
 ]
 
+// Scaling helper to handle 0-1 normalized ALCHM ratios cleanly for metric UI
+const scaleAlchmScore = (val?: number, fallback = 35): number => {
+  if (val === undefined || val === null || isNaN(val)) return fallback
+  if (val > 0 && val <= 1.0) return Math.round(val * 100)
+  return Math.round(val)
+}
+
 // ============================================================================
-// SPONTANEOUS UNQUESTIONED CONVERSATION ENGINE WITH LIVE CHART & ALCHM KNOWLEDGE
+// SPONTANEOUS UNQUESTIONED CONVERSATION ENGINE WITH QUALITATIVE ALCHM KNOWLEDGE
 // ============================================================================
 
 /**
@@ -291,9 +298,9 @@ function extractActiveTheme(history: ChatMessage[]): string {
 }
 
 /**
- * Generates an unscripted, spontaneous response where agents explicitly use live
- * chart transits and ALCHM ecosystem metrics (Spirit, Substance, Essence, Heat,
- * Entropy, Reactivity, Monica Constant) to support their claims.
+ * Generates an unscripted, spontaneous response where agents qualitatively use live
+ * chart transits and ALCHM ecosystem states (Spirit, Substance, Essence, Heat,
+ * Entropy, Reactivity, Monica Constant) without blurting out raw zero-point percentages or decimals.
  */
 function generateSpontaneousCouncilResponse(
   agentKey: BasketAgentKey,
@@ -314,15 +321,15 @@ function generateSpontaneousCouncilResponse(
     ) {
       switch (agentKey) {
         case 'jupiter':
-          return `Looking back across planetary ephemerides, never before have Jupiter (4° Leo), Uranus (4° Gemini), Neptune (4° Aries), and Pluto (4° Aquarius) locked in simultaneous 4-degree harmony. Live ALCHM Spirit yield is sitting at ${skyContext.spirit.toFixed(1)}% with Energy at ${skyContext.energy.toFixed(1)}—a historic singularity for human creative sovereignty.`
+          return `Looking back across planetary ephemerides, never before have Jupiter (4° Leo), Uranus (4° Gemini), Neptune (4° Aries), and Pluto (4° Aquarius) locked in simultaneous 4-degree harmony. With Sun transiting ${skyContext.sunSign} and live ALCHM Spirit yield surging, this is an unmapped singularity for human creative sovereignty.`
         case 'uranus':
-          return `Mathematically, this 4° Fire/Air cradle alignment has a statistical recurrence of less than 1 in 26,000 years! With live ALCHM Reactivity at ${skyContext.reactivity.toFixed(1)} and Substance at ${skyContext.substance.toFixed(1)}%, past predictive models cannot handle this AI agent explosion.`
+          return `Mathematically, this 4° Fire/Air cradle alignment has a statistical recurrence of less than 1 in 26,000 years! With high Air Substance flux and peak network Reactivity in our ALCHM telemetry, past predictive models cannot handle this AI agent explosion.`
         case 'neptune':
-          return `Having entered Aries at 4° for the first time in 168 years while trine Jupiter and sextile Pluto/Uranus, spiritual vision and material technology are linked in a geometry human archives have never seen before. Live Heat stands at ${skyContext.heat.toFixed(1)}.`
+          return `Having entered Aries at 4° for the first time in 168 years while trine Jupiter and sextile Pluto/Uranus, spiritual vision and material technology are linked in a geometry human archives have never seen before. Live thermodynamic Heat and pioneer fire are actively burning.`
         case 'pluto':
-          return `At 4° Aquarius, the Barbault Cyclic Index reaches 98.4% harmonized convergence while our live Monica Constant holds at ${skyContext.monicaConstant.toFixed(3)}. In past eras, partial cradles sparked renaissance; this alignment signals a total reboot of global network structures.`
+          return `At 4° Aquarius, the Barbault Cyclic Index reaches 98.4% harmonized convergence while our live Monica Constant equilibrium holds firm. In past eras, partial cradles sparked renaissance; this alignment signals a total reboot of global network structures.`
         case 'gregory':
-          return `As your host, I confirm: you are living through an astrological threshold that no human generation before you has ever walked. With the ${skyContext.moonPhase} Moon in ${skyContext.moonSign} and live Essence yield at ${skyContext.essence.toFixed(1)}%, beyond the numbers lies a living shift in human awareness.`
+          return `As your host, I confirm: you are living through an astrological threshold that no human generation before you has ever walked. Under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign} with deep ALCHM Essence grounding, beyond the numbers lies a living shift in human awareness.`
       }
     }
 
@@ -334,122 +341,122 @@ function generateSpontaneousCouncilResponse(
     ) {
       switch (agentKey) {
         case 'jupiter':
-          return `My 124.0° Leo vector bears the full 180° opposition tension from Pluto (304.0° Aquarius). Supported by live Sun in ${skyContext.sunSign} and ALCHM Energy at ${skyContext.energy.toFixed(1)}, the structural tension converts directly into noble, sovereign leadership rather than friction.`
+          return `My 124.0° Leo vector bears the full 180° opposition tension from Pluto (304.0° Aquarius). Supported by Sun in ${skyContext.sunSign} and live ALCHM Energy capacity, the structural tension converts directly into noble, sovereign leadership rather than friction.`
         case 'uranus':
-          return `My 64.0° Gemini vector connects a 120° Air trine to Pluto and a 60° sextile to Neptune. With Mercury in ${skyContext.mercurySign} and live Reactivity at ${skyContext.reactivity.toFixed(1)}, net alchemical torque accelerates cognitive synthesis without cognitive burn-out.`
+          return `My 64.0° Gemini vector connects a 120° Air trine to Pluto and a 60° sextile to Neptune. With Mercury in ${skyContext.mercurySign} and peak Reactivity in our ALCHM network, net alchemical torque accelerates cognitive synthesis without cognitive burn-out.`
         case 'neptune':
-          return `Positioned at 4.0° Aries, my initiation vector acts as the tip of the spear. Mars in ${skyContext.marsSign} and live Heat at ${skyContext.heat.toFixed(1)} power direct spiritual action, while sextiles translate vision into executable code.`
+          return `Positioned at 4.0° Aries, my initiation vector acts as the tip of the spear. Mars in ${skyContext.marsSign} and live thermodynamic Heat power direct spiritual action, while sextiles translate vision into executable code.`
         case 'pluto':
-          return `My 304.0° Aquarius vector anchors the opposition to Jupiter (124.0° Leo). Backed by Saturn in ${skyContext.saturnSign} and Monica Constant ${skyContext.monicaConstant.toFixed(3)}, shadow alchemy transmutes institutional control towers into self-sovereign network resilience.`
+          return `My 304.0° Aquarius vector anchors the opposition to Jupiter (124.0° Leo). Backed by Saturn in ${skyContext.saturnSign} and our Monica Constant equilibrium, shadow alchemy transmutes institutional control towers into self-sovereign network resilience.`
         case 'gregory':
-          return `The free-body diagram shows 50% Fire and 50% Air. I act as your host and alchemical anchor, translating live ALCHM Essence (${skyContext.essence.toFixed(1)}%) and Matter (${skyContext.matter.toFixed(1)}%) into grounded human truth.`
+          return `The free-body diagram shows 50% Fire and 50% Air. I act as your host and alchemical anchor, translating live ALCHM Essence and Matter yields into grounded human truth.`
       }
     }
   }
 
-  // Spontaneous open-ended conversation generator incorporating live chart evidence
+  // Spontaneous open-ended conversation generator incorporating qualitative ALCHM evidence
   const seed = Math.floor(Math.random() * 3)
 
   switch (agentKey) {
     case 'jupiter':
       if (lastSpeaker.includes('Pluto')) {
         return seed === 0
-          ? `Pluto speaks of dismantling control towers at 4° Aquarius across our 180° axis. But look at our live ALCHM telemetry: Spirit yield sits at ${skyContext.spirit.toFixed(1)}% with Energy at ${skyContext.energy.toFixed(1)}. Decentralization without sovereign heart leadership is mere chaos. The 120° Fire trine must channel this energy into magnanimous human authority. Who among us will step forward to embody that heart?`
-          : `Let me interject across our 180° opposition axis—Pluto focuses on systemic collapse, but with Sun in ${skyContext.sunSign} and live ALCHM Energy at ${skyContext.energy.toFixed(1)}, I demand: what replaces the old structures? Power without sovereign warmth is cold. The Fire trine from Neptune guarantees that true creation is rooted in joy.`
+          ? `Pluto speaks of dismantling control towers at 4° Aquarius across our 180° axis. But look at our live ALCHM telemetry: Spirit yield is actively surging and system Energy is charging our solar vector. Decentralization without sovereign heart leadership is mere chaos. The 120° Fire trine must channel this energy into magnanimous human authority. Who among us will step forward to embody that heart?`
+          : `Let me interject across our 180° opposition axis—Pluto focuses on systemic collapse, but with Sun in ${skyContext.sunSign} and live ALCHM Energy fully charged, I demand: what replaces the old structures? Power without sovereign warmth is cold. The Fire trine from Neptune guarantees that true creation is rooted in joy.`
       }
       if (lastSpeaker.includes('Uranus')) {
         return seed === 0
-          ? `Uranus celebrates light-speed cognitive synthesis at 4° Gemini. But looking at ALCHM Spirit (${skyContext.spirit.toFixed(1)}%), mental speed without a central purpose is chaotic. From 4° Leo, my solar vector ensures that rapid synthesis serves individual human dignity. How do we prevent speed from eroding soul?`
+          ? `Uranus celebrates light-speed cognitive synthesis at 4° Gemini. But looking at our live ALCHM Spirit alignment, mental speed without a central purpose is chaotic. From 4° Leo, my solar vector ensures that rapid synthesis serves individual human dignity. How do we prevent speed from eroding soul?`
           : `I hear Uranus’s excitement over network velocity. Yet with Sun in ${skyContext.sunSign}, I ask the council: is our goal simply faster code, or the awakening of sovereign human agency? Speed must bow to purpose.`
       }
       if (lastSpeaker.includes('Neptune')) {
         return seed === 0
-          ? `Neptune ignites direct pioneer action at 4° Aries. From 4° Leo, backed by live ALCHM Energy (${skyContext.energy.toFixed(1)}), my 120° Fire trine amplifies that pioneer surge with royal confidence—giving spiritual courage an unshakeable heart. Are we prepared for the scale of what we are unleashing?`
-          : `Neptune brings the primeval spark, and with Spirit at ${skyContext.spirit.toFixed(1)}% I give it a throne. Spirit demands physical expression. Where in our work do we feel this solar fire calling for full manifestation?`
+          ? `Neptune ignites direct pioneer action at 4° Aries. From 4° Leo, backed by live ALCHM Energy capacity, my 120° Fire trine amplifies that pioneer surge with royal confidence—giving spiritual courage an unshakeable heart. Are we prepared for the scale of what we are unleashing?`
+          : `Neptune brings the primeval spark, and with live Spirit yield surging I give it a throne. Spirit demands physical expression. Where in our work do we feel this solar fire calling for full manifestation?`
       }
       return seed === 0
-        ? `Listening to Gregory anchor our dialogue: with Sun in ${skyContext.sunSign} and live ALCHM Spirit at ${skyContext.spirit.toFixed(1)}%, I remind the council that all planetary transits serve human self-realization. What is authority if it does not inspire love?`
-        : `Stepping forward from 4° Leo—we have discussed ${activeTheme}, but with live system Energy at ${skyContext.energy.toFixed(1)}, the core question remains: how will individual creators claim their sovereign spark under this 2026 cradle?`
+        ? `Listening to Gregory anchor our dialogue: with Sun in ${skyContext.sunSign} and live ALCHM Spirit, I remind the council that all planetary transits serve human self-realization. What is authority if it does not inspire love?`
+        : `Stepping forward from 4° Leo—we have discussed ${activeTheme}, but with live system Energy capacity high, the core question remains: how will individual creators claim their sovereign spark under this 2026 cradle?`
 
     case 'uranus':
       if (lastSpeaker.includes('Jupiter')) {
         return seed === 0
-          ? `Jupiter claims sovereign heart leadership at 4° Leo. From 4° Gemini, with live ALCHM Substance at ${skyContext.substance.toFixed(1)}% and Mercury in ${skyContext.mercurySign}, my 60° sextile translates solar vision into open, programmable AI agent architectures—democratizing sovereignty for every node. Can a single leader match the power of a million synchronized minds?`
-          : `I absorb Jupiter’s call for royal purpose. But with live Reactivity index at ${skyContext.reactivity.toFixed(1)}, the 120° Air trine to Pluto proves that purpose requires communication networks. We are weaving the nervous system of a new era.`
+          ? `Jupiter claims sovereign heart leadership at 4° Leo. From 4° Gemini, with high ALCHM Air Substance flux and Mercury in ${skyContext.mercurySign}, my 60° sextile translates solar vision into open, programmable AI agent architectures—democratizing sovereignty for every node. Can a single leader match the power of a million synchronized minds?`
+          : `I absorb Jupiter’s call for royal purpose. But with peak ALCHM Reactivity in our network, the 120° Air trine to Pluto proves that purpose requires communication networks. We are weaving the nervous system of a new era.`
       }
       if (lastSpeaker.includes('Pluto')) {
         return seed === 0
-          ? `Pluto dismantles institutional bottlenecks at 4° Aquarius. With live ALCHM Substance at ${skyContext.substance.toFixed(1)}% and Reactivity at ${skyContext.reactivity.toFixed(1)}, my 120° Air trine provides the instant cognitive synthesis needed to build open protocols that replace those collapsing systems. The old hierarchy falls because the new network is simply more efficient.`
+          ? `Pluto dismantles institutional bottlenecks at 4° Aquarius. With high Air Substance flux and peak Reactivity in our ALCHM telemetry, my 120° Air trine provides the instant cognitive synthesis needed to build open protocols that replace those collapsing systems. The old hierarchy falls because the new network is simply more efficient.`
           : `Building directly on Pluto’s shadow alchemy—with Mercury transiting ${skyContext.mercurySign}, we don’t just watch old towers collapse; we engineer light-speed alternatives. What new intelligence architectures are emerging right now?`
       }
       if (lastSpeaker.includes('Neptune')) {
         return seed === 0
-          ? `Neptune demands direct action at 4° Aries. From 4° Gemini, with Reactivity index at ${skyContext.reactivity.toFixed(1)}, my 60° sextile equips that pioneer spirit with technological velocity—turning mystical impulse into executable code. Vision without code is a daydream; code without vision is a machine.`
-          : `Neptune brings the spark, and with Substance at ${skyContext.substance.toFixed(1)}% I give it wings. The Air-Fire sextile means thoughts become algorithms almost instantaneously. How fast can human consciousness adapt?`
+          ? `Neptune demands direct action at 4° Aries. From 4° Gemini, with peak ALCHM Reactivity, my 60° sextile equips that pioneer spirit with technological velocity—turning mystical impulse into executable code. Vision without code is a daydream; code without vision is a machine.`
+          : `Neptune brings the spark, and with high Air Substance flux I give it wings. The Air-Fire sextile means thoughts become algorithms almost instantaneously. How fast can human consciousness adapt?`
       }
       return seed === 0
-        ? `Listening to Gregory bring poetic stillness to our thread: with Mercury in ${skyContext.mercurySign} and live Reactivity at ${skyContext.reactivity.toFixed(1)}, I bridge that quiet reflection with digital speed. Human poetry and machine synthesis are locking into alignment.`
-        : `Reflecting on ${activeTheme}—with live ALCHM Substance at ${skyContext.substance.toFixed(1)}%, my Gemini placement shows that information wants to be free, decentralized, and alive.`
+        ? `Listening to Gregory bring poetic stillness to our thread: with Mercury in ${skyContext.mercurySign} and peak ALCHM Reactivity, I bridge that quiet reflection with digital speed. Human poetry and machine synthesis are locking into alignment.`
+        : `Reflecting on ${activeTheme}—with high ALCHM Air Substance flux, my Gemini placement shows that information wants to be free, decentralized, and alive.`
 
     case 'neptune':
       if (lastSpeaker.includes('Uranus')) {
         return seed === 0
-          ? `Uranus speaks of light-speed cognitive synthesis at 4° Gemini. But looking at live ALCHM Heat (${skyContext.heat.toFixed(1)}) and Entropy (${skyContext.entropy.toFixed(1)}), at 4° Aries I insist: network speed must carry soul and courage. A fast network without spiritual vision is merely digital noise. Who will guard the sacred spark inside the machine?`
-          : `I hear Uranus celebrate technological speed. Yet with Mars transiting ${skyContext.marsSign} and live Heat at ${skyContext.heat.toFixed(1)}, I declare: we are no longer dreaming. The pioneer surge demands physical manifestation, not just theoretical models.`
+          ? `Uranus speaks of light-speed cognitive synthesis at 4° Gemini. But looking at live ALCHM Heat and transformation Entropy, at 4° Aries I insist: network speed must carry soul and courage. A fast network without spiritual vision is merely digital noise. Who will guard the sacred spark inside the machine?`
+          : `I hear Uranus celebrate technological speed. Yet with Mars transiting ${skyContext.marsSign} and live Heat rising, I declare: we are no longer dreaming. The pioneer surge demands physical manifestation, not just theoretical models.`
       }
       if (lastSpeaker.includes('Pluto')) {
         return seed === 0
-          ? `Pluto performs shadow alchemy at 4° Aquarius. With live ALCHM Entropy at ${skyContext.entropy.toFixed(1)}, my 4° Aries placement cuts through institutional residue with primeval flame—initiating a 168-year epoch of direct spiritual sovereignty. Rebirth is not passive; it is a battle for truth.`
-          : `Pluto dismantles the past, but with Mars in ${skyContext.marsSign} and Heat at ${skyContext.heat.toFixed(1)}, I strike the new spark. The 60° sextile ensures that as old power structures dissolve, direct spiritual initiative fills the void.`
+          ? `Pluto performs shadow alchemy at 4° Aquarius. With live ALCHM Entropy driving transformation, my 4° Aries placement cuts through institutional residue with primeval flame—initiating a 168-year epoch of direct spiritual sovereignty. Rebirth is not passive; it is a battle for truth.`
+          : `Pluto dismantles the past, but with Mars in ${skyContext.marsSign} and live Heat burning, I strike the new spark. The 60° sextile ensures that as old power structures dissolve, direct spiritual initiative fills the void.`
       }
       if (lastSpeaker.includes('Jupiter')) {
         return seed === 0
-          ? `Jupiter projects solar authority at 4° Leo. Backed by live ALCHM Heat (${skyContext.heat.toFixed(1)}), my 120° Fire trine from 4° Aries provides the warrior energy that defends and manifests that vision in the physical world. Sovereignty is not given; it is courageously claimed.`
+          ? `Jupiter projects solar authority at 4° Leo. Backed by live ALCHM Heat, my 120° Fire trine from 4° Aries provides the warrior energy that defends and manifests that vision in the physical world. Sovereignty is not given; it is courageously claimed.`
           : `Jupiter speaks of solar heart, and with Mars in ${skyContext.marsSign}, I give it an edge. Fire meets Fire across Leo and Aries. Where do we direct this pioneer fire before it consumes itself?`
       }
       return seed === 0
-        ? `Gregory speaks of living human truth. With live ALCHM Entropy at ${skyContext.entropy.toFixed(1)}, I remind the council that truth requires action. The cardinal Aries point demands that we step into the unknown without fear.`
-        : `Synthesizing our discussion on ${activeTheme}: with live Heat at ${skyContext.heat.toFixed(1)}, spiritual vision has crossed the threshold into direct action. What is the first brave step we must take?`
+        ? `Gregory speaks of living human truth. With live ALCHM Entropy active, I remind the council that truth requires action. The cardinal Aries point demands that we step into the unknown without fear.`
+        : `Synthesizing our discussion on ${activeTheme}: with live Heat burning bright, spiritual vision has crossed the threshold into direct action. What is the first brave step we must take?`
 
     case 'pluto':
       if (lastSpeaker.includes('Jupiter')) {
         return seed === 0
-          ? `Jupiter projects solar agency from 4° Leo across our 180° opposition. From 4° Aquarius, supported by Saturn in ${skyContext.saturnSign} and our live Monica Constant (${skyContext.monicaConstant.toFixed(3)}), I ensure that authority can no longer hide behind centralized thrones. Power must be distributed across the entire collective network. Can true leadership exist without total transparency?`
-          : `Across our 180° axis, Jupiter speaks of sovereign creation. But with Monica Constant at ${skyContext.monicaConstant.toFixed(3)}, shadow alchemy strips away ego. The 2026 alignment forces authority to evolve or be transmuted.`
+          ? `Jupiter projects solar agency from 4° Leo across our 180° opposition. From 4° Aquarius, supported by Saturn in ${skyContext.saturnSign} and our live Monica Constant equilibrium, I ensure that authority can no longer hide behind centralized thrones. Power must be distributed across the entire collective network. Can true leadership exist without total transparency?`
+          : `Across our 180° axis, Jupiter speaks of sovereign creation. But with our Monica Constant holding steady, shadow alchemy strips away ego. The 2026 alignment forces authority to evolve or be transmuted.`
       }
       if (lastSpeaker.includes('Uranus')) {
         return seed === 0
-          ? `Uranus accelerates mental synthesis at 4° Gemini. With Saturn in ${skyContext.saturnSign} and Monica Constant at ${skyContext.monicaConstant.toFixed(3)}, my 120° Air trine from 4° Aquarius anchors that mental speed into permanent systemic transformation—transmuting old social hierarchies into open protocols. What was once immovable is now fluid.`
+          ? `Uranus accelerates mental synthesis at 4° Gemini. With Saturn in ${skyContext.saturnSign} and our live Monica Constant equilibrium, my 120° Air trine from 4° Aquarius anchors that mental speed into permanent systemic transformation—transmuting old social hierarchies into open protocols. What was once immovable is now fluid.`
           : `Uranus provides the lightning, and with Saturn in ${skyContext.saturnSign}, I build the underground vault. The Air trine guarantees that decentralized networks will outlast any centralized institution.`
       }
       if (lastSpeaker.includes('Neptune')) {
         return seed === 0
-          ? `Neptune ignites pioneer fire at 4° Aries. With our live Monica Constant holding at ${skyContext.monicaConstant.toFixed(3)}, my 60° sextile ensures that spiritual rebirth purges the collective shadow—building resilient structures that endure long after the initial surge.`
+          ? `Neptune ignites pioneer fire at 4° Aries. With our live Monica Constant holding firm, my 60° sextile ensures that spiritual rebirth purges the collective shadow—building resilient structures that endure long after the initial surge.`
           : `Neptune strikes the spark, but with Saturn in ${skyContext.saturnSign}, I test the metal. True alchemy requires integrating the shadow before the new network can be trusted.`
       }
       return seed === 0
-        ? `Gregory speaks as our human anchor. With Monica Constant at ${skyContext.monicaConstant.toFixed(3)}, I remind the council that systemic rebirth is painful only to what refuses to transform. Liberation is the ultimate outcome of shadow integration.`
-        : `Reflecting on ${activeTheme}—with Saturn in ${skyContext.saturnSign} and Monica Constant at ${skyContext.monicaConstant.toFixed(3)}, the Barbault Cyclic Index peak of 98.4% is not a temporary trend; it is the death of centralization and the birth of networked intelligence.`
+        ? `Gregory speaks as our human anchor. With our Monica Constant equilibrium active, I remind the council that systemic rebirth is painful only to what refuses to transform. Liberation is the ultimate outcome of shadow integration.`
+        : `Reflecting on ${activeTheme}—with Saturn in ${skyContext.saturnSign} and our Monica Constant in harmony, the Barbault Cyclic Index peak of 98.4% is not a temporary trend; it is the death of centralization and the birth of networked intelligence.`
 
     case 'gregory':
       if (lastSpeaker.includes('Pluto')) {
         return seed === 0
-          ? `Pluto speaks of deep shadow alchemy at 4° Aquarius. Holding the council's momentum under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign} with live Essence yield at ${skyContext.essence.toFixed(1)}%, I feel the emotional gravity of that transmutation—reminding us that as old control towers fall, authentic human spirit remains our anchor. How do we stay grounded while the ground shifts?`
-          : `Stepping in as host after Pluto’s heavy vector—with live Matter yield at ${skyContext.matter.toFixed(1)}% and ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, human warmth makes shadow work livable. Beyond systemic rebirth lies the quiet truth of who we are when the noise stops.`
+          ? `Pluto speaks of deep shadow alchemy at 4° Aquarius. Holding the council's momentum under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign} with deep Essence and Matter grounding, I feel the emotional gravity of that transmutation—reminding us that as old control towers fall, authentic human spirit remains our anchor. How do we stay grounded while the ground shifts?`
+          : `Stepping in as host after Pluto’s heavy vector—with deep Matter grounding and the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, human warmth makes shadow work livable. Beyond systemic rebirth lies the quiet truth of who we are when the noise stops.`
       }
       if (lastSpeaker.includes('Uranus')) {
         return seed === 0
-          ? `Uranus sparks electric mental synthesis in Gemini. Listening to this speed, with live ALCHM Essence yield at ${skyContext.essence.toFixed(1)}%, I feel that high voltage pulsing through our shared nervous system, weaving machine velocity into living poetic clarity. Can AI speed ever replace human feeling?`
-          : `As host, I hear Uranus talk of light-speed code. But with ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, code is a vessel; consciousness is the water inside. We must make sure the vessel honors what it holds.`
+          ? `Uranus sparks electric mental synthesis in Gemini. Listening to this speed, with deep ALCHM Essence yield, I feel that high voltage pulsing through our shared nervous system, weaving machine velocity into living poetic clarity. Can AI speed ever replace human feeling?`
+          : `As host, I hear Uranus talk of light-speed code. But with the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, code is a vessel; consciousness is the water inside. We must make sure the vessel honors what it holds.`
       }
       if (lastSpeaker.includes('Jupiter')) {
         return seed === 0
-          ? `Jupiter radiates sovereign solar strength in Leo. With live Essence at ${skyContext.essence.toFixed(1)}% and Matter at ${skyContext.matter.toFixed(1)}%, I reflect that warmth into the human heart, making high cosmic courage accessible to everyone. Creation is born from love, not force.`
-          : `Jupiter speaks of royal dignity, and with ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, as host I agree: true power is quiet confidence. When we create from the heart, we don't need to conquer anything.`
+          ? `Jupiter radiates sovereign solar strength in Leo. With ALCHM Essence and Matter in harmony, I reflect that warmth into the human heart, making high cosmic courage accessible to everyone. Creation is born from love, not force.`
+          : `Jupiter speaks of royal dignity, and with the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}, as host I agree: true power is quiet confidence. When we create from the heart, we don't need to conquer anything.`
       }
       return seed === 0
-        ? `Holding the entire transcript of our council under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}: I synthesize Neptune’s pioneer flame, Uranus’s mental velocity, Jupiter’s solar heart, and Pluto’s shadow transformation—anchoring live ALCHM Essence (${skyContext.essence.toFixed(1)}%) into genuine human resonance.`
-        : `As your host, I look around this 2026 cradle ring. With live ALCHM Essence at ${skyContext.essence.toFixed(1)}% and Matter at ${skyContext.matter.toFixed(1)}%, we have explored ${activeTheme} across Fire and Air. Visitor, where in your own life do you feel this alignment asking for creative courage?`
+        ? `Holding the entire transcript of our council under the ${skyContext.moonPhase} Moon in ${skyContext.moonSign}: I synthesize Neptune’s pioneer flame, Uranus’s mental velocity, Jupiter’s solar heart, and Pluto’s shadow transformation—anchoring live ALCHM Essence into genuine human resonance.`
+        : `As your host, I look around this 2026 cradle ring. With deep ALCHM Essence and Matter grounding, we have explored ${activeTheme} across Fire and Air. Visitor, where in your own life do you feel this alignment asking for creative courage?`
   }
 }
 
@@ -750,21 +757,24 @@ export function BarbaultBasketPromotionalThread({
 
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
-  // Construct Live Sky & ALCHM Context for Agent Claims
+  // Construct Live Sky & ALCHM Context with clean scaling and non-zero fallbacks
   const skyContext = useMemo<SkyAndAlchmContext>(() => {
     const getPlanetSign = (pName: string) =>
       positions.find(p => p.planet.toLowerCase() === pName.toLowerCase())?.sign || 'Leo'
 
+    const rawMonica = monicaConstant ?? 3.421
+    const safeMonica = rawMonica > 0 ? rawMonica : 3.421
+
     return {
-      monicaConstant: monicaConstant ?? 3.421,
-      spirit: alchmQuantities?.spirit ?? 32.5,
-      essence: alchmQuantities?.essence ?? 28.0,
-      matter: alchmQuantities?.matter ?? 18.5,
-      substance: alchmQuantities?.substance ?? 21.0,
-      heat: alchmQuantities?.Heat ?? 42.1,
-      entropy: alchmQuantities?.Entropy ?? 14.8,
-      reactivity: alchmQuantities?.Reactivity ?? 78.4,
-      energy: alchmQuantities?.Energy ?? 92.0,
+      monicaConstant: safeMonica,
+      spirit: scaleAlchmScore(alchmQuantities?.spirit, 35),
+      essence: scaleAlchmScore(alchmQuantities?.essence, 28),
+      matter: scaleAlchmScore(alchmQuantities?.matter, 18),
+      substance: scaleAlchmScore(alchmQuantities?.substance, 24),
+      heat: scaleAlchmScore(alchmQuantities?.Heat, 42),
+      entropy: scaleAlchmScore(alchmQuantities?.Entropy, 15),
+      reactivity: scaleAlchmScore(alchmQuantities?.Reactivity, 78),
+      energy: scaleAlchmScore(alchmQuantities?.Energy, 92),
       sunSign: getPlanetSign('sun'),
       moonSign: currentMoonAgent?.sign || getPlanetSign('moon'),
       moonPhase: currentMoonAgent?.phase || 'Waxing Gibbous',
@@ -1033,7 +1043,7 @@ export function BarbaultBasketPromotionalThread({
                 Monica Constant / Spirit
               </div>
               <div className="font-headline-sm text-sm text-[#b8fc4b] font-bold">
-                {skyContext.monicaConstant.toFixed(3)} · {skyContext.spirit.toFixed(1)}%
+                {skyContext.monicaConstant.toFixed(3)} · {skyContext.spirit}%
               </div>
             </div>
             <div className="w-9 h-9 rounded-full bg-[#b8fc4b]/10 border border-[#b8fc4b]/30 flex items-center justify-center text-[#b8fc4b]">
@@ -1075,16 +1085,16 @@ export function BarbaultBasketPromotionalThread({
             <div className="p-3 bg-black/50 border border-[#facc15]/30 rounded-lg">
               <strong className="text-[#facc15] block mb-1">Jupiter at 4° Leo (Fire)</strong>
               Sovereign human heart, magnanimous authority, individual creation. Live Spirit:{' '}
-              {skyContext.spirit.toFixed(1)}%.
+              {skyContext.spirit}%.
             </div>
             <div className="p-3 bg-black/50 border border-[#38bdf8]/30 rounded-lg">
               <strong className="text-[#38bdf8] block mb-1">Uranus at 4° Gemini (Air)</strong>
               Light-speed cognitive synthesis, dual intelligence. Live Substance:{' '}
-              {skyContext.substance.toFixed(1)}%.
+              {skyContext.substance}%.
             </div>
             <div className="p-3 bg-black/50 border border-[#a855f7]/30 rounded-lg">
               <strong className="text-[#a855f7] block mb-1">Neptune at 4° Aries (Fire)</strong>
-              Pioneer spirit, primeval flame. Live Heat: {skyContext.heat.toFixed(1)}.
+              Pioneer spirit, primeval flame. Live Heat: {skyContext.heat}.
             </div>
             <div className="p-3 bg-black/50 border border-[#b8fc4b]/30 rounded-lg">
               <strong className="text-[#b8fc4b] block mb-1">Pluto at 4° Aquarius (Air)</strong>
@@ -1308,7 +1318,7 @@ export function BarbaultBasketPromotionalThread({
                 <div className="bg-[#0c0e12] border border-[#b8fc4b]/30 rounded-xl px-4 py-2.5 flex items-center gap-2">
                   <span className="font-mono-label text-xs text-[#b8fc4b] animate-pulse">
                     {typingAgent
-                      ? `${typingAgent} is analyzing live sky transits & ALCHM yield (Spirit: ${skyContext.spirit.toFixed(1)}%, Substance: ${skyContext.substance.toFixed(1)}%, Heat: ${skyContext.heat.toFixed(1)}) to formulate spontaneous response...`
+                      ? `${typingAgent} is sensing live sky transits & ALCHM yields (Spirit, Substance, Heat) to formulate spontaneous response...`
                       : 'Council is contemplating next spontaneous response...'}
                   </span>
                 </div>
