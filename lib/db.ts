@@ -53,6 +53,9 @@ function materializePrisma(): PrismaClient {
 
   // Synchronous require — only paid when first used
   const req = typeof require !== 'undefined' ? require : createRequire(import.meta.url)
+  const { PrismaClient: PrismaClientCtor } = req(
+    '@prisma/client'
+  ) as typeof import('@prisma/client')
   const dbUrl =
     process.env.DATABASE_URL ||
     process.env.DIRECT_URL ||
@@ -61,8 +64,8 @@ function materializePrisma(): PrismaClient {
     process.env.POSTGRES_PRISMA_URL
 
   const client = dbUrl
-    ? new PrismaClient({ datasources: { db: { url: dbUrl } } })
-    : new PrismaClient()
+    ? new PrismaClientCtor({ datasources: { db: { url: dbUrl } } })
+    : new PrismaClientCtor()
 
   // Apply Accelerate extension only when using a prisma+postgres:// URL
   if (dbUrl?.startsWith('prisma+postgres://')) {
