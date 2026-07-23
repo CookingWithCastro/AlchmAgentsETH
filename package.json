@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-old-space-size=4096' next dev",
+    "dev": "bun --bun next dev",
     "dev:desktop-shell": "vite --config desktop-shell/vite.config.ts --host 127.0.0.1",
     "build:desktop-shell": "vite build --config desktop-shell/vite.config.ts",
     "build:sidecar": "bash scripts/build-sidecar.sh",
