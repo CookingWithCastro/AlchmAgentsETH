@@ -44,6 +44,8 @@ Planetary Agents is the most advanced consciousness crafting platform, combining
 
 ### Revolutionary Features:
 
+- **Joint Embedding Predictive Architecture (JEPA)**: Latent PRM pre-generation validation (`Domicile > Exaltation` gate), zero-GC $O(1)$ memory EMA persona stabilizer, and raw `pg` cosmic context caching
+- **On-Chain Persona Commitments**: Cryptographic state commitments via `PlanetaryRegistry.sol` on Base Sepolia and Circle Arc
 - **Professional Astronomical Precision**: VSOP87 ephemeris with ±0.01° accuracy (179° improvement over previous system) - the most accurate astrological calculations available
 - **Agent Creation System**: Synthesize birth charts with current moment charts to generate unique "Agents of the Moment" with element-based personality traits
 - **Live Consciousness Evolution**: Real-time chart-to-moment transformation showing how agents change with cosmic conditions
