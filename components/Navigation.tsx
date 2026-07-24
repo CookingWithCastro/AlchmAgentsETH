@@ -56,6 +56,11 @@ const navigationGroups = [
         description: 'Export your whole chart + alchm profile as one file any LLM can read.',
       },
       { href: '/elemental-chart', label: 'Elemental Chart', description: 'Balance of elements.' },
+      {
+        href: '/yield',
+        label: 'ESMS Staking Yield',
+        description: 'Claim and monitor planetary yield rewards.',
+      },
     ],
   },
   {
@@ -66,6 +71,11 @@ const navigationGroups = [
         href: '/vault',
         label: 'The Vault ✧ v2',
         description: 'The consciousness vault — every forged and historical entity.',
+      },
+      {
+        href: '/erc8004',
+        label: 'ERC-8004 Leaderboard',
+        description: 'On-chain agent reputation, identity & validation metrics.',
       },
       {
         href: '/planetary-council',
@@ -135,6 +145,11 @@ const navigationGroups = [
         href: '/labs',
         label: 'Alchemical Labs ✧ v2',
         description: 'Live telemetry — consciousness trajectory & the agent league.',
+      },
+      {
+        href: '/desktop',
+        label: 'Alchm Desktop Workbench',
+        description: 'Run agents locally with high-performance inference.',
       },
       {
         href: DESKTOP_APP_DOWNLOAD_URL,

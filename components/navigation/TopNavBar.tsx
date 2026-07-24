@@ -19,8 +19,8 @@ export function TopNavBar() {
     <nav className="hidden md:flex fixed top-0 w-full z-50 bg-obsidian-deep/60 backdrop-blur-xl border-b border-white/10 shadow-[0_0_20px_rgba(168,85,247,0.2)] justify-between items-center px-gutter py-4">
       <div className="flex items-center gap-8">
         <Link
-          href="/forge"
-          className="font-headline-sm text-headline-sm text-monica-constant tracking-tight"
+          href="/"
+          className="font-headline-sm text-headline-sm text-monica-constant tracking-tight hover:opacity-90 transition-opacity"
         >
           Planetary Agents
         </Link>
@@ -44,6 +44,16 @@ export function TopNavBar() {
         </div>
       </div>
       <div className="flex items-center gap-4">
+        <Link
+          href="/erc8004"
+          aria-label="ERC-8004 Reputation Leaderboard"
+          title="ERC-8004 Reputation Leaderboard"
+          className="text-on-surface-variant hover:text-st-primary transition-colors flex items-center gap-1"
+        >
+          <span className="material-symbols-outlined text-[20px]" aria-hidden>
+            shield
+          </span>
+        </Link>
         <Link
           href="/pentacles"
           aria-label="Pentacle Star Vaults"

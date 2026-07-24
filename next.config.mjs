@@ -1,3 +1,8 @@
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
 // Conditionally import bundle analyzer only when needed
 const bundleAnalyzer =
   process.env.ANALYZE === 'true'
@@ -8,6 +13,7 @@ const bundleAnalyzer =
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: path.resolve(__dirname),
   // Both gates are real now: tsc --noEmit and eslint --quiet are at 0 errors
   // on the maintained surface, so builds enforce them instead of masking them.
   eslint: {

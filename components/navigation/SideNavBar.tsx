@@ -86,6 +86,34 @@ export function SideNavBar() {
             </Link>
           )
         })}
+
+        <div className="my-2 border-t border-white/5" />
+        <Link
+          href="/erc8004"
+          className={
+            pathname === '/erc8004'
+              ? 'flex items-center gap-3 p-3 rounded bg-primary-container/20 text-st-primary border-r-4 border-st-primary'
+              : 'flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors'
+          }
+        >
+          <span className="material-symbols-outlined" aria-hidden>
+            shield
+          </span>
+          ERC-8004 Registry
+        </Link>
+        <Link
+          href="/yield"
+          className={
+            pathname === '/yield'
+              ? 'flex items-center gap-3 p-3 rounded bg-primary-container/20 text-st-primary border-r-4 border-st-primary'
+              : 'flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors'
+          }
+        >
+          <span className="material-symbols-outlined" aria-hidden>
+            trending_up
+          </span>
+          Yield Staking
+        </Link>
       </nav>
 
       {/* ESMS balances */}

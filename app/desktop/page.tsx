@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import Link from 'next/link'
 
 import { useChatStore } from '@/lib/store/chat-store'
 import PhilosophersStone from '@/components/philosophers-stone'
@@ -882,14 +883,18 @@ export default function App() {
             <span className="w-3 h-3 rounded-full bg-yellow-500/80 border border-yellow-600/30" />
             <span className="w-3 h-3 rounded-full bg-green-500/80 border border-green-600/30" />
           </div>
-          <div className="flex items-center gap-2 text-xs font-semibold text-purple-400 tracking-wider font-mono">
+          <Link
+            href="/"
+            title="Return to Planetary Agents Home"
+            className="flex items-center gap-2 text-xs font-semibold text-purple-400 hover:text-purple-300 tracking-wider font-mono transition-colors"
+          >
             <img
               src="/alchm-logo.png"
               className="w-4 h-4 rounded-full object-cover border border-purple-500/40"
               alt="Alchm Logo"
             />
             ALCHM DESKTOP COMPANION · V1.0.0
-          </div>
+          </Link>
         </div>
 
         {/* Center Tabs: Titlebar Tabs */}
