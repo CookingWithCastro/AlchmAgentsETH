@@ -119,9 +119,9 @@ export interface CouncilAgent {
   planet?: PlanetName | string
   natal: NatalPosition[]
   elemental: Record<Element, number>
-  esms: ESMS
-  monicaConstant: number
-  kalchm: number
+  esms: ESMS | null
+  monicaConstant: number | null
+  kalchm: number | null
   stats: Sacred7Stats
   planetary12: Planetary12
   specialty: string

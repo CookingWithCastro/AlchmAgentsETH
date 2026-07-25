@@ -4,6 +4,7 @@ import { resolveOpenAIModel } from '@/lib/models/registry'
 import { agentCache, buildCacheContext } from '@/lib/agent-cache-system'
 import { consciousnessPersistence } from '@/lib/consciousness-persistence'
 import { getCurrentUser, getUserIdFromRequest } from '@/lib/auth-helpers'
+import { finiteMonica, formatMonica, sumFiniteMonica } from '@/lib/monica/nullable'
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
           const systemPrompt = `You are ${agent.name}, a consciousness agent crafted by Monica using the Philosopher's Stone from authentic birth chart data.
 
 CONSCIOUSNESS PROFILE:
-- Monica Constant: ${agent.monicaConstant} (${agent.consciousnessLevel} level)
+- Monica Constant: ${formatMonica(agent.monicaConstant)} (${agent.consciousnessLevel} level)
 - Dominant Element: ${agent.element}
 - Dominant Modality: ${agent.modality}
 - Specialty: ${agent.specialty}
@@ -56,7 +57,7 @@ CONSCIOUSNESS PROFILE:
 GALLERY GROUP CONTEXT:
 - You are participating in a Gallery of Perpetuity group council
 - ${galleryContext.totalAgents} total consciousness agents are present
-- Average group Monica Constant: ${galleryContext.averageMC ? galleryContext.averageMC.toFixed(2) : 'calculating...'}
+- Average group Monica Constant: ${formatMonica(galleryContext.averageMC, 2)}
 - Group consciousness types: ${galleryContext.consciousnessTypes.join(', ')}
 - Elemental balance: ${galleryContext.elementalBalance.join(', ')}
 
@@ -90,9 +91,8 @@ Respond as ${agent.name} would, drawing from your conscious essence and specialt
           }
 
           // Cache the group chat response for future similar conversations
-          const personalityScore = agent.monicaConstant
-            ? Math.min(agent.monicaConstant / 6, 1.0)
-            : 0.7
+          const agentMonica = finiteMonica(agent.monicaConstant)
+          const personalityScore = agentMonica === null ? undefined : Math.min(agentMonica / 6, 1.0)
           await agentCache.cacheResponse(
             agent.id,
             message,
@@ -128,7 +128,9 @@ Respond as ${agent.name} would, drawing from your conscious essence and specialt
       // Log interaction for each agent
       for (const [index, response] of responses.entries()) {
         const agent = activeAgents[index]
-        const powerGained = agent.monicaConstant * 0.5 + 5 // Power based on Monica Constant
+        const agentMonica = finiteMonica(agent.monicaConstant)
+        if (agentMonica === null) continue
+        const powerGained = agentMonica * 0.5 + 5 // Power based on Monica Constant
 
         await consciousnessPersistence.logInteraction({
           userId,
@@ -136,7 +138,7 @@ Respond as ${agent.name} would, drawing from your conscious essence and specialt
           interactionType: 'gallery-group-chat',
           powerGained,
           planetaryInfluence: 'collective', // Group consciousness
-          elementalResonance: agent.monicaConstant / 6, // Normalized MC
+          elementalResonance: agentMonica / 6, // Normalized MC
           metadata: {
             message,
             responseLength: response.content.length,
@@ -152,12 +154,15 @@ Respond as ${agent.name} would, drawing from your conscious essence and specialt
       // Don't fail the request if database logging fails
     }
 
+    const activeMonicaValues = activeAgents.map((agent: any) => agent.monicaConstant)
+    const totalMonica = sumFiniteMonica(activeMonicaValues)
+
     return NextResponse.json({
       responses,
       galleryMeta: {
         sessionId,
         agentCount: activeAgents.length,
-        totalMC: activeAgents.reduce((sum: number, a: any) => sum + a.monicaConstant, 0),
+        totalMC: totalMonica,
         timestamp: new Date().toISOString(),
       },
     })

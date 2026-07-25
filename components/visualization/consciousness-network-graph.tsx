@@ -463,7 +463,9 @@ export function ConsciousnessNetworkGraph({
               <Badge variant="outline">{links.length} connections</Badge>
               {groupDynamics && (
                 <Badge variant="outline">
-                  {groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)} group level
+                  {groupDynamics.consciousnessNetwork.groupConsciousness === null
+                    ? 'Group level not computed'
+                    : `${groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)} group level`}
                 </Badge>
               )}
             </div>
@@ -556,7 +558,9 @@ export function ConsciousnessNetworkGraph({
                     </div>
                     <div>
                       Group Consciousness:{' '}
-                      {groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)}
+                      {groupDynamics.consciousnessNetwork.groupConsciousness === null
+                        ? 'not computed'
+                        : groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)}
                     </div>
                   </>
                 )}

@@ -78,7 +78,7 @@ export interface FeedActionPayload {
       natalChart?: any
       natalPositions?: Array<{ planet: string; sign: string; degree: number }>
       dominantElement?: string
-      monicaConstant?: number
+      monicaConstant?: number | null
       birthDate?: string
       birthTime?: string | null
       birthLocation?: string

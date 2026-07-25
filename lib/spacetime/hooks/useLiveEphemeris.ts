@@ -319,7 +319,7 @@ export function useLiveEphemeris({ enabled = true }: UseLiveEphemerisOptions = {
     timestamp: lastUpdated?.toISOString() ?? new Date(0).toISOString(),
     planetaryPositions: derived?.planetaryPositions ?? [],
     alchmQuantities: derived?.alchmQuantities ?? EMPTY_ALCHEMICAL_QUANTITIES,
-    monicaConstant: derived?.monicaConstant ?? 0,
+    monicaConstant: derived?.monicaConstant ?? null,
     loading: enabled && status !== 'disabled' && !isReady,
     error,
     lastUpdated,

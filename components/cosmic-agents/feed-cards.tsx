@@ -33,9 +33,9 @@ function fallbackAgent(agentId: string): CouncilAgent {
     kind: 'historical' as const,
     natal: [],
     elemental: { Fire: 25, Water: 25, Earth: 25, Air: 25 },
-    esms: { spirit: 50, essence: 50, matter: 50, substance: 50 },
-    monicaConstant: 0.5,
-    kalchm: 0.5,
+    esms: null,
+    monicaConstant: null,
+    kalchm: null,
     stats: {
       power: 50,
       resonance: 50,

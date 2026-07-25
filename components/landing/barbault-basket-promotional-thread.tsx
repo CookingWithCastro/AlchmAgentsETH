@@ -56,7 +56,7 @@ export interface ChatMessage {
 }
 
 export interface SkyAndAlchmContext {
-  monicaConstant: number
+  monicaConstant: number | null
   spirit: number
   essence: number
   matter: number
@@ -711,11 +711,11 @@ export function BarbaultBasketPromotionalThread({
     const getPlanetSign = (pName: string) =>
       positions.find(p => p.planet.toLowerCase() === pName.toLowerCase())?.sign || 'Leo'
 
-    const rawMonica = monicaConstant ?? 3.421
-    const safeMonica = rawMonica > 0 ? rawMonica : 3.421
+    const currentMonica =
+      typeof monicaConstant === 'number' && Number.isFinite(monicaConstant) ? monicaConstant : null
 
     return {
-      monicaConstant: safeMonica,
+      monicaConstant: currentMonica,
       spirit: scaleAlchmScore(alchmQuantities?.spirit, 35),
       essence: scaleAlchmScore(alchmQuantities?.essence, 28),
       matter: scaleAlchmScore(alchmQuantities?.matter, 18),
@@ -1030,7 +1030,10 @@ export function BarbaultBasketPromotionalThread({
                 Monica Constant / Spirit
               </div>
               <div className="font-headline-sm text-sm text-[#b8fc4b] font-bold">
-                {skyContext.monicaConstant.toFixed(3)} · {skyContext.spirit}%
+                {skyContext.monicaConstant === null
+                  ? 'not computed'
+                  : skyContext.monicaConstant.toFixed(3)}{' '}
+                · {skyContext.spirit}%
               </div>
             </div>
             <div className="w-9 h-9 rounded-full bg-[#b8fc4b]/10 border border-[#b8fc4b]/30 flex items-center justify-center text-[#b8fc4b]">

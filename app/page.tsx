@@ -384,7 +384,8 @@ export default function LandingPage() {
   const skyStats = useMemo<Sacred7Stats | null>(() => {
     const positions = planetaryData.planetaryPositions
     if (!positions || positions.length === 0) return null
-    const mc = monicaConstant ?? planetaryData.monicaConstant ?? 0
+    const mc = monicaConstant ?? planetaryData.monicaConstant ?? null
+    if (mc === null) return null
     const base = deriveStatsFromChart({
       monicaConstant: mc,
       sunLongitude: findLon('Sun'),

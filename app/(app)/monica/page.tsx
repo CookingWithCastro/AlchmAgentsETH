@@ -117,7 +117,9 @@ export default function MonicaPage() {
                 <span className="font-data-mono text-sm text-alchemical-gold glow-text font-semibold">
                   {liveConsciousness
                     ? liveConsciousness.birthMC.toFixed(3)
-                    : (monicaConstant || 0).toFixed(3)}
+                    : monicaConstant === null
+                      ? 'not computed'
+                      : monicaConstant.toFixed(3)}
                 </span>
               </div>
               <div className="flex justify-between items-center border-b border-glass-border pb-2">
@@ -127,7 +129,9 @@ export default function MonicaPage() {
                 >
                   {liveConsciousness
                     ? liveConsciousness.liveMC.toFixed(3)
-                    : (monicaConstant || 0).toFixed(3)}
+                    : monicaConstant === null
+                      ? 'not computed'
+                      : monicaConstant.toFixed(3)}
                 </span>
               </div>
               <div className="flex justify-between items-center">

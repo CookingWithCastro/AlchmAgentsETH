@@ -60,10 +60,10 @@ export function AgentDrawer({ agent, agents, onClose }: Props) {
                 </span>
               )}
               <span className="chip" style={{ cursor: 'default' }}>
-                kalchm {agent.kalchm}
+                kalchm {agent.kalchm === null ? 'not computed' : agent.kalchm}
               </span>
               <span className="chip" style={{ cursor: 'default' }}>
-                M-const {agent.monicaConstant}
+                M-const {agent.monicaConstant === null ? 'not computed' : agent.monicaConstant}
               </span>
             </div>
           </div>
@@ -79,7 +79,11 @@ export function AgentDrawer({ agent, agents, onClose }: Props) {
 
           <div className="section">
             <h4>ESMS · alchemical components</h4>
-            <ESMSDisplay esms={agent.esms} />
+            {agent.esms === null ? (
+              <span className="hint">not computed</span>
+            ) : (
+              <ESMSDisplay esms={agent.esms} />
+            )}
           </div>
 
           <div className="section">

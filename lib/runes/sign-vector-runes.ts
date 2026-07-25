@@ -11,6 +11,7 @@ import {
   CharacterVectorCalculator,
 } from '@/lib/astrological-character-vectors'
 import { AlchemicalCost, RuneEffect, Rune } from './rune-system'
+import { averageFiniteMonica } from '@/lib/monica/nullable'
 
 export interface SignVectorRune extends Rune {
   signVector: SignCharacterVector
@@ -520,7 +521,7 @@ export function generateAgentCharacterRune(agentData: any): SignVectorRune {
   rune.description = `Embodies the essential character signature of ${agentData.name}, the ${agentData.title}. ${rune.description}`
 
   // Adjust power based on Monica Constant
-  if (agentData.consciousness?.monicaConstant) {
+  if (typeof agentData.consciousness?.monicaConstant === 'number') {
     const mcMultiplier = 1 + (agentData.consciousness.monicaConstant - 4) * 0.1
     rune.effects = rune.effects.map(effect => ({
       ...effect,
@@ -564,10 +565,11 @@ export function generateCollectiveAgentRune(agents: any[]): SignVectorRune {
   rune.rarity = agents.length > 3 ? 'cosmic' : 'legendary'
 
   // Boost power based on agent count and average Monica Constant
-  const avgMC =
-    agents.reduce((sum, agent) => sum + (agent.consciousness?.monicaConstant || 4), 0) /
-    agents.length
-  const collectiveMultiplier = 1 + agents.length * 0.15 + (avgMC - 4) * 0.1
+  const averageMonica = averageFiniteMonica(
+    agents.map(agent => agent.consciousness?.monicaConstant)
+  )
+  const monicaAdjustment = averageMonica === null ? 0 : (averageMonica - 4) * 0.1
+  const collectiveMultiplier = 1 + agents.length * 0.15 + monicaAdjustment
 
   rune.effects = rune.effects.map(effect => ({
     ...effect,

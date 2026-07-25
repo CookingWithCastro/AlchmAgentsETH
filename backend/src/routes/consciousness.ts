@@ -126,13 +126,15 @@ router.post('/live', async (req: Request, res: Response) => {
     const birthMatter = birthAlchmData.matter || 0
     const birthSubstance = birthAlchmData.substance || 0
 
-    const birthMC = calculateMC({
+    const birthMCResult = calculateMC({
       spirit: birthSpirit,
       essence: birthEssence,
       matter: birthMatter,
       substance: birthSubstance,
       aNumber: (birthSpirit + birthEssence + birthMatter + birthSubstance) / 7,
-    }).value
+    })
+    if (!birthMCResult) throw new Error('Birth Monica Constant could not be computed')
+    const birthMC = birthMCResult.value
 
     // Get current moment alchemical data
     logger.info('Fetching current cosmic conditions')
@@ -152,13 +154,15 @@ router.post('/live', async (req: Request, res: Response) => {
     const liveSubstance = Math.max(0.1, birthSubstance + transitEffects.substanceModifier)
 
     // Calculate live MC
-    const liveMC = calculateMC({
+    const liveMCResult = calculateMC({
       spirit: liveSpirit,
       essence: liveEssence,
       matter: liveMatter,
       substance: liveSubstance,
       aNumber: (liveSpirit + liveEssence + liveMatter + liveSubstance) / 7,
-    }).value
+    })
+    if (!liveMCResult) throw new Error('Live Monica Constant could not be computed')
+    const liveMC = liveMCResult.value
 
     // Calculate change metrics
     const mcChange = liveMC - birthMC
@@ -418,13 +422,15 @@ async function calculateSingleLiveConsciousness(
   const birthMatter = birthAlchmData.matter || 0
   const birthSubstance = birthAlchmData.substance || 0
 
-  const birthMC = calculateMC({
+  const birthMCResult = calculateMC({
     spirit: birthSpirit,
     essence: birthEssence,
     matter: birthMatter,
     substance: birthSubstance,
     aNumber: (birthSpirit + birthEssence + birthMatter + birthSubstance) / 7,
-  }).value
+  })
+  if (!birthMCResult) throw new Error('Birth Monica Constant could not be computed')
+  const birthMC = birthMCResult.value
 
   // Calculate transit effects
   const transitEffects = await calculateTransitEffects(
@@ -439,13 +445,15 @@ async function calculateSingleLiveConsciousness(
   const liveMatter = Math.max(0.1, birthMatter + transitEffects.matterModifier)
   const liveSubstance = Math.max(0.1, birthSubstance + transitEffects.substanceModifier)
 
-  const liveMC = calculateMC({
+  const liveMCResult = calculateMC({
     spirit: liveSpirit,
     essence: liveEssence,
     matter: liveMatter,
     substance: liveSubstance,
     aNumber: (liveSpirit + liveEssence + liveMatter + liveSubstance) / 7,
-  }).value
+  })
+  if (!liveMCResult) throw new Error('Live Monica Constant could not be computed')
+  const liveMC = liveMCResult.value
 
   const mcChange = liveMC - birthMC
   const mcPercentChange = birthMC !== 0 ? (mcChange / birthMC) * 100 : 0

@@ -26,7 +26,7 @@ export interface MonicaConstantResult {
 export function calculateMC(
   alchemicalElements: AlchemicalElements,
   consciousnessLevel: number = 1
-): MonicaConstantResult {
+): MonicaConstantResult | null {
   try {
     // Extract elemental values
     const { spirit, essence, matter, substance } = alchemicalElements
@@ -50,6 +50,13 @@ export function calculateMC(
     const elementalFactor = totalWeight > 0 ? 1 + elementalBalance / totalWeight : 1
     const consciousnessFactor = 1 + consciousnessLevel / 10
     const monicaConstant = GOLDEN_RATIO * elementalFactor * consciousnessFactor
+    if (
+      !Number.isFinite(monicaConstant) ||
+      !Number.isFinite(elementalBalance) ||
+      !Number.isFinite(totalWeight)
+    ) {
+      return null
+    }
 
     // Generate interpretation
     const interpretation = generateInterpretation(
@@ -70,17 +77,7 @@ export function calculateMC(
     }
   } catch (error) {
     logger.error('Error calculating Monica Constant:', error)
-    // Return default value
-    return {
-      value: GOLDEN_RATIO,
-      components: {
-        baseGoldenRatio: GOLDEN_RATIO,
-        elementalBalance: 0.5,
-        totalWeight: 1.0,
-        consciousnessLevel: 1,
-      },
-      interpretation: 'Standard consciousness resonance detected.',
-    }
+    return null
   }
 }
 

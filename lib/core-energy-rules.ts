@@ -1,6 +1,8 @@
 // Core Greg's Energy System Rules
 // Based on Core_Gregs_Energy_System.ipynb and current-moment-chart.ipynb
 
+import { calculateKalchm, calculateMonica } from '@/lib/thermodynamics/kalchm'
+
 export interface AlchemicalProperties {
   spirit: number
   essence: number
@@ -93,7 +95,7 @@ export interface ThermodynamicMetrics {
 
 export interface AdvancedConstants {
   kalchmConstant: number
-  monicaConstant: number
+  monicaConstant: number | null
 }
 
 /**
@@ -233,25 +235,7 @@ export class AdvancedConstantsCalculator {
     matter: number,
     substance: number
   ): number {
-    try {
-      // Handle negative values by using absolute values
-      const spiritAbs = Math.abs(spirit) || 1e-10
-      const essenceAbs = Math.abs(essence) || 1e-10
-      const matterAbs = Math.abs(matter) || 1e-10
-      const substanceAbs = Math.abs(substance) || 1e-10
-
-      // Calculate with absolute values
-      const numerator = Math.pow(spiritAbs, spiritAbs) * Math.pow(essenceAbs, essenceAbs)
-      const denominator = Math.pow(matterAbs, matterAbs) * Math.pow(substanceAbs, substanceAbs)
-
-      // Apply sign correction based on the number of negative values
-      const negativeCount = [spirit, essence, matter, substance].filter(v => v < 0).length
-      const signFactor = negativeCount % 2 === 1 ? -1 : 1
-
-      return signFactor * (numerator / denominator)
-    } catch (error) {
-      return NaN
-    }
+    return calculateKalchm({ spirit, essence, matter, substance })
   }
 
   /**
@@ -261,18 +245,12 @@ export class AdvancedConstantsCalculator {
     energy: number,
     reactivity: number,
     kalchmConstant: number
-  ): number {
-    try {
-      if (kalchmConstant > 0 && reactivity !== 0) {
-        const lnK = Math.log(Math.abs(kalchmConstant))
-        if (lnK !== 0) {
-          return -energy / (reactivity * lnK)
-        }
-      }
-      return NaN
-    } catch (error) {
-      return NaN
-    }
+  ): number | null {
+    return calculateMonica({
+      energy,
+      reactivity,
+      kalchm: kalchmConstant,
+    })
   }
 
   /**

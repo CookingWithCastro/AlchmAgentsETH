@@ -21,6 +21,10 @@ jobs:
         run: bun run lint
       - name: Run type checking
         run: bun run typecheck
+      - name: Reject fabricated Monica fallbacks
+        run: bun run check:no-fabricated-monica
+      - name: Enforce the canonical Kalchm engine
+        run: bun run check:no-stray-kalchm
       - name: Build application
         run: bun run build
         env:

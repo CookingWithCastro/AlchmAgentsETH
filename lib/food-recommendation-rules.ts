@@ -237,10 +237,10 @@ export class KalchmFoodAnalyzer {
     }
 
     // Monica constant analysis
-    if (monicaConstant < 0) {
+    if (monicaConstant !== null && monicaConstant < 0) {
       reasoning +=
         'Negative Monica constant suggests resistance to change - gentle approach needed. '
-    } else if (monicaConstant > 1) {
+    } else if (monicaConstant !== null && monicaConstant > 1) {
       reasoning +=
         'High Monica constant supports dynamic transformation - catalytic foods beneficial. '
     }

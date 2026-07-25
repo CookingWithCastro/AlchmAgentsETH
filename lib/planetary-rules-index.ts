@@ -171,7 +171,7 @@ export class PlanetaryRulesSystem {
         modalities: currentChart.modalities || { Cardinal: 0, Fixed: 0, Mutable: 0 },
         chartMetrics: thermodynamics,
         kalchmConstant: constants.kalchmConstant,
-        monicaConstant: constants.monicaConstant,
+        monicaConstant: constants.monicaConstant ?? undefined,
       }
 
       const chartAnalysis = this.chartAnalyzer.analyzeChart(chartData)
@@ -202,7 +202,10 @@ export class PlanetaryRulesSystem {
         alerts.push('EXTREME energy state detected - proceed with caution')
       }
 
-      if (constants.kalchmConstant < -2 || constants.monicaConstant < -2) {
+      if (
+        constants.kalchmConstant < -2 ||
+        (constants.monicaConstant !== null && constants.monicaConstant < -2)
+      ) {
         alerts.push('Advanced constants showing extreme values - verify calculations')
       }
 
@@ -302,7 +305,11 @@ export class PlanetaryRulesSystem {
         isValid = false
       }
 
-      if (isNaN(monicaConstant) || !isFinite(monicaConstant)) {
+      if (
+        monicaConstant === null ||
+        Number.isNaN(monicaConstant) ||
+        !Number.isFinite(monicaConstant)
+      ) {
         errors.push('Monica constant calculation failed')
         isValid = false
       }

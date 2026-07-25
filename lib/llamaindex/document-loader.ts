@@ -220,7 +220,7 @@ export function extractMetadata(agent: CraftedAgent): DocumentMetadata {
     wisdomDomains: agent.abilities?.wisdomDomains ? agent.abilities.wisdomDomains.join(', ') : '',
     teachingStyle: agent.abilities?.teachingStyle || '',
     consciousnessLevel: agent.consciousness?.level || 'Unknown',
-    monicaConstant: agent.consciousness?.monicaConstant || 0,
+    monicaConstant: agent.consciousness?.monicaConstant ?? null,
     dominantElement: agent.consciousness?.dominantElement || '',
     birthYear: agent.birthData?.date ? new Date(agent.birthData.date).getFullYear() : null,
   }

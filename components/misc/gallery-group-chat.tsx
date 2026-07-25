@@ -16,6 +16,7 @@ import {
 } from '@/components/charts/dynamic-aspects-indicators'
 import { usePowerLevelIndicator } from '@/lib/hooks/use-power-monitoring'
 import { useLiveConsciousness, type BirthChartData } from '@/hooks/useLiveConsciousness'
+import { averageFiniteMonica } from '@/lib/monica/nullable'
 
 type Message = {
   role: 'user' | 'agent'
@@ -133,7 +134,6 @@ export function GalleryGroupChat({ selectedAgents, isOpen, onClose }: GalleryGro
         symbol: agent.appearance?.symbol || agent.name.charAt(0).toUpperCase(),
         creationStory: agent.monicaCreationStory,
       }))
-
       const response = await fetch('/api/gallery-group-chat', {
         method: 'POST',
         headers: {
@@ -145,9 +145,9 @@ export function GalleryGroupChat({ selectedAgents, isOpen, onClose }: GalleryGro
           sessionId,
           galleryContext: {
             totalAgents: selectedAgents.length,
-            averageMC:
-              selectedAgents.reduce((sum, a) => sum + a.consciousness.monicaConstant, 0) /
-              selectedAgents.length,
+            averageMC: averageFiniteMonica(
+              selectedAgents.map(agent => agent.consciousness?.monicaConstant)
+            ),
             consciousnessTypes: [...new Set(selectedAgents.map(a => a.consciousness.level))],
             elementalBalance: [
               ...new Set(selectedAgents.map(a => a.consciousness.dominantElement)),
@@ -357,12 +357,9 @@ export function GalleryGroupChat({ selectedAgents, isOpen, onClose }: GalleryGro
                   const validData = Object.values(liveConsciousnessData).filter(
                     d => d && 'liveMC' in d
                   )
-                  const avgLiveMC =
-                    validData.length > 0
-                      ? validData.reduce((sum, d) => sum + (d.liveMC || 0), 0) / validData.length
-                      : 0
+                  const avgLiveMC = averageFiniteMonica(validData.map(d => d.liveMC))
                   const enhancedCount = validData.filter(d => (d.mcChange || 0) > 0.1).length
-                  return `Group Avg MC: ${avgLiveMC.toFixed(2)} • ${enhancedCount} enhanced`
+                  return `Group Avg MC: ${avgLiveMC === null ? 'not computed' : avgLiveMC.toFixed(2)} • ${enhancedCount} enhanced`
                 })()}
               </span>
               {liveLoading && <div className="w-3 h-3 rounded-full bg-purple-600 animate-pulse" />}

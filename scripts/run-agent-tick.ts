@@ -140,7 +140,12 @@ async function main() {
                       }))
                     : [],
                   dominantElement: agent.user_profiles.dominantElement ?? 'Fire',
-                  monicaConstant: Number(agent.user_profiles.monicaConstant ?? 0),
+                  monicaConstant: (() => {
+                    const value = agent.user_profiles.monicaConstant
+                    if (value === null || value === undefined) return null
+                    const parsed = Number(value)
+                    return Number.isFinite(parsed) ? parsed : null
+                  })(),
                   birthDate:
                     agent.user_profiles.birthDate instanceof Date
                       ? agent.user_profiles.birthDate.toISOString().split('T')[0]

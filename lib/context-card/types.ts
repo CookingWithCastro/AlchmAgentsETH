@@ -58,7 +58,7 @@ export interface ContextCardAlchm {
   elemental: Record<string, number>
   esms: { spirit: number; essence: number; matter: number; substance: number }
   kalchm: number
-  monica: number
+  monica: number | null
   thermodynamics: {
     heat: number
     entropy: number

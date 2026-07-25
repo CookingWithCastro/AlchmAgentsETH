@@ -155,7 +155,10 @@ export function useUnifiedPlanetaryPositions(
             Reactivity: Number((a as any)?.Reactivity ?? 0),
             Energy: Number((a as any)?.Energy ?? 0),
           }
-          monicaConstant = Number((a as any)?.['A-Number'] ?? 0)
+          const monicaInput = (a as any)?.['A-Number']
+          const rawMonica =
+            monicaInput === null || monicaInput === undefined ? Number.NaN : Number(monicaInput)
+          monicaConstant = Number.isFinite(rawMonica) ? rawMonica : undefined
         }
 
         const result: PlanetaryData = {

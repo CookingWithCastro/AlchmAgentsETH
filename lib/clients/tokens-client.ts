@@ -23,8 +23,8 @@ export interface TokenRates {
   Essence: number
   Matter: number
   Substance: number
-  kalchm?: number
-  monica?: number
+  kalchm?: number | null
+  monica?: number | null
 }
 
 export interface TokenProjection {
@@ -140,8 +140,8 @@ export class TokensClient {
         Essence: backendData.rates.Essence,
         Matter: backendData.rates.Matter,
         Substance: backendData.rates.Substance,
-        kalchm: backendData.rates.kalchm || 0,
-        monica: backendData.rates.monica || 0,
+        kalchm: backendData.rates.kalchm ?? null,
+        monica: backendData.rates.monica ?? null,
       },
       projections: backendData.projections || [],
       harmonics: backendData.harmonics || {
@@ -278,7 +278,7 @@ export class TokensClient {
         Substance: 0.4,
       }
       return {
-        rates: { ...baseTokens, kalchm: 1.0, monica: 1.0 },
+        rates: { ...baseTokens, kalchm: null, monica: null },
         projections: [],
         harmonics: { phase: 0, amplitude: 1, resonance: 'neutral' },
         marketPhase: 'peak',

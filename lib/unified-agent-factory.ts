@@ -44,7 +44,7 @@ export class UnifiedAgentFactory implements AgentFactory {
 
       consciousness: {
         level: agent.consciousness.level as any,
-        monicaConstant: (agent.consciousness as any).monicaConstant || 3.5,
+        monicaConstant: agent.consciousness.monicaConstant,
         dominantElement: agent.consciousness.dominantElement,
         dominantModality: agent.consciousness.dominantModality,
         signature: agent.consciousness.signature,

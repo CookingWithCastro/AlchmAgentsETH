@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 
 interface StitchProfileClientProps {
-  monicaConstant: number
+  monicaConstant: number | null
   dominantElement: string
   actions: any[]
   interactions: any[]
@@ -59,7 +59,9 @@ export function StitchProfileClient({
     const defaultLogs = [
       `SYSTEM: Initializing cognitive telemetry stream...`,
       `RESOLVED: Dominant elemental affinity => ${dominantElement.toUpperCase()}`,
-      `CALCULATED: Monica Constant calibrated to ${monicaConstant.toFixed(2)}/10.00`,
+      monicaConstant === null
+        ? 'ABSENT: Monica Constant has not been computed'
+        : `CALCULATED: Monica Constant calibrated to ${monicaConstant.toFixed(2)}/10.00`,
       `COGNITION: Processing astral transits for natal alignment...`,
     ]
 
@@ -133,7 +135,8 @@ export function StitchProfileClient({
   // Radial chart calculations
   const radius = 40
   const circumference = 2 * Math.PI * radius // 251.3
-  const progressPercent = Math.min(100, Math.max(0, (monicaConstant / 10) * 100))
+  const progressPercent =
+    monicaConstant === null ? 0 : Math.min(100, Math.max(0, (monicaConstant / 10) * 100))
   const strokeOffset = circumference - (circumference * progressPercent) / 100
 
   return (
@@ -179,7 +182,7 @@ export function StitchProfileClient({
           </svg>
           <div className="absolute flex flex-col items-center justify-center">
             <span className="font-mono-data text-4xl text-bright-gold font-bold">
-              {monicaConstant.toFixed(2)}
+              {monicaConstant === null ? '—' : monicaConstant.toFixed(2)}
             </span>
             <span className="text-[9px] font-mono-label text-muted-text uppercase tracking-wider mt-1">
               MONICA CONSTANT

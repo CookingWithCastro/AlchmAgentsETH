@@ -456,7 +456,7 @@ function AlchmBlock({ data }: { data: ContextCardData }) {
             Kalchm <b>{a.kalchm}</b>
           </span>
           <span className="kchip">
-            Monica <b>{a.monica}</b>
+            Monica <b>{a.monica === null ? 'not computed' : a.monica}</b>
           </span>
           <span className="kchip">
             Heat <b>{t.heat}</b>

@@ -28,6 +28,8 @@ class HistoricalAgent(Base):
     
     # Consciousness profile
     consciousnessLevel = Column(String)
+    # The deployed/test schema keeps this NOT NULL; changing absence semantics
+    # requires an explicit migration rather than an ORM-only edit.
     kalchmConstant = Column(Float, default=0.5)
     monicaConstant = Column(Float)
     dominantElement = Column(String)
@@ -189,5 +191,3 @@ class UserSubscription(Base):
     cancelAtPeriodEnd = Column(Boolean, name="cancel_at_period_end", default=False)
     createdAt = Column(DateTime, name="created_at", default=datetime.utcnow)
     updatedAt = Column(DateTime, name="updated_at", default=datetime.utcnow)
-
-

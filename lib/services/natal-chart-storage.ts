@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db'
 import { generateAccurateHoroscope } from '../monica/horoscope-generator'
 import { signDegreeToLongitude } from '../enhanced-astronomical-calculator'
 import { alchemize } from '../alchemizer'
+import { calculateMC } from '../monica/monica-constant-validator'
 
 export interface CreateNatalChartInput {
   userId: string
@@ -470,12 +471,20 @@ async function calculateAlchemicalQuantities(planets: any[]) {
     )
   }
 
+  const effects = alchmResult['Alchemy Effects']
+  const axes = {
+    spirit: Number(effects['Total Spirit']),
+    essence: Number(effects['Total Essence']),
+    matter: Number(effects['Total Matter']),
+    substance: Number(effects['Total Substance']),
+  }
+  if (Object.values(axes).some(value => !Number.isFinite(value))) {
+    throw new Error('Alchemical calculation returned non-finite ESMS values')
+  }
+
   return {
-    monicaConstant: 2.1, // Default value
-    spirit: alchmResult['Alchemy Effects']['Total Spirit'] || 0,
-    essence: alchmResult['Alchemy Effects']['Total Essence'] || 0,
-    matter: alchmResult['Alchemy Effects']['Total Matter'] || 0,
-    substance: alchmResult['Alchemy Effects']['Total Substance'] || 0,
+    monicaConstant: calculateMC(axes.spirit, axes.essence, axes.matter, axes.substance),
+    ...axes,
   }
 }
 

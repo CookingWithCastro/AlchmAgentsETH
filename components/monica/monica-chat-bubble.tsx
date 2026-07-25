@@ -43,7 +43,7 @@ interface MonicaChatMessage {
 
 interface MonicaChatBubbleProps {
   pathname: string
-  currentMC?: number
+  currentMC?: number | null
   consciousnessLevel?: string
 }
 
@@ -353,7 +353,7 @@ export function MonicaChatBubble({
                           <Eye className="w-2.5 h-2.5 mr-1" />
                           {pathname.split('/').pop() || 'home'}
                         </Badge>
-                        {currentMC && (
+                        {typeof currentMC === 'number' && (
                           <Badge
                             variant="outline"
                             className="text-[10px] bg-purple-100 dark:bg-purple-900 border-purple-300"
@@ -609,7 +609,7 @@ export function MonicaChatBubble({
                   <div className="text-emerald-200 text-xs mb-2">
                     Your consciousness guide is here to help!
                   </div>
-                  {currentMC && (
+                  {typeof currentMC === 'number' && (
                     <div className="flex items-center gap-2 mb-2">
                       <Badge
                         variant="outline"

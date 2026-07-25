@@ -251,7 +251,7 @@ function buildMarkdown(data: ContextCardData, opts: ExportOptions): string {
       `- ESMS Balance: Spirit ${es.spirit} · Essence ${es.essence} · Matter ${es.matter} · Substance ${es.substance}`
     )
     L.push(`- Kalchm Quotient: ${data.alchm.kalchm}`)
-    L.push(`- Monica Constant: ${data.alchm.monica}`)
+    L.push(`- Monica Constant: ${data.alchm.monica === null ? 'not computed' : data.alchm.monica}`)
     L.push('')
     if (data.alchm.sacred7 && Object.keys(data.alchm.sacred7).length > 0) {
       L.push('### Sacred 7 Scores')

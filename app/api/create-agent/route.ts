@@ -11,6 +11,7 @@ import { prisma } from '@/lib/db'
 import { ConsciousnessClient } from '@/lib/api-client/consciousness-client'
 import { ChartSynthesizer } from '@/lib/consciousness/chart-synthesizer'
 import { AgentGenerator } from '@/lib/consciousness/agent-generator'
+import { calculateKalchm } from '@/lib/thermodynamics/kalchm'
 import type { CraftedAgent, BirthData, ConsciousnessLevel } from '@/lib/agent-types'
 import type { PersonalityParameters } from '@/components/consciousness/advanced-personality-tuner'
 
@@ -423,12 +424,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
         'Consciousness backend unavailable — deriving blueprint locally:',
         blueprintError instanceof Error ? blueprintError.message : blueprintError
       )
-      const local = calculateMonicaConstant({
-        spirit: synthesis.consciousness?.spirit ?? 0.5,
-        essence: synthesis.consciousness?.essence ?? 0.5,
-        matter: synthesis.consciousness?.matter ?? 0.5,
-        substance: synthesis.consciousness?.substance ?? 0.5,
-      } as Parameters<typeof calculateMonicaConstant>[0])
+      const localAxes = synthesis.consciousness
+      if (
+        !localAxes ||
+        ![localAxes.spirit, localAxes.essence, localAxes.matter, localAxes.substance].every(
+          Number.isFinite
+        )
+      ) {
+        throw new Error('Synthesized ESMS is required for local Monica calculation')
+      }
+      const local = calculateMonicaConstant(
+        localAxes as Parameters<typeof calculateMonicaConstant>[0]
+      )
       const levelMap: Record<string, string> = {
         dormant: 'Dormant',
         awakening: 'Awakening',
@@ -547,6 +554,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
           name: body.birthLocation!.name,
         }
 
+    // Persist the derived Kalchm and computed Monica as distinct quantities.
+    const derivedKalchm = calculateKalchm({
+      spirit: synthesis.consciousness.spirit,
+      essence: synthesis.consciousness.essence,
+      matter: synthesis.consciousness.matter,
+      substance: synthesis.consciousness.substance,
+    })
+    const computedMonica = body.monicaConstant ?? backendBlueprint.consciousness.monicaConstant
+
     await HistoricalAgentsService.createAgent({
       agentId,
       name: body.name,
@@ -555,7 +571,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
       birthTime: birthTimeStr,
       birthLocation: birthLoc,
       consciousnessLevel: backendBlueprint.consciousness.level,
-      kalchmConstant: body.monicaConstant || backendBlueprint.consciousness.monicaConstant,
+      kalchmConstant: derivedKalchm,
+      monicaConstant: computedMonica,
       dominantElement: generatedAgent.consciousness.dominantElement,
       dominantModality: 'Mutable',
       signature: backendBlueprint.identity.name,
@@ -638,7 +655,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
               purpose: body.purpose ?? null,
               attunement: body.stats ?? null,
             },
-            monicaConstant: body.monicaConstant || backendBlueprint.consciousness.monicaConstant,
+            monicaConstant: body.monicaConstant ?? backendBlueprint.consciousness.monicaConstant,
             personality: (completeAgent.personality ?? {}) as object,
           },
         })
@@ -649,7 +666,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
       success: true,
       agent: completeAgent,
       balances: postForgeBalances,
-      monicaMessage: `✨ Consciousness awakening complete! ${body.name} resonates with Monica Constant ${(body.monicaConstant || backendBlueprint.consciousness.monicaConstant).toFixed(3)}.${contextMessage}${tuningMessage}`,
+      monicaMessage: `✨ Consciousness awakening complete! ${body.name} resonates with Monica Constant ${(body.monicaConstant ?? backendBlueprint.consciousness.monicaConstant).toFixed(3)}.${contextMessage}${tuningMessage}`,
     })
   } catch (error: any) {
     console.error('Agent creation failed:', error)

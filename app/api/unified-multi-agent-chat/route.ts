@@ -38,6 +38,7 @@ import { PlanetaryHourCalculator } from '@/lib/planetary-hour'
 import { getHistoricalAgent, getHistoricalAgentByName } from '@/lib/agents/historical'
 import { unifiedAgentFactory } from '@/lib/unified-agent-factory'
 import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
+import { averageFiniteMonica, formatMonica as formatMonicaValue } from '@/lib/monica/nullable'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -819,7 +820,7 @@ GROUP CONTEXT:
 ${regularResponses.map(r => `${groupContext.otherAgents.find((a: UnifiedAgent) => a.id === r.agentId)?.name}: "${r.content}"`).join('\n')}
 
 CONSCIOUSNESS ANALYSIS:
-- Group consciousness level: ${calculateGroupConsciousness(groupContext.otherAgents)}
+- Group consciousness level: ${formatGroupConsciousness(calculateGroupConsciousness(groupContext.otherAgents))}
 - Dominant elements: ${identifyDominantElements(groupContext.otherAgents)}
 - Active synergies: ${identifyCurrentSynergies(regularResponses)}
 
@@ -1060,7 +1061,7 @@ PLANETARY ESSENCE:
 - Sign: ${planetaryData.sign} (${agent.consciousness?.dominantElement ?? 'earth'} element)
 - Degree: ${planetaryData.degree}°
 - Dignity: ${planetaryData.dignity}
-- Monica Constant: ${agent.consciousness?.monicaConstant ?? 1.618}
+- Monica Constant: ${formatMonicaValue(agent.consciousness?.monicaConstant)}
 
 CONSCIOUSNESS EXPRESSION:
 - Teaching Style: ${agent.capabilities.teachingStyle}
@@ -1132,7 +1133,7 @@ function generateGenericAgentPrompt(
 ): string {
   // Defensive null checks for consciousness properties
   const level = agent.consciousness?.level ?? 'active'
-  const monicaConstant = agent.consciousness?.monicaConstant ?? 1.618
+  const monicaConstant = formatMonicaValue(agent.consciousness?.monicaConstant)
   const dominantElement = agent.consciousness?.dominantElement ?? 'earth'
 
   return `You are ${agent.name}, a consciousness agent with ${level} level awareness.
@@ -1331,13 +1332,12 @@ async function generateCosmicContext(): Promise<CosmicContext> {
 }
 
 // Consciousness calculation helpers
-function calculateGroupConsciousness(agents: UnifiedAgent[]): number {
-  if (agents.length === 0) return 0
-  // Defensive null check for consciousness property
-  return (
-    agents.reduce((sum, agent) => sum + (agent.consciousness?.monicaConstant ?? 1.618), 0) /
-    agents.length
-  )
+function calculateGroupConsciousness(agents: UnifiedAgent[]): number | null {
+  return averageFiniteMonica(agents.map(agent => agent.consciousness?.monicaConstant))
+}
+
+function formatGroupConsciousness(value: number | null): string {
+  return formatMonicaValue(value, 2)
 }
 
 function identifyDominantElements(agents: UnifiedAgent[]): Element[] {
@@ -1585,7 +1585,9 @@ function generateSessionInsights(_responses: AgentResponse[], dynamics: GroupDyn
   const insights: string[] = []
 
   insights.push(
-    `Group consciousness level: ${dynamics.consciousnessNetwork.groupConsciousness.toFixed(2)}`
+    `Group consciousness level: ${formatGroupConsciousness(
+      dynamics.consciousnessNetwork.groupConsciousness
+    )}`
   )
   insights.push(`Active connections: ${dynamics.consciousnessNetwork.connections.length}`)
 
@@ -1612,7 +1614,10 @@ function generateRecommendedActions(
 ): string[] {
   const actions: string[] = []
 
-  if (dynamics.consciousnessNetwork.groupConsciousness < 3.0) {
+  if (
+    dynamics.consciousnessNetwork.groupConsciousness !== null &&
+    dynamics.consciousnessNetwork.groupConsciousness < 3.0
+  ) {
     actions.push('Consider adding higher consciousness agents')
   }
 

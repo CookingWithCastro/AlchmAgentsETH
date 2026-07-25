@@ -743,12 +743,17 @@ function GalleryPageContent() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-gutter text-sm mb-sm">
               {(() => {
                 const validData = Object.values(liveConsciousnessData).filter(
-                  d => d && typeof d === 'object' && 'liveMC' in d
+                  d =>
+                    d &&
+                    typeof d === 'object' &&
+                    'liveMC' in d &&
+                    typeof d.liveMC === 'number' &&
+                    Number.isFinite(d.liveMC)
                 )
                 const avgLiveMC =
                   validData.length > 0
-                    ? validData.reduce((sum, d) => sum + (d.liveMC || 0), 0) / validData.length
-                    : 0
+                    ? validData.reduce((sum, d) => sum + d.liveMC, 0) / validData.length
+                    : null
                 const evolutionCount = validData.filter(d => Math.abs(d.mcChange || 0) > 0.1).length
                 const enhancementCount = validData.filter(d => (d.mcChange || 0) > 0.1).length
                 const challengeCount = validData.filter(d => (d.mcChange || 0) < -0.1).length
@@ -757,7 +762,7 @@ function GalleryPageContent() {
                   <>
                     <div className="text-center p-md bg-[#0b0e19]/40 border border-border-gold/10 rounded">
                       <div className="text-2xl font-bold text-primary-gold font-mono-data">
-                        {avgLiveMC.toFixed(2)}
+                        {avgLiveMC === null ? 'not computed' : avgLiveMC.toFixed(2)}
                       </div>
                       <div className="text-xs text-muted-text font-mono-label mt-1">
                         Avg Live MC

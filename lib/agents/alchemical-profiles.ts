@@ -1,12 +1,12 @@
 // Alchemical profiles for historical agents
 // These represent the intrinsic elemental balance of each figure
 
-export interface AlchemicalProfile {
-  spirit: number
-  essence: number
-  matter: number
-  substance: number
-}
+import {
+  calculateKalchm as calculateCanonicalKalchm,
+  type KalchmAxes,
+} from '@/lib/thermodynamics/kalchm'
+
+export type AlchemicalProfile = KalchmAxes
 
 export const HISTORICAL_ALCHEMICAL_PROFILES: Record<string, AlchemicalProfile> = {
   'leonardo-da-vinci': { spirit: 6, essence: 8, matter: 7, substance: 4 },
@@ -40,10 +40,10 @@ export function getAgentAlchemicalProperties(agentId: string): AlchemicalProfile
   return HISTORICAL_ALCHEMICAL_PROFILES[agentId] || DEFAULT_ALCHEMICAL_PROFILE
 }
 
-export function calculateKalchm(agentId: string): number {
-  const { spirit, essence, matter, substance } = getAgentAlchemicalProperties(agentId)
-  const numerator = Math.pow(spirit, spirit) * Math.pow(essence, essence)
-  const denominator = Math.pow(matter, matter) * Math.pow(substance, substance)
-  const kalchm = numerator / denominator
-  return isFinite(kalchm) && !isNaN(kalchm) ? kalchm : 1.0
+export function calculateKalchm(agentOrProfile: string | AlchemicalProfile): number {
+  const profile =
+    typeof agentOrProfile === 'string'
+      ? getAgentAlchemicalProperties(agentOrProfile)
+      : agentOrProfile
+  return calculateCanonicalKalchm(profile)
 }

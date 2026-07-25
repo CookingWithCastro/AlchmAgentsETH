@@ -15,7 +15,7 @@ export interface CacheEntry {
   contextHash: string
   timestamp: Date
   responseTime: number
-  personalityScore: number
+  personalityScore: number | null
   interactionCount: number
   ttl: number
 }
@@ -162,7 +162,7 @@ export class AgentCacheSystem {
       contextHash,
       timestamp: new Date(),
       responseTime,
-      personalityScore: personalityScore || 0.7,
+      personalityScore: personalityScore ?? null,
       interactionCount: 1,
       ttl: this.calculateTTL(responseTime, personalityScore),
     }

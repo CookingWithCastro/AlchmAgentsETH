@@ -25,7 +25,7 @@ function formatAgentRow(agent: any) {
     },
     consciousness: {
       natalChart: agent.natalChart,
-      monicaConstant: agent.monicaConstant || 0,
+      monicaConstant: agent.monicaConstant ?? null,
       level: agent.consciousnessLevel || 'Novice',
       dominantElement: agent.dominantElement || 'Earth',
       dominantModality: agent.dominantModality || 'Fixed',

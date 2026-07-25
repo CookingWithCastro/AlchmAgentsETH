@@ -29,14 +29,14 @@ interface LiveConsciousnessDisplayProps {
     Entropy?: number
     Reactivity?: number
   }
-  birthMC?: number
+  birthMC?: number | null
 }
 
 export function LiveConsciousnessDisplay({
   birthInfo,
   userName = 'You',
   birthAlchm,
-  birthMC = 0,
+  birthMC = null,
 }: LiveConsciousnessDisplayProps) {
   const [sparklineData, setSparklineData] = useState<number[]>([])
   const [sparklineLabels, setSparklineLabels] = useState<string[]>([])

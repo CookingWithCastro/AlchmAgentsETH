@@ -104,6 +104,7 @@ export default function ChartInterpreterPage() {
     usePlanetaryPositions({
       refreshInterval: 30000,
     })
+  const monicaLabel = monicaConstant === null ? 'not computed' : monicaConstant.toFixed(3)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -305,7 +306,7 @@ export default function ChartInterpreterPage() {
               )}
               <Badge variant="outline" className="flex items-center gap-1">
                 <Zap className="w-3 h-3" />
-                Monica Constant: {monicaConstant.toFixed(3)}
+                Monica Constant: {monicaLabel}
               </Badge>
               {lastUpdated && (
                 <Badge variant="secondary" className="flex items-center gap-1">
@@ -462,7 +463,7 @@ export default function ChartInterpreterPage() {
                           <Star className="w-4 h-4" />
                           <AlertDescription>
                             Current moment chart automatically populated with live planetary
-                            positions. Monica Constant: {monicaConstant.toFixed(3)} | Spirit:{' '}
+                            positions. Monica Constant: {monicaLabel} | Spirit:{' '}
                             {alchmQuantities.spirit.toFixed(2)}
                           </AlertDescription>
                         </Alert>
@@ -622,7 +623,7 @@ export default function ChartInterpreterPage() {
                   <Separator />
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Monica Constant:</span>
-                    <span className="font-mono">{monicaConstant.toFixed(3)}</span>
+                    <span className="font-mono">{monicaLabel}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -788,16 +789,18 @@ export default function ChartInterpreterPage() {
                           <span className="text-sm font-medium">Consciousness Level:</span>
                           <div className="text-right">
                             <div className="font-mono text-lg font-bold text-purple-600">
-                              {monicaConstant.toFixed(3)}
+                              {monicaLabel}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {monicaConstant > 4.236
-                                ? 'Elevated'
-                                : monicaConstant > 3.618
-                                  ? 'Active'
-                                  : monicaConstant > 2.618
-                                    ? 'Awakening'
-                                    : 'Dormant'}
+                              {monicaConstant === null
+                                ? 'Not computed'
+                                : monicaConstant > 4.236
+                                  ? 'Elevated'
+                                  : monicaConstant > 3.618
+                                    ? 'Active'
+                                    : monicaConstant > 2.618
+                                      ? 'Awakening'
+                                      : 'Dormant'}
                             </div>
                           </div>
                         </div>

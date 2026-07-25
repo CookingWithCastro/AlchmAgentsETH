@@ -6,6 +6,7 @@
 
 import { agentCache } from './agent-cache-system'
 import { resilientApiCall } from './api-resilience-system'
+import { calculateKalchm, type KalchmAxes } from '@/lib/thermodynamics/kalchm'
 
 export interface PerformanceConfig {
   maxConcurrentAgents: number
@@ -40,6 +41,21 @@ export interface PerformanceMetrics {
   concurrencyUtilization: number
   streamingBytesServed: number
   optimizationsSaved: number
+}
+
+export interface PerformanceKalchmResult {
+  value: number
+  valid: boolean
+}
+
+/**
+ * Public characterization seam for the optimizer's Kalchm implementation.
+ * `valid` preserves the optimizer's warning path while `value` preserves its
+ * neutral-equilibrium fallback.
+ */
+export function evaluatePerformanceKalchm(alchemicalProps: KalchmAxes): PerformanceKalchmResult {
+  const valid = Object.values(alchemicalProps).every(Number.isFinite)
+  return { value: calculateKalchm(alchemicalProps), valid }
 }
 
 export class AgentPerformanceOptimizer {
@@ -255,22 +271,18 @@ export class AgentPerformanceOptimizer {
       // Get alchemical properties for the agent (would fetch from agent data in real implementation)
       const alchemicalProps = this.getAgentAlchemicalProperties(agentId)
 
-      const { spirit, essence, matter, substance } = alchemicalProps
-
-      // Calculate Kalchm using the exact formula from the notebook
-      const numerator = Math.pow(spirit, spirit) * Math.pow(essence, essence)
-      const denominator = Math.pow(matter, matter) * Math.pow(substance, substance)
-
-      const kalchm = numerator / denominator
+      const result = evaluatePerformanceKalchm(alchemicalProps)
+      const kalchm = result.value
 
       // Handle edge cases
-      if (!isFinite(kalchm) || isNaN(kalchm)) {
+      if (!result.valid) {
         console.warn(`Invalid Kalchm calculated for ${agentId}, using fallback`)
         this.kalchmCache.set(agentId, 1.0) // Neutral equilibrium
         return 1.0
       }
 
       this.kalchmCache.set(agentId, kalchm)
+      const { spirit, essence, matter, substance } = alchemicalProps
       console.log(
         `📊 Calculated Kalchm for ${agentId}: ${kalchm.toFixed(4)} (Spirit:${spirit}, Essence:${essence}, Matter:${matter}, Substance:${substance})`
       )

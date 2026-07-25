@@ -512,7 +512,7 @@ export function TemporalClient() {
       {currentSnapshot && currentSnapshot.alchmQuantities && (
         <ConsciousnessVectorDisplay
           alchmQuantities={currentSnapshot.alchmQuantities}
-          monicaConstant={currentSnapshot.monicaConstant || 0}
+          monicaConstant={currentSnapshot.monicaConstant ?? null}
         />
       )}
 
@@ -578,7 +578,11 @@ export function TemporalClient() {
                       Reactivity: (r as any).alchm['Reactivity'] || 0,
                       Energy: (r as any).alchm['Energy'] || 0,
                     }}
-                    monicaConstant={(r as any).mc || 0}
+                    monicaConstant={
+                      typeof (r as any).mc === 'number' && Number.isFinite((r as any).mc)
+                        ? (r as any).mc
+                        : null
+                    }
                   />
                 )}
               </div>

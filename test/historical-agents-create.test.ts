@@ -23,6 +23,7 @@ const baseAgentData = {
   birthLocation: { lat: 40.7128, lon: -74.006, name: 'New York' },
   consciousnessLevel: 'Active',
   kalchmConstant: 0.149,
+  monicaConstant: 3.7,
   dominantElement: 'Air',
   dominantModality: 'Mutable',
   signature: 'Test Vessel',
@@ -44,21 +45,19 @@ const baseAgentData = {
   natalChart: {},
 }
 
-describe('HistoricalAgentsService.createAgent — Monica/Kalchm synonym columns', () => {
+describe('HistoricalAgentsService.createAgent — distinct Monica and Kalchm columns', () => {
   beforeEach(() => {
     createMock.mockReset()
     createMock.mockImplementation(async ({ data }: any) => data)
   })
 
-  it('writes monicaConstant = kalchmConstant when monicaConstant is omitted', async () => {
-    // Regression: the insert used to omit monicaConstant entirely, so the
-    // schema default (0) won and galleries rendered crafted vessels as A#0.
+  it('preserves the independently computed values', async () => {
     await HistoricalAgentsService.createAgent(baseAgentData)
 
     expect(createMock).toHaveBeenCalledTimes(1)
     const { data } = createMock.mock.calls[0][0]
     expect(data.kalchmConstant).toBe(0.149)
-    expect(data.monicaConstant).toBe(0.149)
+    expect(data.monicaConstant).toBe(3.7)
   })
 
   it('respects an explicit monicaConstant when provided', async () => {

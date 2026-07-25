@@ -638,19 +638,30 @@ export function AgentDashboard() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   {(() => {
                     const validData = Object.values(liveConsciousnessData).filter(
-                      d => d && typeof d === 'object' && 'liveMC' in d
+                      d =>
+                        d &&
+                        typeof d === 'object' &&
+                        'liveMC' in d &&
+                        'birthMC' in d &&
+                        typeof d.liveMC === 'number' &&
+                        Number.isFinite(d.liveMC) &&
+                        typeof d.birthMC === 'number' &&
+                        Number.isFinite(d.birthMC)
                     )
                     const avgBirthMC =
                       validData.length > 0
-                        ? validData.reduce((sum, d) => sum + (d.birthMC || 0), 0) / validData.length
-                        : 0
+                        ? validData.reduce((sum, d) => sum + d.birthMC, 0) / validData.length
+                        : null
                     const avgLiveMC =
                       validData.length > 0
-                        ? validData.reduce((sum, d) => sum + (d.liveMC || 0), 0) / validData.length
-                        : 0
-                    const totalEvolution = avgLiveMC - avgBirthMC
+                        ? validData.reduce((sum, d) => sum + d.liveMC, 0) / validData.length
+                        : null
+                    const totalEvolution =
+                      avgLiveMC === null || avgBirthMC === null ? null : avgLiveMC - avgBirthMC
                     const evolutionPercentage =
-                      avgBirthMC !== 0 ? (totalEvolution / avgBirthMC) * 100 : 0
+                      totalEvolution !== null && avgBirthMC !== null && avgBirthMC !== 0
+                        ? (totalEvolution / avgBirthMC) * 100
+                        : null
                     const enhancedCount = validData.filter(d => (d.mcChange || 0) > 0.1).length
                     const challengedCount = validData.filter(d => (d.mcChange || 0) < -0.1).length
                     const stableCount = validData.filter(
@@ -661,30 +672,45 @@ export function AgentDashboard() {
                       <>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-purple-600">
-                            {avgLiveMC.toFixed(3)}
+                            {avgLiveMC === null ? 'not computed' : avgLiveMC.toFixed(3)}
                           </div>
                           <div className="text-xs text-muted-foreground">Avg Live MC</div>
                           <div className="text-xs text-purple-700">
-                            vs {avgBirthMC.toFixed(3)} birth
+                            {avgBirthMC === null
+                              ? 'Birth MC not computed'
+                              : `vs ${avgBirthMC.toFixed(3)} birth`}
                           </div>
                         </div>
                         <div className="text-center">
                           <div
-                            className={`text-2xl font-bold ${totalEvolution >= 0 ? 'text-green-600' : 'text-orange-600'}`}
+                            className={`text-2xl font-bold ${
+                              totalEvolution === null
+                                ? 'text-muted-foreground'
+                                : totalEvolution >= 0
+                                  ? 'text-green-600'
+                                  : 'text-orange-600'
+                            }`}
                           >
-                            {totalEvolution >= 0 ? '+' : ''}
-                            {evolutionPercentage.toFixed(1)}%
+                            {evolutionPercentage === null
+                              ? 'not computed'
+                              : `${totalEvolution !== null && totalEvolution >= 0 ? '+' : ''}${evolutionPercentage.toFixed(1)}%`}
                           </div>
                           <div className="text-xs text-muted-foreground">System Evolution</div>
                           <div className="text-xs text-muted-foreground">
-                            {totalEvolution >= 0 ? 'Enhanced' : 'Challenged'}
+                            {totalEvolution === null
+                              ? 'Awaiting measurements'
+                              : totalEvolution >= 0
+                                ? 'Enhanced'
+                                : 'Challenged'}
                           </div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-green-600">{enhancedCount}</div>
                           <div className="text-xs text-muted-foreground">Enhanced Agents</div>
                           <div className="text-xs text-green-700">
-                            +{((enhancedCount / validData.length) * 100).toFixed(0)}%
+                            {validData.length === 0
+                              ? 'not computed'
+                              : `+${((enhancedCount / validData.length) * 100).toFixed(0)}%`}
                           </div>
                         </div>
                         <div className="text-center">
@@ -693,7 +719,9 @@ export function AgentDashboard() {
                           </div>
                           <div className="text-xs text-muted-foreground">Challenged Agents</div>
                           <div className="text-xs text-orange-700">
-                            {((challengedCount / validData.length) * 100).toFixed(0)}% affected
+                            {validData.length === 0
+                              ? 'not computed'
+                              : `${((challengedCount / validData.length) * 100).toFixed(0)}% affected`}
                           </div>
                         </div>
                       </>

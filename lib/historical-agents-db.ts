@@ -149,8 +149,7 @@ export class HistoricalAgentsService {
       // Enhanced consciousness profile
       consciousnessLevel: agent.consciousness.level,
       monicaConstant: agent.consciousness.monicaConstant,
-      kalchmConstant:
-        (agent as any).consciousness.kalchmConstant || agent.consciousness.monicaConstant || 0.5,
+      kalchmConstant: (agent as any).consciousness.kalchmConstant ?? null,
       dominantElement: agent.consciousness.dominantElement,
       dominantModality: agent.consciousness.dominantModality || null,
       signature: agent.consciousness.signature,
@@ -923,8 +922,7 @@ export class HistoricalAgentsService {
     birthLocation: { lat: number; lon: number; name: string }
     consciousnessLevel: string
     kalchmConstant: number
-    /** Synonym of kalchmConstant; defaults to it when omitted (UIs read this column). */
-    monicaConstant?: number
+    monicaConstant: number
     dominantElement: string
     dominantModality: string
     signature: string
@@ -965,9 +963,7 @@ export class HistoricalAgentsService {
           geography: 'Consciousness Realm',
           consciousnessLevel: agentData.consciousnessLevel,
           kalchmConstant: agentData.kalchmConstant,
-          // Synonym columns — without this the schema default (0) wins and
-          // galleries render crafted vessels as A#0.
-          monicaConstant: agentData.monicaConstant ?? agentData.kalchmConstant,
+          monicaConstant: agentData.monicaConstant,
           dominantElement: agentData.dominantElement,
           dominantModality: agentData.dominantModality,
           signature: agentData.signature,
@@ -1028,7 +1024,7 @@ export class HistoricalAgentsService {
           birthTime: agentData.birthTime,
           birthLocation: agentData.birthLocation,
           natalChart: agentData.natalChart,
-          monicaConstant: agentData.kalchmConstant,
+          monicaConstant: agentData.monicaConstant,
           dominantElement: agentData.dominantElement,
         })
       } catch (error) {

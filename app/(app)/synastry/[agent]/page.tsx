@@ -150,7 +150,9 @@ export default async function SynastryAgentPage({ params }: SynastryAgentPagePro
                 <div className="flex justify-between gap-4">
                   <span className="text-muted-foreground">Monica Constant</span>
                   <span className="font-mono font-medium">
-                    {typeof monicaConstant === 'number' ? monicaConstant.toFixed(3) : '0.000'}
+                    {typeof monicaConstant === 'number'
+                      ? monicaConstant.toFixed(3)
+                      : 'not computed'}
                   </span>
                 </div>
                 {agent.specialization && (

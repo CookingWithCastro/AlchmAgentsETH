@@ -224,7 +224,7 @@ function buildPositionsPayload(
   }
 }
 
-class BackendError extends Error {
+export class BackendError extends Error {
   constructor(
     public status: number,
     public path: string,
@@ -352,6 +352,23 @@ export const backend = {
 
   /** Raw HTTP request helper targeting agents backend */
   agentRequest,
+
+  consciousness: {
+    live: (body: unknown) =>
+      agentRequest<unknown>({
+        path: '/api/consciousness/live',
+        method: 'POST',
+        body,
+        auth: false,
+      }),
+    batch: (body: unknown) =>
+      agentRequest<unknown>({
+        path: '/api/consciousness/batch',
+        method: 'POST',
+        body,
+        auth: false,
+      }),
+  },
 
   /** Health check — public endpoint */
   health: () =>
@@ -781,5 +798,3 @@ export async function getLegacyPlanetaryPositions(
     speedDisplay: body?.speedDisplay ?? '',
   }))
 }
-
-export { BackendError }

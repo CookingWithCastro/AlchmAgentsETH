@@ -17,7 +17,7 @@ export interface EnhancedMomentScore {
   aspectSensitivity: number
   kineticScore: number
   consciousnessScore: number
-  mcScore: number
+  mcScore: number | null
   elementalResonance: number
   optimalTopics: string[]
   nextOptimalWindow?: Date
@@ -77,8 +77,11 @@ export function calculateEnhancedMomentScore(
     consciousnessMetrics.alchemicalCoherence * 0.3
 
   // 5. Monica Constant Score (10% weight) - Higher MC = more developed consciousness
-  const monicaConstant = agent.consciousness?.monicaConstant || 1.0
-  const mcScore = Math.min(1, monicaConstant / 7) // Normalize to 0-1 (MC range typically 0-7)
+  const monicaConstant = agent.consciousness?.monicaConstant
+  const mcScore =
+    typeof monicaConstant === 'number' && Number.isFinite(monicaConstant)
+      ? Math.min(1, monicaConstant / 7)
+      : null
 
   // 6. Elemental Resonance (10% weight) - Match with current alchemical state
   let elementalResonance = 0.5
@@ -107,13 +110,17 @@ export function calculateEnhancedMomentScore(
   }
 
   // Calculate weighted final score
+  const weightedComponents = [
+    { score: powerAlignment, weight: 0.25 },
+    { score: kineticScore, weight: 0.2 },
+    { score: aspectSensitivity, weight: 0.15 },
+    { score: consciousnessScore, weight: 0.2 },
+    ...(mcScore === null ? [] : [{ score: mcScore, weight: 0.1 }]),
+    { score: elementalResonance, weight: 0.1 },
+  ]
   const baseScore =
-    powerAlignment * 0.25 +
-    kineticScore * 0.2 +
-    aspectSensitivity * 0.15 +
-    consciousnessScore * 0.2 +
-    mcScore * 0.1 +
-    elementalResonance * 0.1
+    weightedComponents.reduce((total, component) => total + component.score * component.weight, 0) /
+    weightedComponents.reduce((total, component) => total + component.weight, 0)
 
   // Diversity bonus - favor agents with unique momentum types
   const selectedMomentumTypes = selectedAgents
@@ -148,7 +155,7 @@ export function calculateEnhancedMomentScore(
     reasoningParts.push(`high kinetic velocity (${Math.round(kineticScore * 100)}%)`)
   }
 
-  if (mcScore > 0.7) {
+  if (mcScore !== null && mcScore > 0.7 && typeof monicaConstant === 'number') {
     reasoningParts.push(`elevated consciousness (MC ${monicaConstant.toFixed(1)})`)
   }
 

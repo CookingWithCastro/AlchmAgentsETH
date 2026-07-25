@@ -870,7 +870,10 @@ export function UnifiedMultiAgentChat({
                 variant="outline"
                 className="ml-2 bg-purple-900/40 border-purple-500/50 text-purple-200"
               >
-                Consciousness: {groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)}
+                Consciousness:{' '}
+                {groupDynamics.consciousnessNetwork.groupConsciousness === null
+                  ? 'not computed'
+                  : groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)}
               </Badge>
             )}
           </div>
@@ -927,7 +930,9 @@ export function UnifiedMultiAgentChat({
                           <div>
                             <h4 className="text-sm font-medium mb-2">Consciousness Network</h4>
                             <div className="text-2xl font-bold">
-                              {groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)}
+                              {groupDynamics.consciousnessNetwork.groupConsciousness === null
+                                ? 'not computed'
+                                : groupDynamics.consciousnessNetwork.groupConsciousness.toFixed(2)}
                             </div>
                             <div className="text-sm text-gray-500">Group Level</div>
                           </div>

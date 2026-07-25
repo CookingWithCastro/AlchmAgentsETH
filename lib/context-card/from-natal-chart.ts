@@ -3,6 +3,7 @@ import { getLegacyPlanetaryPositions } from '@/lib/backend'
 import { getAlchemicalQuantitiesAction } from '@/lib/actions/backend-actions'
 import { getPlanetaryDignity, getRulingPlanet } from '@/lib/astrological-data'
 import { deriveStatsFromChart } from '@/lib/sacred-7-stats'
+import { calculateKalchm as calculateCanonicalKalchm } from '@/lib/thermodynamics/kalchm'
 import {
   calculateAllPlanets,
   calculateProfessionalHouses,
@@ -110,12 +111,13 @@ function birthMoment(chart: StoredChart): Date {
   )
 }
 
-function computeKalchm(spirit: number, essence: number, matter: number, substance: number): number {
-  if (!spirit && !essence && !matter && !substance) return 1.0
-  const num = Math.pow(spirit || 1, spirit || 1) * Math.pow(essence || 1, essence || 1)
-  const den = Math.pow(matter || 1, matter || 1) * Math.pow(substance || 1, substance || 1)
-  const k = num / den
-  return Number.isFinite(k) && !Number.isNaN(k) ? Math.round(k * 100) / 100 : 1.0
+export function computeKalchm(
+  spirit: number,
+  essence: number,
+  matter: number,
+  substance: number
+): number {
+  return calculateCanonicalKalchm({ spirit, essence, matter, substance })
 }
 
 function closestMajor(sep: number) {
@@ -264,24 +266,42 @@ export async function buildContextCardDataFromChart(chart: StoredChart): Promise
     moon: signOf('Moon'),
     rising: risingSign,
   }
+  const chartMonica =
+    typeof chart.monicaConstant === 'number' && Number.isFinite(chart.monicaConstant)
+      ? chart.monicaConstant
+      : null
 
   let sacred7: Record<string, number> = {}
   let planetary12: Record<string, number> = {}
-  try {
-    const stats = deriveStatsFromChart({
-      monicaConstant: Number(chart.monicaConstant) || 1.618,
-      sunLongitude: absByBody.Sun ?? 0,
-      moonLongitude: absByBody.Moon ?? 0,
-      mercuryLongitude: absByBody.Mercury ?? 0,
-      venusLongitude: absByBody.Venus ?? 0,
-      marsLongitude: absByBody.Mars ?? 0,
-      ascendantLongitude: ascendantLon,
-    }) as unknown as Record<string, number>
-    sacred7 = Object.fromEntries(SACRED7_KEYS.map(k => [k, Math.round(stats[k] ?? 50)]))
-    planetary12 = Object.fromEntries(PLANETARY12_KEYS.map(k => [k, Math.round(stats[k] ?? 50)]))
-  } catch {
-    sacred7 = Object.fromEntries(SACRED7_KEYS.map(k => [k, 50]))
-    planetary12 = Object.fromEntries(PLANETARY12_KEYS.map(k => [k, 50]))
+  if (chartMonica !== null) {
+    try {
+      const stats = deriveStatsFromChart({
+        monicaConstant: chartMonica,
+        sunLongitude: absByBody.Sun ?? 0,
+        moonLongitude: absByBody.Moon ?? 0,
+        mercuryLongitude: absByBody.Mercury ?? 0,
+        venusLongitude: absByBody.Venus ?? 0,
+        marsLongitude: absByBody.Mars ?? 0,
+        ascendantLongitude: ascendantLon,
+      }) as unknown as Record<string, number>
+      sacred7 = Object.fromEntries(
+        SACRED7_KEYS.flatMap(key =>
+          typeof stats[key] === 'number' && Number.isFinite(stats[key])
+            ? [[key, Math.round(stats[key])]]
+            : []
+        )
+      )
+      planetary12 = Object.fromEntries(
+        PLANETARY12_KEYS.flatMap(key =>
+          typeof stats[key] === 'number' && Number.isFinite(stats[key])
+            ? [[key, Math.round(stats[key])]]
+            : []
+        )
+      )
+    } catch {
+      sacred7 = {}
+      planetary12 = {}
+    }
   }
 
   const elementTally: Record<string, number> = { Fire: 0, Water: 0, Earth: 0, Air: 0 }
@@ -394,7 +414,7 @@ export async function buildContextCardDataFromChart(chart: StoredChart): Promise
       elemental: elementTally,
       esms: { spirit, essence, matter, substance },
       kalchm,
-      monica: Number(chart.monicaConstant) || 1.618,
+      monica: chartMonica,
       thermodynamics: {
         heat: 0.65,
         entropy: 0.42,

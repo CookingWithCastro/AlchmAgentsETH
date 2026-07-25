@@ -1645,7 +1645,7 @@ async def get_moment_recommendations(limit: int = 5, db: Session = Depends(datab
 
     scored_agents = []
     for agent in agents:
-        mc = agent.monicaConstant if getattr(agent, 'monicaConstant', None) is not None else 0.5
+        mc = agent.monicaConstant if getattr(agent, 'monicaConstant', None) is not None else None
         score = utils.calculate_enhanced_moment_score(
             agent.agentId,
             current_planets,
@@ -1681,7 +1681,7 @@ async def post_moment_recommendations(request: Dict[str, Any], db: Session = Dep
     scores = []
     for agent_id in agent_ids:
         agent = crud.get_agent(db, agent_id)
-        mc = agent.monicaConstant if agent and getattr(agent, 'monicaConstant', None) is not None else 0.5
+        mc = agent.monicaConstant if agent and getattr(agent, 'monicaConstant', None) is not None else None
         score = utils.calculate_enhanced_moment_score(agent_id, current_planets, alchm_data, mc, agent=agent)
         scores.append(score)
         

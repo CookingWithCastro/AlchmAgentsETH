@@ -34,7 +34,7 @@ export interface UnifiedPlanetaryData {
   timestamp: string
   planetaryPositions: PlanetaryPosition[]
   alchmQuantities: AlchemicalQuantities
-  monicaConstant: number
+  monicaConstant: number | null
   loading: boolean
   error: string | null
   lastUpdated: Date | null
@@ -90,7 +90,7 @@ export function usePlanetaryPositions(options: UsePlanetaryPositionsOptions = {}
       Reactivity: 0,
       Energy: 0,
     },
-    monicaConstant: 0,
+    monicaConstant: null,
     loading: true,
     error: null,
     lastUpdated: null,
@@ -159,11 +159,14 @@ export function usePlanetaryPositions(options: UsePlanetaryPositionsOptions = {}
 
       // Backend recovered — re-arm the warning so a future outage gets logged once.
       backendWarnedRef.current = false
+      const monicaInput = alchmPayload?.['A-Number']
+      const rawMonica =
+        monicaInput === null || monicaInput === undefined ? Number.NaN : Number(monicaInput)
       setData({
         timestamp: new Date().toISOString(),
         planetaryPositions,
         alchmQuantities,
-        monicaConstant: Number(alchmPayload?.['A-Number'] ?? 0),
+        monicaConstant: Number.isFinite(rawMonica) ? rawMonica : null,
         loading: false,
         error: null,
         lastUpdated: new Date(),

@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 import math
 from datetime import datetime
+from thermodynamics import calculate_kalchm, calculate_monica
 
 PLANET_ALCHM_PERIODS = {
     'Pluto': 247.94,
@@ -293,22 +294,9 @@ def alchemize(
     # Greg's Energy
     gregs_energy = heat - entropy * reactivity
     
-    # Kalchm
-    def safe_pow_x_x(x: float) -> float:
-        if x <= 0.0:
-            return 1.0
-        return x ** x
-        
-    kalchm_num = safe_pow_x_x(Spirit) * safe_pow_x_x(Essence)
-    kalchm_den = safe_pow_x_x(Matter) * safe_pow_x_x(Substance)
-    kalchm = kalchm_num / (kalchm_den or 1.0)
-    
-    # Monica
-    monica = 1.0
-    if kalchm > 0 and math.isfinite(kalchm):
-        lnk = math.log(kalchm)
-        if lnk != 0.0 and reactivity != 0.0:
-            monica = -gregs_energy / (reactivity * lnk)
+    # Canonical thermodynamic constants
+    kalchm = calculate_kalchm(Spirit, Essence, Matter, Substance)
+    monica = calculate_monica(gregs_energy, reactivity, kalchm)
             
     total_elements = Fire + Water + Air + Earth
     elemental_properties = {
@@ -803,14 +791,11 @@ _SIGN_ELEMENTS = {
 }
 _COMPLEMENTARY_ELEMENT = {"fire": "air", "air": "fire", "earth": "water", "water": "earth"}
 
-def calculate_enhanced_moment_score(agent_id: str, current_planets: Dict[str, Any], alchm_data: Dict[str, Any], monica_constant: float, agent: Any = None) -> Dict[str, Any]:
+def calculate_enhanced_moment_score(agent_id: str, current_planets: Dict[str, Any], alchm_data: Dict[str, Any], monica_constant: Optional[float], agent: Any = None) -> Dict[str, Any]:
     """6-component moment score, derived entirely from real data:
     the agent's stored Sacred quantities (spirit/essence/matter/substance),
     kalchm + monica constants, its dominant element vs the CURRENT sky's
     elemental distribution, and the moment's alchemical totals."""
-    if monica_constant is None:
-        monica_constant = 0.5
-
     # Per-agent kinetic profile from stored Sacred quantities: the volatile
     # quantities (spirit/essence) drive velocity; the receptive ones
     # (essence/substance) drive aspect sensitivity.
@@ -858,7 +843,8 @@ def calculate_enhanced_moment_score(agent_id: str, current_planets: Dict[str, An
     kinetic_velocity = 0.20 * (consciousness_velocity * 100)
     aspect_sensitivity = 0.15 * (aspect_sensitivity_ratio * 100)
     consciousness_score = 0.20 * consciousness_pct
-    mc_bonus = 0.10 * (monica_constant * 100)
+    has_monica = monica_constant is not None and math.isfinite(monica_constant)
+    mc_bonus = 0.10 * (monica_constant * 100) if has_monica else None
 
     effects = alchm_data.get("Alchemy Effects", {})
     total_elements = sum([effects.get("Total Spirit", 0), effects.get("Total Essence", 0), effects.get("Total Matter", 0), effects.get("Total Substance", 0)])
@@ -866,7 +852,19 @@ def calculate_enhanced_moment_score(agent_id: str, current_planets: Dict[str, An
 
     diversity_bonus = 5
 
-    score = planetary_alignment + kinetic_velocity + aspect_sensitivity + consciousness_score + mc_bonus + elemental_resonance + diversity_bonus
+    weighted_components = [
+        (planetary_alignment, 0.25),
+        (kinetic_velocity, 0.20),
+        (aspect_sensitivity, 0.15),
+        (consciousness_score, 0.20),
+        (elemental_resonance, 0.10),
+    ]
+    if mc_bonus is not None:
+        weighted_components.append((mc_bonus, 0.10))
+    score = (
+        sum(component for component, _weight in weighted_components)
+        / sum(weight for _component, weight in weighted_components)
+    ) + diversity_bonus
     score = max(0, min(100, score))
 
     return {

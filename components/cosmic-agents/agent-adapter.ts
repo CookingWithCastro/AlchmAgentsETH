@@ -4,6 +4,7 @@
  */
 
 import type { CraftedAgent, SacredStats } from '../../lib/agent-types'
+import { calculateKalchm as calculateCanonicalKalchm } from '@/lib/thermodynamics/kalchm'
 import type { CouncilAgent, Element, NatalPosition, Sacred7Stats, Planetary12 } from './types'
 
 const SIGN_ELEMENT: Record<string, Element> = {
@@ -127,13 +128,15 @@ export function craftedToCouncilAgent(agent: CraftedAgent, cooldownMins = 0): Co
     rising: agent.consciousness?.signature?.split(' ')?.[0],
     natal: natalArray(planets),
     elemental: elementalPercentages(planets),
-    esms: {
-      spirit: alchemical?.spirit ?? 6,
-      essence: alchemical?.essence ?? 6,
-      matter: alchemical?.matter ?? 6,
-      substance: alchemical?.substance ?? 6,
-    },
-    monicaConstant: agent.consciousness?.monicaConstant ?? 5.0,
+    esms: alchemical
+      ? {
+          spirit: alchemical.spirit,
+          essence: alchemical.essence,
+          matter: alchemical.matter,
+          substance: alchemical.substance,
+        }
+      : null,
+    monicaConstant: agent.consciousness?.monicaConstant ?? null,
     kalchm: deriveKalchm(alchemical),
     stats: pickSacred7(agent.sacredStats),
     planetary12: pickPlanetary12(agent.sacredStats),
@@ -144,19 +147,14 @@ export function craftedToCouncilAgent(agent: CraftedAgent, cooldownMins = 0): Co
   }
 }
 
-function deriveKalchm(alchemical?: {
+export function deriveKalchm(alchemical?: {
   spirit: number
   essence: number
   matter: number
   substance: number
-}): number {
-  if (!alchemical) return 1
-  const { spirit, essence, matter, substance } = alchemical
-  if (matter === 0 || substance === 0) return 1
-  // Mirror of lib/alchemizer.ts kalchm formula shape — sufficient for UI display
-  const top = Math.pow(spirit, spirit) * Math.pow(essence, essence)
-  const bot = Math.pow(matter, matter) * Math.pow(substance, substance)
-  return Math.round((top / bot) * 100) / 100
+}): number | null {
+  if (!alchemical) return null
+  return calculateCanonicalKalchm(alchemical)
 }
 
 /* User natal chart → CouncilAgent */
@@ -182,9 +180,9 @@ export function userChartToCouncilAgent(chart: UserChartLite | null): CouncilAge
     moon,
     natal: chart.positions,
     elemental: elementalPercentages(planetsRec),
-    esms: { spirit: 6, essence: 7, matter: 5, substance: 8 },
-    monicaConstant: 5.3,
-    kalchm: 4.12,
+    esms: null,
+    monicaConstant: null,
+    kalchm: null,
     stats: defaultSacred7(),
     planetary12: defaultPlanetary12(),
     specialty: chart.birthDate ? `native of ${chart.birthDate} · operator` : 'operator',

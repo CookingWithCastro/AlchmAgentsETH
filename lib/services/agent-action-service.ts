@@ -80,7 +80,7 @@ export interface AgentProfilePayload {
   natalChart: any
   natalPositions: Array<{ planet: string; sign: string; degree: number }>
   dominantElement: string
-  monicaConstant: number
+  monicaConstant: number | null
   birthDate: string
   birthTime: string | null
   birthLocation: string
@@ -1128,6 +1128,10 @@ export class AgentActionService {
     profile: AgenticUser['user_profiles']
   ): AgentProfilePayload | null {
     if (!profile) return null
+    const parsedMonica =
+      profile.monicaConstant === null || profile.monicaConstant === undefined
+        ? null
+        : Number(profile.monicaConstant)
 
     const natalPositions: Array<{ planet: string; sign: string; degree: number }> = []
     if (Array.isArray(profile.natalPositions)) {
@@ -1168,7 +1172,7 @@ export class AgentActionService {
       natalChart: profile.natalChart ?? null,
       natalPositions,
       dominantElement: profile.dominantElement ?? 'Fire',
-      monicaConstant: Number(profile.monicaConstant ?? 0),
+      monicaConstant: parsedMonica !== null && Number.isFinite(parsedMonica) ? parsedMonica : null,
       birthDate,
       birthTime: profile.birthTime ?? null,
       birthLocation,

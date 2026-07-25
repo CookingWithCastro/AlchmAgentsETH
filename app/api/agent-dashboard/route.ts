@@ -234,7 +234,7 @@ async function getResilienceOverview() {
 async function getConsciousnessOverview() {
   const scoredAgents = HISTORICAL_AGENTS.map(agent => ({
     id: agent.id,
-    monicaConstant: Number(agent.consciousness?.monicaConstant ?? 0),
+    monicaConstant: Number(agent.consciousness.monicaConstant),
     evolutionStage: Number(agent.personality?.evolutionStage ?? 0),
   }))
   const averageConsciousnessLevel =

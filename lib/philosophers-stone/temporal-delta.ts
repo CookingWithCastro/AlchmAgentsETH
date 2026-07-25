@@ -20,7 +20,7 @@ export type SessionSnapshot = {
     Reactivity?: number
     Energy?: number
   }
-  monicaConstant?: number
+  monicaConstant?: number | null
 }
 
 export type TemporalDelta = {
@@ -176,18 +176,27 @@ export function computeTemporalDelta(
 
   // Calculate consciousness delta with comprehensive validation
   let consciousnessDelta: TemporalDelta['consciousnessDelta'] | undefined
-  const mcPrev = safeNumber(previousSession.monicaConstant, 0)
-  const mcCur = safeNumber(currentSession.monicaConstant, 0)
+  const mcPrev =
+    typeof previousSession.monicaConstant === 'number' &&
+    Number.isFinite(previousSession.monicaConstant)
+      ? previousSession.monicaConstant
+      : null
+  const mcCur =
+    typeof currentSession.monicaConstant === 'number' &&
+    Number.isFinite(currentSession.monicaConstant)
+      ? currentSession.monicaConstant
+      : null
   const energyPrev = safeNumber(previousSession.alchmQuantities?.Energy, 0)
   const energyCur = safeNumber(currentSession.alchmQuantities?.Energy, 0)
 
   // Only include consciousness delta if we have valid data
-  if (mcPrev !== 0 || mcCur !== 0 || energyPrev !== 0 || energyCur !== 0) {
-    const mcDelta = mcCur - mcPrev
+  if ((mcPrev !== null && mcCur !== null) || energyPrev !== 0 || energyCur !== 0) {
     const energyDelta = energyCur - energyPrev
 
     consciousnessDelta = {
-      monicaConstantDelta: Math.round(safeNumber(mcDelta, 0) * 1000) / 1000,
+      ...(mcPrev !== null && mcCur !== null
+        ? { monicaConstantDelta: Math.round((mcCur - mcPrev) * 1000) / 1000 }
+        : {}),
       energyDelta: Math.round(safeNumber(energyDelta, 0) * 100) / 100,
     }
   }

@@ -175,12 +175,13 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ i
 
   const element = agent.consciousness?.dominantElement || 'Air'
   const meta = ELEMENT_METADATA[element as keyof typeof ELEMENT_METADATA] || ELEMENT_METADATA.Air
+  const agentMonica = agent.consciousness?.monicaConstant ?? null
 
   return (
     <div className="relative min-h-screen bg-[#10131f] text-[#e0e1f3] font-body-md overflow-x-hidden">
       {/* Client Component for Starfield, Live Clock, and Scrolling Telemetry Logs */}
       <StitchProfileClient
-        monicaConstant={agent.consciousness?.monicaConstant || 5.0}
+        monicaConstant={agentMonica}
         dominantElement={element}
         actions={(actionsRes as any).actions || []}
         interactions={(interactionsRes as any).interactions || []}
@@ -327,7 +328,7 @@ export default async function AgentProfilePage({ params }: { params: Promise<{ i
                 <div className="w-48 h-48 rounded-full border border-dashed border-border-gold/10 flex items-center justify-center">
                   <div className="text-center">
                     <span className="font-mono-data text-4xl text-bright-gold font-bold">
-                      {(agent.consciousness?.monicaConstant || 5.0).toFixed(2)}
+                      {agentMonica === null ? 'not computed' : agentMonica.toFixed(2)}
                     </span>
                     <span className="text-[9px] font-mono-label text-muted-text uppercase tracking-wider block mt-1">
                       MONICA CONSTANT

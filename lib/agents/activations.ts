@@ -117,13 +117,15 @@ function mapAgent(agent: any, date: Date): AgentActivationContract {
   const momentElement = SIGN_ELEMENT[sign]
   const element = normalizeElement(agent.dominantElement || agent.consciousness?.dominantElement)
   const resonance = Number(agent.resonanceScore ?? agent.stats?.resonanceScore ?? 0.5)
-  const monica = Number(agent.monicaConstant ?? agent.consciousness?.monicaConstant ?? 0.5)
+  const rawMonica = agent.monicaConstant ?? agent.consciousness?.monicaConstant ?? null
+  const monicaContribution =
+    typeof rawMonica === 'number' && Number.isFinite(rawMonica) ? rawMonica * 0.04 : 0
   const affinity = element === momentElement ? 0.35 : 0.08
   const jitter =
     stableFraction(`${agent.agentId || agent.id}:${date.toISOString().slice(0, 10)}`) * 0.12
   const strength = Math.max(
     0,
-    Math.min(1, 0.28 + affinity + resonance * 0.18 + monica * 0.04 + jitter)
+    Math.min(1, 0.28 + affinity + resonance * 0.18 + monicaContribution + jitter)
   )
 
   return {

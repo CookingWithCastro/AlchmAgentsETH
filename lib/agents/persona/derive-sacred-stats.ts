@@ -41,7 +41,7 @@ export function deriveSacredStats(agent: CraftedAgent): Sacred7Stats {
   const ascendant = agent.consciousness?.natalChart?.ascendant ?? 0
 
   return deriveStatsFromChart({
-    monicaConstant: agent.consciousness?.monicaConstant ?? 0,
+    monicaConstant: agent.consciousness.monicaConstant,
     sunLongitude: planetLongitude(planets as any, 'Sun', 120),
     moonLongitude: planetLongitude(planets as any, 'Moon', 90),
     mercuryLongitude: planetLongitude(planets as any, 'Mercury', 150),

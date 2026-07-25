@@ -34,7 +34,7 @@ function parseDate(dateInput: Date | string): { date: Date; year: number } {
  * Derive all 19 Sacred Stats (Sacred 7 + Planetary 12) for seeding
  */
 function deriveSacredStats(agent: any) {
-  const mc = agent.consciousness.monicaConstant || 0
+  const mc = agent.consciousness.monicaConstant
   const spirit = agent.consciousness.alchemicalElements?.spirit || 0.5
   const essence = agent.consciousness.alchemicalElements?.essence || 0.5
   const matter = agent.consciousness.alchemicalElements?.matter || 0.5

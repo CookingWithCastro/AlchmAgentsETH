@@ -143,7 +143,7 @@ export interface GroupDynamics {
       resonanceType: string
       strength: number
     }>
-    groupConsciousness: number
+    groupConsciousness: number | null
     dominantElements: Element[]
     synergies: string[]
     tensions: string[]

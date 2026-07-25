@@ -47,7 +47,7 @@ type Props = {
     Reactivity?: number
     Energy?: number
   }
-  monicaConstant: number
+  monicaConstant: number | null
   // Optional live consciousness data for real-time display
   liveData?: {
     birthMC: number
@@ -101,6 +101,11 @@ function safeConsciousnessValue(value: any, fallback: number = 0): number {
   return fallback
 }
 
+function finiteConsciousnessValue(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  return null
+}
+
 export function ConsciousnessVectorDisplay({
   alchmQuantities,
   monicaConstant,
@@ -146,16 +151,17 @@ export function ConsciousnessVectorDisplay({
       }
     : null
 
-  const safeMC = safeConsciousnessValue(liveData?.liveMC || monicaConstant, 0)
-  const birthMC = liveData ? safeConsciousnessValue(liveData.birthMC, 0) : null
+  const currentMonica = finiteConsciousnessValue(liveData?.liveMC ?? monicaConstant)
+  const birthMonica = liveData ? finiteConsciousnessValue(liveData.birthMC) : null
 
   // Validate MC classification to prevent errors
-  let mcClass
-  try {
-    mcClass = classifyMC(safeMC)
-  } catch (error) {
-    console.warn('Error classifying Monica Constant:', error)
-    mcClass = { level: 1, name: 'Initiate', description: 'Beginning consciousness development' }
+  let mcClass: ReturnType<typeof classifyMC> | null = null
+  if (currentMonica !== null) {
+    try {
+      mcClass = classifyMC(currentMonica)
+    } catch (error) {
+      console.warn('Error classifying Monica Constant:', error)
+    }
   }
 
   // Normalize values to avoid negative or extreme scaling
@@ -318,10 +324,12 @@ export function ConsciousnessVectorDisplay({
               </div>
 
               {/* Live MC with birth comparison */}
-              {liveData ? (
+              {currentMonica === null ? (
+                <div className="text-3xl font-bold text-muted-foreground">not computed</div>
+              ) : liveData ? (
                 <>
                   <div className="text-3xl font-bold text-primary">
-                    {safeMC.toFixed(3)}
+                    {currentMonica.toFixed(3)}
                     {liveData.mcChange !== 0 && (
                       <span
                         className={`text-sm ml-2 ${liveData.mcChange > 0 ? 'text-green-500' : 'text-red-500'}`}
@@ -332,18 +340,23 @@ export function ConsciousnessVectorDisplay({
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    Birth: {birthMC?.toFixed(3)} → Live: {safeMC.toFixed(3)}
+                    Birth: {birthMonica === null ? 'not computed' : birthMonica.toFixed(3)} → Live:{' '}
+                    {currentMonica.toFixed(3)}
                   </div>
                 </>
               ) : (
-                <div className="text-3xl font-bold text-primary">{safeMC.toFixed(3)}</div>
+                <div className="text-3xl font-bold text-primary">{currentMonica.toFixed(3)}</div>
               )}
 
-              <Badge variant="secondary" className="flex items-center gap-1 w-fit">
-                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                Level {mcClass.level}: {mcClass.name}
-              </Badge>
-              <p className="text-sm text-muted-foreground">{mcClass.description}</p>
+              {mcClass && (
+                <>
+                  <Badge variant="secondary" className="flex items-center gap-1 w-fit">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    Level {mcClass.level}: {mcClass.name}
+                  </Badge>
+                  <p className="text-sm text-muted-foreground">{mcClass.description}</p>
+                </>
+              )}
 
               {/* Live consciousness interpretation */}
               {liveData?.interpretations?.transitInfluence && (
@@ -650,8 +663,9 @@ export function ConsciousnessVectorDisplay({
               Substance + 1)
               <br />
               <span className="text-muted-foreground">
-                Your current MC of {safeMC.toFixed(3)} indicates {mcClass.name.toLowerCase()}{' '}
-                consciousness level.
+                {currentMonica === null || mcClass === null
+                  ? 'Monica has not been computed for this chart.'
+                  : `Your current MC of ${currentMonica.toFixed(3)} indicates ${mcClass.name.toLowerCase()} consciousness level.`}
               </span>
             </p>
           </div>
