@@ -84,6 +84,22 @@ export async function POST(req: NextRequest) {
             { status: 400 }
           )
         }
+
+        // SSRF Defense (OWASP API7:2023): Validate all target URLs
+        const { validateUrlForSSRF } = await import('@/lib/utils/url-validator')
+        for (const url of body.sources) {
+          const validation = validateUrlForSSRF(url)
+          if (!validation.valid) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: `Invalid or restricted target URL '${url}': ${validation.reason}`,
+              },
+              { status: 400 }
+            )
+          }
+        }
+
         const result = await updateAgentKnowledge(body.agentId, body.sources, body.options)
         return result
       }

@@ -156,6 +156,11 @@ const navigationGroups = [
         label: ALCHM_DESKTOP_DOWNLOAD_LABEL,
         description: 'Install the native Alchm Desktop chat interface.',
       },
+      {
+        href: '/privacy',
+        label: 'Privacy Policy',
+        description: 'Review our security, data protection, and user rights policies.',
+      },
     ],
   },
 ]

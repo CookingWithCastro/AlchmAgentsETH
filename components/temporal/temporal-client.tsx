@@ -20,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
 import { calculateMC } from '@/lib/monica/monica-constant-validator'
+import { sanitizeSvg } from '@/lib/utils/sanitizer'
 
 // Browser-safe wrappers around the proxy routes — replaces removed
 // `@/lib/astrologize` and `@/lib/alchemizer` modules.
@@ -554,7 +555,7 @@ export function TemporalClient() {
                 </div>
                 {(r as any).wheel?.svg && (
                   <div className="border rounded p-2 overflow-auto">
-                    <div dangerouslySetInnerHTML={{ __html: (r as any).wheel.svg }} />
+                    <div dangerouslySetInnerHTML={{ __html: sanitizeSvg((r as any).wheel.svg) }} />
                   </div>
                 )}
                 {(r as any).wheel?.imageUrl && !(r as any).wheel?.svg && (

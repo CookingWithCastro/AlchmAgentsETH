@@ -56,9 +56,35 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
         const userId = session?.user?.id
 
         if (!userId) {
+          const { logSecurityEvent } = await import('@/lib/security-audit-logger')
+          logSecurityEvent({
+            eventType: 'AUTH_FAILURE',
+            resource: '/api/agents/unified (chat)',
+            details: { action },
+          })
           return NextResponse.json(
             { success: false, error: 'Authentication required for agent interaction.', timestamp },
             { status: 401 }
+          )
+        }
+
+        // Rate limiting check (OWASP LLM10 / API4)
+        const { checkRateLimit } = await import('@/lib/rate-limiter')
+        const rateCheck = checkRateLimit(`chat:${userId}`, { windowMs: 60 * 1000, maxRequests: 30 })
+        if (!rateCheck.allowed) {
+          const { logSecurityEvent } = await import('@/lib/security-audit-logger')
+          logSecurityEvent({
+            eventType: 'RATE_LIMIT_EXCEEDED',
+            userId,
+            resource: '/api/agents/unified (chat)',
+          })
+          return NextResponse.json(
+            {
+              success: false,
+              error: 'Rate limit exceeded. Please wait before sending more messages.',
+              timestamp,
+            },
+            { status: 429 }
           )
         }
 
@@ -92,7 +118,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
         }
 
         const personaCtx = parameters.agentId ? buildAgentContext(parameters.agentId) : null
-        const userMessage = parameters.message || parameters.userMessage
+        const { sanitizePromptInput } = await import('@/lib/utils/sanitizer')
+        const rawUserMessage = parameters.message || parameters.userMessage
+        const userMessage = rawUserMessage ? sanitizePromptInput(rawUserMessage) : rawUserMessage
 
         // Walrus memory: inject the agent's most-relevant past memories into the
         // persona (no-op without MemWal). Never blocks chat — falls back to the raw block.

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import NatalWheelSvg from './natal-wheel-svg'
+import { sanitizeSvg } from '@/lib/utils/sanitizer'
 
 // Local type matching the proxy `/api/astrologize` response. The Railway
 // backend no longer renders an SVG/image wheel — when `svg`/`imageUrl` are
@@ -244,7 +245,7 @@ export default function CircularNatalHoroscope({
                   }}
                 >
                   <div
-                    dangerouslySetInnerHTML={{ __html: horoscope.svg }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeSvg(horoscope.svg) }}
                     style={{
                       filter: isDarkMode ? 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.2))' : 'none',
                     }}

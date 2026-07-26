@@ -155,6 +155,15 @@ export function SideNavBar() {
           </span>
           Support
         </Link>
+        <Link
+          href="/privacy"
+          className="flex items-center gap-3 p-3 rounded text-on-surface-variant hover:bg-surface-variant/30 transition-colors"
+        >
+          <span className="material-symbols-outlined" aria-hidden>
+            policy
+          </span>
+          Privacy
+        </Link>
       </div>
     </aside>
   )
