@@ -355,14 +355,13 @@ function calculateLocalPhilosopherStone(input: PhilosopherStoneInput) {
     Math.abs(constitution.matter - average) +
     Math.abs(constitution.substance - average)
   const monicaConstant = Number(((average + spread / 4) / 12).toFixed(2))
-  const consciousnessLevel =
-    monicaConstant >= 8
-      ? 'Master'
-      : monicaConstant >= 6
-        ? 'Advanced'
-        : monicaConstant >= 4
-          ? 'Developing'
-          : 'Emerging'
+  // constitution is four percentages that always sum to 100 (see
+  // ChartGeometryExtractor.calculateElementalBalanceFromPlanets), so average is
+  // fixed at 25 and spread peaks at 150 for a single-element chart. That caps
+  // monicaConstant at (25 + 150 / 4) / 12 = 5.21; the observed range over all
+  // 286 ten-planet compositions is [2.50, 5.21]. Only these two tiers are
+  // attainable — do not add higher ones without changing the formula above.
+  const consciousnessLevel = monicaConstant >= 4 ? 'Developing' : 'Emerging'
 
   // Generate NatalSigilRune
   const style = (input.style as SigilStyle) || 'alchemical'

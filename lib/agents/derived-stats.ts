@@ -8,6 +8,7 @@ import type { CraftedAgent } from '../agent-types'
 import { alchemize } from '../alchemizer'
 import { generateAccurateHoroscope } from '../monica/horoscope-generator'
 import { AlchemicalKineticsClient } from '../kinetics-client'
+import { calculateThermodynamics as calculateCanonicalThermodynamics } from '../thermodynamics/kalchm'
 
 export interface LiveStats {
   // The Seven Sacred Stats - Living Vital Signs of Consciousness
@@ -143,7 +144,8 @@ async function calculateAlchemicalProperties(agent: CraftedAgent): Promise<{
   }
 }
 
-// Calculate thermodynamic properties using exact alchemizer formulas
+// Calculate thermodynamic properties from the canonical engine, renaming gregsEnergy to the
+// `energy` key LiveStats exposes. The `|| 0` guards keep the previous malformed-input contract.
 function calculateThermodynamics(
   alchemicalProps: { spirit: number; essence: number; matter: number; substance: number },
   elementalValues: { fire: number; water: number; air: number; earth: number }
@@ -153,22 +155,17 @@ function calculateThermodynamics(
   reactivity: number
   energy: number
 } {
-  const { spirit, essence, matter, substance } = alchemicalProps
-  const { fire, water, air, earth } = elementalValues
+  const { heat, entropy, reactivity, gregsEnergy } = calculateCanonicalThermodynamics({
+    ...alchemicalProps,
+    ...elementalValues,
+  })
 
-  // Use exact formulas from alchemizer.ts
-  const denominator = substance + essence + matter + water + air + earth || 1
-  const earthWaterDenominator = matter + earth + water || 1
-
-  const heat = (spirit ** 2 + fire ** 2) / denominator ** 2 || 0
-  const entropy =
-    (spirit ** 2 + substance ** 2 + fire ** 2 + air ** 2) / earthWaterDenominator ** 2 || 0
-  const reactivity =
-    (spirit ** 2 + substance ** 2 + essence ** 2 + fire ** 2 + air ** 2 + water ** 2) /
-      ((matter + earth) ** 2 || 1) || 0
-  const energy = heat - reactivity * entropy || 0
-
-  return { heat, entropy, reactivity, energy }
+  return {
+    heat: heat || 0,
+    entropy: entropy || 0,
+    reactivity: reactivity || 0,
+    energy: gregsEnergy || 0,
+  }
 }
 
 // Extract elemental values from agent's natal chart

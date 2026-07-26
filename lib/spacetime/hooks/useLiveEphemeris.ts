@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { AlchemicalQuantities, PlanetaryPosition } from '@/hooks/usePlanetaryPositions'
 import { calculateMC } from '@/lib/monica/monica-constant-validator'
+import { calculateThermodynamics } from '@/lib/thermodynamics/kalchm'
 import { useSpacetime } from '@/lib/spacetime/SpacetimeContext'
 import { tables } from '@/lib/spacetime/generated'
 import type { Ephemeris, Planet } from '@/lib/spacetime/generated/types'
@@ -212,33 +213,20 @@ export function deriveLiveEphemeris(rows: readonly Ephemeris[]) {
         PLANET_ORDER.indexOf(right.planet as PlanetName)
     )
 
-  const denominator =
-    totals.substance +
-      totals.essence +
-      totals.matter +
-      elements.Water +
-      elements.Air +
-      elements.Earth || 1
-  const earthWaterDenominator = totals.matter + elements.Earth + elements.Water || 1
-  const Heat = (totals.spirit ** 2 + elements.Fire ** 2) / denominator ** 2
-  const Entropy =
-    (totals.spirit ** 2 + totals.substance ** 2 + elements.Fire ** 2 + elements.Air ** 2) /
-    earthWaterDenominator ** 2
-  const Reactivity =
-    (totals.spirit ** 2 +
-      totals.substance ** 2 +
-      totals.essence ** 2 +
-      elements.Fire ** 2 +
-      elements.Air ** 2 +
-      elements.Water ** 2) /
-    ((totals.matter + elements.Earth) ** 2 || 1)
+  const { heat, entropy, reactivity, gregsEnergy } = calculateThermodynamics({
+    ...totals,
+    fire: elements.Fire,
+    water: elements.Water,
+    air: elements.Air,
+    earth: elements.Earth,
+  })
 
   const alchmQuantities: AlchemicalQuantities = {
     ...totals,
-    Heat,
-    Entropy,
-    Reactivity,
-    Energy: Heat - Reactivity * Entropy,
+    Heat: heat,
+    Entropy: entropy,
+    Reactivity: reactivity,
+    Energy: gregsEnergy,
   }
 
   return {

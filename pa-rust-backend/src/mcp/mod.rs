@@ -84,6 +84,17 @@ fn degraded_tool(name: &str, description: &str) -> Value {
 }
 
 /// Convert an arbitrary `planet -> {sign, degree}` object to alchemical inputs.
+///
+/// DELIBERATELY UNGUARDED by `ensure_complete_from_value`, unlike every other
+/// caller-supplied chart. These inputs (`chartA`/`chartB` of
+/// `compute_synastry_overlay`) are caller-supplied, but they reach only
+/// `interchart_aspects` — pairwise angular separations. They never enter
+/// `alchemize*`, so they cannot touch the ESMS accumulators, Kalchm, or the
+/// Monica singularity that the completeness guard exists to prevent. A synastry
+/// overlay of a few named bodies is a legitimate, self-describing request: every
+/// aspect it found is listed in the response, so a partial chart yields fewer
+/// aspects rather than a fabricated number. The empty-chart check in
+/// `compute_synastry_overlay` remains the boundary for this tool.
 fn chart_inputs(arg: Option<&Value>) -> Vec<(String, PositionInput)> {
     match arg {
         Some(v) => alchemy::ensure_from_value(v),
@@ -200,8 +211,20 @@ pub fn call_tool(name: &str, args: &Value) -> Value {
             );
             let generated = planetary_positions_for(dt);
             let prev = planetary_positions_for(dt - Duration::days(1));
+            // A caller-supplied chart must be COMPLETE. A partial one is
+            // refused with the tool's normal `{"error": ...}` shape (which
+            // `handle_jsonrpc` turns into `isError: true`) rather than
+            // alchemized into a plausible-looking Monica — see
+            // `alchemy::ensure_complete_from_value`. A present-but-malformed
+            // value (a string, a number, a list) normalizes to nothing, so it
+            // is reported as a chart missing every body instead of silently
+            // falling back to the server's own chart. Absent or null
+            // `customPlanets` keeps the generated-chart path exactly as before.
             let current = match args.get("customPlanets") {
-                Some(v) if v.is_object() => alchemy::ensure_from_value(v),
+                Some(v) if !v.is_null() => match alchemy::ensure_complete_from_value(v) {
+                    Ok(inputs) => inputs,
+                    Err(incomplete) => return json!({"error": incomplete.detail()}),
+                },
                 _ => alchemy::ensure_from_positions(&generated),
             };
             let historical = alchemy::ensure_from_positions(&prev);

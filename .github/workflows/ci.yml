@@ -25,6 +25,13 @@ jobs:
         run: bun run check:no-fabricated-monica
       - name: Enforce the canonical Kalchm engine
         run: bun run check:no-stray-kalchm
+      # Run the Python gate as its own step too. check:no-stray-kalchm delegates to
+      # it only after every TypeScript check has passed, so a TypeScript failure
+      # would otherwise stop the Python runtime from being policed at all — and
+      # an unpoliced second runtime is the exact defect this gate exists to catch.
+      - name: Enforce the canonical Kalchm engine (Python runtime)
+        if: '!cancelled()'
+        run: python3 scripts/check_no_stray_kalchm_formula.py
       - name: Build application
         run: bun run build
         env:

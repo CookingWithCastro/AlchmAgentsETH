@@ -59,6 +59,77 @@ pub fn ensure_from_value(value: &Value) -> Vec<(String, PositionInput)> {
     out
 }
 
+/// A caller-supplied chart that is missing at least one required body. Carries
+/// the missing names in `PLANETARY_PERIODS_DAYS` order so the message is stable.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IncompleteChart {
+    pub missing: Vec<&'static str>,
+}
+
+impl IncompleteChart {
+    /// The rejection message, worded to match `_require_complete_chart` in
+    /// `backend/main.py` — singular "body: " for one, plural "bodies: " for
+    /// several — so the Rust and Python runtimes present one contract.
+    pub fn detail(&self) -> String {
+        let noun = if self.missing.len() == 1 {
+            "body: "
+        } else {
+            "bodies: "
+        };
+        format!(
+            "customPlanets must be a complete chart; missing required {noun}{}",
+            self.missing.join(", ")
+        )
+    }
+}
+
+impl std::fmt::Display for IncompleteChart {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.detail())
+    }
+}
+
+impl std::error::Error for IncompleteChart {}
+
+/// Normalize a caller-supplied chart, REJECTING it if any required body is absent.
+/// Port of `_require_complete_chart` in `backend/main.py`.
+///
+/// A partial chart is not a weaker chart, it is different physics. Dropping
+/// bodies collapses the ESMS axes toward each other, which drives Kalchm toward
+/// 1 and Monica through its `1/ln K` singularity — a 3-body payload measures
+/// `kalchm 0.999967755012035`, `monica -6309.85`. That is finite and plausible,
+/// so nothing downstream can tell it from a real reading: `AlchemizeResult`
+/// serialises `monica` as a plain number straight to the caller.
+///
+/// So the check belongs here, at the boundary where partial input enters, and
+/// NOT as a near-equilibrium band inside the Monica formula — this engine's
+/// population is a continuum rather than two clusters, so no band is derivable
+/// from it (see the Monica comment in `alchemize`, and
+/// `backend/test_ln_kalchm_population.py` for the measurement).
+///
+/// Required bodies are exactly the ones `planetary_positions_for` always
+/// supplies (`PLANETARY_PERIODS_DAYS`), so every chart this server generates
+/// passes unchanged. Missing bodies are NEVER filled in with defaults: an
+/// invented body is invented data. Validation runs on the NORMALIZED view
+/// because `ensure_from_value` silently drops entries that are neither a sign
+/// string nor a position object — a body sent as `42` is the same defect as
+/// omitting it outright, and is reported as missing.
+pub fn ensure_complete_from_value(
+    value: &Value,
+) -> Result<Vec<(String, PositionInput)>, IncompleteChart> {
+    let normalized = ensure_from_value(value);
+    let missing: Vec<&'static str> = PLANETARY_PERIODS_DAYS
+        .iter()
+        .map(|(body, _)| *body)
+        .filter(|body| !normalized.iter().any(|(name, _)| name.as_str() == *body))
+        .collect();
+    if missing.is_empty() {
+        Ok(normalized)
+    } else {
+        Err(IncompleteChart { missing })
+    }
+}
+
 /// Convert generated positions into alchemical inputs without a JSON round-trip.
 pub fn ensure_from_positions(
     map: &IndexMap<String, PlanetPosition>,
@@ -166,7 +237,11 @@ pub struct AlchemizeResult {
     pub esms: Esms,
     pub planetary_momentum: IndexMap<String, f64>,
     pub kalchm: f64,
-    pub monica: f64,
+    /// `None` when Monica is ABSENT — malformed inputs, non-positive Kalchm, or
+    /// zero reactivity. Serialised as JSON `null` (no `skip_serializing_if`), so
+    /// absence stays distinguishable from a legitimate value, exactly as in the
+    /// TypeScript and Python engines.
+    pub monica: Option<f64>,
     pub score: f64,
     pub normalized: bool,
     pub confidence: f64,
@@ -178,6 +253,23 @@ pub struct AlchemizeResult {
 const SIGN_WEIGHT: f64 = 0.6;
 const SECT_WEIGHT: f64 = 0.4;
 
+/// Monica's value at exact Kalchm equilibrium (`ln K == 0`). Shared verbatim
+/// with `MONICA_EQUILIBRIUM` in `lib/thermodynamics/kalchm.ts` and
+/// `backend/thermodynamics.py`; all three runtimes must agree on it.
+pub const MONICA_EQUILIBRIUM: f64 = 1.618;
+
+/// `x^x`, with a non-positive axis yielding 1.0 — both the exact limit of x^x as
+/// x tends to zero and what TS/Python produce after clamping a negative axis.
+///
+/// TOTALITY: `x <= 0.0` is FALSE for NaN, so a NaN falls through to
+/// `NaN.powf(NaN)` and propagates into Kalchm; `+inf` yields `+inf`. Neither is
+/// reachable. The only callers pass the Spirit/Essence/Matter/Substance
+/// accumulators, which are sums over at most eleven named bodies of values drawn
+/// exclusively from closed constant tables (`planetary_alchemy` 0.0/1.0,
+/// `planetary_dignity` i32, `planet_alchm_period`). The caller-supplied f64s
+/// (degree/minute/exactLongitude) reach only `planetary_momentum`, never these
+/// accumulators. A comparison-based guard would not catch NaN anyway, so none is
+/// added in preference to one that could never fire.
 fn safe_pow_x_x(x: f64) -> f64 {
     if x <= 0.0 { 1.0 } else { x.powf(x) }
 }
@@ -267,7 +359,15 @@ pub fn alchemize(
         }
     }
 
-    // Thermodynamics — `den or 1.0` becomes "use 1.0 when den == 0".
+    // Thermodynamics — `den or 1.0` becomes "use 1.0 when den == 0". This is
+    // AAE's own convention, matching `_denominator_or_1` in
+    // `backend/thermodynamics.py` and `denominatorOr1` in
+    // `lib/thermodynamics/kalchm.ts`; it is deliberately NOT WTEN's 0.01 floor,
+    // which differs by 100x for a non-zero numerator over a zero denominator.
+    // `-0.0 == 0.0` holds, so signed zero is handled. A NaN denominator would
+    // pass straight through (`NaN == 0.0` is false), but every denominator below
+    // is a square of a sum of constant-table values, so it is non-negative and
+    // finite by construction — see `safe_pow_x_x` for the same argument.
     let or1 = |x: f64| if x == 0.0 { 1.0 } else { x };
 
     let heat_num = spirit.powi(2) + fire.powi(2);
@@ -278,13 +378,18 @@ pub fn alchemize(
     let entropy_den = (essence + matter + earth + water).powi(2);
     let entropy = entropy_num / or1(entropy_den);
 
+    // Reactivity's denominator is the SQUARED SUM `(M + Ea)^2`, like heat's and
+    // entropy's. Writing it as `num / M + Ea^2` moves Earth out of the divisor
+    // and re-adds it; the two forms coincide only when Earth == 0 and Matter == 1,
+    // so the defect hid wherever a test happened to sit on that coincidence.
     let reactivity_num = spirit.powi(2)
         + substance.powi(2)
         + essence.powi(2)
         + fire.powi(2)
         + air.powi(2)
         + water.powi(2);
-    let reactivity = (reactivity_num / or1(matter)) + earth.powi(2);
+    let reactivity_den = (matter + earth).powi(2);
+    let reactivity = reactivity_num / or1(reactivity_den);
 
     let gregs_energy = heat - entropy * reactivity;
 
@@ -292,13 +397,30 @@ pub fn alchemize(
     let kalchm_den = safe_pow_x_x(matter) * safe_pow_x_x(substance);
     let kalchm = kalchm_num / or1(kalchm_den);
 
-    let mut monica = 1.0;
-    if kalchm > 0.0 && kalchm.is_finite() {
+    // Monica: `-energy / (reactivity * ln K)`, mirroring `calculateMonica` in
+    // `lib/thermodynamics/kalchm.ts` and `calculate_monica` in
+    // `backend/thermodynamics.py` branch for branch. Exact Kalchm equilibrium
+    // resolves to MONICA_EQUILIBRIUM; every other degenerate case is ABSENT
+    // rather than a sentinel that would be indistinguishable from a real value.
+    // NO near-equilibrium band is applied — see the `calculateMonica` docstring
+    // for the measurement showing this population is a continuum, not bimodal.
+    let monica = if !gregs_energy.is_finite()
+        || !reactivity.is_finite()
+        || !kalchm.is_finite()
+        || kalchm <= 0.0
+    {
+        None
+    } else {
         let lnk = kalchm.ln();
-        if lnk != 0.0 && reactivity != 0.0 {
-            monica = -gregs_energy / (reactivity * lnk);
+        if lnk == 0.0 {
+            Some(MONICA_EQUILIBRIUM)
+        } else if reactivity == 0.0 {
+            None
+        } else {
+            let m = -gregs_energy / (reactivity * lnk);
+            if m.is_finite() { Some(m) } else { None }
         }
-    }
+    };
 
     let total_elements = fire + water + air + earth;
     let denom = 1.0_f64.max(total_elements);

@@ -419,13 +419,60 @@ def test_philosophers_stone_positions_post():
     data = response.json()
     assert "elementalProperties" in data
     
-    custom_planets = {
+    # A PARTIAL customPlanets chart is rejected. Kalchm approaches 1 as bodies
+    # are dropped, and Monica is -energy / (reactivity * ln K), so a partial
+    # chart drives Monica arbitrarily large: this two-body payload used to be
+    # accepted and returned a finite, plausible-looking value. Complete charts
+    # never come near equilibrium, so the fix is to require completeness here
+    # rather than to add a near-equilibrium band the population cannot support.
+    partial_planets = {
         "Sun": {"sign": "Leo", "degree": 15, "minute": 30, "exactLongitude": 135.5},
         "Moon": {"sign": "Cancer", "degree": 12, "minute": 0, "exactLongitude": 102.0}
     }
     response = client.post(
         "/api/philosophers-stone/positions",
-        json={"year": 2026, "month": 5, "day": 21, "customPlanets": custom_planets}
+        json={"year": 2026, "month": 5, "day": 21, "customPlanets": partial_planets}
+    )
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert "complete chart" in detail
+    # Names every body it is missing, so the caller can fix the request.
+    for body in ["Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"]:
+        assert body in detail
+
+    # An explicitly-supplied EMPTY chart is a chart missing every body, not a
+    # request for the server's own. Both runtimes agree on this; the Rust half
+    # is pinned by pa-rust-backend/tests/chart_completeness.rs.
+    response = client.post(
+        "/api/philosophers-stone/positions",
+        json={"year": 2026, "month": 5, "day": 21, "customPlanets": {}}
+    )
+    assert response.status_code == 422
+    assert "Sun" in response.json()["detail"]
+
+    # Absent or null still means "generate one for me".
+    response = client.post(
+        "/api/philosophers-stone/positions",
+        json={"year": 2026, "month": 5, "day": 21, "customPlanets": None}
+    )
+    assert response.status_code == 200
+
+    # A COMPLETE chart is still accepted and still honours the supplied signs.
+    complete_planets = {
+        "Sun": {"sign": "Leo", "degree": 15, "minute": 30, "exactLongitude": 135.5},
+        "Moon": {"sign": "Cancer", "degree": 12, "minute": 0, "exactLongitude": 102.0},
+        "Mercury": {"sign": "Virgo", "degree": 3, "minute": 0, "exactLongitude": 153.0},
+        "Venus": {"sign": "Libra", "degree": 8, "minute": 0, "exactLongitude": 188.0},
+        "Mars": {"sign": "Aries", "degree": 22, "minute": 0, "exactLongitude": 22.0},
+        "Jupiter": {"sign": "Sagittarius", "degree": 11, "minute": 0, "exactLongitude": 251.0},
+        "Saturn": {"sign": "Capricorn", "degree": 27, "minute": 0, "exactLongitude": 297.0},
+        "Uranus": {"sign": "Taurus", "degree": 19, "minute": 0, "exactLongitude": 49.0},
+        "Neptune": {"sign": "Pisces", "degree": 5, "minute": 0, "exactLongitude": 335.0},
+        "Pluto": {"sign": "Aquarius", "degree": 2, "minute": 0, "exactLongitude": 302.0},
+    }
+    response = client.post(
+        "/api/philosophers-stone/positions",
+        json={"year": 2026, "month": 5, "day": 21, "customPlanets": complete_planets}
     )
     assert response.status_code == 200
     data = response.json()

@@ -129,7 +129,10 @@ pub fn calculate_kinetics(
         .unwrap_or(current_heat);
     let reactivity = current_thermo.thermodynamic_properties.reactivity;
     let gregs_energy = current_thermo.thermodynamic_properties.gregs_energy;
-    let monica = current_thermo.monica;
+    // Monica is ABSENT (not 1.0) for degenerate charts; an absent Monica
+    // contributes no term to the electromagnetic force below rather than
+    // silently standing in for a real value.
+    let monica = current_thermo.monica.unwrap_or(0.0);
 
     let current_totals = aggregate_alchemical_properties(current);
     let previous_totals = match previous {

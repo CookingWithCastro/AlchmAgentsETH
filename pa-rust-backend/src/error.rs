@@ -11,6 +11,11 @@ pub enum AppError {
     BadRequest(String),
     /// 403 — admin secret mismatch.
     Forbidden,
+    /// 422 with a string detail — the payload parsed but is semantically
+    /// unusable (e.g. a caller-supplied chart missing required bodies).
+    /// Matches the status FastAPI's `HTTPException(422)` returns for the same
+    /// rejection in `backend/main.py`.
+    Unprocessable(String),
     /// 502/503 etc. with an arbitrary JSON detail (mirrors recipe failures).
     Upstream(StatusCode, Value),
     /// 503 with a string detail.
@@ -24,6 +29,7 @@ impl std::fmt::Display for AppError {
         match self {
             AppError::BadRequest(m) => write!(f, "bad request: {m}"),
             AppError::Forbidden => write!(f, "forbidden"),
+            AppError::Unprocessable(m) => write!(f, "unprocessable: {m}"),
             AppError::Upstream(s, d) => write!(f, "upstream {s}: {d}"),
             AppError::Unavailable(m) => write!(f, "unavailable: {m}"),
             AppError::Internal(m) => write!(f, "internal: {m}"),
@@ -41,11 +47,21 @@ impl IntoResponse for AppError {
                 StatusCode::FORBIDDEN,
                 Value::String("Forbidden".to_string()),
             ),
+            AppError::Unprocessable(m) => (StatusCode::UNPROCESSABLE_ENTITY, Value::String(m)),
             AppError::Upstream(s, d) => (s, d),
             AppError::Unavailable(m) => (StatusCode::SERVICE_UNAVAILABLE, Value::String(m)),
             AppError::Internal(m) => (StatusCode::INTERNAL_SERVER_ERROR, Value::String(m)),
         };
         (status, Json(json!({ "detail": detail }))).into_response()
+    }
+}
+
+/// A caller-supplied chart missing required bodies is a 422, exactly as in
+/// `backend/main.py:_require_complete_chart`. The `From` impl lets every HTTP
+/// handler propagate the rejection with `?` instead of restating the status.
+impl From<crate::astro::alchemy::IncompleteChart> for AppError {
+    fn from(err: crate::astro::alchemy::IncompleteChart) -> Self {
+        AppError::Unprocessable(err.detail())
     }
 }
 

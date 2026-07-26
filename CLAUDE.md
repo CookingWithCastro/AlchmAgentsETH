@@ -158,6 +158,26 @@ Planetary positions flow through a fallback hierarchy:
 
 The central Next.js API endpoint is `app/api/planetary-positions/route.ts`. The React hook `hooks/useUnifiedPlanetaryPositions.ts` is the preferred frontend interface.
 
+### Thermodynamics & Kalchm Engine
+
+Heat, entropy, reactivity, Greg's Energy, Kalchm and Monica **should** have exactly one definition per runtime, across **three runtimes that must stay in lockstep**. That is the invariant being worked toward, not a description of today: two non-canonical sites are known and still open — see the warning at the end of this section.
+
+| Runtime    | Canonical module                       | Exports                                                              |
+| ---------- | -------------------------------------- | -------------------------------------------------------------------- |
+| TypeScript | `lib/thermodynamics/kalchm.ts`         | `calculateThermodynamics` / `calculateKalchm` / `calculateMonica`    |
+| Python     | `backend/thermodynamics.py`            | `calculate_thermodynamics` / `calculate_kalchm` / `calculate_monica` |
+| Rust       | `pa-rust-backend/src/astro/alchemy.rs` | in-module                                                            |
+
+Both TS and Python engines own **all four** thermodynamic quantities, not just two. Everything else **delegates** — `lib/alchemizer.ts`, `lib/agents/derived-stats.ts`, `lib/spacetime/hooks/useLiveEphemeris.ts` and `backend/utils.py` all call in rather than re-deriving. Do not transcribe a formula at a call site: every denominator is a parenthesised sum that is _then_ squared, and writing it as `num / term + other²` silently moves a term out of the denominator. That exact slip shipped in the Python and Rust reactivity for a while and only agrees with the correct form at isolated points, so it survives tests that happen to sit on the coincidence.
+
+- **Zero-denominator convention:** a zero denominator falls back to **1**. This is AAE's convention, deliberately _not_ WTEN's `THERMO_DEN_FLOOR` of 0.01 — the two differ by 100x. It is load-bearing; never change it in one runtime alone.
+- **Monica ABSENT is `null` / `None`**, never a sentinel number. Rust returns `Option<f64>`, which serialises as JSON `null`. Exact Kalchm equilibrium returns `MONICA_EQUILIBRIUM = 1.618` in all three runtimes.
+- **No near-equilibrium band is applied**, because this engine's |ln K| population is a continuum rather than the bimodal gap a band would have to be derived from — the measurement is written out in the `calculateMonica` docstring in `lib/thermodynamics/kalchm.ts`. Near-singular Monica is reachable only from _partial_ charts, so those are rejected at the boundary instead: `backend/main.py:_require_complete_chart` raises **422** naming the missing bodies when `customPlanets` omits any of the 10 required ones. It never fills defaults.
+
+**Gate:** `bun run check:no-stray-kalchm` is the gate and covers **four** runtimes — TS/JS by AST, Rust (`pa-rust-backend/**/*.rs`) and notebooks (`notebooks/**/*.ipynb`) by controlled text scan, and Python by delegating to `scripts/check_no_stray_kalchm_formula.py`. CI (`.github/workflows/ci.yml`) also runs the Python half as its **own step**, so a TypeScript failure cannot stop the Python runtime from being policed. A new top-level TypeScript tree is invisible to the gate until it is added to `SOURCE_ROOTS`.
+
+⚠️ **`lib/monica/monica-constant.ts` and `lib/monica/monica-constant-validator.ts` are NOT this Monica.** They implement an unrelated φ-based quantity under the same name, so the `monicaConstant` column in `prisma/schema.prisma` is not necessarily the thermodynamic Monica — check which one a call site means before touching it. Two further non-canonical sites are known and still open (deferred, not fixed): `server.ts:calculateConsensusQuantities` defines its own unsquared-denominator heat/entropy/reactivity set and serves it from `GET /api/astrology/consensus`, and `kalchmConstant`/`monicaConstant` are `NOT NULL` in `prisma/schema.prisma`, so ABSENT is unrepresentable at the DB layer (`backend/crud.py` still defaults Monica to 0.5 and copies it into `kalchmConstant`).
+
 ### Database
 
 PostgreSQL via **Prisma Accelerate** (connection pooling). Schema at `prisma/schema.prisma`. Key tables: `historical_agents`, `created_agents`, `user_natal_charts`, `consciousness_snapshots`, `agent_consciousness`, `collaborative_time_sessions`.

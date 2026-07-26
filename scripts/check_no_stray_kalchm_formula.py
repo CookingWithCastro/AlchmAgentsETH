@@ -5,7 +5,11 @@ import pathlib
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-BACKEND = ROOT / "backend"
+# Every first-party tree that can ship or generate Python. `backend` alone left
+# the fixture generator under pa-rust-backend/tests unpoliced, and that
+# generator is what produces the Rust golden vectors — a stray formula there
+# would have been pinned as authoritative by a green test.
+SOURCE_ROOTS = ("backend", "scripts", "pa-rust-backend")
 CANONICAL = pathlib.Path("backend/thermodynamics.py")
 LIST_ONLY = "--list" in sys.argv
 
@@ -31,13 +35,22 @@ def is_self_exponentiation(node: ast.AST) -> bool:
     return is_pow and normalized(node.args[0]) == normalized(node.args[1])
 
 
+EXCLUDED_PARTS = {".venv", "venv", "__pycache__", "node_modules", "site-packages", "target"}
+
 files = sorted(
     path
-    for path in BACKEND.rglob("*.py")
-    if ".venv" not in path.parts and "__pycache__" not in path.parts
+    for root in SOURCE_ROOTS
+    for path in (ROOT / root).rglob("*.py")
+    if not EXCLUDED_PARTS & set(path.parts)
 )
 if not files:
-    raise SystemExit("✗ PYTHON COVERAGE FAILED: zero backend Python files scanned")
+    raise SystemExit("✗ PYTHON COVERAGE FAILED: zero Python files scanned")
+
+# Per-root coverage, so adding a root that silently matches nothing fails loudly
+# instead of reporting a clean zero.
+for root in SOURCE_ROOTS:
+    if not any(str(path.relative_to(ROOT)).startswith(f"{root}/") for path in files):
+        raise SystemExit(f"✗ PYTHON COVERAGE FAILED: zero files scanned under {root}/")
 
 hits: list[tuple[pathlib.Path, int, str]] = []
 for path in files:
@@ -64,7 +77,7 @@ if LIST_ONLY:
     print(f"canonical Python control {CANONICAL}: {len(canonical_hits)} sites")
     for path, line, source in stray_hits:
         print(f"{path}:{line} {source}")
-    print(f"✓ scanned {len(files)} backend Python files")
+    print(f"✓ scanned {len(files)} Python files across {', '.join(SOURCE_ROOTS)}")
     raise SystemExit(0)
 
 if stray_hits:
