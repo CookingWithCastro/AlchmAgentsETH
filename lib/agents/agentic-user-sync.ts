@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { signDegreeToLongitude } from '@/lib/enhanced-astronomical-calculator'
 import { syncAgentToWten, type SyncAgentProfilePayload } from '@/lib/wtenClient'
 
 const AGENTIC_DOMAIN = '@agentic.alchm.kitchen'
@@ -15,23 +16,67 @@ interface EnsureAgenticUserInput {
   dominantElement: string
 }
 
+/** First value that coerces to a finite number; `null` when there is none. */
+function firstFiniteNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return null
+}
+
+/**
+ * Absolute ECLIPTIC longitude (0–360) of a natal placement — where the planet
+ * sits on the zodiac, NOT a birth location's geographic longitude.
+ *
+ * A finite longitude already on the record wins (real stored data). Otherwise
+ * it is DERIVED from the sign + within-sign degree the record actually holds,
+ * delegated to the canonical `signDegreeToLongitude`. Deriving from data we
+ * have is arithmetic; defaulting is invention.
+ *
+ * Returns `null` when neither path is available — no numeric degree, or a sign
+ * the zodiac table does not recognise. Never 0: 0 is a real longitude
+ * (0°00′ Aries), so a sentinel 0 both asserts a placement nobody measured and,
+ * being non-nullish, silently satisfies any downstream `x ?? longitude ?? y`
+ * or `longitude || fallback` chain that was meant to reach its fallback.
+ */
+function natalLongitude(sign: unknown, degree: number | null, stored: unknown): number | null {
+  const explicit = firstFiniteNumber(stored)
+  if (explicit !== null) return explicit
+  if (degree === null || typeof sign !== 'string' || !sign.trim()) return null
+  return signDegreeToLongitude(sign, degree)
+}
+
 function extractNatalPositions(natalChart: any): any[] {
   if (!natalChart) return []
   if (natalChart.planets && typeof natalChart.planets === 'object') {
-    return Object.entries(natalChart.planets).map(([planet, data]: [string, any]) => ({
-      planet,
-      sign: data.sign ?? '',
-      degree: data.signDegree ?? data.degree ?? 0,
-      longitude: data.longitude ?? data.degrees ?? 0,
-    }))
+    return Object.entries(natalChart.planets).map(([planet, data]: [string, any]) => {
+      const sign = data?.sign ?? ''
+      const degree = firstFiniteNumber(data?.signDegree, data?.degree)
+      return {
+        planet,
+        sign,
+        // `degree` keeps its 0 default deliberately: the alchm.kitchen sync
+        // contracts require a number here, and dropping the entry instead would
+        // strip the planet→sign pair their yield engine reads. See the round-3
+        // report; absence is carried by `longitude` below.
+        degree: degree ?? 0,
+        longitude: natalLongitude(sign, degree, data?.longitude),
+      }
+    })
   }
   if (Array.isArray(natalChart)) {
-    return natalChart.map((p: any) => ({
-      planet: p.planet ?? p.label ?? '',
-      sign: p.sign ?? '',
-      degree: p.signDegree ?? p.degree ?? 0,
-      longitude: p.longitude ?? p.degrees ?? 0,
-    }))
+    return natalChart.map((p: any) => {
+      const sign = p?.sign ?? ''
+      const degree = firstFiniteNumber(p?.signDegree, p?.degree)
+      return {
+        planet: p?.planet ?? p?.label ?? '',
+        sign,
+        degree: degree ?? 0,
+        longitude: natalLongitude(sign, degree, p?.longitude),
+      }
+    })
   }
   return []
 }
