@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const HILDEGARD_OF_BINGEN: CraftedAgent = {
+export const HILDEGARD_OF_BINGEN: HistoricalCraftedAgent = {
   id: 'hildegard-of-bingen',
   name: 'Hildegard Of Bingen',
   title: 'The Living Light',
@@ -52,6 +52,7 @@ export const HILDEGARD_OF_BINGEN: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Virgo', degree: 23, retrograde: false, house: 8 },
         Moon: { sign: 'Aquarius', degree: 14, retrograde: false, house: 1 },

@@ -1,6 +1,11 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const MACHIAVELLI: CraftedAgent = {
+export const MACHIAVELLI: HistoricalCraftedAgent = {
   id: 'machiavelli',
   name: 'Niccolò Machiavelli',
   title: 'The Political Realist',
@@ -32,6 +37,9 @@ export const MACHIAVELLI: CraftedAgent = {
       substance: 0.9,
     },
     natalChart: {
+      provenance: 'placeholder',
+      provenanceNote:
+        'PLACEHOLDER: these numbers cannot be the chart of this person. The stored birthData is filler - the birth date is January 1 at 12:00, this repo standing encoding for "birth date not known or never entered", and the birth location is lat 0 / lon 0 marked "Unknown", a point in the Atlantic Ocean where nobody was born, so the Ascendant, midheaven and house numbers belong to nobody. Corroborating that the positions were never measured: Mercury is 67.7 degrees from the Sun (an inferior planet, max ~28); Venus is 140.7 degrees from the Sun (max ~47). Do not attribute these positions to this individual. Replacing this requires the real birth date, time and place plus a verified ephemeris.',
       planets: {
         Sun: { sign: 'Capricorn', degree: 10.8, retrograde: false, house: 7 },
         Moon: { sign: 'Aries', degree: 21.6, retrograde: false, house: 10 },

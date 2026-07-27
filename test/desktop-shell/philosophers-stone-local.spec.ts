@@ -9,7 +9,14 @@ import { createNatalSigilRune } from '../../lib/runes/natal-sigil-runes'
 import { createSigilSvg, sigilSvgToDataUrl } from '../../lib/sigil-download'
 
 describe("Philosopher's Stone — Local High-Precision & Sigils", () => {
-  it('correctly calculates planetary positions using VSOP87 approximations', () => {
+  // RENAMED. This test was called "correctly calculates planetary positions using
+  // VSOP87 approximations" while asserting only that longitude is in [0, 360) and
+  // signDegree in [0, 30). Those hold for literally any number the engine can
+  // produce, so it passed for the entire period the engine was returning Mercury
+  // opposite the Sun. Correctness lives in
+  // test/astronomy/chart-engine-physical-bounds.spec.ts; this one checks the
+  // shape of the returned chart and nothing more.
+  it('returns a well-formed chart: every body present, in range, and provenance-stamped', () => {
     const birthInfo = {
       year: 1990,
       month: 5,
@@ -23,21 +30,23 @@ describe("Philosopher's Stone — Local High-Precision & Sigils", () => {
 
     const chart = calculateAllPlanets(birthInfo)
 
-    // Check that we have planet positions for the key bodies
-    expect(chart.planets.Sun).toBeDefined()
-    expect(chart.planets.Moon).toBeDefined()
-    expect(chart.planets.Mercury).toBeDefined()
+    // Nothing was withheld for this date, so every body should be present.
+    expect(chart.unavailable).toEqual([])
+    for (const body of ['Sun', 'Moon', 'Mercury', 'Venus', 'Mars', 'Jupiter', 'Saturn']) {
+      const p = chart.planets[body]
+      expect(p, `${body} missing from chart`).toBeDefined()
+      expect(p.longitude).toBeGreaterThanOrEqual(0)
+      expect(p.longitude).toBeLessThan(360)
+      expect(typeof p.sign).toBe('string')
+      expect(p.signDegree).toBeGreaterThanOrEqual(0)
+      expect(p.signDegree).toBeLessThan(30)
+      // Provenance is required and must never claim to be a measurement.
+      expect(p.source).toBe('vsop87-approximation')
+    }
 
-    // Verify reasonable coordinates range
-    expect(chart.planets.Sun.longitude).toBeGreaterThanOrEqual(0)
-    expect(chart.planets.Sun.longitude).toBeLessThan(360)
-    expect(chart.planets.Moon.longitude).toBeGreaterThanOrEqual(0)
-    expect(chart.planets.Moon.longitude).toBeLessThan(360)
-
-    // Verify Sign mapping
-    expect(typeof chart.planets.Sun.sign).toBe('string')
-    expect(chart.planets.Sun.signDegree).toBeGreaterThanOrEqual(0)
-    expect(chart.planets.Sun.signDegree).toBeLessThan(30)
+    expect(chart.source).toBe('vsop87-approximation')
+    expect(chart.ascendant.source).toBe('vsop87-approximation')
+    expect(chart.withinElementSetRange).toBe(true)
   })
 
   it('detects aspects, extracts geometry, and generates a premium Runic Sigil', () => {

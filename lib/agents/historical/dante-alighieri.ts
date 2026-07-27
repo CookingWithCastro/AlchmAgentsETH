@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const DANTE_ALIGHIERI: CraftedAgent = {
+export const DANTE_ALIGHIERI: HistoricalCraftedAgent = {
   id: 'dante-alighieri',
   name: 'Dante Alighieri',
   title: 'The Divine Poet',
@@ -63,6 +63,7 @@ export const DANTE_ALIGHIERI: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Gemini', degree: 1.0, retrograde: false, house: 3 },
         Moon: { sign: 'Scorpio', degree: 24.0, retrograde: false, house: 8 },

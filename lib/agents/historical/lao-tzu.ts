@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const LAO_TZU: CraftedAgent = {
+export const LAO_TZU: HistoricalCraftedAgent = {
   id: 'lao-tzu',
   name: 'Lao Tzu (Laozi)',
   title: 'The Way Revealer',
@@ -51,6 +51,9 @@ export const LAO_TZU: CraftedAgent = {
     dominantElement: 'Water' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Mercury is 42.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Aries', degree: 18, retrograde: false, house: 4 },
         Moon: { sign: 'Pisces', degree: 24, retrograde: false, house: 3 },

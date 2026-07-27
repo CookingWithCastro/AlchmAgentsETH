@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const GEOFFREY_CHAUCER: CraftedAgent = {
+export const GEOFFREY_CHAUCER: HistoricalCraftedAgent = {
   id: 'geoffrey-chaucer',
   name: 'Geoffrey Chaucer',
   title: 'The Canterbury Poet',
@@ -62,6 +62,9 @@ export const GEOFFREY_CHAUCER: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'placeholder',
+      provenanceNote:
+        'PLACEHOLDER: these numbers cannot be the chart of this person. The stored birthData is filler - the birth date is January 1 at 12:00, this repo standing encoding for "birth date not known or never entered". Corroborating that the positions were never measured: Mercury is 40.0 degrees from the Sun (an inferior planet, max ~28). Do not attribute these positions to this individual. Replacing this requires the real birth date, time and place plus a verified ephemeris.',
       planets: {
         Sun: { sign: 'Capricorn', degree: 18.0, retrograde: false, house: 11 },
         Moon: { sign: 'Virgo', degree: 12.0, retrograde: false, house: 7 },

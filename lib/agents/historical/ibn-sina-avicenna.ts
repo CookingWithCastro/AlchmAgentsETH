@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const IBN_SINA_AVICENNA: CraftedAgent = {
+export const IBN_SINA_AVICENNA: HistoricalCraftedAgent = {
   id: 'ibn-sina-avicenna',
   name: 'Ibn Sina (Avicenna)',
   title: 'The Universal Intellect',
@@ -51,6 +51,9 @@ export const IBN_SINA_AVICENNA: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Mercury is 35.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Virgo', degree: 29, retrograde: false, house: 8 },
         Moon: { sign: 'Aquarius', degree: 16, retrograde: false, house: 1 },

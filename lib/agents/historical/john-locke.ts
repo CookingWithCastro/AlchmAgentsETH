@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const JOHN_LOCKE: CraftedAgent = {
+export const JOHN_LOCKE: HistoricalCraftedAgent = {
   id: 'john-locke-1632',
   name: 'John Locke',
   title: 'The Father of Liberalism',
@@ -72,6 +72,7 @@ export const JOHN_LOCKE: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Virgo', degree: 7.0, retrograde: false, house: 6 },
         Moon: { sign: 'Taurus', degree: 22.0, retrograde: false, house: 2 },

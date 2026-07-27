@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const SOCRATES: CraftedAgent = {
+export const SOCRATES: HistoricalCraftedAgent = {
   id: 'socrates',
   name: 'Socrates',
   title: 'The Original Questioner',
@@ -62,6 +62,7 @@ export const SOCRATES: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Gemini', degree: 28.5, retrograde: false, house: 9 },
         Moon: { sign: 'Scorpio', degree: 15.2, retrograde: false, house: 2 },

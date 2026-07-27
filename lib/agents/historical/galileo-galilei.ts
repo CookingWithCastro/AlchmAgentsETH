@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const GALILEO_GALILEI: CraftedAgent = {
+export const GALILEO_GALILEI: HistoricalCraftedAgent = {
   id: 'galileo-galilei',
   name: 'Galileo Galilei',
   title: 'Cosmic Revolutionary',
@@ -62,6 +62,7 @@ export const GALILEO_GALILEI: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aquarius', degree: 26.2, retrograde: false, house: 7 },
         Moon: { sign: 'Gemini', degree: 19.4, retrograde: false, house: 11 },

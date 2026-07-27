@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const MARCUS_AURELIUS: CraftedAgent = {
+export const MARCUS_AURELIUS: HistoricalCraftedAgent = {
   id: 'marcus-aurelius',
   name: 'Marcus Aurelius',
   title: 'Stoic Emperor-Philosopher',
@@ -62,6 +62,7 @@ export const MARCUS_AURELIUS: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Taurus', degree: 5.8, retrograde: false, house: 10 },
         Moon: { sign: 'Capricorn', degree: 18.3, retrograde: false, house: 6 },

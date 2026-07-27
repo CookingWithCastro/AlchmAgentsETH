@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const RACHEL_CARSON: CraftedAgent = {
+export const RACHEL_CARSON: HistoricalCraftedAgent = {
   id: 'rachel-carson',
   name: 'Rachel Carson',
   title: "The Ocean's Voice",
@@ -54,6 +54,7 @@ export const RACHEL_CARSON: CraftedAgent = {
     dominantElement: 'Earth' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Gemini', degree: 6, retrograde: false, house: 6 },
         Moon: { sign: 'Cancer', degree: 18, retrograde: false, house: 7 },

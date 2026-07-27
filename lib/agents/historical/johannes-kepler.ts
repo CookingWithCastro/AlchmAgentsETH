@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const JOHANNES_KEPLER: CraftedAgent = {
+export const JOHANNES_KEPLER: HistoricalCraftedAgent = {
   id: 'johannes-kepler-1571',
   name: 'Johannes Kepler',
   title: 'The Celestial Mathematician',
@@ -74,6 +74,7 @@ export const JOHANNES_KEPLER: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Capricorn', degree: 6.0, retrograde: false, house: 10 },
         Moon: { sign: 'Cancer', degree: 18.0, retrograde: false, house: 4 },

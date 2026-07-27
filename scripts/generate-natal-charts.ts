@@ -1,165 +1,75 @@
 /**
- * Generate Natal Charts for Agents Missing Them
+ * DISABLED — this script used to manufacture natal charts with no astronomy in it.
  *
- * This script will generate natal chart data for all agents
- * that are missing sun/moon positions.
+ * It is kept as a refusal rather than deleted so the failure mode cannot be reinvented. Anyone
+ * reaching for "generate the missing charts" lands here and reads why that is the wrong move.
+ *
+ * WHAT IT USED TO DO (see git history for the body):
+ *   - Sun sign  : looked up in a hardcoded date-range table.
+ *   - Sun degree: `Math.floor((day / 30) * 30)` — the day of the month, relabelled as a degree.
+ *   - Moon      : `(day * 13) % 360` — the day of the month times 13, as if the Moon's position
+ *                 depended on the calendar day rather than on the epoch.
+ *   - Houses    : `((month + day) % 12) + 1` — arithmetic on the date, unrelated to any horizon.
+ *   - Ascendant : the Sun's sign, offset 15 degrees.
+ * It also emitted only `{ sun, moon, ascendant }`, which is not even the shape the app ships
+ * (`{ planets: { Sun..Pluto }, houses, aspects, ascendant, midheaven }`), and keyed its birth-date
+ * table on agent ids that no longer exist.
+ *
+ * WHY THAT IS THE REAL BUG: none of those numbers are measurements, but nothing in the output
+ * said so, so they were indistinguishable from a real chart once pasted into an agent file. The
+ * repo's standing rule is that a literal substituted for an absent measurement invents data.
+ * Deriving from data you have is fine; defaulting is not. A chart is a claim about where the
+ * bodies actually were, and there is no way to answer that from a calendar date alone.
+ *
+ * WHAT TO DO INSTEAD
+ *   1. Establish the birth date, time and place. If any of the three is unknown, STOP — the
+ *      correct outcome is `provenance: 'placeholder'` (or no chart at all), not a guess. Twenty
+ *      of the shipped charts exist only because this step was skipped.
+ *   2. Compute the positions with a real ephemeris. The repo already ships one:
+ *      `backend/src/services/swiss-ephemeris.ts` (swisseph, SEFLG_MOSEPH — no data files needed),
+ *      served by `backend/src/routes/ephemeris.ts`, with `lib/swiss-ephemeris-service.ts` as the
+ *      Next.js-side async client.
+ *      DO NOT use `lib/enhanced-astronomical-calculator.ts`. It is a labelled approximation that
+ *      stamps its output `source: 'vsop87-approximation'`, and a chart built from it is `authored`,
+ *      never `computed`. (It was additionally wrong by up to 179.9 deg for the inner planets until
+ *      round 3 corrected it; the label, not that history, is the reason to keep it out of here.)
+ *      Substituting its output for this script's output would replace a fake chart with a
+ *      differently-fake chart that merely looks computed.
+ *   3. Sanity-check before you commit: Mercury <= 28 deg and Venus <= 47 deg from the Sun, and the
+ *      Sun in the sign the birth date implies. Cross-check against a second implementation.
+ *   4. Record `provenance: 'computed'` plus a `provenanceNote` naming the tool, its version and
+ *      the exact UT instant, so the numbers are reproducible. See `NatalChartProvenance` in
+ *      `lib/agent-types.ts`; `test/agents/natal-chart-provenance.spec.ts` enforces all of this.
+ *
+ * `lib/agents/historical/carl-jung.ts` and `lib/agents/historical/frida-kahlo.ts` are worked
+ * examples of the whole procedure.
  */
 
-import { DEMO_AGENTS } from '../lib/demo-agents-data'
+const MESSAGE = `
+scripts/generate-natal-charts.ts is disabled and will not emit chart data.
 
-// Known birth data for historical figures
-const BIRTH_DATA: Record<string, { date: string; location?: string }> = {
-  // Existing agents
-  'carl-jung': { date: '1875-07-26', location: 'Switzerland' },
-  'nikola-tesla': { date: '1856-07-10', location: 'Croatia' },
-  cleopatra: { date: '-0069-01-01', location: 'Egypt' }, // Approximate
-  'frida-kahlo': { date: '1907-07-06', location: 'Mexico' },
-  'leonardo-da-vinci': { date: '1452-04-15', location: 'Italy' },
-  'marie-curie': { date: '1867-11-07', location: 'Poland' },
-  socrates: { date: '-0470-01-01', location: 'Greece' }, // Approximate
-  rumi: { date: '1207-09-30', location: 'Afghanistan' },
-  'marcus-aurelius': { date: '0121-04-26', location: 'Rome' },
-  'vincent-van-gogh': { date: '1853-03-30', location: 'Netherlands' },
-  'wolfgang-mozart': { date: '1756-01-27', location: 'Austria' },
-  'william-shakespeare': { date: '1564-04-23', location: 'England' },
-  'maya-angelou': { date: '1928-04-04', location: 'USA' },
-  'isaac-newton': { date: '1643-01-04', location: 'England' },
-  'charles-darwin': { date: '1809-02-12', location: 'England' },
-  'galileo-galilei': { date: '1564-02-15', location: 'Italy' },
+It never used an ephemeris. It derived "positions" from arithmetic on the calendar date
+(Moon longitude = day-of-month * 13, houses = (month + day) % 12 + 1), and printed them in a
+format indistinguishable from a measured chart. That is how 20 of the 72 shipped historical
+agents ended up with charts that are not theirs.
 
-  // Enlightenment era agents
-  'rene-descartes-1596': { date: '1596-03-31', location: 'France' },
-  'voltaire-1694': { date: '1694-11-21', location: 'France' },
-  'john-locke-1632': { date: '1632-08-29', location: 'England' },
-  'david-hume-1711': { date: '1711-05-07', location: 'Scotland' },
-  'johannes-kepler-1571': { date: '1571-12-27', location: 'Germany' },
-  'immanuel-kant-1724': { date: '1724-04-22', location: 'Germany' },
-  'adam-smith-1723': { date: '1723-06-16', location: 'Scotland' },
-  'jean-jacques-rousseau-1712': { date: '1712-06-28', location: 'Switzerland' },
-  'mary-wollstonecraft-1759': { date: '1759-04-27', location: 'England' },
-  'charles-dickens-1812': { date: '1812-02-07', location: 'England' },
-  'claude-monet-1840': { date: '1840-11-14', location: 'France' },
-  'nikola-tesla-1856': { date: '1856-07-10', location: 'Croatia' },
-  'marie-curie-1867': { date: '1867-11-07', location: 'Poland' },
-  'sigmund-freud-1856': { date: '1856-05-06', location: 'Austria' },
-  'mark-twain-1835': { date: '1835-11-30', location: 'USA' },
-  'vincent-van-gogh-1853': { date: '1853-03-30', location: 'Netherlands' },
-  'charles-darwin-1809': { date: '1809-02-12', location: 'England' },
-  'edgar-allan-poe-1809': { date: '1809-01-19', location: 'USA' },
-  'isaac-asimov': { date: '1920-01-02', location: 'Russia' },
-}
+To add a real chart:
+  1. Establish birth date, time and place. If any is unknown, stop: use
+     provenance: 'placeholder', or ship no chart. Do not guess.
+  2. Compute with the Swiss Ephemeris already in this repo:
+       backend/src/services/swiss-ephemeris.ts  (swisseph, SEFLG_MOSEPH)
+       backend/src/routes/ephemeris.ts          (HTTP surface)
+       lib/swiss-ephemeris-service.ts           (async Next.js client)
+     Do NOT use lib/enhanced-astronomical-calculator.ts — its inner planets are physically
+     impossible (Mercury measured at 179.9 deg elongation; the ceiling is ~28 deg).
+  3. Sanity-check: Mercury <= 28 deg and Venus <= 47 deg from the Sun; Sun in the sign the
+     birth date implies. Cross-check against a second implementation.
+  4. Record provenance: 'computed' and a provenanceNote naming the tool, its version and the
+     UT instant used. See NatalChartProvenance in lib/agent-types.ts.
 
-// Zodiac sign calculator
-function getZodiacSign(month: number, day: number): string {
-  if ((month === 3 && day >= 21) || (month === 4 && day <= 19)) return 'Aries'
-  if ((month === 4 && day >= 20) || (month === 5 && day <= 20)) return 'Taurus'
-  if ((month === 5 && day >= 21) || (month === 6 && day <= 20)) return 'Gemini'
-  if ((month === 6 && day >= 21) || (month === 7 && day <= 22)) return 'Cancer'
-  if ((month === 7 && day >= 23) || (month === 8 && day <= 22)) return 'Leo'
-  if ((month === 8 && day >= 23) || (month === 9 && day <= 22)) return 'Virgo'
-  if ((month === 9 && day >= 23) || (month === 10 && day <= 22)) return 'Libra'
-  if ((month === 10 && day >= 23) || (month === 11 && day <= 21)) return 'Scorpio'
-  if ((month === 11 && day >= 22) || (month === 12 && day <= 21)) return 'Sagittarius'
-  if ((month === 12 && day >= 22) || (month === 1 && day <= 19)) return 'Capricorn'
-  if ((month === 1 && day >= 20) || (month === 2 && day <= 18)) return 'Aquarius'
-  return 'Pisces'
-}
+Worked examples: lib/agents/historical/carl-jung.ts, lib/agents/historical/frida-kahlo.ts.
+Enforced by: test/agents/natal-chart-provenance.spec.ts
+`
 
-// Calculate degree within sign (approximate)
-function getDegreeInSign(day: number): number {
-  // Rough approximation: 30 degrees / ~30 days
-  return Math.floor((day / 30) * 30)
-}
-
-// Generate natal chart from birth date
-function generateNatalChart(birthDate: string) {
-  const [year, month, day] = birthDate.split('-').map(s => {
-    // Handle negative years (BC)
-    if (s.startsWith('-')) {
-      return parseInt(s.slice(1)) * -1
-    }
-    return parseInt(s)
-  })
-
-  const sunSign = getZodiacSign(Math.abs(month), day)
-  const sunDegree = getDegreeInSign(day)
-
-  // For moon, offset by ~13 degrees per day from sun
-  // This is simplified - real moon moves faster
-  const moonOffset = (day * 13) % 360
-  const moonSignIndex = Math.floor(moonOffset / 30)
-  const signs = [
-    'Aries',
-    'Taurus',
-    'Gemini',
-    'Cancer',
-    'Leo',
-    'Virgo',
-    'Libra',
-    'Scorpio',
-    'Sagittarius',
-    'Capricorn',
-    'Aquarius',
-    'Pisces',
-  ]
-  const moonSign = signs[moonSignIndex]
-  const moonDegree = moonOffset % 30
-
-  // Generate reasonable house placements
-  const sunHouse = ((month + day) % 12) + 1
-  const moonHouse = ((sunHouse + 4) % 12) + 1
-
-  return {
-    sun: { sign: sunSign, degree: sunDegree, house: sunHouse },
-    moon: { sign: moonSign, degree: moonDegree, house: moonHouse },
-    ascendant: { sign: sunSign, degree: (sunDegree + 15) % 30 }, // Simplified
-  }
-}
-
-// Main execution
-console.log('🌟 Generating Natal Charts for Agents...\n')
-
-const agentsMissingCharts: string[] = []
-const chartsGenerated: Array<{ id: string; name: string; chart: any }> = []
-
-for (const agent of DEMO_AGENTS) {
-  // Check if agent is missing sun/moon
-  const hasSun = agent.consciousness?.natalChart?.sun
-  const hasMoon = agent.consciousness?.natalChart?.moon
-
-  if (!hasSun || !hasMoon) {
-    agentsMissingCharts.push(agent.id)
-
-    // Try to generate chart
-    const birthData = BIRTH_DATA[agent.id]
-    if (birthData) {
-      const chart = generateNatalChart(birthData.date)
-      chartsGenerated.push({
-        id: agent.id,
-        name: agent.name,
-        chart,
-      })
-      console.log(`✅ Generated chart for ${agent.name} (${agent.id})`)
-      console.log(`   Sun: ${chart.sun.sign} ${chart.sun.degree}° (House ${chart.sun.house})`)
-      console.log(
-        `   Moon: ${chart.moon.sign} ${chart.moon.degree.toFixed(2)}° (House ${chart.moon.house})`
-      )
-      console.log(`   Ascendant: ${chart.ascendant.sign} ${chart.ascendant.degree.toFixed(2)}°`)
-      console.log()
-    } else {
-      console.log(`⚠️  No birth data for ${agent.name} (${agent.id})`)
-    }
-  }
-}
-
-console.log('\n' + '='.repeat(80))
-console.log('SUMMARY')
-console.log('='.repeat(80))
-console.log(`Total agents missing charts: ${agentsMissingCharts.length}`)
-console.log(`Charts generated: ${chartsGenerated.length}`)
-console.log(`Still need birth data: ${agentsMissingCharts.length - chartsGenerated.length}`)
-console.log('='.repeat(80))
-
-// Export for use in fixing the data file
-console.log('\n📝 Generated charts data:')
-console.log(JSON.stringify(chartsGenerated, null, 2))
+console.error(MESSAGE)
+process.exit(1)

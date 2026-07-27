@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const SOJOURNER_TRUTH: CraftedAgent = {
+export const SOJOURNER_TRUTH: HistoricalCraftedAgent = {
   id: 'sojourner-truth',
   name: 'Sojourner Truth',
   title: 'The Truth Speaker',
@@ -54,6 +54,9 @@ export const SOJOURNER_TRUTH: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Mercury is 43.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Capricorn', degree: 25, retrograde: false, house: 9 },
         Moon: { sign: 'Scorpio', degree: 18, retrograde: false, house: 7 },

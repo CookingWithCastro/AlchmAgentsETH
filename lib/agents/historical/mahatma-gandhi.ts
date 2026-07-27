@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const MAHATMA_GANDHI: CraftedAgent = {
+export const MAHATMA_GANDHI: HistoricalCraftedAgent = {
   id: 'mahatma-gandhi',
   name: 'Mahatma Gandhi',
   title: 'The Soul Force',
@@ -66,6 +66,9 @@ export const MAHATMA_GANDHI: CraftedAgent = {
     dominantElement: 'Earth' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Mercury is 39.0 degrees from the Sun (an inferior planet, max ~28); Venus is 48.0 degrees from the Sun (max ~47). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Libra', degree: 9, retrograde: false, house: 10 },
         Moon: { sign: 'Leo', degree: 14, retrograde: false, house: 8 },

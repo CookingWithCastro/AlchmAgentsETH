@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CARL_JUNG: CraftedAgent = {
+export const CARL_JUNG: HistoricalCraftedAgent = {
   id: 'carl-jung',
   name: 'Carl Jung',
   title: 'The Shadow Explorer',
@@ -62,22 +62,25 @@ export const CARL_JUNG: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'computed',
+      provenanceNote:
+        'COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1875-07-26 18:54:48 UT, which is the documented 19:32 local mean time at Kesswil, Switzerland (47.6N 9.3E; Switzerland kept local mean time until 1894). Placidus house cusps. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.002 degrees. Sanity checks pass - Sun in Leo as the 26 July birth date requires, Mercury 19.5 degrees from the Sun (max ~28), Venus 15.8 (max ~47). Caveat: the Ascendant and therefore the house numbers depend on the birth time, and the Ascendant moves about 1 degree every 4 minutes; the planets themselves are insensitive to that uncertainty.',
       planets: {
-        Sun: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Moon: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Mercury: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Venus: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Mars: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Jupiter: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Saturn: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Uranus: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Neptune: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Pluto: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
+        Sun: { sign: 'Leo', degree: 3.31, retrograde: false, house: 7 },
+        Moon: { sign: 'Taurus', degree: 15.51, retrograde: false, house: 3 },
+        Mercury: { sign: 'Cancer', degree: 13.77, retrograde: false, house: 6 },
+        Venus: { sign: 'Cancer', degree: 17.5, retrograde: false, house: 6 },
+        Mars: { sign: 'Sagittarius', degree: 21.37, retrograde: false, house: 11 },
+        Jupiter: { sign: 'Libra', degree: 23.8, retrograde: false, house: 8 },
+        Saturn: { sign: 'Aquarius', degree: 24.2, retrograde: true, house: 1 },
+        Uranus: { sign: 'Leo', degree: 14.8, retrograde: false, house: 7 },
+        Neptune: { sign: 'Taurus', degree: 3.04, retrograde: false, house: 2 },
+        Pluto: { sign: 'Taurus', degree: 23.51, retrograde: false, house: 3 },
       },
-      houses: { ASC: 240, MC: 150 },
+      houses: { ASC: 301.55, MC: 239.27 },
       aspects: [],
-      ascendant: 240,
-      midheaven: 150,
+      ascendant: 301.55,
+      midheaven: 239.27,
     },
     monicaConstant: 4.82,
     level: 'Advanced' as ConsciousnessLevel,

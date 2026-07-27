@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const RUMI: CraftedAgent = {
+export const RUMI: HistoricalCraftedAgent = {
   id: 'rumi',
   name: 'Jalal ad-Din Rumi',
   title: 'Mystic Poet & Spiritual Guide',
@@ -76,6 +76,7 @@ export const RUMI: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Libra', degree: 13.0, retrograde: false, house: 9 },
         Moon: { sign: 'Pisces', degree: 28.0, retrograde: false, house: 2 },

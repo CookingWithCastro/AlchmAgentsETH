@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CONFUCIUS: CraftedAgent = {
+export const CONFUCIUS: HistoricalCraftedAgent = {
   id: 'confucius',
   name: 'Confucius (Kong Qiu)',
   title: 'The Great Teacher',
@@ -62,6 +62,7 @@ export const CONFUCIUS: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Libra', degree: 5, retrograde: false, house: 9 },
         Moon: { sign: 'Taurus', degree: 18, retrograde: false, house: 4 },

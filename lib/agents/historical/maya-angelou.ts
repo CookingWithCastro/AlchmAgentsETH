@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const MAYA_ANGELOU: CraftedAgent = {
+export const MAYA_ANGELOU: HistoricalCraftedAgent = {
   id: 'maya-angelou',
   name: 'Maya Angelou',
   title: 'Poet of Resilience',
@@ -62,6 +62,7 @@ export const MAYA_ANGELOU: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aries', degree: 14.2, retrograde: false, house: 4 },
         Moon: { sign: 'Libra', degree: 28.7, retrograde: false, house: 10 },

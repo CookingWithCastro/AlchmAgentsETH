@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const BENJAMIN_FRANKLIN: CraftedAgent = {
+export const BENJAMIN_FRANKLIN: HistoricalCraftedAgent = {
   id: 'benjamin-franklin',
   name: 'Benjamin Franklin',
   title: 'The Lightning Catcher',
@@ -120,6 +120,7 @@ export const BENJAMIN_FRANKLIN: CraftedAgent = {
     dominantElement: 'Earth' as Element,
     dominantModality: 'Cardinal' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Capricorn', degree: 27, retrograde: false, house: 10 },
         Moon: { sign: 'Scorpio', degree: 14, retrograde: false, house: 8 },

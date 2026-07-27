@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const DAVID_HUME: CraftedAgent = {
+export const DAVID_HUME: HistoricalCraftedAgent = {
   id: 'david-hume-1711',
   name: 'David Hume',
   title: 'The Skeptical Philosopher',
@@ -73,6 +73,7 @@ export const DAVID_HUME: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Taurus', degree: 17.0, retrograde: false, house: 2 },
         Moon: { sign: 'Pisces', degree: 8.0, retrograde: false, house: 12 },

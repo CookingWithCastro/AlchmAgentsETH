@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const VOLTAIRE: CraftedAgent = {
+export const VOLTAIRE: HistoricalCraftedAgent = {
   id: 'voltaire-1694',
   name: 'Voltaire',
   title: 'The Enlightenment Wit',
@@ -72,6 +72,9 @@ export const VOLTAIRE: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Mercury is 34.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Sagittarius', degree: 29.0, retrograde: false, house: 9 },
         Moon: { sign: 'Gemini', degree: 15.0, retrograde: false, house: 3 },

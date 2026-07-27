@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const THOMAS_AQUINAS: CraftedAgent = {
+export const THOMAS_AQUINAS: HistoricalCraftedAgent = {
   id: 'thomas-aquinas',
   name: 'Thomas Aquinas',
   title: 'The Systematic Theologian',
@@ -62,6 +62,7 @@ export const THOMAS_AQUINAS: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aquarius', degree: 18.0, retrograde: false, house: 11 },
         Moon: { sign: 'Capricorn', degree: 15.0, retrograde: false, house: 10 },

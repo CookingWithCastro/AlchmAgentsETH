@@ -1,4 +1,9 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 import { searchPoemCorpus } from '../../rag/bm25-poems'
 import { getCurrentPlanetaryPositions } from '../../calculate-transits'
 
@@ -55,7 +60,7 @@ function calculateTransitAspects(
   return aspects
 }
 
-export const GREG_CASTRO: CraftedAgent = {
+export const GREG_CASTRO: HistoricalCraftedAgent = {
   id: 'greg-castro-1991',
   name: 'Gregory Castro',
   title: 'The Conscious Creator & Alchemical Poet',
@@ -112,6 +117,7 @@ export const GREG_CASTRO: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Cancer', degree: 1.63, retrograde: false, house: 11 },
         Moon: { sign: 'Scorpio', degree: 23.03, retrograde: false, house: 3 },

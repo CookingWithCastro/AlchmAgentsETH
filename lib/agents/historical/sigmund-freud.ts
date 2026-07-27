@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const SIGMUND_FREUD: CraftedAgent = {
+export const SIGMUND_FREUD: HistoricalCraftedAgent = {
   id: 'sigmund-freud-1856',
   name: 'Sigmund Freud',
   title: 'The Mind Explorer',
@@ -67,6 +67,7 @@ export const SIGMUND_FREUD: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Taurus', degree: 16.0, retrograde: false, house: 2 },
         Moon: { sign: 'Gemini', degree: 28.0, retrograde: false, house: 3 },

@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const ISAAC_NEWTON: CraftedAgent = {
+export const ISAAC_NEWTON: HistoricalCraftedAgent = {
   id: 'isaac-newton',
   name: 'Isaac Newton',
   title: 'Mathematical Mystic',
@@ -62,6 +62,7 @@ export const ISAAC_NEWTON: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Capricorn', degree: 13.8, retrograde: false, house: 4 },
         Moon: { sign: 'Sagittarius', degree: 28.2, retrograde: false, house: 3 },

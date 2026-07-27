@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const TECUMSEH: CraftedAgent = {
+export const TECUMSEH: HistoricalCraftedAgent = {
   id: 'tecumseh',
   name: 'Tecumseh',
   title: 'The Unity Visionary',
@@ -51,6 +51,9 @@ export const TECUMSEH: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Mercury is 36.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Pisces', degree: 25, retrograde: false, house: 11 },
         Moon: { sign: 'Sagittarius', degree: 8, retrograde: false, house: 8 },

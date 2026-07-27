@@ -13,12 +13,74 @@ export interface BirthData {
   location: Coordinates
 }
 
+/**
+ * Where a natal chart's numbers actually came from.
+ *
+ * A chart is a *measurement claim*: "at this instant, from this place, these bodies were
+ * at these longitudes". Most charts in this repo were never measured. This field makes the
+ * difference legible, so no consumer can render an invented chart as if it were observed.
+ *
+ * The repo's standing rule applies: a literal substituted for an absent measurement invents
+ * data. Deriving from data you have is fine; defaulting is not. Never widen a chart's
+ * provenance to make it look better — under-claiming is always the safe direction.
+ *
+ * - `'computed'`   — produced by a verified external ephemeris (Swiss Ephemeris, JPL DE, or an
+ *                    equivalent that has been cross-checked). `provenanceNote` MUST name the tool,
+ *                    its version, and the exact UT instant used, so the numbers are reproducible.
+ *                    A `'computed'` chart is expected to satisfy the physical bounds on the inner
+ *                    planets (Mercury <= 28 deg and Venus <= 47 deg elongation from the Sun) —
+ *                    `test/agents/natal-chart-provenance.spec.ts` enforces exactly that.
+ *                    NOTE: `lib/enhanced-astronomical-calculator.ts` is NOT such a tool. It stamps
+ *                    its own output `source: 'vsop87-approximation'` and says so: it is a labelled
+ *                    approximation, not a measurement. (It was also, until round 3, physically
+ *                    impossible for the inner planets; that is fixed, but a corrected
+ *                    approximation is still an approximation.) Anything it produces is at best
+ *                    `'authored'`.
+ * - `'authored'`   — hand-entered, transcribed from an unverified source, or approximated by a
+ *                    human. It is specific to this subject but is NOT a measurement, is not
+ *                    reproducible, and may be physically impossible. Never present as measured.
+ * - `'placeholder'`— not this subject's chart at all: filler, a clone of another subject's chart,
+ *                    all-zero padding, or a chart built from a birth date that is not known.
+ *                    Downstream MUST NOT attribute these numbers to the individual.
+ * - `'unattributed'`— provenance was never recorded. Semantically identical to the field being
+ *                    absent; prefer stating it when you are writing a chart and genuinely do not
+ *                    know. Treat with the same caution as `'placeholder'`.
+ *
+ * The field is optional on `NatalChart` only because charts are constructed in several places
+ * outside the historical-agent corpus. **Absent means `'unattributed'`** — it never means
+ * `'computed'`. Historical agents are held to the stronger `AttributedNatalChart`, where the
+ * field is required.
+ */
+export type NatalChartProvenance = 'computed' | 'authored' | 'placeholder' | 'unattributed'
+
 export interface NatalChart {
   planets: Record<string, PlanetPosition>
   houses: Record<string, number>
   aspects: Aspect[]
   ascendant: number
   midheaven: number
+  /**
+   * How these numbers were obtained. Absent is read as `'unattributed'` — a chart with no
+   * provenance must never be presented as measured. See {@link NatalChartProvenance}.
+   */
+  provenance?: NatalChartProvenance
+  /**
+   * Human-readable justification for `provenance`. Required in practice for `'computed'`
+   * (name the tool + version + UT instant so it can be reproduced) and for `'placeholder'`
+   * (say what the filler actually is and what would be needed to replace it).
+   */
+  provenanceNote?: string
+}
+
+/**
+ * A `NatalChart` that is required to state where it came from.
+ *
+ * Used by {@link HistoricalCraftedAgent} so that a newly added historical agent cannot compile
+ * without classifying its chart. This is the compile-time half of the guarantee; the runtime half
+ * is `test/agents/natal-chart-provenance.spec.ts`.
+ */
+export interface AttributedNatalChart extends NatalChart {
+  provenance: NatalChartProvenance
 }
 
 export interface PlanetPosition {
@@ -405,6 +467,23 @@ export interface CraftedAgent {
   synthesis?: string
   historicalEra?: string
   systemPrompt?: ((query: string, mode?: string) => string) | string
+}
+
+/**
+ * A `CraftedAgent` that names a real person, as shipped from `lib/agents/historical/*.ts`.
+ *
+ * The only difference from `CraftedAgent` is that its natal chart must declare its provenance
+ * ({@link AttributedNatalChart}). Historical agents assert facts about identifiable individuals,
+ * so a chart attached to one is a claim about that person's birth sky and must say whether it was
+ * measured, authored, or is filler. Every file in `lib/agents/historical/` is annotated with this
+ * type, which makes an unclassified chart a compile error rather than a silent lie.
+ *
+ * Assignable anywhere `CraftedAgent` is expected.
+ */
+export interface HistoricalCraftedAgent extends CraftedAgent {
+  consciousness: CraftedAgent['consciousness'] & {
+    natalChart: AttributedNatalChart
+  }
 }
 
 // Gallery and Party System Types

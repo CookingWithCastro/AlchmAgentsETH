@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CLAUDE_MONET: CraftedAgent = {
+export const CLAUDE_MONET: HistoricalCraftedAgent = {
   id: 'claude-monet-1840',
   name: 'Claude Monet',
   title: 'The Light Catcher',
@@ -64,6 +64,9 @@ export const CLAUDE_MONET: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Venus is 49.0 degrees from the Sun (max ~47). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Scorpio', degree: 22.0, retrograde: false, house: 8 },
         Moon: { sign: 'Cancer', degree: 15.0, retrograde: false, house: 4 },

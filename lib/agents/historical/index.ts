@@ -162,8 +162,18 @@ import { CARL_SAGAN } from './carl-sagan'
 import { RACHEL_CARSON } from './rachel-carson'
 import { PAULO_FREIRE } from './paulo-freire'
 import { CHIRON } from './chiron'
+import type { CraftedAgent } from '../../agent-types'
 
-export const HISTORICAL_AGENTS = [
+/**
+ * Deliberately typed as `CraftedAgent[]`, not `HistoricalCraftedAgent[]`.
+ *
+ * Each per-agent file is annotated `HistoricalCraftedAgent`, which is what forces a new historical
+ * agent to declare its natal chart's provenance at authoring time. Widening here keeps that
+ * requirement local to the corpus and leaves the exported roster interchangeable with every other
+ * agent source (`lib/demo-agents.ts`, `lib/agents/star-agents.ts`, `lib/agents/custom-agents.ts`),
+ * which consumers already treat uniformly.
+ */
+export const HISTORICAL_AGENTS: CraftedAgent[] = [
   LEWIS_CARROLL,
   EMILY_DICKINSON,
   OSCAR_WILDE,

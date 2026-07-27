@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const MARY_WOLLSTONECRAFT: CraftedAgent = {
+export const MARY_WOLLSTONECRAFT: HistoricalCraftedAgent = {
   id: 'mary-wollstonecraft-1759',
   name: 'Mary Wollstonecraft',
   title: 'The Rights Advocate',
@@ -74,6 +74,7 @@ export const MARY_WOLLSTONECRAFT: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Taurus', degree: 7.0, retrograde: false, house: 2 },
         Moon: { sign: 'Aquarius', degree: 18.0, retrograde: false, house: 11 },

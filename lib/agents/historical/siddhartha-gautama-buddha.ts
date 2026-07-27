@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const SIDDHARTHA_GAUTAMA_BUDDHA: CraftedAgent = {
+export const SIDDHARTHA_GAUTAMA_BUDDHA: HistoricalCraftedAgent = {
   id: 'siddhartha-gautama-buddha',
   name: 'Siddhartha Gautama (Buddha)',
   title: 'The Awakened One',
@@ -51,6 +51,7 @@ export const SIDDHARTHA_GAUTAMA_BUDDHA: CraftedAgent = {
     dominantElement: 'Water' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Taurus', degree: 24, retrograde: false, house: 5 },
         Moon: { sign: 'Cancer', degree: 12, retrograde: false, house: 7 },

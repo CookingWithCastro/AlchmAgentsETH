@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const WANGARI_MAATHAI: CraftedAgent = {
+export const WANGARI_MAATHAI: HistoricalCraftedAgent = {
   id: 'wangari-maathai',
   name: 'Wangari Maathai',
   title: 'The Tree Mother',
@@ -52,6 +52,7 @@ export const WANGARI_MAATHAI: CraftedAgent = {
     dominantElement: 'Earth' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aries', degree: 11, retrograde: false, house: 4 },
         Moon: { sign: 'Virgo', degree: 23, retrograde: false, house: 9 },

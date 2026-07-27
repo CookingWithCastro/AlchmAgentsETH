@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const MARIE_CURIE: CraftedAgent = {
+export const MARIE_CURIE: HistoricalCraftedAgent = {
   id: 'marie-curie-1867',
   name: 'Marie Curie',
   title: 'The Radium Pioneer',
@@ -62,6 +62,7 @@ export const MARIE_CURIE: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Scorpio', degree: 15.0, retrograde: false, house: 8 },
         Moon: { sign: 'Capricorn', degree: 28.0, retrograde: false, house: 10 },

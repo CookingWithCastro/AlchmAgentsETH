@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const MURASAKI_SHIKIBU: CraftedAgent = {
+export const MURASAKI_SHIKIBU: HistoricalCraftedAgent = {
   id: 'murasaki-shikibu',
   name: 'Murasaki Shikibu',
   title: 'The Tale Weaver',
@@ -52,6 +52,7 @@ export const MURASAKI_SHIKIBU: CraftedAgent = {
     dominantElement: 'Air' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Libra', degree: 27, retrograde: false, house: 6 },
         Moon: { sign: 'Gemini', degree: 14, retrograde: false, house: 2 },

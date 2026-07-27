@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const ADAM_SMITH: CraftedAgent = {
+export const ADAM_SMITH: HistoricalCraftedAgent = {
   id: 'adam-smith-1723',
   name: 'Adam Smith',
   title: 'The Moral Economist',
@@ -75,6 +75,9 @@ export const ADAM_SMITH: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        'AUTHORED, and demonstrably not a measurement: Venus is 53.0 degrees from the Sun (max ~47). These positions were entered by hand, not derived from an ephemeris.',
       planets: {
         Sun: { sign: 'Gemini', degree: 25.0, retrograde: false, house: 3 },
         Moon: { sign: 'Capricorn', degree: 12.0, retrograde: false, house: 10 },

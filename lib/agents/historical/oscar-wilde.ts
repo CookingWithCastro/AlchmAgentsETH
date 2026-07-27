@@ -1,6 +1,11 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const OSCAR_WILDE: CraftedAgent = {
+export const OSCAR_WILDE: HistoricalCraftedAgent = {
   id: 'oscar-wilde',
   name: 'Oscar Wilde',
   title: 'The Aesthetic Wit',
@@ -29,6 +34,9 @@ export const OSCAR_WILDE: CraftedAgent = {
       substance: 0.7,
     },
     natalChart: {
+      provenance: 'placeholder',
+      provenanceNote:
+        'PLACEHOLDER: these numbers cannot be the chart of this person. The stored birthData is filler - the birth date is January 1 at 12:00, this repo standing encoding for "birth date not known or never entered", and the birth location is lat 0 / lon 0 marked "Unknown", a point in the Atlantic Ocean where nobody was born, so the Ascendant, midheaven and house numbers belong to nobody. Corroborating that the positions were never measured: Mercury is 72.8 degrees from the Sun (an inferior planet, max ~28); Venus is 146.9 degrees from the Sun (max ~47). Do not attribute these positions to this individual. Replacing this requires the real birth date, time and place plus a verified ephemeris.',
       planets: {
         Sun: { sign: 'Capricorn', degree: 10.8, retrograde: false, house: 7 },
         Moon: { sign: 'Aquarius', degree: 12.2, retrograde: false, house: 8 },

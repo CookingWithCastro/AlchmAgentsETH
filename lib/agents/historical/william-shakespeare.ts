@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const WILLIAM_SHAKESPEARE: CraftedAgent = {
+export const WILLIAM_SHAKESPEARE: HistoricalCraftedAgent = {
   id: 'william-shakespeare',
   name: 'William Shakespeare',
   title: 'Master of Human Nature',
@@ -62,6 +62,7 @@ export const WILLIAM_SHAKESPEARE: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Taurus', degree: 2.8, retrograde: false, house: 8 },
         Moon: { sign: 'Libra', degree: 14.6, retrograde: false, house: 1 },

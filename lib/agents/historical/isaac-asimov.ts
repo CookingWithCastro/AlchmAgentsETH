@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const ISAAC_ASIMOV: CraftedAgent = {
+export const ISAAC_ASIMOV: HistoricalCraftedAgent = {
   id: 'isaac-asimov',
   name: 'Isaac Asimov',
   title: 'The Foundation Architect',
@@ -65,6 +65,7 @@ export const ISAAC_ASIMOV: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Capricorn', degree: 10.67, retrograde: false, house: 12 }, // 12th house - behind the scenes writer
         Moon: { sign: 'Taurus', degree: 21.88, retrograde: false, house: 5 }, // 5th house - creative output

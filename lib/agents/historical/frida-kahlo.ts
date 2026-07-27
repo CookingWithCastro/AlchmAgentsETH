@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const FRIDA_KAHLO: CraftedAgent = {
+export const FRIDA_KAHLO: HistoricalCraftedAgent = {
   id: 'frida-kahlo',
   name: 'Frida Kahlo',
   title: 'The Pain Alchemist',
@@ -62,22 +62,25 @@ export const FRIDA_KAHLO: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'computed',
+      provenanceNote:
+        'COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1907-07-06 15:06:48 UT, which is the birth-record 08:30 local mean time at Coyoacan, Mexico (19.3N 99.2W; Mexico kept local mean time until 1922). Placidus house cusps. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.002 degrees. Sanity checks pass - Sun in Cancer as the 6 July birth date requires, Mercury 23.0 degrees from the Sun (max ~28), Venus 19.0 (max ~47). Caveat: the Ascendant and therefore the house numbers depend on the birth time, and the Ascendant moves about 1 degree every 4 minutes; the planets themselves are insensitive to that uncertainty.',
       planets: {
-        Sun: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Moon: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Mercury: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Venus: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Mars: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Jupiter: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Saturn: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Uranus: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Neptune: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
-        Pluto: { sign: 'Aries', degree: 0, retrograde: false, house: 1 },
+        Sun: { sign: 'Cancer', degree: 13.38, retrograde: false, house: 11 },
+        Moon: { sign: 'Taurus', degree: 29.71, retrograde: false, house: 10 },
+        Mercury: { sign: 'Leo', degree: 6.34, retrograde: false, house: 12 },
+        Venus: { sign: 'Gemini', degree: 24.34, retrograde: false, house: 10 },
+        Mars: { sign: 'Capricorn', degree: 13.39, retrograde: true, house: 5 },
+        Jupiter: { sign: 'Cancer', degree: 20.44, retrograde: false, house: 11 },
+        Saturn: { sign: 'Pisces', degree: 27.45, retrograde: false, house: 8 },
+        Uranus: { sign: 'Capricorn', degree: 10.61, retrograde: true, house: 5 },
+        Neptune: { sign: 'Cancer', degree: 12.4, retrograde: false, house: 11 },
+        Pluto: { sign: 'Gemini', degree: 23.75, retrograde: false, house: 10 },
       },
-      houses: { ASC: 270, MC: 180 },
+      houses: { ASC: 143.51, MC: 53.34 },
       aspects: [],
-      ascendant: 270,
-      midheaven: 180,
+      ascendant: 143.51,
+      midheaven: 53.34,
     },
     monicaConstant: 4.67,
     level: 'Advanced' as ConsciousnessLevel,
