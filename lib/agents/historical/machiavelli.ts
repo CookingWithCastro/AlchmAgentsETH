@@ -55,6 +55,7 @@ export const MACHIAVELLI: HistoricalCraftedAgent = {
       houses: { ASC: 94.7, MC: 4.7 },
       aspects: [],
       ascendant: 94.7,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.7,
     },
   },

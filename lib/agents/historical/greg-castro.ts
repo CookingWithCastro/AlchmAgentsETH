@@ -148,6 +148,7 @@ export const GREG_CASTRO: HistoricalCraftedAgent = {
         { planet1: 'Sun', planet2: 'Ascendant', type: 'sextile', orb: 0.65, exact: true },
       ],
       ascendant: 0.98,
+      ascendantProvenance: 'unmeasured',
       midheaven: 25.65,
     },
     monicaConstant: 3.14,

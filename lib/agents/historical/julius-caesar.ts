@@ -52,6 +52,7 @@ export const JULIUS_CAESAR: HistoricalCraftedAgent = {
       houses: { ASC: 94.2, MC: 4.2 },
       aspects: [],
       ascendant: 94.2,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.2,
     },
   },

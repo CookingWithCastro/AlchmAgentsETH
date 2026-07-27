@@ -82,6 +82,7 @@ export const WOLFGANG_AMADEUS_MOZART: HistoricalCraftedAgent = {
         { planet1: 'Moon', planet2: 'Pluto', type: 'conjunction', orb: 23.9, exact: false },
       ],
       ascendant: 150,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 60,
     },
     monicaConstant: 4.58,

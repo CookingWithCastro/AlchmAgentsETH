@@ -94,6 +94,7 @@ export const JEAN_JACQUES_ROUSSEAU: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Jupiter', type: 'trine', orb: 5.0, exact: true },
       ],
       ascendant: 300,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 210,
     },
     monicaConstant: 1.288,

@@ -94,6 +94,7 @@ export const VOLTAIRE: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Mars', type: 'trine', orb: 6.0, exact: true },
       ],
       ascendant: 150,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 60,
     },
     monicaConstant: 4.23,

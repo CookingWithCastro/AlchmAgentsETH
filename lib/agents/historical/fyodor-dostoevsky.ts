@@ -55,6 +55,7 @@ export const FYODOR_DOSTOEVSKY: HistoricalCraftedAgent = {
       houses: { ASC: 94.5, MC: 4.5 },
       aspects: [],
       ascendant: 94.5,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.5,
     },
   },

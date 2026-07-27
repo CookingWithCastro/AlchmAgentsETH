@@ -232,6 +232,40 @@ export class EconomyService {
     }
   }
 
+  /**
+   * DEBIT vs CREDIT ASYMMETRY — DELIBERATE. DO NOT "FIX" THIS INTO AN UPSERT.
+   *
+   * `creditTokens` (below) upserts: a credit for a user with no `token_balances`
+   * row CREATES the row, because a credit is the arrival of tokens and the row
+   * is just where they are recorded. Its absence means "no ledger yet", not
+   * "no entitlement".
+   *
+   * Both debits (`debitOperation`, `debitDynamic`) deliberately do NOT upsert.
+   * They are a bare `UPDATE ... WHERE user_id = $5 AND <each axis> >= <cost>`:
+   * if no row matches — whether because the user has no balance row at all, or
+   * because one axis is short — zero rows come back and the debit REFUSES with
+   * `{ ok: false, reason: 'insufficient_funds' }`.
+   *
+   * WHY: a missing row means the user has no funds. Creating one in order to
+   * debit it invents a NEGATIVE balance out of nothing and lets someone spend
+   * tokens they never held. The sister repo (WhatToEatNext) measured exactly
+   * this on a rolled-back transaction: an upsert-shaped debit of 25 against a
+   * user with no balance row produced spirit = -25.0000. They were instructed
+   * to convert all four of their debit CTEs to upserts and correctly refused on
+   * that measurement. Symmetry here is a bug, not tidiness.
+   *
+   * Do not conflate that with their other finding. The 521.7141 Spirit lost
+   * across 67 users came from an ensure-then-mutate CTE on the CREDIT side —
+   * a different defect, in the opposite direction, whose fix (an upsert) is
+   * precisely what must NOT be applied here. Credits create; debits refuse.
+   *
+   * The guard is enforced by SQL, not by application code, so it also holds
+   * under concurrency: the check and the decrement are one statement.
+   *
+   * Regression-guarded by test/economy-debit-atomicity.spec.ts, which fails if
+   * a debit ever creates a row, drives an axis negative, or moves its ledger
+   * writes back outside the transaction.
+   */
   static async debitOperation(userId: string, operationKey: string) {
     const cost = AGENT_OPERATION_COSTS[operationKey]
     if (!cost) {
@@ -243,9 +277,19 @@ export class EconomyService {
     const matter = cost.Matter || 0
     const substance = cost.Substance || 0
 
-    // Single atomic CTE query
-    const updatedBalanceRows = await prisma.$queryRawUnsafe<any[]>(
-      `
+    const transactionGroupId = crypto.randomUUID()
+    const entries = Object.entries(cost).filter(([_, amount]) => amount && amount > 0)
+
+    // The balance debit AND its ledger rows commit together or not at all.
+    // Before this was a transaction the CTE below committed on its own and the
+    // token_transactions inserts ran afterwards as separate autocommit
+    // statements: a crash or a failing insert left the balance debited with no
+    // ledger entry recording it, silently and with no error surfaced. Money
+    // moved with no record is the same outcome as double-spending it.
+    return prisma.$transaction(async tx => {
+      // Single atomic CTE query. See DEBIT vs CREDIT ASYMMETRY above.
+      const updatedBalanceRows = await tx.$queryRawUnsafe<any[]>(
+        `
       WITH updated AS (
         UPDATE token_balances
         SET spirit = spirit - $1,
@@ -262,62 +306,77 @@ export class EconomyService {
       )
       SELECT * FROM updated;
     `,
-      spirit,
-      essence,
-      matter,
-      substance,
-      userId
-    )
+        spirit,
+        essence,
+        matter,
+        substance,
+        userId
+      )
 
-    if (!updatedBalanceRows || updatedBalanceRows.length === 0) {
-      return { ok: false, reason: 'insufficient_funds' }
-    }
+      if (!updatedBalanceRows || updatedBalanceRows.length === 0) {
+        // Nothing was written, so committing this empty transaction is a no-op.
+        return { ok: false, reason: 'insufficient_funds' }
+      }
 
-    const updated = updatedBalanceRows[0]
-    const transactionGroupId = crypto.randomUUID()
+      const updated = updatedBalanceRows[0]
 
-    // Insert transaction rows for non-zero costs
-    const entries = Object.entries(cost).filter(([_, amount]) => amount && amount > 0)
-    for (const [token, amount] of entries) {
-      await prisma.$queryRawUnsafe(
-        `
+      // Insert transaction rows for non-zero costs
+      for (const [token, amount] of entries) {
+        await tx.$queryRawUnsafe(
+          `
         INSERT INTO token_transactions (
           transaction_group_id, user_id, token_type, amount, source_type, created_at
         ) VALUES (
           $1, $2, $3, $4, $5, NOW()
         )
       `,
-        transactionGroupId,
-        userId,
-        token,
-        -amount,
-        'agents_operation'
-      )
-    }
+          transactionGroupId,
+          userId,
+          token,
+          -amount,
+          'agents_operation'
+        )
+      }
 
-    return {
-      ok: true,
-      transactionGroupId,
-      balances: {
-        spirit: Number(updated.spirit),
-        essence: Number(updated.essence),
-        matter: Number(updated.matter),
-        substance: Number(updated.substance),
-        lastDailyClaimAt: updated.last_daily_claim_at?.toISOString() || null,
-        lastDailyClaimAgentsAt: updated.last_daily_claim_agents_at?.toISOString() || null,
-      },
-    }
+      return {
+        ok: true,
+        transactionGroupId,
+        balances: {
+          spirit: Number(updated.spirit),
+          essence: Number(updated.essence),
+          matter: Number(updated.matter),
+          substance: Number(updated.substance),
+          lastDailyClaimAt: updated.last_daily_claim_at?.toISOString() || null,
+          lastDailyClaimAgentsAt: updated.last_daily_claim_agents_at?.toISOString() || null,
+        },
+      }
+    })
   }
 
+  /**
+   * Second debit site. The same DEBIT vs CREDIT ASYMMETRY documented on
+   * `debitOperation` applies verbatim: NO upsert, NO `ON CONFLICT`, no
+   * ensure-then-mutate. A missing `token_balances` row means no funds, so this
+   * refuses with `{ ok: false, reason: 'insufficient_funds' }` rather than
+   * creating a row and driving it negative. Only the cost source differs —
+   * `debitOperation` looks a fixed price up in `AGENT_OPERATION_COSTS`, this
+   * takes a caller-computed one.
+   */
   static async debitDynamic(userId: string, cost: Partial<Record<TokenType, number>>) {
     const spirit = cost.Spirit || 0
     const essence = cost.Essence || 0
     const matter = cost.Matter || 0
     const substance = cost.Substance || 0
 
-    // Single atomic CTE query
-    const updatedBalanceRows = await prisma.$queryRawUnsafe<any[]>(
-      `
+    const transactionGroupId = crypto.randomUUID()
+    const entries = Object.entries(cost).filter(([_, amount]) => amount && amount > 0)
+
+    // Same atomicity contract as debitOperation: balance movement and ledger
+    // rows share one transaction so they can never diverge.
+    return prisma.$transaction(async tx => {
+      // Single atomic CTE query. See DEBIT vs CREDIT ASYMMETRY above.
+      const updatedBalanceRows = await tx.$queryRawUnsafe<any[]>(
+        `
       WITH updated AS (
         UPDATE token_balances
         SET spirit = spirit - $1,
@@ -334,53 +393,64 @@ export class EconomyService {
       )
       SELECT * FROM updated;
     `,
-      spirit,
-      essence,
-      matter,
-      substance,
-      userId
-    )
+        spirit,
+        essence,
+        matter,
+        substance,
+        userId
+      )
 
-    if (!updatedBalanceRows || updatedBalanceRows.length === 0) {
-      return { ok: false, reason: 'insufficient_funds' }
-    }
+      if (!updatedBalanceRows || updatedBalanceRows.length === 0) {
+        // Nothing was written, so committing this empty transaction is a no-op.
+        return { ok: false, reason: 'insufficient_funds' }
+      }
 
-    const updated = updatedBalanceRows[0]
-    const transactionGroupId = crypto.randomUUID()
+      const updated = updatedBalanceRows[0]
 
-    // Insert transaction rows for non-zero costs
-    const entries = Object.entries(cost).filter(([_, amount]) => amount && amount > 0)
-    for (const [token, amount] of entries) {
-      await prisma.$queryRawUnsafe(
-        `
+      // Insert transaction rows for non-zero costs
+      for (const [token, amount] of entries) {
+        await tx.$queryRawUnsafe(
+          `
         INSERT INTO token_transactions (
           transaction_group_id, user_id, token_type, amount, source_type, created_at
         ) VALUES (
           $1, $2, $3, $4, $5, NOW()
         )
       `,
-        transactionGroupId,
-        userId,
-        token,
-        -amount,
-        'agents_operation'
-      )
-    }
+          transactionGroupId,
+          userId,
+          token,
+          -amount,
+          'agents_operation'
+        )
+      }
 
-    return {
-      ok: true,
-      transactionGroupId,
-      balances: {
-        spirit: Number(updated.spirit),
-        essence: Number(updated.essence),
-        matter: Number(updated.matter),
-        substance: Number(updated.substance),
-        lastDailyClaimAt: updated.last_daily_claim_at?.toISOString() || null,
-        lastDailyClaimAgentsAt: updated.last_daily_claim_agents_at?.toISOString() || null,
-      },
-    }
+      return {
+        ok: true,
+        transactionGroupId,
+        balances: {
+          spirit: Number(updated.spirit),
+          essence: Number(updated.essence),
+          matter: Number(updated.matter),
+          substance: Number(updated.substance),
+          lastDailyClaimAt: updated.last_daily_claim_at?.toISOString() || null,
+          lastDailyClaimAgentsAt: updated.last_daily_claim_agents_at?.toISOString() || null,
+        },
+      }
+    })
   }
 
+  /**
+   * The CREDIT half of the DEBIT vs CREDIT ASYMMETRY documented on
+   * `debitOperation`. This one DOES upsert, on purpose: tokens are arriving, so
+   * a user with no `token_balances` row gets one created holding exactly the
+   * credited amount. That is safe in a way the mirror-image debit is not — an
+   * upsert can only ever raise a balance from 0, never below it.
+   *
+   * Note the shape, and copy it rather than the older raw-SQL style: the
+   * balance write and every `token_transactions` row are `tx.*` calls inside
+   * one `prisma.$transaction`, so the ledger cannot diverge from the balance.
+   */
   static async creditTokens(
     userId: string,
     amounts: { spirit: number; essence: number; matter: number; substance: number },

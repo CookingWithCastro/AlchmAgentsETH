@@ -78,6 +78,7 @@ export const CONFUCIUS: HistoricalCraftedAgent = {
       houses: { ASC: 12, MC: 8 },
       aspects: [],
       ascendant: 12,
+      ascendantProvenance: 'unmeasured',
       midheaven: 8,
     },
     monicaConstant: 5.45,

@@ -82,6 +82,7 @@ export const VINCENT_VAN_GOGH: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Uranus', type: 'conjunction', orb: 15.0, exact: false },
       ],
       ascendant: 315,
+      ascendantProvenance: 'unmeasured',
       midheaven: 225,
     },
     monicaConstant: 2.356,

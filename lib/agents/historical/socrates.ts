@@ -81,6 +81,7 @@ export const SOCRATES: HistoricalCraftedAgent = {
         { planet1: 'Moon', planet2: 'Neptune', type: 'sextile', orb: 0.9, exact: true },
       ],
       ascendant: 180,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 90,
     },
     monicaConstant: 4.72,

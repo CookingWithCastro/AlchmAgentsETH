@@ -55,6 +55,7 @@ export const LEWIS_CARROLL: HistoricalCraftedAgent = {
       houses: { ASC: 93.9, MC: 3.9 },
       aspects: [],
       ascendant: 93.9,
+      ascendantProvenance: 'placeholder',
       midheaven: 3.9,
     },
   },

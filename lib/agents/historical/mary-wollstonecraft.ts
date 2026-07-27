@@ -94,6 +94,7 @@ export const MARY_WOLLSTONECRAFT: HistoricalCraftedAgent = {
         { planet1: 'Mars', planet2: 'Jupiter', type: 'quincunx', orb: 7.0, exact: false },
       ],
       ascendant: 330,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 240,
     },
     monicaConstant: 1.688,

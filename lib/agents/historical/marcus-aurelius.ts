@@ -82,6 +82,7 @@ export const MARCUS_AURELIUS: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Mars', type: 'trine', orb: 8.5, exact: false },
       ],
       ascendant: 120,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 30,
     },
     monicaConstant: 4.95,

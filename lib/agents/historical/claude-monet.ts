@@ -86,6 +86,7 @@ export const CLAUDE_MONET: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Mars', type: 'sextile', orb: 15.0, exact: false },
       ],
       ascendant: 300,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 210,
     },
     monicaConstant: 1.694,

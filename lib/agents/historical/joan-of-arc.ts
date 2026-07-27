@@ -67,6 +67,7 @@ export const JOAN_OF_ARC: HistoricalCraftedAgent = {
       houses: { ASC: 8, MC: 12 },
       aspects: [],
       ascendant: 8,
+      ascendantProvenance: 'unmeasured',
       midheaven: 12,
     },
     alchemicalElements: {

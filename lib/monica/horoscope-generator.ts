@@ -4,6 +4,8 @@
 import { BirthInfo } from './alchemical-trainer'
 import {
   calculateAllPlanets,
+  birthMomentUTC,
+  utcDateFromParts,
   type EnhancedBirthInfo,
   type EnhancedPlanetPosition,
   type EnhancedAscendant,
@@ -237,8 +239,11 @@ function calculateAscendant(birthInfo: BirthInfo): { sign: string; degree: numbe
   const longitude = birthInfo.longitude || 0
 
   // Calculate days since J2000.0 (Jan 1, 2000, 12:00 UTC)
-  const birthDate = new Date(birthInfo.year, birthInfo.month, birthInfo.day)
-  const j2000 = new Date(2000, 0, 1, 12, 0, 0)
+  // Two defects here, both fixed: `new Date(year, ...)` remapped years 0-99 to
+  // 1900-1999, and `birthInfo.month` is 1-based while that slot is 0-based, so
+  // the ascendant was computed one month late for every chart.
+  const birthDate = utcDateFromParts(birthInfo.year, birthInfo.month, birthInfo.day)
+  const j2000 = utcDateFromParts(2000, 1, 1, 12, 0, 0)
   const daysSinceJ2000 = (birthDate.getTime() - j2000.getTime()) / (1000 * 60 * 60 * 24)
 
   // Calculate Greenwich Mean Sidereal Time (GMST) at 0h UT
@@ -353,9 +358,12 @@ export function generateAccurateHoroscope(birthInfo: BirthInfo): GeneratedHorosc
   if (cached && Date.now() - cached.timestamp < PLANETARY_CACHE_TTL) {
     return cached.data
   }
-  const birthDate = new Date(
+  // `new Date(year, ...)` carries the SAME 0-99 -> 1900-1999 remap as Date.UTC:
+  // year 69 becomes 1969, silently. Measured before this fix: this function
+  // returned a byte-identical horoscope for year 69 and year 1969.
+  const birthDate = utcDateFromParts(
     birthInfo.year,
-    birthInfo.month - 1,
+    birthInfo.month,
     birthInfo.day,
     birthInfo.hour,
     birthInfo.minute
@@ -460,7 +468,12 @@ export function validateBirthInfo(birthInfo: BirthInfo): { valid: boolean; error
   }
 
   // Validate day
-  const daysInMonth = new Date(birthInfo.year, birthInfo.month, 0).getDate()
+  // `day 0 of month N` is the last day of month N-1, which is correct for a
+  // 1-based `month`. Only the year needed fixing (0-99 remap), and building in
+  // UTC also keeps it from shifting across a timezone boundary.
+  const daysInMonth = new Date(
+    utcDateFromParts(birthInfo.year, birthInfo.month, 1).getTime() - 86400000
+  ).getUTCDate()
   if (birthInfo.day < 1 || birthInfo.day > daysInMonth) {
     errors.push(`Day must be between 1 and ${daysInMonth} for month ${birthInfo.month}`)
   }
@@ -515,17 +528,13 @@ export function generateProfessionalHoroscope(
       longitude: birthInfo.longitude || -74.006,
     }
 
-    // Create birth date for solar ephemeris calculations
-    const birthDate = new Date(
-      Date.UTC(
-        enhancedBirthInfo.year,
-        enhancedBirthInfo.month - 1,
-        enhancedBirthInfo.day,
-        enhancedBirthInfo.hour,
-        enhancedBirthInfo.minute,
-        enhancedBirthInfo.second || 0
-      )
-    )
+    // Create birth date for solar ephemeris calculations.
+    //
+    // This must NOT use Date.UTC: `birthInfo.year` reaches here straight from stored
+    // agent birth data, and a year in 0-99 would be silently remapped to 1900+year.
+    // Cleopatra is stored as `0069-01-01`, so Date.UTC computed her Sun for 1969 —
+    // a 1900-year error that produced a real-looking chart with no warning.
+    const birthDate = birthMomentUTC(enhancedBirthInfo)
 
     // Calculate enhanced positions (but override Sun with accurate solar ephemeris)
     const enhancedResults = calculateAllPlanets(enhancedBirthInfo)

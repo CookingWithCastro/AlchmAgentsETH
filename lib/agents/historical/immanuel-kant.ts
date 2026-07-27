@@ -98,6 +98,7 @@ export const IMMANUEL_KANT: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Jupiter', type: 'sextile', orb: 3.0, exact: true },
       ],
       ascendant: 15,
+      ascendantProvenance: 'unmeasured',
       midheaven: 315,
     },
     monicaConstant: 1.129,

@@ -84,6 +84,7 @@ export const MAHATMA_GANDHI: HistoricalCraftedAgent = {
       houses: { ASC: 25, MC: 2 },
       aspects: [],
       ascendant: 25,
+      ascendantProvenance: 'unmeasured',
       midheaven: 2,
     },
     alchemicalElements: {

@@ -81,6 +81,7 @@ export const THOMAS_AQUINAS: HistoricalCraftedAgent = {
         { planet1: 'Mars', planet2: 'Saturn', type: 'conjunction', orb: 3.0, exact: false },
       ],
       ascendant: 45,
+      ascendantProvenance: 'unmeasured',
       midheaven: 315,
     },
     monicaConstant: 4.67,

@@ -91,6 +91,7 @@ export const ISAAC_ASIMOV: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Neptune', type: 'conjunction', orb: 6.0, exact: false },
       ],
       ascendant: 282.57, // 12.57° Capricorn Rising
+      ascendantProvenance: 'unmeasured',
       midheaven: 192.57, // 12.57° Libra MC
     },
     monicaConstant: 4.82,

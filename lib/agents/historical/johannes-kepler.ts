@@ -94,6 +94,7 @@ export const JOHANNES_KEPLER: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Mars', type: 'opposition', orb: 7.0, exact: false },
       ],
       ascendant: 330,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 240,
     },
     monicaConstant: 1.114,

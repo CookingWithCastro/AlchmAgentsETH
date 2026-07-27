@@ -82,6 +82,7 @@ export const ISAAC_NEWTON: HistoricalCraftedAgent = {
         { planet1: 'Saturn', planet2: 'Uranus', type: 'trine', orb: 7.6, exact: false },
       ],
       ascendant: 210,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 120,
     },
     monicaConstant: 5.67,

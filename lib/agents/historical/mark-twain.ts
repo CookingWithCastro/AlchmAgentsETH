@@ -81,6 +81,7 @@ export const MARK_TWAIN: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Saturn', type: 'sextile', orb: 15.0, exact: false },
       ],
       ascendant: 270,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 180,
     },
     monicaConstant: 1.222,

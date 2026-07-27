@@ -82,6 +82,7 @@ export const WILLIAM_SHAKESPEARE: HistoricalCraftedAgent = {
         { planet1: 'Mars', planet2: 'Jupiter', type: 'sextile', orb: 13.6, exact: false },
       ],
       ascendant: 210,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 120,
     },
     monicaConstant: 5.12,

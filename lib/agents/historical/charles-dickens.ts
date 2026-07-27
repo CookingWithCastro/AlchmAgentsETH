@@ -84,6 +84,7 @@ export const CHARLES_DICKENS: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Uranus', type: 'conjunction', orb: 16.0, exact: false },
       ],
       ascendant: 60,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 330,
     },
     monicaConstant: 1.107,

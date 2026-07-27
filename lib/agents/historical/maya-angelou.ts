@@ -82,6 +82,7 @@ export const MAYA_ANGELOU: HistoricalCraftedAgent = {
         { planet1: 'Sun', planet2: 'Uranus', type: 'conjunction', orb: 8.6, exact: false },
       ],
       ascendant: 180,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 270,
     },
     monicaConstant: 4.38,

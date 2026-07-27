@@ -55,6 +55,7 @@ export const RAPHAEL: HistoricalCraftedAgent = {
       houses: { ASC: 94.4, MC: 4.4 },
       aspects: [],
       ascendant: 94.4,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.4,
     },
   },

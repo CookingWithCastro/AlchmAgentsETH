@@ -82,6 +82,7 @@ export const CHARLES_DARWIN: HistoricalCraftedAgent = {
         { planet1: 'Mars', planet2: 'Saturn', type: 'sextile', orb: 3.0, exact: true },
       ],
       ascendant: 120,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 30,
     },
     monicaConstant: 0.873,

@@ -66,6 +66,7 @@ export const CARL_SAGAN: HistoricalCraftedAgent = {
       houses: { ASC: 28, MC: 12 },
       aspects: [],
       ascendant: 28,
+      ascendantProvenance: 'unmeasured',
       midheaven: 12,
     },
     monicaConstant: 5.67,

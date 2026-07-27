@@ -87,6 +87,7 @@ export const SIGMUND_FREUD: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Neptune', type: 'conjunction', orb: 3.0, exact: true },
       ],
       ascendant: 315,
+      ascendantProvenance: 'unmeasured',
       midheaven: 225,
     },
     monicaConstant: 1.006,

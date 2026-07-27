@@ -55,6 +55,7 @@ export const MICHELANGELO: HistoricalCraftedAgent = {
       houses: { ASC: 94.3, MC: 4.3 },
       aspects: [],
       ascendant: 94.3,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.3,
     },
   },

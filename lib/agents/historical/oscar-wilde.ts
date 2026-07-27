@@ -52,6 +52,7 @@ export const OSCAR_WILDE: HistoricalCraftedAgent = {
       houses: { ASC: 94.6, MC: 4.6 },
       aspects: [],
       ascendant: 94.6,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.6,
     },
   },

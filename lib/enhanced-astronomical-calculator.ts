@@ -251,6 +251,65 @@ const ZODIAC_SIGNS = [
 ]
 
 /**
+ * Build a UTC Date from explicit calendar parts, for ANY year.
+ *
+ * `Date.UTC(year, ...)` and `new Date(year, ...)` implement a legacy two-digit-year
+ * remap that ECMAScript still mandates: an integer year in the inclusive range 0-99
+ * is silently rewritten to `1900 + year`. It is not an error and there is no warning.
+ * Measured:
+ *
+ *   Date.UTC(69, 0, 1)   -> 1969-01-01Z   (wanted 0069)
+ *   Date.UTC(0,  0, 1)   -> 1900-01-01Z   (wanted 0000)
+ *   Date.UTC(99, 0, 1)   -> 1999-01-01Z   (wanted 0099)
+ *   Date.UTC(100, 0, 1)  -> 0100-01-01Z   (correct — the remap stops at 100)
+ *   Date.UTC(-469, 0, 1) -> -000469-01-01Z (correct — negatives are never remapped)
+ *
+ * This repo charts ancient birth moments (Cleopatra is stored as `0069-01-01`,
+ * Socrates as `-000469-06-20`), so the remap is a live 1900-year error on real
+ * data rather than a curiosity. `setUTCFullYear` carries no such remap, so
+ * building the epoch and then setting the year explicitly is exact for years
+ * 0-99, negative years, and modern years alike.
+ *
+ * Every date built from a caller-supplied `year` in this module must go through
+ * here. Do not reintroduce `Date.UTC(year, ...)` on an unconstrained year.
+ *
+ * @param year Full proleptic year. 69 means 69 CE, -469 means 470 BCE.
+ * @param month 1-based month (1 = January), matching `EnhancedBirthInfo.month`.
+ */
+export function utcDateFromParts(
+  year: number,
+  month: number,
+  day: number,
+  hour = 0,
+  minute = 0,
+  second = 0,
+  millisecond = 0
+): Date {
+  const date = new Date(0)
+  // setUTCFullYear does NOT apply the 0-99 -> 1900+year remap that Date.UTC does.
+  date.setUTCFullYear(year, month - 1, day)
+  date.setUTCHours(hour, minute, second, millisecond)
+  return date
+}
+
+/**
+ * The birth instant as a UTC Date, correct for ancient and BCE years.
+ *
+ * The single conversion used by every chart entry point in this module, so that a
+ * chart requested for year 69 is computed for year 69 and not for 1969.
+ */
+export function birthMomentUTC(birthInfo: EnhancedBirthInfo): Date {
+  return utcDateFromParts(
+    birthInfo.year,
+    birthInfo.month,
+    birthInfo.day,
+    birthInfo.hour,
+    birthInfo.minute,
+    birthInfo.second || 0
+  )
+}
+
+/**
  * Convert a UTC calendar date to a Julian Day number (Gregorian calendar rules,
  * exact to the millisecond of the input). No approximation is involved here.
  */
@@ -317,7 +376,11 @@ export function julianDayToDate(jd: number): Date {
   const second = Math.floor(secondsFrac)
   const millisecond = Math.floor((secondsFrac - second) * 1000)
 
-  return new Date(Date.UTC(year, month - 1, day, hour, minute, second, millisecond))
+  // `year` here is derived from the Julian Day arithmetic above (`c - 4716`), so any
+  // JD below ~1757641 produces a year in 0-99. Date.UTC would have remapped those to
+  // the 1900s, making this function the inverse of `dateToJulianDay` only for JDs
+  // after 100 CE.
+  return utcDateFromParts(year, month, day, hour, minute, second, millisecond)
 }
 
 /**
@@ -942,16 +1005,7 @@ function localSiderealTime(
  */
 export function calculateEnhancedAscendant(birthInfo: EnhancedBirthInfo): EnhancedAscendant {
   // Create UTC date to ensure consistent astronomical calculations
-  const birthDate = new Date(
-    Date.UTC(
-      birthInfo.year,
-      birthInfo.month - 1,
-      birthInfo.day,
-      birthInfo.hour,
-      birthInfo.minute,
-      birthInfo.second || 0
-    )
-  )
+  const birthDate = birthMomentUTC(birthInfo)
 
   const jd = dateToJulianDay(birthDate)
   const { lstDeg, obliquityDeg } = localSiderealTime(jd, birthInfo.longitude)
@@ -1029,16 +1083,7 @@ export const CHART_BODIES = [
  */
 export function calculateAllPlanets(birthInfo: EnhancedBirthInfo): EnhancedChartResult {
   // Create UTC date to ensure consistent astronomical calculations
-  const birthDate = new Date(
-    Date.UTC(
-      birthInfo.year,
-      birthInfo.month - 1,
-      birthInfo.day,
-      birthInfo.hour,
-      birthInfo.minute,
-      birthInfo.second || 0
-    )
-  )
+  const birthDate = birthMomentUTC(birthInfo)
 
   const jd = dateToJulianDay(birthDate)
 
@@ -1113,16 +1158,7 @@ export function calculateProfessionalHouses(
   system: HouseSystem = 'placidus'
 ): HouseSystemResult {
   // Create UTC date to ensure consistent astronomical calculations
-  const birthDate = new Date(
-    Date.UTC(
-      birthInfo.year,
-      birthInfo.month - 1,
-      birthInfo.day,
-      birthInfo.hour,
-      birthInfo.minute,
-      birthInfo.second || 0
-    )
-  )
+  const birthDate = birthMomentUTC(birthInfo)
 
   const jd = dateToJulianDay(birthDate)
   const ascendant = calculateEnhancedAscendant(birthInfo)
@@ -1211,7 +1247,8 @@ export function getDatesForSunDegree(
   // Approximate starting date based on degree
   // Sun at 0° Aries around March 20
   const daysFromAries = targetDegree
-  const baseDate = new Date(Date.UTC(year, 2, 20, 12, 0, 0)) // March 20 noon
+  // `year` is an unconstrained caller-supplied parameter, so it can be 0-99.
+  const baseDate = utcDateFromParts(year, 3, 20, 12, 0, 0) // March 20 noon
   const searchStart = new Date(baseDate)
   searchStart.setUTCDate(searchStart.getUTCDate() + Math.floor(daysFromAries) - 2)
 

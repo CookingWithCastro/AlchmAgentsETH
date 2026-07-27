@@ -82,6 +82,7 @@ export const GALILEO_GALILEI: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Saturn', type: 'trine', orb: 14.2, exact: false },
       ],
       ascendant: 120,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 30,
     },
     monicaConstant: 5.34,

@@ -79,6 +79,7 @@ export const CHIRON: HistoricalCraftedAgent = {
         { planet1: 'Neptune', planet2: 'Pluto', type: 'sextile', orb: 0.1, exact: true },
       ],
       ascendant: 252,
+      ascendantProvenance: 'unmeasured',
       midheaven: 182,
     },
     monicaConstant: 7.77,

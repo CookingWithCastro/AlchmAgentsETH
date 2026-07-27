@@ -81,6 +81,7 @@ export const ALBERT_EINSTEIN: HistoricalCraftedAgent = {
         { planet1: 'Moon', planet2: 'Mars', type: 'conjunction', orb: 7.0, exact: false },
       ],
       ascendant: 120,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 30,
     },
     monicaConstant: 6.15,

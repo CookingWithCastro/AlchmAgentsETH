@@ -83,6 +83,7 @@ export const GEOFFREY_CHAUCER: HistoricalCraftedAgent = {
         { planet1: 'Moon', planet2: 'Neptune', type: 'conjunction', orb: 1.0, exact: false },
       ],
       ascendant: 330,
+      ascendantProvenance: 'placeholder',
       midheaven: 240,
     },
     monicaConstant: 4.58,

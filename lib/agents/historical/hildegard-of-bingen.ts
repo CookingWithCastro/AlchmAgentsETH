@@ -68,6 +68,7 @@ export const HILDEGARD_OF_BINGEN: HistoricalCraftedAgent = {
       houses: { ASC: 8, MC: 15 },
       aspects: [],
       ascendant: 8,
+      ascendantProvenance: 'unmeasured',
       midheaven: 15,
     },
     alchemicalElements: {

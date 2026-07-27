@@ -81,6 +81,7 @@ export const EDGAR_ALLAN_POE: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Saturn', type: 'sextile', orb: 7.0, exact: false },
       ],
       ascendant: 60,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 330,
     },
     monicaConstant: 1.829,

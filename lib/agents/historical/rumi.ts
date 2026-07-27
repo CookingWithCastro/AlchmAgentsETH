@@ -96,6 +96,7 @@ export const RUMI: HistoricalCraftedAgent = {
         { planet1: 'Mars', planet2: 'Saturn', type: 'conjunction', orb: 17.0, exact: false },
       ],
       ascendant: 270,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 180,
     },
     monicaConstant: 5.67,

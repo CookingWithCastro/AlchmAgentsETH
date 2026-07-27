@@ -69,6 +69,7 @@ export const LAO_TZU: HistoricalCraftedAgent = {
       houses: { ASC: 28, MC: 15 },
       aspects: [],
       ascendant: 28,
+      ascendantProvenance: 'unmeasured',
       midheaven: 15,
     },
     alchemicalElements: {

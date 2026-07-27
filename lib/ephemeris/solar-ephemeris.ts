@@ -7,6 +7,8 @@
  * Properly accounts for Earth's orbital variations and leap years
  */
 
+import { utcDateFromParts } from '../enhanced-astronomical-calculator'
+
 export interface SolarPosition {
   longitude: number // 0-360° ecliptic longitude
   latitude: number // Should be ~0 for Sun
@@ -232,7 +234,10 @@ export function getDatesForZodiacDegree(
   // Start searching from approximate date
   // Sun moves ~1 degree per day, starting from ~0° Aries around March 20
   const daysFromAries = targetDegree
-  const approxDate = new Date(Date.UTC(year, 2, 20)) // March 20
+  // `year` is unconstrained here — `app/api/zodiac-calendar/route.ts` parses it
+  // straight from the `?year=` query parameter with no range check, so `?year=69`
+  // reaches this line. Date.UTC would have computed 1969 and returned it as if asked for.
+  const approxDate = utcDateFromParts(year, 3, 20) // March 20
   approxDate.setUTCDate(approxDate.getUTCDate() + Math.floor(daysFromAries))
 
   // Binary search for exact entry time

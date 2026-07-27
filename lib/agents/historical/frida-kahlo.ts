@@ -80,6 +80,7 @@ export const FRIDA_KAHLO: HistoricalCraftedAgent = {
       houses: { ASC: 143.51, MC: 53.34 },
       aspects: [],
       ascendant: 143.51,
+      ascendantProvenance: 'measured',
       midheaven: 53.34,
     },
     monicaConstant: 4.67,

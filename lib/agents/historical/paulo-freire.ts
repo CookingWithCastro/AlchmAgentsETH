@@ -70,6 +70,7 @@ export const PAULO_FREIRE: HistoricalCraftedAgent = {
       houses: { ASC: 22, MC: 18 },
       aspects: [],
       ascendant: 22,
+      ascendantProvenance: 'unmeasured',
       midheaven: 18,
     },
     alchemicalElements: {

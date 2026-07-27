@@ -91,6 +91,7 @@ export const RENE_DESCARTES: HistoricalCraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Mars', type: 'sextile', orb: 14.0, exact: false },
       ],
       ascendant: 330,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 240,
     },
     monicaConstant: 4.78,

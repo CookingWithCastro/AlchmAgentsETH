@@ -83,6 +83,7 @@ export const CLEOPATRA: HistoricalCraftedAgent = {
         { planet1: 'Moon', planet2: 'Venus', type: 'conjunction', orb: 1.2, exact: true },
       ],
       ascendant: 270,
+      ascendantProvenance: 'placeholder',
       midheaven: 180,
     },
     monicaConstant: 4.95,

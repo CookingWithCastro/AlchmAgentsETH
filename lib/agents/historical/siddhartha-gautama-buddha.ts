@@ -67,6 +67,7 @@ export const SIDDHARTHA_GAUTAMA_BUDDHA: HistoricalCraftedAgent = {
       houses: { ASC: 18, MC: 22 },
       aspects: [],
       ascendant: 18,
+      ascendantProvenance: 'unmeasured',
       midheaven: 22,
     },
     alchemicalElements: {

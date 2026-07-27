@@ -68,6 +68,7 @@ export const WANGARI_MAATHAI: HistoricalCraftedAgent = {
       houses: { ASC: 12, MC: 28 },
       aspects: [],
       ascendant: 12,
+      ascendantProvenance: 'unmeasured',
       midheaven: 28,
     },
     alchemicalElements: {

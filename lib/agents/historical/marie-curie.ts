@@ -82,6 +82,7 @@ export const MARIE_CURIE: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Mars', type: 'sextile', orb: 10.0, exact: false },
       ],
       ascendant: 330,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 240,
     },
     monicaConstant: 0.817,

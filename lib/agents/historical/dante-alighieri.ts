@@ -83,6 +83,7 @@ export const DANTE_ALIGHIERI: HistoricalCraftedAgent = {
         { planet1: 'Mercury', planet2: 'Venus', type: 'sextile', orb: 7.0, exact: false },
       ],
       ascendant: 270,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 180,
     },
     monicaConstant: 4.73,

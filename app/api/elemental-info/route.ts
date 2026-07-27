@@ -121,11 +121,21 @@ export async function POST(req: Request) {
           House: { label: '7' },
         },
         { label: 'Pluto', Sign: { label: planets.plutoSign || 'Scorpio' }, House: { label: '2' } },
-        {
-          label: 'Ascendant',
-          Sign: { label: planets.ascendantSign || 'Aries' },
-          House: { label: '1' },
-        },
+        // The Ascendant is OMITTED when its sign is unknown rather than
+        // defaulted to Aries. Unlike the planets above — whose fallbacks are
+        // that body's own domicile, a stated convention — an invented rising
+        // sign is specific to the individual and cannot be guessed from the
+        // body. `alchemize` guards this key (`if (horoscope.Ascendant?.Sign?.label)`)
+        // and simply leaves it out of the totals, so absence propagates.
+        ...(planets.ascendantSign
+          ? [
+              {
+                label: 'Ascendant',
+                Sign: { label: planets.ascendantSign },
+                House: { label: '1' },
+              },
+            ]
+          : []),
       ]
     }
 

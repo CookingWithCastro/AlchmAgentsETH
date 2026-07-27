@@ -55,6 +55,7 @@ export const PETRARCH: HistoricalCraftedAgent = {
       houses: { ASC: 93.8, MC: 3.8 },
       aspects: [],
       ascendant: 93.8,
+      ascendantProvenance: 'placeholder',
       midheaven: 3.8,
     },
   },

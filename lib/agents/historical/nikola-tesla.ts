@@ -81,6 +81,7 @@ export const NIKOLA_TESLA: HistoricalCraftedAgent = {
         { planet1: 'Mercury', planet2: 'Saturn', type: 'conjunction', orb: 18.0, exact: false },
       ],
       ascendant: 270,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 180,
     },
     monicaConstant: 1.16,

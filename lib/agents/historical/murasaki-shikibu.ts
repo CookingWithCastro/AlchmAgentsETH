@@ -68,6 +68,7 @@ export const MURASAKI_SHIKIBU: HistoricalCraftedAgent = {
       houses: { ASC: 22, MC: 8 },
       aspects: [],
       ascendant: 22,
+      ascendantProvenance: 'unmeasured',
       midheaven: 8,
     },
     alchemicalElements: {

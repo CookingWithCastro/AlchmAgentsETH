@@ -52,6 +52,7 @@ export const DONATELLO: HistoricalCraftedAgent = {
       houses: { ASC: 94.8, MC: 4.8 },
       aspects: [],
       ascendant: 94.8,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.8,
     },
   },

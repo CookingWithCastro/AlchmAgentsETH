@@ -80,6 +80,7 @@ export const CARL_JUNG: HistoricalCraftedAgent = {
       houses: { ASC: 301.55, MC: 239.27 },
       aspects: [],
       ascendant: 301.55,
+      ascendantProvenance: 'measured',
       midheaven: 239.27,
     },
     monicaConstant: 4.82,

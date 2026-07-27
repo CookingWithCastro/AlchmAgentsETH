@@ -136,6 +136,7 @@ export const BENJAMIN_FRANKLIN: HistoricalCraftedAgent = {
       houses: { ASC: 18, MC: 295 },
       aspects: [],
       ascendant: 18,
+      ascendantProvenance: 'unmeasured',
       midheaven: 295,
     },
     alchemicalElements: { spirit: 0.78, essence: 0.62, matter: 0.81, substance: 0.59 },

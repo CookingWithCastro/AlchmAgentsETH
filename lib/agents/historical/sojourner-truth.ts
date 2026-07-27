@@ -72,6 +72,7 @@ export const SOJOURNER_TRUTH: HistoricalCraftedAgent = {
       houses: { ASC: 12, MC: 2 },
       aspects: [],
       ascendant: 12,
+      ascendantProvenance: 'unmeasured',
       midheaven: 2,
     },
     alchemicalElements: {

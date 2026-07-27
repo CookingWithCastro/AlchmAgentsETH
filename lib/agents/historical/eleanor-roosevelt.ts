@@ -78,6 +78,7 @@ export const ELEANOR_ROOSEVELT: HistoricalCraftedAgent = {
       houses: { ASC: 22, MC: 10 },
       aspects: [],
       ascendant: 22,
+      ascendantProvenance: 'unmeasured',
       midheaven: 10,
     },
     monicaConstant: 5.67,

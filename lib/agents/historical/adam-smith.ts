@@ -97,6 +97,7 @@ export const ADAM_SMITH: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Jupiter', type: 'opposition', orb: 13.0, exact: false },
       ],
       ascendant: 60,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 330,
     },
     monicaConstant: 0.888,

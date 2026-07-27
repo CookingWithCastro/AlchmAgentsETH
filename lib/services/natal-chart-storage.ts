@@ -87,8 +87,12 @@ export async function createNatalChart(
     longitude: input.birthLocation.lon,
   })
 
-  // Calculate alchemical quantities
-  const alchmData = await calculateAlchemicalQuantities(natalData.planets)
+  // Calculate alchemical quantities. The ascendant is a sibling of `planets`, not a member of it,
+  // so it has to be handed over explicitly — see calculateAlchemicalQuantities.
+  const alchmData = await calculateAlchemicalQuantities(
+    natalData.planets,
+    natalData.ascendant?.sign
+  )
 
   // Determine dominant element
   const elementCounts = { Fire: 0, Water: 0, Air: 0, Earth: 0 }
@@ -394,17 +398,47 @@ function calculateNatalChart({
       : [],
     aspects: {}, // Not available in this horoscope format
     nodes: {}, // Not available in this horoscope format
+    // Optional-chained rather than asserted: an absent Ascendant yields `undefined`, which
+    // downstream reads as "no rising sign was resolved". It must never fall back to a sign.
     ascendant: {
-      sign: horoscope.tropical.Ascendant.Sign.label,
-      degree: horoscope.tropical.Ascendant.degrees,
+      sign: horoscope.tropical.Ascendant?.Sign?.label as string | undefined,
+      degree: horoscope.tropical.Ascendant?.degrees as number | undefined,
     },
   }
 }
 
 /**
- * Calculate alchemical quantities from planets data
+ * Calculate alchemical quantities from planets data.
+ *
+ * `ascendantSign` is passed separately because the rising sign is **not** one of the entries in
+ * `planets`. `calculateNatalChart` builds that array from `horoscope.tropical.CelestialBodies.all`,
+ * which `lib/monica/horoscope-generator.ts:387-407` populates with exactly the ten planets; the
+ * Ascendant is returned alongside it as its own key. The previous implementation looked the
+ * Ascendant up *inside* `planets` and defaulted to `'Aries'`:
+ *
+ *     Sign: { label: planets.find(p => p.label === 'Ascendant')?.sign || 'Aries' }
+ *
+ * That `find` could never match, so the fallback was not an edge case — it was the only case.
+ * Every chart written through this path claimed an Aries rising sign, while the correctly computed
+ * ascendant sitting in `natalData.ascendant.sign` was discarded.
+ *
+ * Scope of the harm, measured rather than assumed: the part the caller reads —
+ * `alchemize`'s `Alchemy Effects` — is byte-identical whether the Ascendant key is absent,
+ * `'Aries'`, or `'Capricorn'`. (`result['Planets']['Ascendant']` does differ between the three:
+ * `{}` versus the Fire pair versus the Earth pair. Nothing reads it, which is the point.) `lib/alchemizer.ts:473-484` does write
+ * the rising sign's element into `alchmInfo['Planets']['Ascendant']`, but the effect summation at
+ * `lib/alchemizer.ts:532-542` reads the static `planetInfo` table instead, so that write is never
+ * read back. The fabricated sign therefore did **not** corrupt the persisted
+ * `spiritScore`/`essenceScore`/`matterScore`/`substanceScore` — it was a latent fabrication, one
+ * dead write away from becoming a live one. It is fixed here because a value with no provenance
+ * should not be sitting in the pipeline waiting to be believed, and because the real ascendant was
+ * being thrown away.
+ *
+ * When the rising sign genuinely is not known, pass `undefined` and the `Ascendant` key is omitted
+ * entirely. `alchemize` already guards it (`if (horoscope.Ascendant?.Sign?.label)`) and simply
+ * leaves the Ascendant out of the totals. Absence propagates; it is never a substituted literal.
  */
-async function calculateAlchemicalQuantities(planets: any[]) {
+async function calculateAlchemicalQuantities(planets: any[], ascendantSign?: string) {
   // Validate planets array
   if (!Array.isArray(planets) || planets.length === 0) {
     throw new Error('Invalid planets data: must be non-empty array')
@@ -413,6 +447,13 @@ async function calculateAlchemicalQuantities(planets: any[]) {
   // Create a mock horoscope dict for alchemize function
   let mockHoroscope
   try {
+    // Only claim a rising sign when one was actually resolved. A missing ascendant must stay
+    // missing rather than become a default sign.
+    const resolvedAscendant =
+      typeof ascendantSign === 'string' && ascendantSign.trim().length > 0
+        ? ascendantSign
+        : undefined
+
     mockHoroscope = {
       tropical: {
         CelestialBodies: {
@@ -433,9 +474,7 @@ async function calculateAlchemicalQuantities(planets: any[]) {
             }
           }),
         },
-        Ascendant: {
-          Sign: { label: planets.find(p => p.label === 'Ascendant')?.sign || 'Aries' },
-        },
+        ...(resolvedAscendant ? { Ascendant: { Sign: { label: resolvedAscendant } } } : {}),
         Aspects: { points: {} },
         Houses: [],
       },

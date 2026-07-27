@@ -70,6 +70,7 @@ export const RACHEL_CARSON: HistoricalCraftedAgent = {
       houses: { ASC: 15, MC: 28 },
       aspects: [],
       ascendant: 15,
+      ascendantProvenance: 'unmeasured',
       midheaven: 28,
     },
     alchemicalElements: {

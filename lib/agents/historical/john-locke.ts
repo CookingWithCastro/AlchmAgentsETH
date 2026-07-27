@@ -92,6 +92,7 @@ export const JOHN_LOCKE: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Mars', type: 'square', orb: 15.0, exact: false },
       ],
       ascendant: 45,
+      ascendantProvenance: 'unmeasured',
       midheaven: 315,
     },
     monicaConstant: 4.45,

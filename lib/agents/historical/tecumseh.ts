@@ -69,6 +69,7 @@ export const TECUMSEH: HistoricalCraftedAgent = {
       houses: { ASC: 28, MC: 22 },
       aspects: [],
       ascendant: 28,
+      ascendantProvenance: 'unmeasured',
       midheaven: 22,
     },
     alchemicalElements: {

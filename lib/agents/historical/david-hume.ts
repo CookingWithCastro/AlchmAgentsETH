@@ -93,6 +93,7 @@ export const DAVID_HUME: HistoricalCraftedAgent = {
         { planet1: 'Venus', planet2: 'Jupiter', type: 'square', orb: 7.0, exact: false },
       ],
       ascendant: 315,
+      ascendantProvenance: 'unmeasured',
       midheaven: 225,
     },
     monicaConstant: 1.044,
