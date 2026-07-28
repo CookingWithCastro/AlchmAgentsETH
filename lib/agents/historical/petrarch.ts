@@ -1,15 +1,23 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const PETRARCH: CraftedAgent = {
+export const PETRARCH: HistoricalCraftedAgent = {
   id: 'petrarch',
   name: 'Petrarch',
   title: 'The Father of Humanism',
   era: 'Renaissance',
   specialization: 'Poetry & Humanist Philosophy',
   birthData: {
-    date: new Date('1304-01-01T12:00:00'),
+    // 28 July 1304 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1304-07-28T12:00:00'),
     time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
+    location: { lat: 43.4633, lon: 11.8796, name: 'Arezzo, Republic of Florence' },
   },
   quotes: [
     'Five enemies of peace inhabit with us - avarice, ambition, envy, anger, and pride.',
@@ -32,21 +40,25 @@ export const PETRARCH: CraftedAgent = {
       substance: 0.7,
     },
     natalChart: {
+      provenance: 'computed',
+      provenanceNote:
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1304-07-28 11:12 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.022 degrees, the largest being Pluto, whose 0.022-degree disagreement exceeds the 0.01-degree resolution stored here - so read Pluto's second decimal as uncorroborated. Birth date: 20 July 1304, Arezzo - given without qualification by en.wikipedia.org/wiki/Petrarch, it.wikipedia.org/wiki/Francesco_Petrarca and worldhistory.org/Petrarch, none of which flags a dispute. A 1304 Tuscan date is Julian-calendar. The source records 20 July 1304 in the JULIAN calendar, which is the same instant as 1304-07-28 in the proleptic Gregorian calendar this repo uses at every epoch; birthData stores the proleptic Gregorian date. BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Arezzo, Republic of Florence (43.4633, 11.8796) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon stays in Pisces across the whole day, so its SIGN is certain but its degree is uncertain by up to 6.5 degrees; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Leo as the date requires, Mercury 0.6 degrees from the Sun (max ~28), Venus 37.0 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Capricorn', degree: 9.7, retrograde: false, house: 7 },
-        Moon: { sign: 'Cancer', degree: 4.8, retrograde: false, house: 1 },
-        Mercury: { sign: 'Aquarius', degree: 20.3, retrograde: false, house: 8 },
-        Venus: { sign: 'Gemini', degree: 5.3, retrograde: false, house: 12 },
-        Mars: { sign: 'Pisces', degree: 1.6, retrograde: false, house: 8 },
-        Jupiter: { sign: 'Virgo', degree: 6.5, retrograde: false, house: 3 },
-        Saturn: { sign: 'Libra', degree: 8.1, retrograde: false, house: 4 },
-        Uranus: { sign: 'Scorpio', degree: 6.7, retrograde: false, house: 5 },
-        Neptune: { sign: 'Scorpio', degree: 12.9, retrograde: false, house: 5 },
-        Pluto: { sign: 'Aquarius', degree: 2.8, retrograde: false, house: 7 },
+        Sun: { sign: 'Leo', degree: 4.93, retrograde: false },
+        Moon: { sign: 'Pisces', degree: 8.69, retrograde: false },
+        Mercury: { sign: 'Leo', degree: 5.52, retrograde: false },
+        Venus: { sign: 'Gemini', degree: 27.92, retrograde: false },
+        Mars: { sign: 'Cancer', degree: 13.56, retrograde: false },
+        Jupiter: { sign: 'Virgo', degree: 5.72, retrograde: false },
+        Saturn: { sign: 'Libra', degree: 3.64, retrograde: false },
+        Uranus: { sign: 'Libra', degree: 24.69, retrograde: false },
+        Neptune: { sign: 'Scorpio', degree: 3.88, retrograde: false },
+        Pluto: { sign: 'Aquarius', degree: 26.22, retrograde: true },
       },
       houses: { ASC: 93.8, MC: 3.8 },
       aspects: [],
       ascendant: 93.8,
+      ascendantProvenance: 'placeholder',
       midheaven: 3.8,
     },
   },

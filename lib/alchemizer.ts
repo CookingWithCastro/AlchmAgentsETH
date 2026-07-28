@@ -4,6 +4,7 @@
 import { performanceCache, createBirthInfoHash } from './performance-cache'
 import { generateAccurateHoroscope } from './monica/horoscope-generator'
 import { recordElementalLogicMode } from './observability'
+import { calculateThermodynamics } from './thermodynamics/kalchm'
 
 // Zodiac signs indexed by number
 export const signs: Record<number, string> = {
@@ -701,17 +702,23 @@ export function alchemize(
   const matter = alchmInfo['Alchemy Effects']['Total Matter'] || 0
   const substance = alchmInfo['Alchemy Effects']['Total Substance'] || 0
 
-  // Prevent division by zero in calculations
-  const denominator = substance + essence + matter + water + air + earth || 1
-  const earthWaterDenominator = matter + earth + water || 1
+  // Canonical engine owns the four quantities, including the zero-denominator-falls-back-to-1
+  // convention. The `|| 0` guards are kept so malformed input still reaches callers as 0.
+  const thermodynamics = calculateThermodynamics({
+    spirit,
+    essence,
+    matter,
+    substance,
+    fire,
+    water,
+    air,
+    earth,
+  })
 
-  alchmInfo['Heat'] = (spirit ** 2 + fire ** 2) / denominator ** 2 || 0
-  alchmInfo['Entropy'] =
-    (spirit ** 2 + substance ** 2 + fire ** 2 + air ** 2) / earthWaterDenominator ** 2 || 0
-  alchmInfo['Reactivity'] =
-    (spirit ** 2 + substance ** 2 + essence ** 2 + fire ** 2 + air ** 2 + water ** 2) /
-      ((matter + earth) ** 2 || 1) || 0
-  alchmInfo['Energy'] = alchmInfo['Heat'] - alchmInfo['Reactivity'] * alchmInfo['Entropy'] || 0
+  alchmInfo['Heat'] = thermodynamics.heat || 0
+  alchmInfo['Entropy'] = thermodynamics.entropy || 0
+  alchmInfo['Reactivity'] = thermodynamics.reactivity || 0
+  alchmInfo['Energy'] = thermodynamics.gregsEnergy || 0
 
   // Calculate A-Number: Total Spirit + Total Essence + Total Matter + Total Substance
   alchmInfo['Alchemy Effects']['A #'] = spirit + essence + matter + substance

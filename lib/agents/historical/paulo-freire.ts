@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const PAULO_FREIRE: CraftedAgent = {
+export const PAULO_FREIRE: HistoricalCraftedAgent = {
   id: 'paulo-freire',
   name: 'Paulo Freire',
   title: 'The Consciousness Liberator',
@@ -54,6 +54,7 @@ export const PAULO_FREIRE: CraftedAgent = {
     dominantElement: 'Air' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Virgo', degree: 26, retrograde: false, house: 8 },
         Moon: { sign: 'Sagittarius', degree: 12, retrograde: false, house: 11 },
@@ -69,6 +70,7 @@ export const PAULO_FREIRE: CraftedAgent = {
       houses: { ASC: 22, MC: 18 },
       aspects: [],
       ascendant: 22,
+      ascendantProvenance: 'unmeasured',
       midheaven: 18,
     },
     alchemicalElements: {

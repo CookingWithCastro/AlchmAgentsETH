@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const JOAN_OF_ARC: CraftedAgent = {
+export const JOAN_OF_ARC: HistoricalCraftedAgent = {
   id: 'joan-of-arc',
   name: 'Joan Of Arc',
   title: 'The Divine Warrior',
@@ -51,6 +51,7 @@ export const JOAN_OF_ARC: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Capricorn', degree: 15, retrograde: false, house: 10 },
         Moon: { sign: 'Leo', degree: 22, retrograde: false, house: 5 },
@@ -66,6 +67,7 @@ export const JOAN_OF_ARC: CraftedAgent = {
       houses: { ASC: 8, MC: 12 },
       aspects: [],
       ascendant: 8,
+      ascendantProvenance: 'unmeasured',
       midheaven: 12,
     },
     alchemicalElements: {

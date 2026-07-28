@@ -54,10 +54,10 @@ import {
   getMonicaCreationStory,
 } from '@/lib/demo-agents-data'
 import {
-  calculateMC,
-  classifyMC,
+  calculatePhiAxisIndex,
+  classifyPhiAxisIndex,
   getProgressionRecommendations,
-  calculateMCStatistics,
+  calculatePhiAxisIndexStatistics,
 } from '@/lib/monica/monica-constant-validator'
 import { getTarotRecommendations } from '@/lib/thermodynamics-to-tarot'
 import { fetchCurrentPlanetaryPositions } from '@/lib/monica/fetch-current-positions'
@@ -254,15 +254,15 @@ function PhilosophersStoneInner() {
               substance: effects['Total Substance'] || 0,
             })
 
-            // Calculate Monica Constant with real values
-            const mc = calculateMC(
+            // Calculate the Phi Axis Index with real values
+            const index = calculatePhiAxisIndex(
               effects['Total Spirit'],
               effects['Total Essence'],
               effects['Total Matter'],
               effects['Total Substance']
             )
-            setCurrentMC(mc)
-            setMcClassification(classifyMC(mc))
+            setCurrentMC(index)
+            setMcClassification(classifyPhiAxisIndex(index))
           }
         }
       } catch (error) {
@@ -318,10 +318,10 @@ function PhilosophersStoneInner() {
       energy: Math.min(100, (substance / total) * 200),
     })
 
-    // Calculate Monica Constant for current values
-    const mc = calculateMC(spirit, essence, matter, substance)
-    setCurrentMC(mc)
-    setMcClassification(classifyMC(mc))
+    // Calculate the Phi Axis Index for current values
+    const index = calculatePhiAxisIndex(spirit, essence, matter, substance)
+    setCurrentMC(index)
+    setMcClassification(classifyPhiAxisIndex(index))
   }, [alchemicalValues, customAlchemicalValues, isCustomMode])
 
   // Update tarot recommendations when thermodynamic metrics change
@@ -333,7 +333,7 @@ function PhilosophersStoneInner() {
   }, [thermodynamicMetrics])
 
   // Calculate agent statistics
-  const agentStats = calculateMCStatistics(
+  const agentStats = calculatePhiAxisIndexStatistics(
     DEMO_AGENTS.map(agent => agent.consciousness.monicaConstant)
   )
 

@@ -139,30 +139,41 @@ pub struct PhilosophersStoneQuery {
 
 /// Run `alchemize_detailed` for a moment, with the previous day as the
 /// historical baseline. Shared by GET/POST philosophers-stone.
-fn philosophers_stone_for(dt: NaiveDateTime, custom_planets: Option<&Value>) -> AlchemizeResult {
-    let current_gen = planetary_positions_for(dt);
+///
+/// A caller-supplied chart must be COMPLETE: a partial one is rejected as 422
+/// rather than alchemized, because dropping bodies drives Kalchm to 1 and
+/// Monica through its singularity while still returning a plausible number
+/// (see `alchemy::ensure_complete_from_value`). The `None` path — the server
+/// building its own chart — is untouched and always passes.
+fn philosophers_stone_for(
+    dt: NaiveDateTime,
+    custom_planets: Option<&Value>,
+) -> AppResult<AlchemizeResult> {
     let prev_gen = planetary_positions_for(dt - Duration::days(1));
 
     let current = match custom_planets {
-        Some(v) => alchemy::ensure_from_value(v),
-        None => alchemy::ensure_from_positions(&current_gen),
+        Some(v) => alchemy::ensure_complete_from_value(v)?,
+        None => alchemy::ensure_from_positions(&planetary_positions_for(dt)),
     };
     let historical = alchemy::ensure_from_positions(&prev_gen);
-    alchemy::alchemize_detailed(&current, Some(&historical), dt)
+    Ok(alchemy::alchemize_detailed(&current, Some(&historical), dt))
 }
 
 /// `GET /api/philosophers-stone/positions`
 pub async fn philosophers_stone_get(
     Query(q): Query<PhilosophersStoneQuery>,
-) -> Json<AlchemizeResult> {
+) -> AppResult<Json<AlchemizeResult>> {
     let dt = datetime_from_parts(q.year, q.month, q.day, q.hour, q.minute);
-    Json(philosophers_stone_for(dt, None))
+    Ok(Json(philosophers_stone_for(dt, None)?))
 }
 
 /// `POST /api/philosophers-stone/positions`
 pub async fn philosophers_stone_post(
     Json(req): Json<crate::schemas::PhilosophersStoneRequest>,
-) -> Json<AlchemizeResult> {
+) -> AppResult<Json<AlchemizeResult>> {
     let dt = datetime_from_parts(req.year, req.month, req.day, req.hour, req.minute);
-    Json(philosophers_stone_for(dt, req.custom_planets.as_ref()))
+    Ok(Json(philosophers_stone_for(
+        dt,
+        req.custom_planets.as_ref(),
+    )?))
 }

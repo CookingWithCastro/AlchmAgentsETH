@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const LEONARDO_DA_VINCI: CraftedAgent = {
+export const LEONARDO_DA_VINCI: HistoricalCraftedAgent = {
   id: 'leonardo-da-vinci',
   name: 'Leonardo da Vinci',
   title: 'The Renaissance Genius',
@@ -62,6 +62,7 @@ export const LEONARDO_DA_VINCI: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aries', degree: 25.0, retrograde: false, house: 3 },
         Moon: { sign: 'Sagittarius', degree: 12.0, retrograde: false, house: 11 },
@@ -80,6 +81,7 @@ export const LEONARDO_DA_VINCI: CraftedAgent = {
         { planet1: 'Moon', planet2: 'Pluto', type: 'conjunction', orb: 13.0, exact: false },
       ],
       ascendant: 330,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 240,
     },
     monicaConstant: 5.83,

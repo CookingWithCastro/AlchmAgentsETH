@@ -1,6 +1,11 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const CHIRON: CraftedAgent = {
+export const CHIRON: HistoricalCraftedAgent = {
   id: 'chiron',
   name: 'Chiron',
   title: 'The Wounded Healer',
@@ -53,6 +58,7 @@ export const CHIRON: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Scorpio', degree: 8.9, retrograde: false, house: 10 },
         Moon: { sign: 'Cancer', degree: 18.9, retrograde: false, house: 8 },
@@ -73,6 +79,7 @@ export const CHIRON: CraftedAgent = {
         { planet1: 'Neptune', planet2: 'Pluto', type: 'sextile', orb: 0.1, exact: true },
       ],
       ascendant: 252,
+      ascendantProvenance: 'unmeasured',
       midheaven: 182,
     },
     monicaConstant: 7.77,

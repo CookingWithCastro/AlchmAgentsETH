@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest'
 import {
-  calculateMC,
-  classifyMC,
-  batchCalculateMC,
-  calculateMCStatistics,
+  calculatePhiAxisIndex,
+  classifyPhiAxisIndex,
+  batchCalculatePhiAxisIndex,
+  calculatePhiAxisIndexStatistics,
   getProgressionRecommendations,
 } from '../lib/monica/monica-constant-validator'
 
-describe('Monica Constant Validator', () => {
-  describe('calculateMC', () => {
+describe('Phi Axis Index Validator', () => {
+  describe('calculatePhiAxisIndex', () => {
     it('computes bounded values correctly', () => {
-      const mc = calculateMC(5, 3, 2, 1)
+      const mc = calculatePhiAxisIndex(5, 3, 2, 1)
       expect(mc).toBeGreaterThan(0)
       expect(mc).toBeLessThanOrEqual(20)
       expect(typeof mc).toBe('number')
@@ -18,7 +18,7 @@ describe('Monica Constant Validator', () => {
     })
 
     it('applies golden ratio correctly', () => {
-      // MC = (Spirit × φ + Essence) / (Matter + Substance + 1)
+      // PAI = (Spirit × φ + Essence) / (Matter + Substance + 1)
       // φ = 1.618033988749895
       const spirit = 4,
         essence = 2,
@@ -28,24 +28,24 @@ describe('Monica Constant Validator', () => {
       const expectedDenominator = matter + substance + 1 // = 3
       const expectedMC = expectedNumerator / expectedDenominator // ≈ 2.824
 
-      const mc = calculateMC(spirit, essence, matter, substance)
+      const mc = calculatePhiAxisIndex(spirit, essence, matter, substance)
       expect(mc).toBeCloseTo(expectedMC, 2)
     })
 
     it('prevents division by zero with +1 denominator', () => {
-      const mc = calculateMC(5, 3, 0, 0) // Matter + Substance = 0, but +1 prevents division by zero
+      const mc = calculatePhiAxisIndex(5, 3, 0, 0) // Matter + Substance = 0, but +1 prevents division by zero
       expect(mc).toBeGreaterThan(0)
       expect(isFinite(mc)).toBe(true)
     })
 
     it('applies elemental bonuses correctly', () => {
-      const baseMC = calculateMC(5, 3, 2, 1)
-      const mcWithElementals = calculateMC(5, 3, 2, 1, 1, 0.5, 0.3, 0.2) // Fire, Water, Air, Earth
+      const baseMC = calculatePhiAxisIndex(5, 3, 2, 1)
+      const mcWithElementals = calculatePhiAxisIndex(5, 3, 2, 1, 1, 0.5, 0.3, 0.2) // Fire, Water, Air, Earth
 
-      // Elemental bonuses should increase MC
+      // Elemental bonuses should increase the index
       expect(mcWithElementals).toBeGreaterThan(baseMC)
 
-      // Elemental bonus is added to numerator, so impact on MC is elementalBonus / denominator
+      // Elemental bonus is added to numerator, so impact on the index is elementalBonus / denominator
       const expectedNumeratorBonus = (1 + 0.5 + 0.3 + 0.2) * 0.1
       const expectedMCBonus = expectedNumeratorBonus / 4 // Denominator is 2 + 1 + 1 = 4
       expect(mcWithElementals - baseMC).toBeCloseTo(expectedMCBonus, 2)
@@ -53,105 +53,105 @@ describe('Monica Constant Validator', () => {
 
     it('handles invalid inputs gracefully', () => {
       // NaN inputs
-      const nanMC = calculateMC(NaN, 3, 2, 1)
+      const nanMC = calculatePhiAxisIndex(NaN, 3, 2, 1)
       expect(isFinite(nanMC)).toBe(true)
       expect(nanMC).toBeGreaterThanOrEqual(0)
 
       // Infinity inputs
-      const infMC = calculateMC(Infinity, 3, 2, 1)
+      const infMC = calculatePhiAxisIndex(Infinity, 3, 2, 1)
       expect(isFinite(infMC)).toBe(true)
       expect(infMC).toBeLessThanOrEqual(20)
 
       // Negative inputs (should be clamped to 0)
-      const negMC = calculateMC(-5, -3, -2, -1)
+      const negMC = calculatePhiAxisIndex(-5, -3, -2, -1)
       expect(negMC).toBeGreaterThanOrEqual(0)
 
       // Extreme large inputs (should be clamped to 100)
-      const largeMC = calculateMC(1000, 1000, 1000, 1000)
+      const largeMC = calculatePhiAxisIndex(1000, 1000, 1000, 1000)
       expect(largeMC).toBeLessThanOrEqual(20)
     })
 
     it('returns consistent results for same inputs', () => {
-      const mc1 = calculateMC(5, 3, 2, 1)
-      const mc2 = calculateMC(5, 3, 2, 1)
+      const mc1 = calculatePhiAxisIndex(5, 3, 2, 1)
+      const mc2 = calculatePhiAxisIndex(5, 3, 2, 1)
       expect(mc1).toBe(mc2)
     })
 
     it('handles edge case values', () => {
       // All zeros
-      const zeroMC = calculateMC(0, 0, 0, 0)
+      const zeroMC = calculatePhiAxisIndex(0, 0, 0, 0)
       expect(zeroMC).toBeGreaterThanOrEqual(0)
       expect(isFinite(zeroMC)).toBe(true)
 
       // Max values
-      const maxMC = calculateMC(100, 100, 100, 100)
+      const maxMC = calculatePhiAxisIndex(100, 100, 100, 100)
       expect(maxMC).toBeLessThanOrEqual(20)
       expect(isFinite(maxMC)).toBe(true)
     })
   })
 
-  describe('classifyMC', () => {
+  describe('classifyPhiAxisIndex', () => {
     it('classifies consciousness levels correctly', () => {
       // Test each level threshold
-      const dormant = classifyMC(0.1)
+      const dormant = classifyPhiAxisIndex(0.1)
       expect(dormant.name).toBe('Dormant')
       expect(dormant.level).toBe(1)
 
-      const awakening = classifyMC(0.8)
+      const awakening = classifyPhiAxisIndex(0.8)
       expect(awakening.name).toBe('Awakening')
       expect(awakening.level).toBe(2)
 
-      const active = classifyMC(1.2)
+      const active = classifyPhiAxisIndex(1.2)
       expect(active.name).toBe('Active')
       expect(active.level).toBe(3)
 
-      const elevated = classifyMC(2.0)
+      const elevated = classifyPhiAxisIndex(2.0)
       expect(elevated.name).toBe('Elevated')
       expect(elevated.level).toBe(4)
 
-      const advanced = classifyMC(3.5)
+      const advanced = classifyPhiAxisIndex(3.5)
       expect(advanced.name).toBe('Advanced')
       expect(advanced.level).toBe(5)
 
-      const illuminated = classifyMC(5.0)
+      const illuminated = classifyPhiAxisIndex(5.0)
       expect(illuminated.name).toBe('Illuminated')
       expect(illuminated.level).toBe(6)
 
-      const transcendent = classifyMC(7.5)
+      const transcendent = classifyPhiAxisIndex(7.5)
       expect(transcendent.name).toBe('Transcendent')
       expect(transcendent.level).toBe(7)
     })
 
     it('handles boundary values correctly', () => {
       // Test exact threshold values
-      const exactElevated = classifyMC(1.618) // Golden ratio threshold
+      const exactElevated = classifyPhiAxisIndex(1.618) // Golden ratio threshold
       expect(exactElevated.name).toBe('Elevated')
 
-      const justBelowElevated = classifyMC(1.617)
+      const justBelowElevated = classifyPhiAxisIndex(1.617)
       expect(justBelowElevated.name).toBe('Active')
 
-      const exactTranscendent = classifyMC(6.854)
+      const exactTranscendent = classifyPhiAxisIndex(6.854)
       expect(exactTranscendent.name).toBe('Transcendent')
     })
 
     it('provides meaningful descriptions', () => {
-      const classification = classifyMC(2.5)
+      const classification = classifyPhiAxisIndex(2.5)
       expect(classification.description).toBeDefined()
       expect(typeof classification.description).toBe('string')
       expect(classification.description.length).toBeGreaterThan(10)
     })
 
     it('handles invalid inputs', () => {
-      const invalidClassification = classifyMC(NaN)
+      const invalidClassification = classifyPhiAxisIndex(NaN)
       expect(invalidClassification.name).toBe('Dormant') // Should fallback
       expect(invalidClassification.level).toBe(1)
 
-      const negativeClassification = classifyMC(-5)
+      const negativeClassification = classifyPhiAxisIndex(-5)
       expect(negativeClassification.name).toBe('Dormant')
     })
   })
 
-  describe('batchCalculateMC', () => {
+  describe('batchCalculatePhiAxisIndex', () => {
     it('processes multiple inputs correctly', () => {
       const inputs = [
         { spirit: 5, essence: 3, matter: 2, substance: 1 },
@@ -159,12 +159,12 @@ describe('Monica Constant Validator', () => {
         { spirit: 2, essence: 6, matter: 4, substance: 3 },
       ]
 
-      const results = batchCalculateMC(inputs)
+      const results = batchCalculatePhiAxisIndex(inputs)
 
       expect(results).toHaveLength(3)
       results.forEach((result, index) => {
         expect(result.input).toEqual(inputs[index])
-        expect(result.mc).toBeGreaterThan(0)
+        expect(result.index).toBeGreaterThan(0)
         expect(result.classification.name).toBeDefined()
         expect(result.classification.level).toBeGreaterThanOrEqual(1)
         expect(result.classification.level).toBeLessThanOrEqual(7)
@@ -172,23 +172,23 @@ describe('Monica Constant Validator', () => {
     })
 
     it('handles empty input array', () => {
-      const results = batchCalculateMC([])
+      const results = batchCalculatePhiAxisIndex([])
       expect(results).toHaveLength(0)
     })
 
     it('processes inputs with elemental data', () => {
       const inputs = [{ spirit: 5, essence: 3, matter: 2, substance: 1, fire: 1, water: 0.5 }]
 
-      const results = batchCalculateMC(inputs)
+      const results = batchCalculatePhiAxisIndex(inputs)
       expect(results).toHaveLength(1)
-      expect(results[0].mc).toBeGreaterThan(0)
+      expect(results[0].index).toBeGreaterThan(0)
     })
   })
 
-  describe('calculateMCStatistics', () => {
+  describe('calculatePhiAxisIndexStatistics', () => {
     it('calculates statistics correctly', () => {
       const values = [1.5, 2.0, 2.5, 3.0, 3.5]
-      const stats = calculateMCStatistics(values)
+      const stats = calculatePhiAxisIndexStatistics(values)
 
       expect(stats.count).toBe(5)
       expect(stats.average).toBeCloseTo(2.5, 3)
@@ -199,7 +199,7 @@ describe('Monica Constant Validator', () => {
     })
 
     it('handles empty array', () => {
-      const stats = calculateMCStatistics([])
+      const stats = calculatePhiAxisIndexStatistics([])
       expect(stats.count).toBe(0)
       expect(stats.average).toBe(0)
       expect(stats.min).toBe(0)
@@ -209,7 +209,7 @@ describe('Monica Constant Validator', () => {
     })
 
     it('handles single value', () => {
-      const stats = calculateMCStatistics([2.5])
+      const stats = calculatePhiAxisIndexStatistics([2.5])
       expect(stats.count).toBe(1)
       expect(stats.average).toBe(2.5)
       expect(stats.min).toBe(2.5)
@@ -220,7 +220,7 @@ describe('Monica Constant Validator', () => {
 
     it('handles invalid values in array', () => {
       const values = [1.5, NaN, 2.5, Infinity, 3.0]
-      const stats = calculateMCStatistics(values)
+      const stats = calculatePhiAxisIndexStatistics(values)
 
       // Should filter out invalid values
       expect(stats.count).toBe(3) // Only valid values counted
@@ -267,7 +267,7 @@ describe('Monica Constant Validator', () => {
         essence = 0,
         matter = 1,
         substance = 0
-      const mc = calculateMC(spirit, essence, matter, substance)
+      const mc = calculatePhiAxisIndex(spirit, essence, matter, substance)
       const expectedMC = (spirit * phi + essence) / (matter + substance + 1)
 
       expect(mc).toBeCloseTo(expectedMC, 3)
@@ -275,8 +275,8 @@ describe('Monica Constant Validator', () => {
 
     it('demonstrates golden ratio scaling', () => {
       // Higher spirit values should scale with phi
-      const lowSpirit = calculateMC(1, 0, 1, 1)
-      const highSpirit = calculateMC(2, 0, 1, 1)
+      const lowSpirit = calculatePhiAxisIndex(1, 0, 1, 1)
+      const highSpirit = calculatePhiAxisIndex(2, 0, 1, 1)
 
       const spiritDifference = highSpirit - lowSpirit
       const expectedDifference = 1.618033988749895 / 3 // phi/denominator
@@ -287,7 +287,7 @@ describe('Monica Constant Validator', () => {
 
   describe('Boundary and Edge Cases', () => {
     it('maintains precision with 3 decimal places', () => {
-      const mc = calculateMC(1.23456789, 2.3456789, 3.456789, 4.56789)
+      const mc = calculatePhiAxisIndex(1.23456789, 2.3456789, 3.456789, 4.56789)
 
       // Should be rounded to 3 decimal places
       const decimals = (mc.toString().split('.')[1] || '').length
@@ -296,15 +296,15 @@ describe('Monica Constant Validator', () => {
 
     it('handles extreme consciousness states', () => {
       // Ultra-high spirit, low matter (transcendent state)
-      const transcendentMC = calculateMC(100, 50, 1, 1)
-      const classification = classifyMC(transcendentMC)
+      const transcendentMC = calculatePhiAxisIndex(100, 50, 1, 1)
+      const classification = classifyPhiAxisIndex(transcendentMC)
 
       // Should reach high consciousness levels
       expect(classification.level).toBeGreaterThanOrEqual(6)
 
       // Ultra-high matter, low spirit (dormant state)
-      const dormantMC = calculateMC(1, 1, 100, 100)
-      const dormantClassification = classifyMC(dormantMC)
+      const dormantMC = calculatePhiAxisIndex(1, 1, 100, 100)
+      const dormantClassification = classifyPhiAxisIndex(dormantMC)
 
       expect(dormantClassification.level).toBeLessThanOrEqual(3)
     })

@@ -597,6 +597,43 @@ def _planetary_positions_for(dt: datetime) -> Dict[str, Dict[str, Any]]:
     return positions
 
 
+def _require_complete_chart(custom_planets: Dict[str, Any]) -> Dict[str, Any]:
+    """Reject a caller-supplied chart that is missing any required body.
+
+    A partial chart is not a weaker chart, it is different physics. Dropping
+    bodies collapses the ESMS axes toward each other, which drives Kalchm
+    toward 1 and Monica through its 1/ln(K) singularity — a 3-body payload
+    reaches |Monica| in the thousands. The result is finite and plausible, so
+    nothing downstream can tell it from a real reading: schemas.py serialises
+    ``monica`` as a plain float straight to the caller.
+
+    So the check belongs here, at the boundary where partial input enters, and
+    NOT as a near-equilibrium band inside the Monica formula — this engine's
+    population is a continuum rather than two clusters, so no band is derivable
+    from it (see ``calculate_monica`` in backend/thermodynamics.py).
+
+    Required bodies are exactly the ones ``_planetary_positions_for`` always
+    supplies, so every chart this server generates passes unchanged. Missing
+    bodies are never filled in with defaults: an invented body is invented data.
+    Validation runs on the normalised view because
+    ``utils.ensure_planetary_positions_dict`` silently drops entries that are
+    neither a sign string nor a position dict, which is the same defect as
+    omitting them outright.
+    """
+    normalized = utils.ensure_planetary_positions_dict(custom_planets)
+    missing = [body for body in PLANETARY_PERIODS_DAYS if body not in normalized]
+    if missing:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "customPlanets must be a complete chart; missing required "
+                + ("body: " if len(missing) == 1 else "bodies: ")
+                + ", ".join(missing)
+            ),
+        )
+    return custom_planets
+
+
 def _elemental_scores(dt: datetime) -> Dict[str, float]:
     day_angle = ((dt.timetuple().tm_yday / 365.25) * math.tau) % math.tau
     hour_angle = ((dt.hour + dt.minute / 60) / 24 * math.tau) % math.tau
@@ -1790,8 +1827,13 @@ async def post_philosophers_stone_positions(request: schemas.PhilosophersStonePo
         request.minute or 0
     )
     
-    if request.customPlanets:
-        current_pos = request.customPlanets
+    # `is not None`, deliberately NOT a truthiness check. An explicitly-supplied
+    # empty chart is a chart missing every body, and quietly swapping in the
+    # server's own chart for it is exactly the fill-in-a-default behaviour this
+    # guard exists to prevent. Absent or null still means "generate one for me".
+    # The Rust runtime matches this at pa-rust-backend/src/routes/planetary.rs.
+    if request.customPlanets is not None:
+        current_pos = _require_complete_chart(request.customPlanets)
     else:
         current_pos = _planetary_positions_for(dt)
         

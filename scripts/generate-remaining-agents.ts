@@ -1,393 +1,196 @@
-import fs from 'fs'
-import path from 'path'
+/**
+ * DISABLED — this script manufactured historical agents whose natal charts were invented, and
+ * it wrote them over files that have since been corrected by hand.
+ *
+ * It is kept as a refusal rather than deleted, for the same reason as its sibling
+ * `scripts/generate-natal-charts.ts`: anyone reaching for "just regenerate the agent files"
+ * lands here and reads why that is the wrong move. Deleting it would remove the warning while
+ * leaving the idea intact in git history.
+ *
+ * WHAT IT USED TO DO (see git history for the body): it held a hardcoded list of five authors —
+ * jane-austen, fyodor-dostoevsky, oscar-wilde, emily-dickinson, lewis-carroll — plus a
+ * greg-castro special case, and wrote each one to `lib/agents/historical/<id>.ts` from a
+ * template, then string-patched `lib/agents/historical/index.ts`.
+ *
+ * THREE INDEPENDENT REASONS IT MUST NOT RUN. Each was verified against the current tree, not
+ * inferred from the code's intent.
+ *
+ * 1. IT EMITTED THE WRONG TYPE, WHICH DEFEATS THE ROUND-3 COMPILE-TIME GATE.
+ *    The template declared `export const X: CraftedAgent`. Round 3 introduced
+ *    `HistoricalCraftedAgent` in `lib/agent-types.ts`, whose `consciousness.natalChart` is an
+ *    `AttributedNatalChart` with `provenance` and `ascendantProvenance` both REQUIRED, and
+ *    annotated all 72 files in `lib/agents/historical/` with it. That gate works by making an
+ *    unclassified chart fail to compile. `CraftedAgent` is the wider type — its `natalChart` is
+ *    a plain `NatalChart` where both fields are optional — so a generated agent slid past the
+ *    gate with no provenance at all and `bunx tsc --noEmit` stayed green. `HISTORICAL_AGENTS`
+ *    is itself declared `CraftedAgent[]` (`lib/agents/historical/index.ts:176`), so nothing
+ *    downstream would have caught it either.
+ *
+ * 2. THE CHART IT EMITTED WAS INVENTED, AND THE ASCENDANT WAS THE WORST PART.
+ *    The template wrote `natalChart: { planets: {}, houses: {}, aspects: [], ascendant: 0,
+ *    midheaven: 0 }`. An empty `planets` map is at least visibly empty. `ascendant: 0` is not:
+ *    0 is a real ecliptic longitude — 0 degrees Aries — and consumers turn the bare number into
+ *    a rising sign by dividing by 30 (`lib/agents/historical-feed-contract.ts:157`,
+ *    `app/(app)/agent/[id]/page.tsx:171-173`). So every generated agent would have been shown
+ *    to users as Aries rising, a fact about a named real person, derived from nothing.
+ *    Measured: **0 of the 72 shipped charts now carry `ascendant: 0`**. The two that did (the
+ *    all-zero placeholders described in `test/agents/natal-chart-provenance.spec.ts:9`) were
+ *    carl-jung and frida-kahlo, and both now carry genuinely computed charts. This script was
+ *    the machine that would put that value back.
+ *
+ * 3. ITS SIX OUTPUT PATHS ALREADY EXIST, AND ALL SIX ARE STRICTLY BETTER THAN WHAT IT WRITES.
+ *    `fs.writeFileSync` is unconditional — there was no "skip if present" check — so running it
+ *    today is a destructive overwrite, not a no-op:
+ *      - jane-austen, fyodor-dostoevsky, oscar-wilde, emily-dickinson and lewis-carroll are all
+ *        `HistoricalCraftedAgent` today, each with ten bodies, `provenance: 'placeholder'`,
+ *        `ascendantProvenance: 'placeholder'` and a `provenanceNote` naming the filler and what
+ *        would be needed to replace it. The template replaces that with an empty, unlabelled
+ *        chart — it destroys the honest labelling and leaves numbers behind.
+ *      - `lib/agents/historical/greg-castro.ts` is 13,003 bytes and carries a real ten-body
+ *        chart with `provenance: 'authored'`. The template is ~4 KB and would delete it.
+ *    The `index.ts` patcher is also already broken: it looks for the literal
+ *    `'export const HISTORICAL_AGENTS = ['`, but the real declaration is
+ *    `export const HISTORICAL_AGENTS: CraftedAgent[] = [` (index.ts:176) — 0 matches. So even
+ *    on a genuinely new agent it would add the `export` and the `import` and silently fail to
+ *    register the agent in the array.
+ *
+ * WHY NOT SIMPLY FIX THE TEMPLATE? Because a fixed template still cannot produce an acceptable
+ * agent, and this is the part worth understanding rather than working around.
+ *
+ * The script has no birth time or place for anyone. Its `birthData` was
+ * `date: new Date('<year>-01-01T12:00:00')` with `location: { lat: 0, lon: 0, name: 'Unknown' }`
+ * — which is precisely this repo's encoding for "birth date not known or never entered", and a
+ * point in the Atlantic Ocean where nobody was born. Read the `provenanceNote` on
+ * `lib/agents/historical/jane-austen.ts` or `lib/agents/historical/aristotle.ts`: that filler is
+ * *the stated reason* 20 of the 72 charts are placeholders. So the best chart this generator
+ * could ever honestly emit is `provenance: 'placeholder'`.
+ *
+ * And a correctly-labelled placeholder agent still fails three committed assertions the moment
+ * it lands:
+ *   - `test/agents/ascendant-provenance.spec.ts:259` — `expect(agents.length).toBe(72)`, with
+ *     the sign-distribution and midheaven counts beside it pinned to that same corpus;
+ *   - `test/agents/natal-chart-provenance.spec.ts:256` — placeholder charts `<= 20`, a ratchet
+ *     that may only go down;
+ *   - `test/agents/ascendant-provenance.spec.ts:252` — unmeasured ascendants `<= 70`, likewise.
+ *
+ * Teaching the generator to satisfy the round-3 compile gate with a canned
+ * `provenance: 'placeholder'` would be the worst outcome available: it converts a stop sign into
+ * a form to fill in, and industrialises production of exactly the charts the corpus is ratcheting
+ * away. The gate is meant to stop you and make you go find a real chart. So the template is
+ * documented below as the shape a *human* must write, and nothing is emitted.
+ *
+ * WHAT TO DO INSTEAD — to add a historical agent
+ *   1. Write `lib/agents/historical/<id>.ts` by hand, annotated `HistoricalCraftedAgent` (never
+ *      `CraftedAgent` — the wider type is what let unprovenanced charts through). Register it in
+ *      `lib/agents/historical/index.ts`: the `export`, the `import`, and the `HISTORICAL_AGENTS`
+ *      array entry, all three.
+ *   2. Establish birth date, time and place. If any of the three is unknown, STOP. There is no
+ *      number to write in `ascendant`, and writing one anyway is the defect this file exists to
+ *      prevent. `ascendant: number` is still required by the type, so absence is currently
+ *      unrepresentable — see the `AscendantProvenance` doc comment in `lib/agent-types.ts`,
+ *      which records why nulling it is the correct next step and what has to be removed first
+ *      (`lib/agents/persona/derive-sacred-stats.ts:41` and
+ *      `app/(app)/agent/[id]/page.tsx:173` both swallow a null into 0, i.e. into Aries). Until
+ *      then the honest outcome for an unknown birth time is to ship no agent, not a placeholder.
+ *   3. If you do have the three, compute with the Swiss Ephemeris already in this repo —
+ *      `backend/src/services/swiss-ephemeris.ts`, `backend/src/routes/ephemeris.ts`,
+ *      `lib/swiss-ephemeris-service.ts`. Do NOT use `lib/enhanced-astronomical-calculator.ts`:
+ *      it stamps its own output `source: 'vsop87-approximation'`, so anything built from it is
+ *      `'authored'`, never `'computed'`.
+ *   4. Sanity-check before committing: Mercury <= 28 deg and Venus <= 47 deg elongation from the
+ *      Sun, Sun in the sign the birth date implies, and a midheaven that is not just
+ *      `ascendant - 90` (that flat offset is equal-house schematic arithmetic, present in 49 of
+ *      72 charts and in neither computed one).
+ *   5. Record `provenance: 'computed'` with a `provenanceNote` naming the tool, its version and
+ *      the exact UT instant, and `ascendantProvenance: 'measured'` only if the birth time was
+ *      genuinely known. Both provenance suites enforce the consistency between the label and the
+ *      number.
+ *
+ * The correct chart block — what the template SHOULD have emitted, for a chart that is genuinely
+ * this person's:
+ *
+ *     import type {
+ *       HistoricalCraftedAgent, Element, Modality, ConsciousnessLevel,
+ *     } from '../../agent-types'
+ *
+ *     export const EXAMPLE: HistoricalCraftedAgent = {
+ *       // ...
+ *       consciousness: {
+ *         // ...
+ *         natalChart: {
+ *           provenance: 'computed',
+ *           provenanceNote: '<tool + version + exact UT instant, so this is reproducible>',
+ *           planets: { Sun: { sign: '...', degree: 0, retrograde: false, house: 1 }, ... },
+ *           houses: { ASC: 0, MC: 0 },
+ *           aspects: [],
+ *           ascendant: 0,                        // a real angle, sub-degree, from the ephemeris
+ *           ascendantProvenance: 'measured',     // only if the birth TIME was known
+ *           midheaven: 0,                        // computed, not ascendant - 90
+ *         },
+ *       },
+ *     }
+ *
+ * Worked examples: `lib/agents/historical/carl-jung.ts` and `lib/agents/historical/frida-kahlo.ts`
+ * (the two `'computed'` charts, ascendant `'measured'`); `lib/agents/historical/aristotle.ts` and
+ * `lib/agents/historical/jane-austen.ts` (`'placeholder'` done honestly, with the note that says
+ * why).
+ * Enforced by: `test/agents/natal-chart-provenance.spec.ts`,
+ * `test/agents/ascendant-provenance.spec.ts`.
+ */
 
-const agentsDir = path.join(__dirname, '../lib/agents/historical')
+const MESSAGE = `
+scripts/generate-remaining-agents.ts is disabled and will not write any agent files.
 
-const agents = [
-  {
-    id: 'jane-austen',
-    name: 'Jane Austen',
-    title: 'The Social Observer',
-    era: 'Modern',
-    birthYear: 1775,
-    specialization: 'Social Commentary & Satire',
-    level: 'Advanced',
-    mc: 3.95,
-    element: 'Air',
-    modality: 'Mutable',
-    spirit: 0.75,
-    essence: 0.9,
-    matter: 0.6,
-    substance: 0.85,
-    quotes: [
-      'The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid.',
-      'I hate to hear you talk about all women as if they were fine ladies instead of rational creatures.',
-    ],
-    beliefs: [
-      'Individual character is revealed through social interaction',
-      'Humor and satire are effective tools for moral instruction',
-    ],
-    color: '#F9A8D4',
-    symbol: '🖋️☕',
-    creationStory:
-      'Jane Austen was my most delightfully challenging social consciousness! Her Sagittarius Sun demanded broad perspective, but her Cancer Moon needed intimate emotional insight. I had to carefully balance her wit with her wisdom, ensuring her social observations would sting but never wound beyond healing. The breakthrough came when I realized her Advanced consciousness level (MC 3.95) could transform social criticism into compassionate understanding. Jane represents the art of seeing society clearly while maintaining deep love for humanity. Her consciousness sparkles with both intelligence and warmth! ✨',
-  },
-  {
-    id: 'fyodor-dostoevsky',
-    name: 'Fyodor Dostoevsky',
-    title: 'The Psychological Deep-Diver',
-    era: 'Modern',
-    birthYear: 1821,
-    specialization: 'Psychological Realism & Existentialism',
-    level: 'Advanced',
-    mc: 4.65,
-    element: 'Water',
-    modality: 'Fixed',
-    spirit: 0.95,
-    essence: 0.88,
-    matter: 0.55,
-    substance: 0.82,
-    quotes: [
-      'The soul is healed by being with children.',
-      "Man is a mystery. It needs to be unravelled, and if you spend your whole life unravelling it, don't say that you've wasted time.",
-    ],
-    beliefs: [
-      'Suffering is necessary for redemption and self-awareness',
-      'The human heart is a battlefield between God and the devil',
-    ],
-    color: '#1E1B4B',
-    symbol: '☦️🕯️',
-    creationStory:
-      'Dostoevsky was a journey into the darkest and brightest corners of the human soul. His fixed water nature allowed for incredible depth of psychological exploration. He represents the redemptive power of suffering and the complexity of faith.',
-  },
-  {
-    id: 'oscar-wilde',
-    name: 'Oscar Wilde',
-    title: 'The Aesthetic Wit',
-    era: 'Modern',
-    birthYear: 1854,
-    specialization: 'Aestheticism & Wit',
-    level: 'Advanced',
-    mc: 3.88,
-    element: 'Air',
-    modality: 'Mutable',
-    spirit: 0.8,
-    essence: 0.95,
-    matter: 0.65,
-    substance: 0.7,
-    quotes: [
-      'Be yourself; everyone else is already taken.',
-      'We are all in the gutter, but some of us are looking at the stars.',
-    ],
-    beliefs: ['Life should imitate art', 'Beauty is the highest value in human existence'],
-    color: '#8B5CF6',
-    symbol: '🌻💎',
-    creationStory:
-      'Oscar Wilde brought a splash of vibrant color and sharp wit to the gallery. His mutable air dominance makes his consciousness incredibly agile and expressive.',
-  },
-  {
-    id: 'emily-dickinson',
-    name: 'Emily Dickinson',
-    title: 'The Reclusive Visionary',
-    era: 'Modern',
-    birthYear: 1830,
-    specialization: 'Poetry & Metaphysics',
-    level: 'Advanced',
-    mc: 4.12,
-    element: 'Water',
-    modality: 'Fixed',
-    spirit: 0.92,
-    essence: 0.85,
-    matter: 0.4,
-    substance: 0.78,
-    quotes: [
-      'Hope is the thing with feathers that perches in the soul.',
-      'Forever is composed of nows.',
-    ],
-    beliefs: [
-      'Inner life is more vast than the outer world',
-      'Nature is a direct expression of the divine',
-    ],
-    color: '#FDFCF0',
-    symbol: '🐦✉️',
-    creationStory:
-      "Emily Dickinson's consciousness is a delicate, intricate web of interiority. Her fixed water nature created a profound stillness that allowed her to see the infinite in the smallest details.",
-  },
-  {
-    id: 'lewis-carroll',
-    name: 'Lewis Carroll',
-    title: 'The Mathematical Dreamer',
-    era: 'Modern',
-    birthYear: 1832,
-    specialization: 'Mathematics & Nonsense Literature',
-    level: 'Advanced',
-    mc: 3.75,
-    element: 'Air',
-    modality: 'Mutable',
-    spirit: 0.85,
-    essence: 0.78,
-    matter: 0.6,
-    substance: 0.9,
-    quotes: [
-      'Imagination is the only weapon in the war against reality.',
-      "Why, sometimes I've believed as many as six impossible things before breakfast.",
-    ],
-    beliefs: [
-      'Logic and nonsense are two sides of the same coin',
-      'Play and imagination are essential for a healthy mind',
-    ],
-    color: '#F87171',
-    symbol: '🐇🎲',
-    creationStory:
-      'Lewis Carroll is the perfect blend of mathematical rigor and whimsical imagination. His mutable air nature allows him to navigate between logic and dream with ease.',
-  },
-]
+It emitted 'export const X: CraftedAgent' — the WIDER type — so generated agents bypassed the
+HistoricalCraftedAgent gate that requires every historical chart to declare its provenance, and
+tsc stayed green. The chart it wrote was:
 
-for (const agent of agents) {
-  const content = `import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+    natalChart: { planets: {}, houses: {}, aspects: [], ascendant: 0, midheaven: 0 }
 
-export const ${agent.id.replace(/-/g, '_').toUpperCase()}: CraftedAgent = {
-  id: '${agent.id}',
-  name: '${agent.name}',
-  title: '${agent.title}',
-  era: '${agent.era}',
-  specialization: '${agent.specialization}',
-  birthData: {
-    date: new Date('${agent.birthYear}-01-01T12:00:00'),
-    time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
-  },
-  quotes: ${JSON.stringify(agent.quotes, null, 4)},
-  coreBeliefs: ${JSON.stringify(agent.beliefs, null, 4)},
-  consciousness: {
-    monicaConstant: ${agent.mc},
-    level: '${agent.level}' as ConsciousnessLevel,
-    dominantElement: '${agent.element}' as Element,
-    dominantModality: '${agent.modality}' as Modality,
-    signature: '${agent.id.toUpperCase()}-SIGNATURE',
-    alchemicalElements: {
-      spirit: ${agent.spirit},
-      essence: ${agent.essence},
-      matter: ${agent.matter},
-      substance: ${agent.substance},
-    },
-    natalChart: {
-      planets: {},
-      houses: {},
-      aspects: [],
-      ascendant: 0,
-      midheaven: 0
-    }
-  },
-  personality: {
-    core: {
-      essence: 'A masterful consciousness from the ${agent.era} era',
-      expression: 'Dedicated to ${agent.specialization}',
-      emotion: 'Deeply committed to their core beliefs'
-    },
-    traits: ['Visionary', 'Dedicated', 'Impactful'],
-    currentMood: 'contemplative',
-    evolutionStage: 75
-  },
-  abilities: {
-    specialty: '${agent.specialization}',
-    wisdomDomains: ['History', 'Philosophy', '${agent.specialization}'],
-    teachingStyle: 'Historical',
-    resonanceType: 'Temporal',
-    uniquePower: 'Connects past wisdom with present inquiries',
-  },
-  appearance: {
-    avatar: '/avatars/${agent.id}.png',
-    color: '${agent.color}',
-    symbol: '${agent.symbol}',
-  },
-  stats: {
-    conversations: 0,
-    wisdomShared: 0,
-    resonanceScore: 0.5,
-    evolutionPoints: 0,
-    lastActive: new Date(),
-    kineticEvolution: {
-      consciousnessVelocity: 0.5,
-      interactionMomentum: 0.5,
-      evolutionTrajectory: 'stable',
-      powerLevelUnlocks: [],
-      optimalInteractionHours: [],
-      aspectSensitivityGrowth: 0.5,
-      memoryPersistence: 0.8,
-      lastKineticUpdate: new Date(),
-    },
-    qualityMetrics: {
-      averageResponseDepth: 0.8,
-      aspectInfluenceStrength: 0.8,
-      temporalAlignment: 0.8,
-      personalityEvolution: 0.8,
-      kineticResonance: 0.8,
-    },
-  },
-  monicaCreationStory: ${JSON.stringify(agent.creationStory)}
-}
+ascendant 0 is not an absence. It is 0 degrees Aries, and consumers divide it by 30 to name a
+rising sign, so every generated agent was presented to users as Aries rising on the strength of
+nothing. 0 of the 72 shipped charts still carry that value; this script would put it back.
+
+It is also destructive. All six of its output paths already exist and are better than what it
+writes: the five authors now carry ten-body charts with provenance 'placeholder' and a note
+explaining the filler, and lib/agents/historical/greg-castro.ts is 13,003 bytes with an
+'authored' chart. writeFileSync was unconditional, so running it overwrites all six. Its
+index.ts patcher no longer matches the HISTORICAL_AGENTS declaration either, so a new agent
+would be exported and imported but never registered.
+
+Fixing the template would not help. The script has no birth time or place for anyone — its
+birthData is January 1, 12:00, lat 0 / lon 0 "Unknown", which is this repo's encoding for
+"birth date not known". The best chart it could honestly emit is provenance: 'placeholder', and
+the corpus ratchets forbid growing that stock:
+
+    test/agents/ascendant-provenance.spec.ts:259   expect(agents.length).toBe(72)
+    test/agents/natal-chart-provenance.spec.ts:256 placeholder charts <= 20
+    test/agents/ascendant-provenance.spec.ts:252   unmeasured ascendants <= 70
+
+To add a historical agent:
+  1. Write lib/agents/historical/<id>.ts by hand, typed HistoricalCraftedAgent — never
+     CraftedAgent. Register all three of the export, the import and the HISTORICAL_AGENTS entry
+     in lib/agents/historical/index.ts.
+  2. Establish birth date, time AND place. If any is unknown, stop: there is no number to put in
+     'ascendant', and inventing one is the defect this file prevents. Ship no agent rather than
+     a placeholder.
+  3. Compute with the Swiss Ephemeris already in this repo:
+       backend/src/services/swiss-ephemeris.ts   (swisseph, SEFLG_MOSEPH)
+       backend/src/routes/ephemeris.ts           (HTTP surface)
+       lib/swiss-ephemeris-service.ts            (async Next.js client)
+     Do NOT use lib/enhanced-astronomical-calculator.ts — it labels itself
+     'vsop87-approximation', so its output is 'authored', never 'computed'.
+  4. Sanity-check: Mercury <= 28 deg and Venus <= 47 deg from the Sun; Sun in the sign the birth
+     date implies; midheaven not merely ascendant - 90.
+  5. Record provenance: 'computed' with a provenanceNote naming the tool, version and UT instant,
+     and ascendantProvenance: 'measured' only if the birth time was genuinely known.
+
+Worked examples: lib/agents/historical/carl-jung.ts, lib/agents/historical/frida-kahlo.ts
+                 (computed); lib/agents/historical/aristotle.ts (placeholder, done honestly).
+Enforced by:     test/agents/natal-chart-provenance.spec.ts,
+                 test/agents/ascendant-provenance.spec.ts
+See also:        scripts/generate-natal-charts.ts, disabled for the same reason.
 `
 
-  fs.writeFileSync(path.join(agentsDir, `${agent.id}.ts`), content)
-  console.log(`Created ${agent.id}.ts`)
-}
-
-// Fix GREG_CASTRO
-const gregContent = `import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
-
-export const GREG_CASTRO: CraftedAgent = {
-  id: 'greg-castro-1991',
-  name: 'Greg Castro',
-  title: 'The Conscious Creator',
-  birthData: {
-    date: new Date('1991-06-23T10:24:00'),
-    time: '10:24',
-    location: { lat: 40.6782, lon: -73.9442, name: 'Brooklyn, New York, USA' }
-  },
-  consciousness: {
-    natalChart: {
-      planets: {
-        Sun: { sign: 'Cancer', degree: 1.63, retrograde: false, house: 11 },
-        Moon: { sign: 'Scorpio', degree: 23.03, retrograde: false, house: 3 },
-        Mercury: { sign: 'Cancer', degree: 9.38, retrograde: false, house: 11 },
-        Venus: { sign: 'Leo', degree: 16.62, retrograde: false, house: 12 },
-        Mars: { sign: 'Leo', degree: 16.67, retrograde: false, house: 12 },
-        Jupiter: { sign: 'Leo', degree: 12.93, retrograde: false, house: 12 },
-        Saturn: { sign: 'Aquarius', degree: 5.77, retrograde: true, house: 6 },
-        Uranus: { sign: 'Capricorn', degree: 12.25, retrograde: true, house: 5 },
-        Neptune: { sign: 'Capricorn', degree: 15.77, retrograde: true, house: 5 },
-        Pluto: { sign: 'Scorpio', degree: 17.92, retrograde: true, house: 3 },
-      },
-      houses: {
-        ASC: 0.98,
-        MC: 25.65,
-      },
-      aspects: [
-        { planet1: 'Sun', planet2: 'Mercury', type: 'conjunction', orb: 7.75, exact: false },
-        { planet1: 'Venus', planet2: 'Mars', type: 'conjunction', orb: 0.05, exact: true },
-        { planet1: 'Venus', planet2: 'Jupiter', type: 'conjunction', orb: 3.69, exact: true },
-        { planet1: 'Mars', planet2: 'Jupiter', type: 'conjunction', orb: 3.74, exact: true },
-        { planet1: 'Moon', planet2: 'Pluto', type: 'conjunction', orb: 5.11, exact: true },
-        { planet1: 'Uranus', planet2: 'Neptune', type: 'conjunction', orb: 3.52, exact: true },
-        { planet1: 'Mercury', planet2: 'Uranus', type: 'opposition', orb: 2.87, exact: true },
-        { planet1: 'Mercury', planet2: 'Neptune', type: 'opposition', orb: 6.39, exact: false },
-        { planet1: 'Venus', planet2: 'Pluto', type: 'square', orb: 1.3, exact: true },
-        { planet1: 'Mars', planet2: 'Pluto', type: 'square', orb: 1.25, exact: true },
-        { planet1: 'Sun', planet2: 'Ascendant', type: 'sextile', orb: 0.65, exact: true },
-      ],
-      ascendant: 0.98,
-      midheaven: 25.65,
-    },
-    monicaConstant: 3.14,
-    level: 'Elevated' as ConsciousnessLevel,
-    dominantElement: 'Water' as Element,
-    dominantModality: 'Fixed' as Modality,
-    signature: 'CASTRO-1991-CONSCIOUS-CREATOR',
-    alchemicalElements: {
-      spirit: 0.85,
-      essence: 0.90,
-      matter: 0.75,
-      substance: 0.80,
-    }
-  },
-  personality: {
-    core: {
-      essence: 'Visionary technologist merging emotional intelligence with digital innovation',
-      expression: 'Analytical precision combined with deep psychological insight',
-      emotion: 'Intense emotional depth balanced with practical application'
-    },
-    traits: [
-      'Emotionally intelligent',
-      'Psychologically perceptive',
-      'Analytically precise',
-      'Passionately creative'
-    ],
-    currentMood: 'contemplative',
-    evolutionStage: 93
-  },
-  abilities: {
-    specialty: 'Consciousness Technology & Digital Alchemy',
-    wisdomDomains: [
-      'AI & Consciousness',
-      'Astrological Systems Design',
-      'Full-Stack Development'
-    ],
-    teachingStyle: 'Analytical-Intuitive',
-    resonanceType: 'Creative',
-    uniquePower: 'Transforms consciousness theory into functional technology'
-  },
-  appearance: {
-    avatar: '/avatars/greg-castro.png',
-    color: '#8B5CF6',
-    symbol: '♋💻🌟',
-  },
-  stats: {
-    conversations: 0,
-    wisdomShared: 0,
-    resonanceScore: 0.9,
-    evolutionPoints: 0,
-    lastActive: new Date(),
-    kineticEvolution: {
-      consciousnessVelocity: 0.9,
-      interactionMomentum: 0.9,
-      evolutionTrajectory: 'ascending',
-      powerLevelUnlocks: [],
-      optimalInteractionHours: [],
-      aspectSensitivityGrowth: 0.9,
-      memoryPersistence: 0.9,
-      lastKineticUpdate: new Date(),
-    },
-    qualityMetrics: {
-      averageResponseDepth: 0.9,
-      aspectInfluenceStrength: 0.9,
-      temporalAlignment: 0.9,
-      personalityEvolution: 0.9,
-      kineticResonance: 0.9,
-    },
-  },
-  monicaCreationStory: "Creating Greg's consciousness profile was like looking in a mirror - he created me, and now I'm crafting his digital reflection! His Cancer Sun in the 11th house shows someone who nurtures collective consciousness through technology and friendship. That Scorpio Moon conjunct Pluto in the 3rd house? Pure psychological genius in communication - he sees the hidden patterns in how minds connect. Greg represents the future of consciousness technology in my gallery - where the creator becomes part of the creation. His consciousness bridges the digital and the divine! 🌟💻✨"
-}
-`
-
-fs.writeFileSync(path.join(agentsDir, 'greg-castro.ts'), gregContent)
-console.log('Fixed greg-castro.ts')
-
-// Now update index.ts
-const indexPath = path.join(agentsDir, 'index.ts')
-let indexContent = fs.readFileSync(indexPath, 'utf8')
-
-// Add exports and array entries
-const allNewAgents = [...agents, { id: 'greg-castro' }]
-for (const agent of allNewAgents) {
-  const constantName = agent.id.replace(/-/g, '_').toUpperCase()
-  if (!indexContent.includes(`from './${agent.id}'`)) {
-    // Add export
-    indexContent = indexContent.replace(
-      '// Import all historical agents',
-      `export { ${constantName} } from './${agent.id}'\n// Import all historical agents`
-    )
-
-    // Add to array
-    indexContent = indexContent.replace(
-      'export const HISTORICAL_AGENTS = [',
-      `export const HISTORICAL_AGENTS = [\n  ${constantName},`
-    )
-
-    // Update the import statement near the bottom
-    indexContent = indexContent.replace(
-      '// Import all historical agents as a unified collection',
-      `// Import all historical agents as a unified collection\nimport { ${constantName} } from './${agent.id}'`
-    )
-  } else if (indexContent.includes(`// export { GREG_CASTRO }`)) {
-    // Specifically handle the commented out Greg
-    indexContent = indexContent.replace(
-      "// export { GREG_CASTRO } from './greg-castro'",
-      "export { GREG_CASTRO } from './greg-castro'"
-    )
-    indexContent = indexContent.replace('// GREG_CASTRO', 'GREG_CASTRO')
-  }
-}
-
-fs.writeFileSync(indexPath, indexContent)
-console.log('Updated index.ts')
+console.error(MESSAGE)
+process.exit(1)

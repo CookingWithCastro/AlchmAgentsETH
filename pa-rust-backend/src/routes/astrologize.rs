@@ -14,6 +14,7 @@ use crate::astro::constants::{ZODIAC_SIGNS, sign_modality, zodiac_element};
 use crate::astro::positions::{
     BirthInfo, datetime_from_parts, parse_iso_datetime, planetary_positions_for,
 };
+use crate::error::AppResult;
 use crate::schemas::AstrologizeRequest;
 use axum::Json;
 use chrono::{Duration, NaiveDateTime};
@@ -133,14 +134,22 @@ fn whole_sign_houses(ascendant: &str) -> Vec<House> {
         .collect()
 }
 
-pub async fn astrologize(Json(req): Json<AstrologizeRequest>) -> Json<AstrologizeResponse> {
+/// `POST /api/astrologize`
+///
+/// A caller-supplied `customPlanets` chart must be COMPLETE — a partial chart
+/// is rejected with 422 rather than alchemized into a plausible-looking Monica
+/// (see `alchemy::ensure_complete_from_value`). Requests without `customPlanets`
+/// use the server's own complete chart and are unaffected.
+pub async fn astrologize(
+    Json(req): Json<AstrologizeRequest>,
+) -> AppResult<Json<AstrologizeResponse>> {
     let dt = resolve_dt(&req);
 
     let generated = planetary_positions_for(dt);
     let prev = planetary_positions_for(dt - Duration::days(1));
 
     let current_inputs = match req.custom_planets.as_ref() {
-        Some(v) => alchemy::ensure_from_value(v),
+        Some(v) => alchemy::ensure_complete_from_value(v)?,
         None => alchemy::ensure_from_positions(&generated),
     };
     let historical_inputs = alchemy::ensure_from_positions(&prev);
@@ -180,7 +189,7 @@ pub async fn astrologize(Json(req): Json<AstrologizeRequest>) -> Json<Astrologiz
 
     let elemental_balance = alchemy_result.elemental_properties.clone();
 
-    Json(AstrologizeResponse {
+    Ok(Json(AstrologizeResponse {
         birth_info: BirthInfo::from_dt(dt),
         house_system: "whole_sign".to_string(),
         ascendant,
@@ -197,5 +206,5 @@ pub async fn astrologize(Json(req): Json<AstrologizeRequest>) -> Json<Astrologiz
             "latitude": req.latitude,
             "longitude": req.longitude,
         }),
-    })
+    }))
 }

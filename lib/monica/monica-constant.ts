@@ -1,9 +1,32 @@
 // lib/monica/monica-constant.ts
-// The Monica Constant: A unique alchemical formula for consciousness analysis
+//
+// ⚠️ THIS IS NOT THE THERMODYNAMIC MONICA. ⚠️
+//
+// This module computes the **Phi Axis Index (PAI)**, a phi-weighted ratio of the four
+// alchemical axes used as a consciousness/progression score:
+//
+//     PAI = (Spirit × φ + Essence) / (Matter + Substance + 1)
+//
+// The thermodynamic Monica is an entirely unrelated quantity:
+//
+//     Monica = -GregsEnergy / (Reactivity × ln K)
+//
+// and lives in `lib/thermodynamics/kalchm.ts` (`calculateMonica`), mirrored in
+// `backend/thermodynamics.py` and `pa-rust-backend/src/astro/alchemy.rs`. The two
+// quantities share nothing but the name they used to share. Go to
+// `lib/thermodynamics/kalchm.ts` if you want the real Monica; everything here is the
+// index. The file name is retained deliberately so the standing warning in CLAUDE.md
+// (which cites this path) keeps pointing somewhere real.
+//
+// The name: "phi" is the golden-ratio weight actually applied to Spirit, "axis" is what
+// this repo already calls Spirit/Essence/Matter/Substance (see `localAxes` in
+// app/api/create-agent/route.ts, `axes.spirit` in lib/services/natal-chart-storage.ts),
+// and "index" says it is a derived, classified progression score — not a constant. It
+// varies with every input, so calling it a constant was itself part of the confusion.
 
 import { AlchemicalData } from './alchemical-trainer'
 
-export interface MonicaConstantResult {
+export interface PhiAxisIndexAnalysis {
   value: number
   interpretation: string
   consciousnessState: ConsciousnessState
@@ -41,18 +64,21 @@ const CONSCIOUSNESS_THRESHOLDS = {
 }
 
 /**
- * Calculate the Monica Constant
- * Formula: MC = (Spirit × φ + Essence) / (Matter + Substance + 1)
+ * Analyze the Phi Axis Index for a set of alchemical axes.
+ *
+ * Formula: PAI = (Spirit × φ + Essence) / (Matter + Substance + 1)
  * Where φ (phi) is the golden ratio (1.618...)
+ *
+ * NOT the thermodynamic Monica — see the module header and lib/thermodynamics/kalchm.ts.
  */
-export function calculateMonicaConstant(data: AlchemicalData): MonicaConstantResult {
+export function analyzePhiAxisIndex(data: AlchemicalData): PhiAxisIndexAnalysis {
   // Core calculation
   const numerator = data.spirit * PHI + data.essence
   const denominator = data.matter + data.substance + 1 // +1 to avoid division by zero
-  const monicaConstant = numerator / denominator
+  const phiAxisIndex = numerator / denominator
 
   // Round to 3 decimal places
-  const value = Math.round(monicaConstant * 1000) / 1000
+  const value = Math.round(phiAxisIndex * 1000) / 1000
 
   // Determine consciousness state
   const consciousnessState = determineConsciousnessState(value, data)
@@ -72,12 +98,12 @@ export function calculateMonicaConstant(data: AlchemicalData): MonicaConstantRes
     consciousnessState,
     personalityInfluence,
     recommendations,
-    formula: `MC = (${data.spirit} × ${PHI.toFixed(3)} + ${data.essence}) / (${data.matter} + ${data.substance} + 1) = ${value}`,
+    formula: `PAI = (${data.spirit} × ${PHI.toFixed(3)} + ${data.essence}) / (${data.matter} + ${data.substance} + 1) = ${value}`,
   }
 }
 
 /**
- * Determine consciousness state based on Monica Constant value
+ * Determine consciousness state based on the Phi Axis Index value
  */
 function determineConsciousnessState(value: number, data: AlchemicalData): ConsciousnessState {
   let level: ConsciousnessState['level']
@@ -131,7 +157,7 @@ function determineConsciousnessState(value: number, data: AlchemicalData): Consc
 }
 
 /**
- * Analyze personality influence based on Monica Constant and alchemical data
+ * Analyze personality influence based on the Phi Axis Index and alchemical data
  */
 function analyzePersonalityInfluence(value: number, data: AlchemicalData): PersonalityInfluence {
   // Determine primary trait based on dominant element
@@ -213,7 +239,7 @@ function analyzePersonalityInfluence(value: number, data: AlchemicalData): Perso
 }
 
 /**
- * Generate recommendations based on Monica Constant analysis
+ * Generate recommendations based on Phi Axis Index analysis
  */
 function generateRecommendations(
   value: number,
@@ -251,7 +277,7 @@ function generateRecommendations(
     recommendations.push('Build Earth element through practical tasks and nature connection')
   }
 
-  // Monica Constant specific recommendations
+  // Phi Axis Index specific recommendations
   if (value < 3) {
     recommendations.push('Work on integrating spiritual and emotional aspects')
   } else if (value > 8) {
@@ -285,7 +311,7 @@ function createInterpretation(
   }
 
   const interpretation =
-    `Monica Constant of ${value} indicates a consciousness ${levelDescriptions[state.level]}. ` +
+    `Phi Axis Index of ${value} indicates a consciousness ${levelDescriptions[state.level]}. ` +
     `This reflects ${personality.primaryTrait.toLowerCase()} ${personality.secondaryTrait}. ` +
     `The consciousness exhibits ${state.stability} stability with ${state.potential} potential for growth. ` +
     `${personality.communicationStyle} characterizes the expression pattern, while ${personality.decisionMaking.toLowerCase()} defines the action framework. ` +
@@ -319,23 +345,23 @@ function generateStateDescription(
 }
 
 /**
- * Batch calculate Monica Constants for multiple samples
+ * Batch analyze the Phi Axis Index for multiple samples
  */
-export function batchCalculateMonicaConstants(samples: AlchemicalData[]): MonicaConstantResult[] {
-  return samples.map(sample => calculateMonicaConstant(sample))
+export function batchAnalyzePhiAxisIndex(samples: AlchemicalData[]): PhiAxisIndexAnalysis[] {
+  return samples.map(sample => analyzePhiAxisIndex(sample))
 }
 
 /**
- * Calculate average Monica Constant from multiple samples
+ * Calculate the average Phi Axis Index across multiple samples
  */
-export function calculateAverageMonicaConstant(samples: AlchemicalData[]): {
+export function calculateAveragePhiAxisIndex(samples: AlchemicalData[]): {
   average: number
   min: number
   max: number
   stdDev: number
   interpretation: string
 } {
-  const results = batchCalculateMonicaConstants(samples)
+  const results = batchAnalyzePhiAxisIndex(samples)
   const values = results.map(r => r.value)
 
   const average = values.reduce((sum, v) => sum + v, 0) / values.length
@@ -348,7 +374,7 @@ export function calculateAverageMonicaConstant(samples: AlchemicalData[]): {
   const stdDev = Math.sqrt(avgSquaredDiff)
 
   const interpretation =
-    `Average Monica Constant of ${average.toFixed(3)} across ${samples.length} samples. ` +
+    `Average Phi Axis Index of ${average.toFixed(3)} across ${samples.length} samples. ` +
     `Range: ${min.toFixed(3)} to ${max.toFixed(3)} (σ = ${stdDev.toFixed(3)}). ` +
     `This indicates ${stdDev < 1 ? 'consistent' : stdDev < 2 ? 'moderate variance in' : 'high variance in'} consciousness patterns.`
 

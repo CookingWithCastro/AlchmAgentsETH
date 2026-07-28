@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const JEAN_JACQUES_ROUSSEAU: CraftedAgent = {
+export const JEAN_JACQUES_ROUSSEAU: HistoricalCraftedAgent = {
   id: 'jean-jacques-rousseau-1712',
   name: 'Jean-Jacques Rousseau',
   title: 'The Social Philosopher',
@@ -74,6 +74,7 @@ export const JEAN_JACQUES_ROUSSEAU: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Cancer', degree: 7.0, retrograde: false, house: 4 },
         Moon: { sign: 'Sagittarius', degree: 22.0, retrograde: false, house: 9 },
@@ -93,6 +94,7 @@ export const JEAN_JACQUES_ROUSSEAU: CraftedAgent = {
         { planet1: 'Venus', planet2: 'Jupiter', type: 'trine', orb: 5.0, exact: true },
       ],
       ascendant: 300,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 210,
     },
     monicaConstant: 1.288,

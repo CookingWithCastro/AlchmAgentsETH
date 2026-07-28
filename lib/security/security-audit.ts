@@ -563,28 +563,75 @@ class SecurityAuditEngine {
     }
   }
 
+  /**
+   * Sensitive `users` columns whose at-rest form SQL alone cannot decide.
+   *
+   * `email` has to stay readable to be a login identifier and a unique key, so
+   * a value there never matches a hash prefix; a bcrypt-shaped test over it
+   * reports "unencrypted" on literally every row. At-rest encryption of those
+   * columns is a storage-layer property (disk/volume/TDE), not something a
+   * SELECT can observe. They are named in the evidence rather than silently
+   * folded into a "compliant" verdict — an unmeasured column must not be
+   * presented as a measured one.
+   */
+  private static readonly UNMEASURABLE_SENSITIVE_COLUMNS = [
+    'email',
+    'name',
+    'walletAddress',
+    'privyDid',
+  ] as const
+
   private async checkDataEncryptionCompliance(): Promise<ComplianceCheckResult> {
-    // Check if sensitive data is encrypted
-    const sensitiveFields = ['email', 'personalInfo']
+    // The one at-rest property a query CAN decide: stored password material is
+    // a bcrypt digest (`bcryptjs`, see app/api/auth/change-password/route.ts)
+    // rather than a recoverable plaintext.
+    //
+    // WHY THIS STATEMENT HAS NO INTERPOLATION AT ALL
+    // ----------------------------------------------
+    // The previous form looped over a `sensitiveFields` array and wrote
+    // `WHERE ${field} IS NOT NULL AND ${field} NOT LIKE '$2a$%'` inside a
+    // `$queryRaw` tagged template. Prisma turns every `${}` in that template
+    // into a positional BIND PARAMETER, so PostgreSQL received
+    // `WHERE $1 IS NOT NULL AND $2 NOT LIKE '$2a$%'`. An identifier can never
+    // be a bind parameter: `$n` is planned as a VALUE, so the test compared
+    // the literal string 'email' to NULL, and PostgreSQL cannot even PREPARE
+    // it — `$1 IS NOT NULL` has no inferable type and errors 42P18
+    // (indeterminate_datatype). It was not an edge case; the statement was
+    // unpreparable for every input, so `performFullSecurityAudit` threw here
+    // on every real run. Two further reasons it could never have succeeded:
+    // there is no `"User"` table (the Prisma model is `users`) and no
+    // `personalInfo` column anywhere in prisma/schema.prisma.
+    //
+    // HOW THE FIX IS SAFE: the identifiers below are compile-time literals in
+    // one static statement. Nothing from outside this module is concatenated
+    // into SQL, so the allowlist is the statement itself and there is no
+    // injection surface to escape — strictly stronger than validating a
+    // dynamic identifier against an allowlist and interpolating it. It also
+    // makes the statement statically extractable, so
+    // `scripts/checkRawSqlPrepares.ts` can PREPARE it against a real PostgreSQL.
+    // Only the bcrypt prefixes stay as literals because they are patterns, not
+    // identifiers; every `$2a$`-style token sits inside a quoted string.
+    const rows = (await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS "unhashedPasswords"
+      FROM "users"
+      WHERE "passwordHash" IS NOT NULL
+        AND "passwordHash" NOT LIKE '$2a$%'
+        AND "passwordHash" NOT LIKE '$2b$%'
+        AND "passwordHash" NOT LIKE '$2y$%'
+    `) as Array<{ unhashedPasswords: number }>
 
-    for (const field of sensitiveFields) {
-      const hasUnencryptedData = await prisma.$queryRaw`
-        SELECT COUNT(*) as count
-        FROM "User"
-        WHERE ${field} IS NOT NULL
-        AND ${field} NOT LIKE '$2a$%'  -- bcrypt pattern
-        AND ${field} NOT LIKE '$2b$%'  -- bcrypt pattern
-        LIMIT 1
-      `
+    const unhashedPasswords = rows[0]?.unhashedPasswords ?? 0
+    const unmeasured = SecurityAuditEngine.UNMEASURABLE_SENSITIVE_COLUMNS.join(', ')
 
-      if (hasUnencryptedData && (hasUnencryptedData as any)[0]?.count > 0) {
-        return {
-          standard: 'Data Security',
-          requirement: 'Encrypt sensitive data at rest',
-          status: 'non-compliant',
-          evidence: `Found unencrypted data in ${field} field`,
-          remediation: 'Implement encryption for sensitive fields',
-        }
+    if (unhashedPasswords > 0) {
+      return {
+        standard: 'Data Security',
+        requirement: 'Encrypt sensitive data at rest',
+        status: 'non-compliant',
+        evidence:
+          `users."passwordHash": ${unhashedPasswords} row(s) hold a value with no bcrypt prefix. ` +
+          `Not inspected by this check: ${unmeasured}.`,
+        remediation: 'Re-hash or clear the affected credentials; enforce bcrypt on every write',
       }
     }
 
@@ -592,7 +639,10 @@ class SecurityAuditEngine {
       standard: 'Data Security',
       requirement: 'Encrypt sensitive data at rest',
       status: 'compliant',
-      evidence: 'Sensitive data appears to be properly encrypted',
+      evidence:
+        'users."passwordHash": every stored value carries a bcrypt prefix. ' +
+        `Not inspected by this check: ${unmeasured} — at-rest encryption of those ` +
+        'columns is a storage-layer property this query cannot observe.',
     }
   }
 

@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const ELEANOR_ROOSEVELT: CraftedAgent = {
+export const ELEANOR_ROOSEVELT: HistoricalCraftedAgent = {
   id: 'eleanor-roosevelt',
   name: 'Eleanor Roosevelt',
   title: 'The Compassionate Revolutionary',
@@ -62,6 +62,7 @@ export const ELEANOR_ROOSEVELT: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Libra', degree: 18, retrograde: false, house: 10 },
         Moon: { sign: 'Cancer', degree: 6, retrograde: false, house: 7 },
@@ -77,6 +78,7 @@ export const ELEANOR_ROOSEVELT: CraftedAgent = {
       houses: { ASC: 22, MC: 10 },
       aspects: [],
       ascendant: 22,
+      ascendantProvenance: 'unmeasured',
       midheaven: 10,
     },
     monicaConstant: 5.67,

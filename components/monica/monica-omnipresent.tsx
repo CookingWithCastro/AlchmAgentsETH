@@ -30,7 +30,7 @@ import {
   Eye,
   Send,
 } from 'lucide-react'
-import { calculateMonicaConstant, type MonicaConstantResult } from '@/lib/monica/monica-constant'
+import { analyzePhiAxisIndex, type PhiAxisIndexAnalysis } from '@/lib/monica/monica-constant'
 
 // Browser-safe alchemize replacement — proxies through `/api/alchemize?legacy=true`.
 async function fetchLegacyAlchm(birth: {
@@ -147,7 +147,7 @@ export function MonicaOmnipresent() {
   const [isLoading, setIsLoading] = useState(false)
   const [_contextualHelp, setContextualHelp] = useState<ContextualHelp | null>(null)
   const [currentMC, setCurrentMC] = useState<number | null>(null)
-  const [consciousnessResult, setConsciousnessResult] = useState<MonicaConstantResult | null>(null)
+  const [consciousnessResult, setConsciousnessResult] = useState<PhiAxisIndexAnalysis | null>(null)
   const [isUpdatingConsciousness, setIsUpdatingConsciousness] = useState(false)
   const [widgetSize, setWidgetSize] = useState({ width: 320, height: 480 })
   const [lastPageContext, setLastPageContext] = useState<string>('')
@@ -329,11 +329,12 @@ export function MonicaOmnipresent() {
         // Fetch current alchemical data via proxy
         const alchemicalData = await fetchLegacyAlchm(birthInfo)
 
-        // Calculate Monica Constant
-        const monicaResult = calculateMonicaConstant(alchemicalData as any)
+        // Calculate the Phi Axis Index (NOT the thermodynamic Monica — see
+        // lib/thermodynamics/kalchm.ts for that one)
+        const phiAxisResult = analyzePhiAxisIndex(alchemicalData as any)
 
-        setCurrentMC(monicaResult.value)
-        setConsciousnessResult(monicaResult)
+        setCurrentMC(phiAxisResult.value)
+        setConsciousnessResult(phiAxisResult)
       } catch (error) {
         console.error('Error updating consciousness:', error)
         setCurrentMC(null)

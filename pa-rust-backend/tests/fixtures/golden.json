@@ -129,8 +129,8 @@
     "thermodynamicProperties": {
       "heat": 0.029970740593608176,
       "entropy": 0.08252079315169666,
-      "reactivity": 17.547892922247286,
-      "gregsEnergy": -1.4180953014912818
+      "reactivity": 1.9658479370265296,
+      "gregsEnergy": -0.13225259038544768
     },
     "esms": {
       "Spirit": 2.3350306236702876,
@@ -151,7 +151,7 @@
       "Pluto": 0.004000000000019099
     },
     "kalchm": 89.55921858023714,
-    "monica": 0.01797878760150712,
+    "monica": 0.014966981622420323,
     "score": 1.0,
     "normalized": true,
     "confidence": 0.8,
@@ -174,8 +174,8 @@
     "thermodynamicProperties": {
       "heat": 0.029970740593608176,
       "entropy": 0.08252079315169666,
-      "reactivity": 17.547892922247286,
-      "gregsEnergy": -1.4180953014912818
+      "reactivity": 1.9658479370265296,
+      "gregsEnergy": -0.13225259038544768
     },
     "esms": {
       "Spirit": 2.3350306236702876,
@@ -196,7 +196,7 @@
       "Pluto": 0.004000000000019099
     },
     "kalchm": 89.55921858023714,
-    "monica": 0.01797878760150712,
+    "monica": 0.014966981622420323,
     "score": 1.0,
     "normalized": true,
     "confidence": 0.8,
@@ -611,17 +611,17 @@
       "Air": 0.0
     },
     "charge": 2.291785096393001,
-    "potentialDifference": -0.6187732452415352,
+    "potentialDifference": -0.05770723903981993,
     "currentFlow": 0.0,
     "power": -0.0,
     "inertia": 3.493210382556496,
     "force": {
-      "Fire": -0.8863069192978903,
-      "Water": -0.886312207566212,
-      "Earth": -0.8863095634320511,
-      "Air": -0.8863095634320511
+      "Fire": -0.08265565761073514,
+      "Water": -0.08266008037107446,
+      "Earth": -0.0826578689909048,
+      "Air": -0.0826578689909048
     },
-    "forceMagnitude": 1.7726191268680462,
+    "forceMagnitude": 0.16531573801139057,
     "forceClassification": "balanced",
     "aspectPhase": {
       "type": "separating",

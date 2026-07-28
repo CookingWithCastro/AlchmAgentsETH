@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getCurrentPlanetaryPositions } from '@/lib/calculate-transits'
 import { generateAlchmForCurrentMoment } from '@/lib/alchemizer'
-import { calculateMC } from '@/lib/monica/monica-constant-validator'
+import { calculatePhiAxisIndex } from '@/lib/monica/monica-constant-validator'
 import { logQuantitiesToGalileo, type AlchemicalMetrics } from '@/lib/galileo-logger'
 import { ChartSynthesizer } from '@/lib/consciousness/chart-synthesizer'
 import { synthesizeCharts } from '@/lib/utils'
@@ -69,7 +69,18 @@ export async function GET() {
     const air = alchm?.['Total Effect Value']?.['Air'] || 0
     const earth = alchm?.['Total Effect Value']?.['Earth'] || 0
 
-    const monicaConstant = calculateMC(spirit, essence, matter, substance, fire, water, air, earth)
+    // Response key kept for API compatibility; the value is the Phi Axis Index, not the
+    // thermodynamic Monica (lib/thermodynamics/kalchm.ts).
+    const monicaConstant = calculatePhiAxisIndex(
+      spirit,
+      essence,
+      matter,
+      substance,
+      fire,
+      water,
+      air,
+      earth
+    )
 
     // Build response payload
     const synthesis = synthesizeCharts({

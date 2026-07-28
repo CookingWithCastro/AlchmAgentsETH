@@ -22,7 +22,7 @@ import {
   YAxis,
   CartesianGrid,
 } from 'recharts'
-import { classifyMC } from '@/lib/monica/monica-constant-validator'
+import { classifyPhiAxisIndex } from '@/lib/monica/monica-constant-validator'
 import {
   Crown,
   Zap,
@@ -154,13 +154,13 @@ export function ConsciousnessVectorDisplay({
   const currentMonica = finiteConsciousnessValue(liveData?.liveMC ?? monicaConstant)
   const birthMonica = liveData ? finiteConsciousnessValue(liveData.birthMC) : null
 
-  // Validate MC classification to prevent errors
-  let mcClass: ReturnType<typeof classifyMC> | null = null
+  // Validate the Phi Axis Index classification to prevent errors
+  let mcClass: ReturnType<typeof classifyPhiAxisIndex> | null = null
   if (currentMonica !== null) {
     try {
-      mcClass = classifyMC(currentMonica)
+      mcClass = classifyPhiAxisIndex(currentMonica)
     } catch (error) {
-      console.warn('Error classifying Monica Constant:', error)
+      console.warn('Error classifying the Phi Axis Index:', error)
     }
   }
 

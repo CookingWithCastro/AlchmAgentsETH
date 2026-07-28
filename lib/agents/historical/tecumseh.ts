@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const TECUMSEH: CraftedAgent = {
+export const TECUMSEH: HistoricalCraftedAgent = {
   id: 'tecumseh',
   name: 'Tecumseh',
   title: 'The Unity Visionary',
@@ -51,6 +51,9 @@ export const TECUMSEH: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        "AUTHORED, and demonstrably not a measurement: Mercury is 36.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris. WHY THIS WAS NOT REPLACED WITH A COMPUTED CHART (checked 2026-07-28, by scripts/compute-historical-natal-charts.py, which refuses to emit a chart for this subject): The birth date is an inference, not a record. en.wikipedia.org/wiki/Tecumseh: born 'between 1764 and 1771. The best evidence suggests a birthdate of March 9, 1768.' A computed chart becomes possible only if a documented birth date turns up; a birth TIME would additionally be needed before any ascendant or house placement could be claimed.",
       planets: {
         Sun: { sign: 'Pisces', degree: 25, retrograde: false, house: 11 },
         Moon: { sign: 'Sagittarius', degree: 8, retrograde: false, house: 8 },
@@ -66,6 +69,7 @@ export const TECUMSEH: CraftedAgent = {
       houses: { ASC: 28, MC: 22 },
       aspects: [],
       ascendant: 28,
+      ascendantProvenance: 'unmeasured',
       midheaven: 22,
     },
     alchemicalElements: {

@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const MARK_TWAIN: CraftedAgent = {
+export const MARK_TWAIN: HistoricalCraftedAgent = {
   id: 'mark-twain-1835',
   name: 'Mark Twain',
   title: 'The American Humorist',
@@ -61,6 +61,7 @@ export const MARK_TWAIN: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Sagittarius', degree: 8.0, retrograde: false, house: 9 },
         Moon: { sign: 'Aries', degree: 22.0, retrograde: false, house: 1 },
@@ -80,6 +81,7 @@ export const MARK_TWAIN: CraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Saturn', type: 'sextile', orb: 15.0, exact: false },
       ],
       ascendant: 270,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 180,
     },
     monicaConstant: 1.222,

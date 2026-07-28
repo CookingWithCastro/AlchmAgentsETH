@@ -499,6 +499,20 @@ export function AgentDetailModal({ agent, trigger, open, onOpenChange }: AgentDe
                 <Map className="w-5 h-5" />
                 Natal Chart Highlights
               </CardTitle>
+              {/*
+                A chart that was never measured must not be PRESENTED as if it
+                were. The degrees below render to one decimal place, which reads
+                as precision regardless of where the numbers came from, so the
+                provenance travels with them. `computed` is the only value that
+                means "measured", so anything else is disclosed.
+              */}
+              {agent.consciousness.natalChart.provenance !== 'computed' && (
+                <p className="text-xs text-muted-foreground">
+                  {agent.consciousness.natalChart.provenance === 'placeholder'
+                    ? 'Placeholder chart — not this figure’s birth sky. Shown for layout only.'
+                    : 'Approximate chart — hand-entered, not computed from an ephemeris.'}
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-4">

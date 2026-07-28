@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CLEOPATRA: CraftedAgent = {
+export const CLEOPATRA: HistoricalCraftedAgent = {
   id: 'cleopatra',
   name: 'Cleopatra VII',
   title: 'The Royal Alchemist',
@@ -62,6 +62,9 @@ export const CLEOPATRA: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'placeholder',
+      provenanceNote:
+        'PLACEHOLDER: these numbers cannot be the chart of this person. The stored birthData is filler - the birth date is January 1 at 12:00, this repo standing encoding for "birth date not known or never entered". Corroborating that the positions were never measured: Venus is 61.6 degrees from the Sun (max ~47). Do not attribute these positions to this individual. Replacing this requires the real birth date, time and place plus a verified ephemeris. WHY THIS WAS NOT REPLACED WITH A COMPUTED CHART (checked 2026-07-28, by scripts/compute-historical-natal-charts.py, which refuses to emit a chart for this subject): No birth date is known. The en.wikipedia.org/wiki/Cleopatra infobox reads \'Early 69 BC or late 70 BC\' - a window of a year or more, not a date. (The chart also stored the year as 69 CE rather than 69 BCE.) A computed chart becomes possible only if a documented birth date turns up; a birth TIME would additionally be needed before any ascendant or house placement could be claimed.',
       planets: {
         Sun: { sign: 'Capricorn', degree: 10.5, retrograde: false, house: 1 },
         Moon: { sign: 'Scorpio', degree: 23.7, retrograde: false, house: 11 },
@@ -80,6 +83,7 @@ export const CLEOPATRA: CraftedAgent = {
         { planet1: 'Moon', planet2: 'Venus', type: 'conjunction', orb: 1.2, exact: true },
       ],
       ascendant: 270,
+      ascendantProvenance: 'placeholder',
       midheaven: 180,
     },
     monicaConstant: 4.95,

@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const SITTING_BULL: CraftedAgent = {
+export const SITTING_BULL: HistoricalCraftedAgent = {
   id: 'sitting-bull',
   name: 'Sitting Bull',
   title: 'The Sacred Resistance',
@@ -53,6 +53,9 @@ export const SITTING_BULL: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        "AUTHORED, and demonstrably not a measurement: Mercury is 46.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris. WHY THIS WAS NOT REPLACED WITH A COMPUTED CHART (checked 2026-07-28, by scripts/compute-historical-natal-charts.py, which refuses to emit a chart for this subject): No birth date is known. en.wikipedia.org/wiki/Sitting_Bull gives 'c. 1831-1837' and says he was born 'sometime between 1831 and 1837' - a six-year window. A computed chart becomes possible only if a documented birth date turns up; a birth TIME would additionally be needed before any ascendant or house placement could be claimed.",
       planets: {
         Sun: { sign: 'Pisces', degree: 24, retrograde: false, house: 3 },
         Moon: { sign: 'Cancer', degree: 16, retrograde: false, house: 7 },
@@ -68,6 +71,7 @@ export const SITTING_BULL: CraftedAgent = {
       houses: { ASC: 8, MC: 15 },
       aspects: [],
       ascendant: 8,
+      ascendantProvenance: 'unmeasured',
       midheaven: 15,
     },
     alchemicalElements: {

@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CHARLES_DICKENS: CraftedAgent = {
+export const CHARLES_DICKENS: HistoricalCraftedAgent = {
   id: 'charles-dickens-1812',
   name: 'Charles Dickens',
   title: 'The Social Novelist',
@@ -64,6 +64,7 @@ export const CHARLES_DICKENS: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aquarius', degree: 18.0, retrograde: false, house: 11 },
         Moon: { sign: 'Sagittarius', degree: 8.0, retrograde: false, house: 9 },
@@ -83,6 +84,7 @@ export const CHARLES_DICKENS: CraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Uranus', type: 'conjunction', orb: 16.0, exact: false },
       ],
       ascendant: 60,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 330,
     },
     monicaConstant: 1.107,

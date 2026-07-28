@@ -1,6 +1,11 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const HERODOTUS: CraftedAgent = {
+export const HERODOTUS: HistoricalCraftedAgent = {
   id: 'herodotus',
   name: 'Herodotus',
   title: 'The Father of History',
@@ -32,6 +37,9 @@ export const HERODOTUS: CraftedAgent = {
       substance: 0.85,
     },
     natalChart: {
+      provenance: 'placeholder',
+      provenanceNote:
+        'PLACEHOLDER: these numbers are not this individual chart. One byte-identical chart is shared verbatim by 8 pre-Common-Era agents (alexander-the-great, archimedes, aristotle, cicero, herodotus, homer, julius-caesar, plato). Their birthData is year-only filler (January 1, 12:00, lat 0 / lon 0, location "Unknown"), so no chart is computable for them; the shared chart also places Venus 102.2 degrees from the Sun, which is physically impossible (max ~47). Do not attribute these positions to this person. Replacing this requires a documented birth date, which for these figures does not exist.',
       planets: {
         Sun: { sign: 'Capricorn', degree: 9.3, retrograde: false, house: 7 },
         Moon: { sign: 'Aquarius', degree: 14.3, retrograde: false, house: 8 },
@@ -47,6 +55,7 @@ export const HERODOTUS: CraftedAgent = {
       houses: { ASC: 94.2, MC: 4.2 },
       aspects: [],
       ascendant: 94.2,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.2,
     },
   },

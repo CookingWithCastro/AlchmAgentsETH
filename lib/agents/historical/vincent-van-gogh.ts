@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const VINCENT_VAN_GOGH: CraftedAgent = {
+export const VINCENT_VAN_GOGH: HistoricalCraftedAgent = {
   id: 'vincent-van-gogh-1853',
   name: 'Vincent van Gogh',
   title: 'The Passionate Painter',
@@ -62,6 +62,7 @@ export const VINCENT_VAN_GOGH: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aries', degree: 9.0, retrograde: false, house: 1 },
         Moon: { sign: 'Sagittarius', degree: 15.0, retrograde: false, house: 9 },
@@ -81,6 +82,7 @@ export const VINCENT_VAN_GOGH: CraftedAgent = {
         { planet1: 'Venus', planet2: 'Uranus', type: 'conjunction', orb: 15.0, exact: false },
       ],
       ascendant: 315,
+      ascendantProvenance: 'unmeasured',
       midheaven: 225,
     },
     monicaConstant: 2.356,

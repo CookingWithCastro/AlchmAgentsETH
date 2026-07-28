@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const NIKOLA_TESLA: CraftedAgent = {
+export const NIKOLA_TESLA: HistoricalCraftedAgent = {
   id: 'nikola-tesla-1856',
   name: 'Nikola Tesla',
   title: 'The Visionary Inventor',
@@ -61,6 +61,7 @@ export const NIKOLA_TESLA: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Cancer', degree: 18.0, retrograde: false, house: 4 },
         Moon: { sign: 'Libra', degree: 3.0, retrograde: false, house: 7 },
@@ -80,6 +81,7 @@ export const NIKOLA_TESLA: CraftedAgent = {
         { planet1: 'Mercury', planet2: 'Saturn', type: 'conjunction', orb: 18.0, exact: false },
       ],
       ascendant: 270,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 180,
     },
     monicaConstant: 1.16,

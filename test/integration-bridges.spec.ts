@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { calculateMC, classifyMC, batchCalculateMC } from '../lib/monica/monica-constant-validator'
+import {
+  calculatePhiAxisIndex,
+  classifyPhiAxisIndex,
+  batchCalculatePhiAxisIndex,
+} from '../lib/monica/monica-constant-validator'
 import { getTarotRecommendations } from '../lib/thermodynamics-to-tarot'
 import { getCouncilRecommendations } from '../components/misc/HarmonicAnalysisBridge'
 import type {
@@ -7,26 +11,26 @@ import type {
   ConsciousnessLevel,
 } from '../components/dashboards/TokenMonitorIntegration'
 
-describe('Monica Constant Validator Integration', () => {
-  it('calculateMC handles basic inputs correctly', () => {
-    const mc = calculateMC(5, 3, 2, 1)
+describe('Phi Axis Index Validator Integration', () => {
+  it('calculatePhiAxisIndex handles basic inputs correctly', () => {
+    const mc = calculatePhiAxisIndex(5, 3, 2, 1)
     expect(mc).toBeGreaterThan(0)
     expect(mc).toBeLessThan(20)
     expect(typeof mc).toBe('number')
   })
 
-  it('calculateMC with elemental bonuses', () => {
-    const mcWithElements = calculateMC(5, 3, 2, 1, 1, 0.5, 0.3, 0.2)
-    const mcWithoutElements = calculateMC(5, 3, 2, 1)
+  it('calculatePhiAxisIndex with elemental bonuses', () => {
+    const mcWithElements = calculatePhiAxisIndex(5, 3, 2, 1, 1, 0.5, 0.3, 0.2)
+    const mcWithoutElements = calculatePhiAxisIndex(5, 3, 2, 1)
 
-    // Elemental bonuses should increase MC
+    // Elemental bonuses should increase the index
     expect(mcWithElements).toBeGreaterThan(mcWithoutElements)
   })
 
-  it('classifyMC returns correct consciousness levels', () => {
-    const dormant = classifyMC(0.1)
-    const elevated = classifyMC(2.0)
-    const transcendent = classifyMC(7.0)
+  it('classifyPhiAxisIndex returns correct consciousness levels', () => {
+    const dormant = classifyPhiAxisIndex(0.1)
+    const elevated = classifyPhiAxisIndex(2.0)
+    const transcendent = classifyPhiAxisIndex(7.0)
 
     expect(dormant.name).toBe('Dormant')
     expect(dormant.level).toBe(1)
@@ -38,37 +42,37 @@ describe('Monica Constant Validator Integration', () => {
     expect(transcendent.level).toBe(7)
   })
 
-  it('batchCalculateMC processes multiple inputs', () => {
+  it('batchCalculatePhiAxisIndex processes multiple inputs', () => {
     const inputs = [
       { spirit: 5, essence: 3, matter: 2, substance: 1 },
       { spirit: 8, essence: 2, matter: 1, substance: 1 },
       { spirit: 2, essence: 6, matter: 4, substance: 3 },
     ]
 
-    const results = batchCalculateMC(inputs)
+    const results = batchCalculatePhiAxisIndex(inputs)
 
     expect(results).toHaveLength(3)
     results.forEach(result => {
-      expect(result.mc).toBeGreaterThan(0)
+      expect(result.index).toBeGreaterThan(0)
       expect(result.classification.name).toBeDefined()
       expect(result.classification.level).toBeGreaterThanOrEqual(1)
       expect(result.classification.level).toBeLessThanOrEqual(7)
     })
   })
 
-  it('calculateMC handles edge cases', () => {
+  it('calculatePhiAxisIndex handles edge cases', () => {
     // Zero inputs
-    const zeroMC = calculateMC(0, 0, 0, 0)
+    const zeroMC = calculatePhiAxisIndex(0, 0, 0, 0)
     expect(zeroMC).toBeGreaterThanOrEqual(0)
     expect(isFinite(zeroMC)).toBe(true)
 
     // Large inputs
-    const largeMC = calculateMC(100, 100, 100, 100)
+    const largeMC = calculatePhiAxisIndex(100, 100, 100, 100)
     expect(largeMC).toBeLessThanOrEqual(20) // Should be bounded
     expect(isFinite(largeMC)).toBe(true)
 
     // Invalid inputs (should be sanitized)
-    const invalidMC = calculateMC(NaN, Infinity, -5, 150)
+    const invalidMC = calculatePhiAxisIndex(NaN, Infinity, -5, 150)
     expect(isFinite(invalidMC)).toBe(true)
     expect(invalidMC).toBeGreaterThanOrEqual(0)
   })

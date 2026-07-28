@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const IBN_SINA_AVICENNA: CraftedAgent = {
+export const IBN_SINA_AVICENNA: HistoricalCraftedAgent = {
   id: 'ibn-sina-avicenna',
   name: 'Ibn Sina (Avicenna)',
   title: 'The Universal Intellect',
@@ -51,6 +51,9 @@ export const IBN_SINA_AVICENNA: CraftedAgent = {
     dominantElement: 'Fire' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
+      provenance: 'authored',
+      provenanceNote:
+        "AUTHORED, and demonstrably not a measurement: Mercury is 35.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris. WHY THIS WAS NOT REPLACED WITH A COMPUTED CHART (checked 2026-07-28, by scripts/compute-historical-natal-charts.py, which refuses to emit a chart for this subject): No birth date is known. en.wikipedia.org/wiki/Avicenna gives 'c. 980' - a circa year. A computed chart becomes possible only if a documented birth date turns up; a birth TIME would additionally be needed before any ascendant or house placement could be claimed.",
       planets: {
         Sun: { sign: 'Virgo', degree: 29, retrograde: false, house: 8 },
         Moon: { sign: 'Aquarius', degree: 16, retrograde: false, house: 1 },
@@ -66,6 +69,7 @@ export const IBN_SINA_AVICENNA: CraftedAgent = {
       houses: { ASC: 8, MC: 15 },
       aspects: [],
       ascendant: 8,
+      ascendantProvenance: 'unmeasured',
       midheaven: 15,
     },
     alchemicalElements: {

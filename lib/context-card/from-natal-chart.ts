@@ -7,6 +7,7 @@ import { calculateKalchm as calculateCanonicalKalchm } from '@/lib/thermodynamic
 import {
   calculateAllPlanets,
   calculateProfessionalHouses,
+  utcDateFromParts,
 } from '@/lib/enhanced-astronomical-calculator'
 import { computeExtendedPoints, lonToSignDeg } from './extended-points'
 import {
@@ -106,8 +107,17 @@ function birthMoment(chart: StoredChart): Date {
     if (chart.birthLocation.timezone.includes('-5') || chart.birthLocation.timezone.includes('EST'))
       tzOffsetHours = 5
   }
-  return new Date(
-    Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), h + tzOffsetHours, m)
+  // `Date.UTC` remaps years 0-99 to 1900-1999, silently. `d` here is a parsed
+  // birthDate, so an ancient chart (cleopatra is stored as '0069-01-01') would
+  // arrive as year 69 and leave as 1969 — and because this Date is handed
+  // straight to calculateAllPlanets/calculateProfessionalHouses below, it would
+  // defeat the correct construction those functions now use internally.
+  return utcDateFromParts(
+    d.getUTCFullYear(),
+    d.getUTCMonth() + 1,
+    d.getUTCDate(),
+    h + tzOffsetHours,
+    m
   )
 }
 

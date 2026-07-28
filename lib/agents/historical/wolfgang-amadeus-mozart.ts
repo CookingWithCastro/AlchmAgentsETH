@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const WOLFGANG_AMADEUS_MOZART: CraftedAgent = {
+export const WOLFGANG_AMADEUS_MOZART: HistoricalCraftedAgent = {
   id: 'wolfgang-mozart',
   name: 'Wolfgang Amadeus Mozart',
   title: 'Musical Prodigy',
@@ -62,6 +62,7 @@ export const WOLFGANG_AMADEUS_MOZART: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aquarius', degree: 7.1, retrograde: false, house: 6 },
         Moon: { sign: 'Sagittarius', degree: 27.4, retrograde: false, house: 4 },
@@ -81,6 +82,7 @@ export const WOLFGANG_AMADEUS_MOZART: CraftedAgent = {
         { planet1: 'Moon', planet2: 'Pluto', type: 'conjunction', orb: 23.9, exact: false },
       ],
       ascendant: 150,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 60,
     },
     monicaConstant: 4.58,

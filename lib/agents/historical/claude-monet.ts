@@ -1,21 +1,24 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CLAUDE_MONET: CraftedAgent = {
+export const CLAUDE_MONET: HistoricalCraftedAgent = {
   id: 'claude-monet-1840',
   name: 'Claude Monet',
   title: 'The Light Catcher',
   era: 'Industrial',
   specialization: 'Impressionist Painting',
   birthData: {
-    date: new Date('1840-11-14T12:00:00'), // November 14, 1840,
+    // 14 November 1840 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1840-11-14T12:00:00'),
     time: '12:00',
-    location: { lat: 49.4431, lon: 1.0993, name: 'Paris, France' },
+    location: { lat: 48.8566, lon: 2.3522, name: 'Paris, France' },
   },
   quotes: [
     'I would like to paint the way a bird sings.',
@@ -64,25 +67,28 @@ export const CLAUDE_MONET: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'computed',
+      provenanceNote:
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1840-11-14 11:51 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.005 degrees. Birth date: 14 November 1840, Paris - 45 rue Laffitte, 9th arrondissement (en.wikipedia.org/wiki/Claude_Monet). He moved to Le Havre aged five; the chart shipped before this run carried Rouen's coordinates labelled 'Paris'. BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Paris, France (48.8566, 2.3522) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon crosses from Cancer into Leo during the day (14.3 degrees of motion), so even its SIGN IS NOT CERTAIN and must not be presented as one; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Scorpio as the date requires, Mercury 22.4 degrees from the Sun (max ~28), Venus 29.0 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Scorpio', degree: 22.0, retrograde: false, house: 8 },
-        Moon: { sign: 'Cancer', degree: 15.0, retrograde: false, house: 4 },
-        Mercury: { sign: 'Sagittarius', degree: 8.0, retrograde: false, house: 9 },
-        Venus: { sign: 'Libra', degree: 3.0, retrograde: false, house: 7 },
-        Mars: { sign: 'Virgo', degree: 18.0, retrograde: false, house: 6 },
-        Jupiter: { sign: 'Capricorn', degree: 25.0, retrograde: false, house: 10 },
-        Saturn: { sign: 'Sagittarius', degree: 12.0, retrograde: false, house: 9 },
-        Uranus: { sign: 'Aquarius', degree: 5.0, retrograde: false, house: 11 },
-        Neptune: { sign: 'Aquarius', degree: 28.0, retrograde: false, house: 11 },
-        Pluto: { sign: 'Aries', degree: 15.0, retrograde: false, house: 1 },
+        Sun: { sign: 'Scorpio', degree: 22.23, retrograde: false },
+        Moon: { sign: 'Cancer', degree: 27.96, retrograde: false },
+        Mercury: { sign: 'Sagittarius', degree: 14.61, retrograde: false },
+        Venus: { sign: 'Sagittarius', degree: 21.2, retrograde: false },
+        Mars: { sign: 'Virgo', degree: 20.42, retrograde: false },
+        Jupiter: { sign: 'Scorpio', degree: 27.89, retrograde: false },
+        Saturn: { sign: 'Sagittarius', degree: 20.54, retrograde: false },
+        Uranus: { sign: 'Pisces', degree: 16.51, retrograde: true },
+        Neptune: { sign: 'Aquarius', degree: 12.18, retrograde: false },
+        Pluto: { sign: 'Aries', degree: 18.34, retrograde: true },
       },
       houses: { ASC: 300, MC: 210 },
-      aspects: [
-        { planet1: 'Sun', planet2: 'Moon', type: 'trine', orb: 7.0, exact: false },
-        { planet1: 'Mercury', planet2: 'Saturn', type: 'conjunction', orb: 4.0, exact: true },
-        { planet1: 'Venus', planet2: 'Mars', type: 'sextile', orb: 15.0, exact: false },
-      ],
+      aspects: [],
       ascendant: 300,
+      // 'unmeasured', not 'sign-resolution': the note below records that no birth
+      // time is documented, and without one the rising sign is not determinable
+      // at all — so claiming the value encodes the correct SIGN over-claims.
+      ascendantProvenance: 'unmeasured',
       midheaven: 210,
     },
     monicaConstant: 1.694,

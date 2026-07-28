@@ -1,20 +1,34 @@
-"""Generate golden values from the AUTHORITATIVE Python implementation.
+"""Generate golden values from THIS repo's AUTHORITATIVE Python implementation.
 
-Run with the backend venv:  backend/venv/bin/python golden_gen.py
+Run with any Python 3.10+:  python3 pa-rust-backend/tests/fixtures/golden_gen.py
 
-Imports the real `utils.py` for the alchemical engine and copies the position
-model verbatim from `main.py` (which can't be imported directly because its
-module-level code requires a live database). The copied constants/formula are a
-byte-for-byte transcription of `main.py:_planetary_positions_for`,
+Imports the real `backend/utils.py` for the alchemical engine and
+`backend/thermodynamics.py` for the canonical thermodynamic block, and copies the
+position model verbatim from `main.py` (which can't be imported directly because
+its module-level code requires a live database). The copied constants/formula are
+a byte-for-byte transcription of `main.py:_planetary_positions_for`,
 `_elemental_scores`, and `_request_datetime` as of the migration.
+
+Every path below is derived from this file's own location. This generator used to
+hardcode a SIBLING CHECKOUT (`~/Desktop/planetary_agents-main/backend`) as its
+import root and write `golden.json` back into that other repo's tree, so
+`tests/golden.rs` was green while pinning values produced by a different
+codebase. Never reintroduce an absolute home path here.
 """
 
 import json
 import math
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
-sys.path.insert(0, "/Users/cookingwithcastro/Desktop/planetary_agents-main/backend")
+FIXTURES_DIR = Path(__file__).resolve().parent
+# fixtures -> tests -> pa-rust-backend -> repo root
+REPO_ROOT = FIXTURES_DIR.parents[2]
+BACKEND_DIR = REPO_ROOT / "backend"
+
+sys.path.insert(0, str(BACKEND_DIR))
+import thermodynamics  # noqa: E402
 import utils  # noqa: E402
 
 # --- verbatim copy from main.py ---
@@ -83,6 +97,46 @@ PREV = DT - timedelta(days=1)
 _DIURNAL = 6 <= DT.hour < 18
 utils.is_sect_diurnal = lambda _dt, _d=_DIURNAL: _d
 
+def _assert_canonical_thermodynamics(result, detailed):
+    """Refuse to write a fixture whose thermodynamics didn't come from the engine.
+
+    `golden.json` is what `tests/golden.rs` treats as authoritative, so a call-site
+    transcription of Heat/Entropy/Reactivity/GregsEnergy must never reach it — that
+    is precisely how the buggy reactivity (`num / Matter + Earth**2`, which moves
+    Earth out of the squared denominator) stayed green for as long as it did. The
+    element totals are summed from the engine's OWN per-planet breakdown so nothing
+    here re-derives the element model.
+    """
+    esms = result["esms"]
+    totals = {"Fire": 0.0, "Water": 0.0, "Air": 0.0, "Earth": 0.0}
+    for planet in detailed["perPlanet"].values():
+        for element in totals:
+            totals[element] += planet["elements"][element]
+
+    thermo = thermodynamics.calculate_thermodynamics(
+        esms["Spirit"], esms["Essence"], esms["Matter"], esms["Substance"],
+        totals["Fire"], totals["Water"], totals["Air"], totals["Earth"],
+    )
+    expected = {
+        "heat": thermo["heat"],
+        "entropy": thermo["entropy"],
+        "reactivity": thermo["reactivity"],
+        "gregsEnergy": thermo["gregs_energy"],
+    }
+    expected["monica"] = thermodynamics.calculate_monica(
+        thermo["gregs_energy"], thermo["reactivity"], result["kalchm"]
+    )
+
+    for key, want in expected.items():
+        got = result["monica"] if key == "monica" else result["thermodynamicProperties"][key]
+        if got != want:
+            raise SystemExit(
+                f"{BACKEND_DIR / 'utils.py'}:alchemize produced {key}={got!r}, but "
+                f"{BACKEND_DIR / 'thermodynamics.py'} gives {want!r}. Refusing to "
+                "pin a non-canonical value as golden."
+            )
+
+
 positions = _planetary_positions_for(DT)
 prev_positions = _planetary_positions_for(PREV)
 
@@ -110,12 +164,19 @@ golden = {
     "normalize_planet_weight_sun": utils.normalize_planet_weight(333000),
 }
 
-out_path = "/Users/cookingwithcastro/Desktop/planetary_agents-main/pa-rust-backend/tests/fixtures/golden.json"
+_assert_canonical_thermodynamics(golden["alchemize"], golden["alchemize_detailed"])
+
+out_path = FIXTURES_DIR / "golden.json"
 with open(out_path, "w") as f:
     json.dump(golden, f, indent=2, sort_keys=False)
+    f.write("\n")
 print(f"wrote {out_path}")
+print("engine:", BACKEND_DIR)
 print("Sun:", positions["Sun"])
 print("heat:", golden["alchemize"]["thermodynamicProperties"]["heat"])
+print("entropy:", golden["alchemize"]["thermodynamicProperties"]["entropy"])
+print("reactivity:", golden["alchemize"]["thermodynamicProperties"]["reactivity"])
+print("gregsEnergy:", golden["alchemize"]["thermodynamicProperties"]["gregsEnergy"])
 print("monica:", golden["alchemize"]["monica"])
 print("kalchm:", golden["alchemize"]["kalchm"])
 print("aspect count:", len(golden["aspects"]["aspects"]))

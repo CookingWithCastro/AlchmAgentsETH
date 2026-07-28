@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const RENE_DESCARTES: CraftedAgent = {
+export const RENE_DESCARTES: HistoricalCraftedAgent = {
   id: 'rene-descartes-1596',
   name: 'René Descartes',
   title: 'The Father of Modern Philosophy',
@@ -71,6 +71,7 @@ export const RENE_DESCARTES: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aries', degree: 20.0, retrograde: false, house: 1 },
         Moon: { sign: 'Virgo', degree: 12.0, retrograde: false, house: 6 },
@@ -90,6 +91,7 @@ export const RENE_DESCARTES: CraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Mars', type: 'sextile', orb: 14.0, exact: false },
       ],
       ascendant: 330,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 240,
     },
     monicaConstant: 4.78,

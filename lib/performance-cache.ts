@@ -112,15 +112,34 @@ class PerformanceCache {
   }
 }
 
-// Utility functions for creating cache keys
+/**
+ * Cache key for a birth moment.
+ *
+ * It hashes EVERY own enumerable field, with keys sorted so the result does not
+ * depend on property order. That bias is deliberate: over-keying a cache costs
+ * a miss, whereas UNDER-keying returns one caller's answer to another.
+ *
+ * This previously hashed a hand-picked `{date, time, location, hour}`. Callers
+ * pass `{year, month, day, hour, minute, second, latitude, longitude}` — so
+ * three of those four were `undefined`, `JSON.stringify` dropped them, and every
+ * key collapsed to the literal `{"hour":12}`. Twenty-four possible keys for the
+ * whole application. Measured: `alchemize` called with two completely different
+ * ten-body horoscopes returned the SAME OBJECT, and 30 of 72 historical agents
+ * share birth hour 12, so one agent's ESMS was served as another's.
+ *
+ * The digest below is a 32-bit string hash, so it is not collision-resistant in
+ * the cryptographic sense; it only has to separate the inputs this app actually
+ * sees. If that ever stops being true, widen the digest — do not narrow the key.
+ */
 export function createBirthInfoHash(birthInfo: any): string {
-  // Create a hash from birth info for caching
-  const key = JSON.stringify({
-    date: birthInfo.date,
-    time: birthInfo.time,
-    location: birthInfo.location,
-    hour: birthInfo.hour,
-  })
+  if (birthInfo === null || typeof birthInfo !== 'object') {
+    return `nonobject:${String(birthInfo)}`
+  }
+  const key = JSON.stringify(
+    Object.keys(birthInfo)
+      .sort()
+      .map(k => [k, birthInfo[k]])
+  )
 
   // Simple hash function
   let hash = 0

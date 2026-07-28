@@ -1,14 +1,33 @@
-// Enhanced Monica Constant validator with comprehensive edge case handling
-// Implements the sacred formula: MC = (Spirit × φ + Essence) / (Matter + Substance + 1)
+// lib/monica/monica-constant-validator.ts
+//
+// ⚠️ THIS IS NOT THE THERMODYNAMIC MONICA. ⚠️
+//
+// This module computes the **Phi Axis Index (PAI)** — a phi-weighted ratio of the four
+// alchemical axes, used as a consciousness/progression score — with input sanitisation,
+// elemental reinforcement, clamping to [0, 20], and level classification:
+//
+//     PAI = (Spirit × φ + Essence + elementalBonus) / (Matter + Substance + 1)
+//
+// The thermodynamic Monica is an entirely unrelated quantity:
+//
+//     Monica = -GregsEnergy / (Reactivity × ln K)
+//
+// and lives in `lib/thermodynamics/kalchm.ts` (`calculateMonica`), mirrored in
+// `backend/thermodynamics.py` and `pa-rust-backend/src/astro/alchemy.rs`. Nothing here
+// is that. The file name is retained deliberately so the standing warning in CLAUDE.md
+// (which cites this path) keeps pointing somewhere real.
+//
+// This is the dominant numeric constructor of the index across the UI and creation
+// paths; `./monica-constant.ts` wraps the same idea in a richer analysis object.
 
-export interface MonicaConstantClassification {
+export interface PhiAxisIndexClassification {
   level: number
   name: string
   description: string
   threshold: number
 }
 
-export interface MonicaConstantInput {
+export interface PhiAxisIndexInput {
   spirit: number
   essence: number
   matter: number
@@ -23,7 +42,7 @@ export interface MonicaConstantInput {
 const PHI = 1.618033988749895
 
 // Classification thresholds based on consciousness levels
-const MC_CLASSIFICATIONS: MonicaConstantClassification[] = [
+const PHI_AXIS_INDEX_CLASSIFICATIONS: PhiAxisIndexClassification[] = [
   {
     level: 1,
     name: 'Dormant',
@@ -95,10 +114,12 @@ function validateNumericInput(
 }
 
 /**
- * Calculate Monica Constant using the sacred formula
- * MC = (Spirit × φ + Essence) / (Matter + Substance + 1)
+ * Calculate the Phi Axis Index.
+ * PAI = (Spirit × φ + Essence + elementalBonus) / (Matter + Substance + 1)
+ *
+ * NOT the thermodynamic Monica — see the module header and lib/thermodynamics/kalchm.ts.
  */
-export function calculateMC(
+export function calculatePhiAxisIndex(
   spirit: number,
   essence: number,
   matter: number,
@@ -129,45 +150,45 @@ export function calculateMC(
     elementalBonus += Math.max(0, earth) * 0.1 // Earth reinforces Matter
   }
 
-  // Core Monica Constant calculation
+  // Core Phi Axis Index calculation
   const numerator = validSpirit * PHI + validEssence + elementalBonus
   const denominator = validMatter + validSubstance + 1 // +1 prevents division by zero
 
-  const mc = safeDivision(numerator, denominator, 0)
+  const index = safeDivision(numerator, denominator, 0)
 
   // Return bounded result with 3 decimal precision
-  return Math.round(Math.max(0, Math.min(20, mc)) * 1000) / 1000
+  return Math.round(Math.max(0, Math.min(20, index)) * 1000) / 1000
 }
 
 /**
- * Classify Monica Constant value into consciousness level
+ * Classify a Phi Axis Index value into a consciousness level
  */
-export function classifyMC(mc: number): MonicaConstantClassification {
-  const validMC = validateNumericInput(mc, 0, 0, 20)
+export function classifyPhiAxisIndex(index: number): PhiAxisIndexClassification {
+  const validIndex = validateNumericInput(index, 0, 0, 20)
 
   // Find the appropriate classification
-  for (let i = MC_CLASSIFICATIONS.length - 1; i >= 0; i--) {
-    if (validMC >= MC_CLASSIFICATIONS[i].threshold) {
-      return MC_CLASSIFICATIONS[i]
+  for (let i = PHI_AXIS_INDEX_CLASSIFICATIONS.length - 1; i >= 0; i--) {
+    if (validIndex >= PHI_AXIS_INDEX_CLASSIFICATIONS[i].threshold) {
+      return PHI_AXIS_INDEX_CLASSIFICATIONS[i]
     }
   }
 
   // Fallback to dormant state
-  return MC_CLASSIFICATIONS[0]
+  return PHI_AXIS_INDEX_CLASSIFICATIONS[0]
 }
 
 /**
- * Batch calculate Monica Constants for multiple inputs
+ * Batch calculate the Phi Axis Index for multiple inputs
  */
-export function batchCalculateMC(
-  inputs: MonicaConstantInput[]
-): Array<{ input: MonicaConstantInput; mc: number; classification: MonicaConstantClassification }> {
+export function batchCalculatePhiAxisIndex(
+  inputs: PhiAxisIndexInput[]
+): Array<{ input: PhiAxisIndexInput; index: number; classification: PhiAxisIndexClassification }> {
   if (!Array.isArray(inputs) || inputs.length === 0) {
     return []
   }
 
   return inputs.map(input => {
-    const mc = calculateMC(
+    const index = calculatePhiAxisIndex(
       input.spirit,
       input.essence,
       input.matter,
@@ -180,16 +201,16 @@ export function batchCalculateMC(
 
     return {
       input,
-      mc,
-      classification: classifyMC(mc),
+      index,
+      classification: classifyPhiAxisIndex(index),
     }
   })
 }
 
 /**
- * Calculate statistical summary of Monica Constants
+ * Calculate statistical summary of Phi Axis Index values
  */
-export function calculateMCStatistics(values: number[]): {
+export function calculatePhiAxisIndexStatistics(values: number[]): {
   average: number
   min: number
   max: number
@@ -230,10 +251,10 @@ export function calculateMCStatistics(values: number[]): {
 }
 
 /**
- * Get consciousness progression recommendations based on MC level
+ * Get consciousness progression recommendations based on Phi Axis Index level
  */
-export function getProgressionRecommendations(mc: number): string[] {
-  const classification = classifyMC(mc)
+export function getProgressionRecommendations(index: number): string[] {
+  const classification = classifyPhiAxisIndex(index)
 
   const recommendations: Record<string, string[]> = {
     Dormant: [

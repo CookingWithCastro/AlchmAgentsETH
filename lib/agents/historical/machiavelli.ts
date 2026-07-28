@@ -1,15 +1,23 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const MACHIAVELLI: CraftedAgent = {
+export const MACHIAVELLI: HistoricalCraftedAgent = {
   id: 'machiavelli',
   name: 'Niccolò Machiavelli',
   title: 'The Political Realist',
   era: 'Renaissance',
   specialization: 'Political Science & Statecraft',
   birthData: {
-    date: new Date('1469-01-01T12:00:00'),
+    // 12 May 1469 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1469-05-12T12:00:00'),
     time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
+    location: { lat: 43.7696, lon: 11.2558, name: 'Florence, Republic of Florence' },
   },
   quotes: [
     'It is better to be feared than loved, if you cannot be both.',
@@ -32,21 +40,25 @@ export const MACHIAVELLI: CraftedAgent = {
       substance: 0.9,
     },
     natalChart: {
+      provenance: 'computed',
+      provenanceNote:
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1469-05-12 11:15 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.025 degrees, the largest being Pluto, whose 0.025-degree disagreement exceeds the 0.01-degree resolution stored here - so read Pluto's second decimal as uncorroborated. Birth date: 3 May 1469, Florence (en.wikipedia.org/wiki/Niccolo_Machiavelli infobox), recorded in his father Bernardo's diary. A 1469 Florentine date is Julian-calendar. The source records 3 May 1469 in the JULIAN calendar, which is the same instant as 1469-05-12 in the proleptic Gregorian calendar this repo uses at every epoch; birthData stores the proleptic Gregorian date. BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Florence, Republic of Florence (43.7696, 11.2558) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon stays in Aquarius across the whole day, so its SIGN is certain but its degree is uncertain by up to 6.0 degrees; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Taurus as the date requires, Mercury 19.0 degrees from the Sun (max ~28), Venus 28.3 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Capricorn', degree: 10.8, retrograde: false, house: 7 },
-        Moon: { sign: 'Aries', degree: 21.6, retrograde: false, house: 10 },
-        Mercury: { sign: 'Pisces', degree: 18.5, retrograde: false, house: 9 },
-        Venus: { sign: 'Leo', degree: 20.1, retrograde: false, house: 2 },
-        Mars: { sign: 'Sagittarius', degree: 0, retrograde: false, house: 5 },
-        Jupiter: { sign: 'Leo', degree: 5.6, retrograde: false, house: 2 },
-        Saturn: { sign: 'Taurus', degree: 3.1, retrograde: false, house: 10 },
-        Uranus: { sign: 'Libra', degree: 24.1, retrograde: false, house: 4 },
-        Neptune: { sign: 'Scorpio', degree: 13.4, retrograde: false, house: 5 },
-        Pluto: { sign: 'Scorpio', degree: 6.6, retrograde: false, house: 5 },
+        Sun: { sign: 'Taurus', degree: 21.48, retrograde: false },
+        Moon: { sign: 'Aquarius', degree: 9.26, retrograde: false },
+        Mercury: { sign: 'Gemini', degree: 10.44, retrograde: false },
+        Venus: { sign: 'Aries', degree: 23.22, retrograde: false },
+        Mars: { sign: 'Pisces', degree: 12.38, retrograde: false },
+        Jupiter: { sign: 'Cancer', degree: 27.43, retrograde: false },
+        Saturn: { sign: 'Taurus', degree: 5.0, retrograde: false },
+        Uranus: { sign: 'Libra', degree: 12.96, retrograde: true },
+        Neptune: { sign: 'Scorpio', degree: 7.72, retrograde: true },
+        Pluto: { sign: 'Virgo', degree: 6.01, retrograde: true },
       },
       houses: { ASC: 94.7, MC: 4.7 },
       aspects: [],
       ascendant: 94.7,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.7,
     },
   },

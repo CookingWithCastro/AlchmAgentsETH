@@ -8,6 +8,7 @@
 import { PrismaClient, Prisma } from '@prisma/client'
 import { PlanetaryHourCalculator } from '../lib/planetary-hour'
 import { getCurrentPlanetaryPositions } from '../lib/calculate-transits'
+import { signDegreeToLongitude } from '../lib/enhanced-astronomical-calculator'
 import { AGENT_ACTIVATION_THRESHOLD, AGENT_DAILY_YIELD } from '../lib/economy-config'
 import { syncDebitToAlchm } from '../lib/alchm-debit-sync'
 
@@ -42,7 +43,8 @@ interface NatalPos {
   planet: string
   sign: string
   degree: number
-  longitude: number
+  /** `null` when it cannot be derived — never 0, which is a real longitude. */
+  longitude: number | null
 }
 
 async function main() {
@@ -221,12 +223,22 @@ function extractNatal(profile: any): NatalPos[] | null {
   const chart = profile.natalChart
   if (!chart) return null
   if (chart.planets && typeof chart.planets === 'object') {
-    return Object.entries(chart.planets).map(([planet, data]: [string, any]) => ({
-      planet,
-      sign: data.sign ?? '',
-      degree: data.signDegree ?? data.degree ?? 0,
-      longitude: data.longitude ?? 0,
-    }))
+    return Object.entries(chart.planets).map(([planet, data]: [string, any]) => {
+      const sign = data.sign ?? ''
+      const degree = data.signDegree ?? data.degree ?? 0
+      const stored = Number(data.longitude)
+      return {
+        planet,
+        sign,
+        degree,
+        // DERIVED from the sign and degree the record actually holds, not
+        // defaulted. 0 is a real longitude (0°00′ Aries), so a sentinel 0 both
+        // asserts a placement nobody measured and, being non-nullish, silently
+        // satisfies any downstream `?? longitude ??` chain meant to reach its
+        // fallback. Stored natal charts carry `degree`, never `longitude`.
+        longitude: Number.isFinite(stored) ? stored : signDegreeToLongitude(sign, degree),
+      }
+    })
   }
   return null
 }

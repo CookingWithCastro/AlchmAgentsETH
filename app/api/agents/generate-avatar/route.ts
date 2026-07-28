@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 
 import { generateAgentAvatar, type AgentAvatarMeta } from '@/lib/agents/avatar-generator'
 import { resolveAnyAgent } from '@/lib/agents/resolve-any-agent'
+import { signDegreeToLongitude } from '@/lib/enhanced-astronomical-calculator'
 import { backend } from '@/lib/backend'
 import { getHistoricalPortraitHint } from '@/lib/agents/portrait-hints'
 import { syncAgentToWten, type SyncAgentProfilePayload } from '@/lib/wtenClient'
@@ -27,8 +28,17 @@ function firstString(...values: unknown[]): string | undefined {
   return undefined
 }
 
+/**
+ * First value that coerces to a finite number, else `undefined`.
+ *
+ * `null` and `''` are skipped rather than coerced: `Number(null) === 0` and
+ * `Number('') === 0`, so the previous version turned an absent latitude,
+ * longitude or monicaConstant into a confident 0 — a real coordinate (the Gulf
+ * of Guinea) and a monica that was never computed. Absence must stay absent.
+ */
 function firstNumber(...values: unknown[]): number | undefined {
   for (const value of values) {
+    if (value === null || value === undefined || value === '') continue
     const numberValue = Number(value)
     if (Number.isFinite(numberValue)) return numberValue
   }
@@ -97,23 +107,58 @@ function getNatalChart(agent: Record<string, any>): any {
   return agent.natalChart ?? agent.consciousness?.natalChart
 }
 
+/**
+ * Absolute ECLIPTIC longitude (0–360) of a natal placement — where the planet
+ * sits on the zodiac, NOT the birth location's geographic longitude handled by
+ * `toRenderBirthInfo` above.
+ *
+ * A finite longitude already on the record wins (real stored data). Otherwise
+ * it is DERIVED from the sign + within-sign degree the record actually holds,
+ * delegated to the canonical `signDegreeToLongitude`. Deriving from data we
+ * have is arithmetic; defaulting is invention.
+ *
+ * Returns `null` when neither path is available — no numeric degree, or a sign
+ * the zodiac table does not recognise. Never 0: 0 is a real longitude
+ * (0°00′ Aries), so a sentinel 0 both asserts a placement nobody measured and,
+ * being non-nullish, silently satisfies any downstream `x ?? longitude ?? y`
+ * or `longitude || fallback` chain that was meant to reach its fallback.
+ */
+function natalLongitude(sign: unknown, degree: number | undefined, stored: unknown): number | null {
+  const explicit = firstNumber(stored)
+  if (explicit !== undefined) return explicit
+  if (degree === undefined || typeof sign !== 'string' || !sign.trim()) return null
+  return signDegreeToLongitude(sign, degree)
+}
+
 function extractNatalPositions(natalChart: any): any[] {
   if (!natalChart) return []
   if (natalChart.planets && typeof natalChart.planets === 'object') {
-    return Object.entries(natalChart.planets).map(([planet, data]: [string, any]) => ({
-      planet,
-      sign: data?.sign ?? '',
-      degree: data?.signDegree ?? data?.degree ?? 0,
-      longitude: data?.longitude ?? data?.degrees ?? 0,
-    }))
+    return Object.entries(natalChart.planets).map(([planet, data]: [string, any]) => {
+      const sign = data?.sign ?? ''
+      const degree = firstNumber(data?.signDegree, data?.degree)
+      return {
+        planet,
+        sign,
+        // `degree` keeps its 0 default deliberately: the alchm.kitchen sync
+        // contracts require a number here, and dropping the entry instead would
+        // strip the planet→sign pair their yield engine reads. See the round-3
+        // report; absence is carried by `longitude` below.
+        degree: degree ?? 0,
+        longitude: natalLongitude(sign, degree, data?.longitude),
+      }
+    })
   }
   if (Array.isArray(natalChart)) {
-    return natalChart.map((position: any) => ({
-      planet: position?.planet ?? position?.label ?? '',
-      sign: position?.sign ?? '',
-      degree: position?.signDegree ?? position?.degree ?? 0,
-      longitude: position?.longitude ?? position?.degrees ?? 0,
-    }))
+    return natalChart.map((position: any) => {
+      const sign = position?.sign ?? ''
+      const degree = firstNumber(position?.signDegree, position?.degree)
+      return {
+        planet: position?.planet ?? position?.label ?? '',
+        sign,
+        degree: degree ?? 0,
+        longitude: natalLongitude(sign, degree, position?.longitude),
+      }
+    })
   }
   return []
 }

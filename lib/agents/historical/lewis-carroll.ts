@@ -1,15 +1,23 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const LEWIS_CARROLL: CraftedAgent = {
+export const LEWIS_CARROLL: HistoricalCraftedAgent = {
   id: 'lewis-carroll',
   name: 'Lewis Carroll',
   title: 'The Mathematical Dreamer',
   era: 'Modern',
   specialization: 'Mathematics & Nonsense Literature',
   birthData: {
-    date: new Date('1832-01-01T12:00:00'),
+    // 27 January 1832 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1832-01-27T12:00:00'),
     time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
+    location: { lat: 53.335, lon: -2.6389, name: 'Daresbury, Cheshire, England' },
   },
   quotes: [
     'Imagination is the only weapon in the war against reality.',
@@ -32,21 +40,25 @@ export const LEWIS_CARROLL: CraftedAgent = {
       substance: 0.9,
     },
     natalChart: {
+      provenance: 'computed',
+      provenanceNote:
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1832-01-27 12:11 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.004 degrees. Birth date: 27 January 1832, Daresbury, Cheshire (en.wikipedia.org/wiki/Lewis_Carroll infobox) BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Daresbury, Cheshire, England (53.3350, -2.6389) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon stays in Sagittarius across the whole day, so its SIGN is certain but its degree is uncertain by up to 5.9 degrees; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Aquarius as the date requires, Mercury 24.2 degrees from the Sun (max ~28), Venus 43.3 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Capricorn', degree: 10.2, retrograde: false, house: 7 },
-        Moon: { sign: 'Sagittarius', degree: 22.5, retrograde: false, house: 6 },
-        Mercury: { sign: 'Taurus', degree: 24.2, retrograde: false, house: 11 },
-        Venus: { sign: 'Virgo', degree: 3.9, retrograde: false, house: 3 },
-        Mars: { sign: 'Scorpio', degree: 28.3, retrograde: false, house: 5 },
-        Jupiter: { sign: 'Pisces', degree: 2.5, retrograde: false, house: 8 },
-        Saturn: { sign: 'Virgo', degree: 11.9, retrograde: false, house: 3 },
-        Uranus: { sign: 'Aquarius', degree: 11.2, retrograde: false, house: 8 },
-        Neptune: { sign: 'Capricorn', degree: 27.7, retrograde: false, house: 7 },
-        Pluto: { sign: 'Pisces', degree: 3.8, retrograde: false, house: 8 },
+        Sun: { sign: 'Aquarius', degree: 6.63, retrograde: false },
+        Moon: { sign: 'Sagittarius', degree: 7.49, retrograde: false },
+        Mercury: { sign: 'Capricorn', degree: 12.47, retrograde: false },
+        Venus: { sign: 'Sagittarius', degree: 23.35, retrograde: false },
+        Mars: { sign: 'Sagittarius', degree: 25.91, retrograde: false },
+        Jupiter: { sign: 'Aquarius', degree: 28.32, retrograde: false },
+        Saturn: { sign: 'Virgo', degree: 14.16, retrograde: true },
+        Uranus: { sign: 'Aquarius', degree: 14.07, retrograde: false },
+        Neptune: { sign: 'Capricorn', degree: 25.13, retrograde: false },
+        Pluto: { sign: 'Aries', degree: 8.86, retrograde: false },
       },
       houses: { ASC: 93.9, MC: 3.9 },
       aspects: [],
       ascendant: 93.9,
+      ascendantProvenance: 'placeholder',
       midheaven: 3.9,
     },
   },

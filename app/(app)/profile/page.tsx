@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import ProfileOnboardingForm from '@/components/profile/onboarding-form'
-import { calculateMC } from '@/lib/monica/monica-constant-validator'
+import { calculatePhiAxisIndex } from '@/lib/monica/monica-constant-validator'
 import { backend } from '@/lib/backend'
 import { getSunSign, getZodiacTheme } from '@/lib/zodiac-utils'
 import { fetchRenderSupplementalData } from '@/lib/agents/render-supplemental'
@@ -213,7 +213,18 @@ export default async function ProfilePage({
   const Reactivity = Number(alchm?.['Reactivity'] || 0)
   const EnergyValue = Number(alchm?.['Energy'] || 0)
 
-  const monicaConstant = calculateMC(spirit, essence, matter, substance, fire, water, air, earth)
+  // Prop name kept for the MeClient contract; the value is the Phi Axis Index, not the
+  // thermodynamic Monica (lib/thermodynamics/kalchm.ts).
+  const monicaConstant = calculatePhiAxisIndex(
+    spirit,
+    essence,
+    matter,
+    substance,
+    fire,
+    water,
+    air,
+    earth
+  )
   const dominantElement = String(alchm?.['Dominant Element'] || 'Fire')
   const modality = String(alchm?.['Dominant Modality'] || '')
 

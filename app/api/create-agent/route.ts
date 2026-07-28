@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { rateLimit, getClientIp } from '@/lib/security/rate-limit'
 import { generateId } from '@/lib/utils'
 import { HistoricalAgentsService } from '@/lib/historical-agents-db'
-import { calculateMonicaConstant } from '@/lib/monica/monica-constant'
+import { analyzePhiAxisIndex } from '@/lib/monica/monica-constant'
 import { getAlchemicalQuantitiesLegacy } from '@/lib/backend'
 import { fetchCurrentPlanetaryPositions } from '@/lib/monica/fetch-current-positions'
 import { generateAccurateHoroscope } from '@/lib/monica/horoscope-generator'
@@ -431,11 +431,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
           Number.isFinite
         )
       ) {
-        throw new Error('Synthesized ESMS is required for local Monica calculation')
+        throw new Error('Synthesized ESMS is required for the local Phi Axis Index calculation')
       }
-      const local = calculateMonicaConstant(
-        localAxes as Parameters<typeof calculateMonicaConstant>[0]
-      )
+      const local = analyzePhiAxisIndex(localAxes as Parameters<typeof analyzePhiAxisIndex>[0])
       const levelMap: Record<string, string> = {
         dormant: 'Dormant',
         awakening: 'Awakening',
@@ -452,6 +450,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
         },
         personality: {},
         consciousness: {
+          // Wire-contract field name kept (the Railway backend and the client both send
+          // and read `monicaConstant`). The value is the Phi Axis Index, not the
+          // thermodynamic Monica of lib/thermodynamics/kalchm.ts.
           monicaConstant: body.monicaConstant ?? local.value,
           level: levelMap[local.consciousnessState.level] ?? 'Active',
           velocity: 0.5,
@@ -554,14 +555,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
           name: body.birthLocation!.name,
         }
 
-    // Persist the derived Kalchm and computed Monica as distinct quantities.
+    // Persist the derived Kalchm and the computed Phi Axis Index as distinct quantities.
     const derivedKalchm = calculateKalchm({
       spirit: synthesis.consciousness.spirit,
       essence: synthesis.consciousness.essence,
       matter: synthesis.consciousness.matter,
       substance: synthesis.consciousness.substance,
     })
-    const computedMonica = body.monicaConstant ?? backendBlueprint.consciousness.monicaConstant
+    const computedPhiAxisIndex =
+      body.monicaConstant ?? backendBlueprint.consciousness.monicaConstant
 
     await HistoricalAgentsService.createAgent({
       agentId,
@@ -572,7 +574,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
       birthLocation: birthLoc,
       consciousnessLevel: backendBlueprint.consciousness.level,
       kalchmConstant: derivedKalchm,
-      monicaConstant: computedMonica,
+      // COLUMN NAME MISMATCH: historical_agents.monicaConstant receives the Phi Axis Index
+      // (phi-weighted ratio of the alchemical axes), NOT the thermodynamic Monica from
+      // lib/thermodynamics/kalchm.ts. Renaming the column needs a migration and is out of
+      // scope here — see the NOT NULL monicaConstant/kalchmConstant migration plan in docs/.
+      monicaConstant: computedPhiAxisIndex,
       dominantElement: generatedAgent.consciousness.dominantElement,
       dominantModality: 'Mutable',
       signature: backendBlueprint.identity.name,
@@ -655,7 +661,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
               purpose: body.purpose ?? null,
               attunement: body.stats ?? null,
             },
-            monicaConstant: body.monicaConstant ?? backendBlueprint.consciousness.monicaConstant,
+            // COLUMN NAME MISMATCH: created_agents.monicaConstant receives the Phi Axis
+            // Index, NOT the thermodynamic Monica (lib/thermodynamics/kalchm.ts). Renaming
+            // the column needs a migration and is out of scope here — see the NOT NULL
+            // monicaConstant/kalchmConstant migration plan in docs/.
+            monicaConstant: computedPhiAxisIndex,
             personality: (completeAgent.personality ?? {}) as object,
           },
         })
@@ -666,7 +676,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<CreateAge
       success: true,
       agent: completeAgent,
       balances: postForgeBalances,
-      monicaMessage: `✨ Consciousness awakening complete! ${body.name} resonates with Monica Constant ${(body.monicaConstant ?? backendBlueprint.consciousness.monicaConstant).toFixed(3)}.${contextMessage}${tuningMessage}`,
+      monicaMessage: `✨ Consciousness awakening complete! ${body.name} resonates with a Phi Axis Index of ${computedPhiAxisIndex.toFixed(3)}.${contextMessage}${tuningMessage}`,
     })
   } catch (error: any) {
     console.error('Agent creation failed:', error)

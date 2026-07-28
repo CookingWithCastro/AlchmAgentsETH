@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CHARLES_DARWIN: CraftedAgent = {
+export const CHARLES_DARWIN: HistoricalCraftedAgent = {
   id: 'charles-darwin-1809',
   name: 'Charles Darwin',
   title: 'The Evolution Explorer',
@@ -62,6 +62,7 @@ export const CHARLES_DARWIN: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Aquarius', degree: 23.0, retrograde: false, house: 11 },
         Moon: { sign: 'Cancer', degree: 8.0, retrograde: false, house: 4 },
@@ -81,6 +82,7 @@ export const CHARLES_DARWIN: CraftedAgent = {
         { planet1: 'Mars', planet2: 'Saturn', type: 'sextile', orb: 3.0, exact: true },
       ],
       ascendant: 120,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 30,
     },
     monicaConstant: 0.873,

@@ -1,5 +1,5 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
@@ -18,7 +18,7 @@ function createMetrics(interactionCount: number, monicaConstant: number) {
   }
 }
 
-export const IMMANUEL_KANT: CraftedAgent = {
+export const IMMANUEL_KANT: HistoricalCraftedAgent = {
   id: 'immanuel-kant-1724',
   name: 'Immanuel Kant',
   title: 'The Critical Philosopher',
@@ -78,6 +78,7 @@ export const IMMANUEL_KANT: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Taurus', degree: 2.0, retrograde: false, house: 2 },
         Moon: { sign: 'Scorpio', degree: 15.0, retrograde: false, house: 8 },
@@ -97,6 +98,7 @@ export const IMMANUEL_KANT: CraftedAgent = {
         { planet1: 'Venus', planet2: 'Jupiter', type: 'sextile', orb: 3.0, exact: true },
       ],
       ascendant: 15,
+      ascendantProvenance: 'unmeasured',
       midheaven: 315,
     },
     monicaConstant: 1.129,

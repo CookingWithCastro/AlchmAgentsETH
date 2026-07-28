@@ -35,6 +35,7 @@ import { feedPusherService } from '@/lib/agents/feed-pusher'
 import { isEconomyWallet } from '@/lib/agents/agent-type-model'
 import { WTENEventType } from '@/lib/agents/feed-activation-engine'
 import { PlanetaryHourCalculator } from '@/lib/planetary-hour'
+import { signDegreeToLongitude } from '@/lib/enhanced-astronomical-calculator'
 import { getCurrentPlanetaryPositions } from '@/lib/calculate-transits'
 import type { CurrentPlanetPosition } from '@/lib/calculate-transits'
 
@@ -47,7 +48,14 @@ export interface NatalPosition {
   planet: string
   sign: string
   degree: number // 0–30 within sign
-  longitude: number // 0–360 absolute
+  /**
+   * 0–360 absolute ECLIPTIC longitude (the planet's place on the zodiac — not a
+   * geographic birth longitude), or `null` when it cannot be established from
+   * the record. Nullable on purpose: 0 is a real longitude (0°00′ Aries), so a
+   * sentinel 0 both invents a placement and, being non-nullish, silently
+   * satisfies any `x ?? longitude ?? y` / `longitude || fallback` downstream.
+   */
+  longitude: number | null
 }
 
 /** Result of evaluating a single agent's activation */
@@ -212,6 +220,42 @@ const SPECIALIZED_AGENT_ACTIONS: Array<{
     questEvents: ['agent_energy_harmonic_calibration'],
   },
 ]
+
+// ---------------------------------------------------------------------------
+// Natal-position helpers
+// ---------------------------------------------------------------------------
+
+/** First value that coerces to a finite number; `null` when there is none. */
+function firstFiniteNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    if (value === null || value === undefined || value === '') continue
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return null
+}
+
+/**
+ * Absolute ECLIPTIC longitude (0–360) of a natal placement — where the planet
+ * sits on the zodiac, NOT a birth location's geographic longitude.
+ *
+ * A finite longitude already on the record wins (real stored data). Otherwise
+ * it is DERIVED from the sign + within-sign degree the record actually holds,
+ * delegated to the canonical `signDegreeToLongitude`. Deriving from data we
+ * have is arithmetic; defaulting is invention.
+ *
+ * Returns `null` when neither path is available — no numeric degree, or a sign
+ * the zodiac table does not recognise. Never 0: 0 is a real longitude
+ * (0°00′ Aries), so a sentinel 0 both asserts a placement nobody measured and,
+ * being non-nullish, silently satisfies any downstream `x ?? longitude ?? y`
+ * or `longitude || fallback` chain that was meant to reach its fallback.
+ */
+function natalLongitude(sign: unknown, degree: number | null, stored: unknown): number | null {
+  const explicit = firstFiniteNumber(stored)
+  if (explicit !== null) return explicit
+  if (degree === null || typeof sign !== 'string' || !sign.trim()) return null
+  return signDegreeToLongitude(sign, degree)
+}
 
 // ---------------------------------------------------------------------------
 // Service
@@ -967,21 +1011,34 @@ export class AgentActionService {
     try {
       // Handle both { planets: { Sun: { degree, sign, ... } } } and array formats
       if (chart.planets && typeof chart.planets === 'object') {
-        return Object.entries(chart.planets).map(([planet, data]: [string, any]) => ({
-          planet,
-          sign: data.sign ?? '',
-          degree: data.signDegree ?? data.degree ?? 0,
-          longitude: data.longitude ?? data.degrees ?? 0,
-        }))
+        return Object.entries(chart.planets).map(([planet, data]: [string, any]) => {
+          const sign = data?.sign ?? ''
+          const degree = firstFiniteNumber(data?.signDegree, data?.degree)
+          return {
+            planet,
+            sign,
+            // `degree` keeps its 0 default deliberately: three alchm.kitchen sync
+            // contracts (lib/alchm-{debit,credit,event}-sync.ts) type it as a
+            // required number, and dropping the entry instead would strip the
+            // planet→sign pair their yield engine reads. Absence is carried by
+            // `longitude` below, which nothing types as required.
+            degree: degree ?? 0,
+            longitude: natalLongitude(sign, degree, data?.longitude),
+          }
+        })
       }
 
       if (Array.isArray(chart)) {
-        return chart.map((p: any) => ({
-          planet: p.planet ?? p.label ?? '',
-          sign: p.sign ?? '',
-          degree: p.signDegree ?? p.degree ?? 0,
-          longitude: p.longitude ?? p.degrees ?? 0,
-        }))
+        return chart.map((p: any) => {
+          const sign = p?.sign ?? ''
+          const degree = firstFiniteNumber(p?.signDegree, p?.degree)
+          return {
+            planet: p?.planet ?? p?.label ?? '',
+            sign,
+            degree: degree ?? 0,
+            longitude: natalLongitude(sign, degree, p?.longitude),
+          }
+        })
       }
     } catch {
       console.warn(`[AgentActionService] Failed to parse natal chart for ${agent.id}`)

@@ -4,6 +4,8 @@
 import { BirthInfo } from './alchemical-trainer'
 import {
   calculateAllPlanets,
+  birthMomentUTC,
+  utcDateFromParts,
   type EnhancedBirthInfo,
   type EnhancedPlanetPosition,
   type EnhancedAscendant,
@@ -237,8 +239,11 @@ function calculateAscendant(birthInfo: BirthInfo): { sign: string; degree: numbe
   const longitude = birthInfo.longitude || 0
 
   // Calculate days since J2000.0 (Jan 1, 2000, 12:00 UTC)
-  const birthDate = new Date(birthInfo.year, birthInfo.month, birthInfo.day)
-  const j2000 = new Date(2000, 0, 1, 12, 0, 0)
+  // Two defects here, both fixed: `new Date(year, ...)` remapped years 0-99 to
+  // 1900-1999, and `birthInfo.month` is 1-based while that slot is 0-based, so
+  // the ascendant was computed one month late for every chart.
+  const birthDate = utcDateFromParts(birthInfo.year, birthInfo.month, birthInfo.day)
+  const j2000 = utcDateFromParts(2000, 1, 1, 12, 0, 0)
   const daysSinceJ2000 = (birthDate.getTime() - j2000.getTime()) / (1000 * 60 * 60 * 24)
 
   // Calculate Greenwich Mean Sidereal Time (GMST) at 0h UT
@@ -267,9 +272,22 @@ function calculateAscendant(birthInfo: BirthInfo): { sign: string; degree: numbe
   const tanLat = Math.tan(latRad)
   const cosObliquity = Math.cos(obliquity)
 
-  // Calculate ascendant longitude
+  // Calculate ascendant longitude.
+  //
+  // ASC = atan2( cos θ, -(sin θ cos ε + tan φ sin ε) ), θ = local sidereal time.
+  //
+  // This previously read atan2(-cos θ, +(…)). Negating BOTH arguments of atan2
+  // yields the same angle plus exactly 180 degrees, so it returned the
+  // DESCENDANT — a rising sign six signs wrong — for every chart. Measured at
+  // 180.000 degrees separation across 260 latitude/sidereal-time samples.
+  //
+  // This is the SECOND copy of that defect. The first was fixed in 7ad3b4e5 at
+  // lib/enhanced-astronomical-calculator.ts:calculateEnhancedAscendant, and this
+  // one survived because it is a separate transcription — which is exactly why
+  // the repo's rule is to delegate rather than restate. This function is the
+  // path that writes user_natal_charts, user_profiles and created_agents.
   let ascendantLongitude =
-    (Math.atan2(-Math.cos(RAMC), Math.sin(RAMC) * cosObliquity + tanLat * Math.sin(obliquity)) *
+    (Math.atan2(Math.cos(RAMC), -(Math.sin(RAMC) * cosObliquity + tanLat * Math.sin(obliquity))) *
       180) /
     Math.PI
 
@@ -345,17 +363,36 @@ const PLANETARY_CACHE_TTL = 10 * 60 * 1000 // 10 minutes
  * Generate a comprehensive horoscope with all planets
  */
 export function generateAccurateHoroscope(birthInfo: BirthInfo): GeneratedHoroscope {
-  // Create cache key for this birth info (rounded to hour for efficiency)
-  const cacheKey = `${birthInfo.year}-${birthInfo.month}-${birthInfo.day}-${birthInfo.hour}`
+  // Cache key. It MUST include latitude, longitude and minute: this function
+  // returns an ascendant and midheaven, and both depend on the observer's
+  // position and on the minute (the ascendant moves ~1 degree every 4 minutes).
+  //
+  // The key was previously `year-month-day-hour` only. Measured consequence:
+  // charts for Stockholm (59.33N 18.07E) and Sydney (33.87S 151.21E) on the same
+  // date and hour returned the byte-identical object, ascendant included. A
+  // cache key that omits an input the result depends on does not save work — it
+  // serves one caller's answer to another.
+  const cacheKey = [
+    birthInfo.year,
+    birthInfo.month,
+    birthInfo.day,
+    birthInfo.hour,
+    birthInfo.minute ?? 0,
+    birthInfo.latitude ?? 'nolat',
+    birthInfo.longitude ?? 'nolon',
+  ].join('|')
 
   // Check cache first for planetary positions
   const cached = planetaryCache.get(cacheKey)
   if (cached && Date.now() - cached.timestamp < PLANETARY_CACHE_TTL) {
     return cached.data
   }
-  const birthDate = new Date(
+  // `new Date(year, ...)` carries the SAME 0-99 -> 1900-1999 remap as Date.UTC:
+  // year 69 becomes 1969, silently. Measured before this fix: this function
+  // returned a byte-identical horoscope for year 69 and year 1969.
+  const birthDate = utcDateFromParts(
     birthInfo.year,
-    birthInfo.month - 1,
+    birthInfo.month,
     birthInfo.day,
     birthInfo.hour,
     birthInfo.minute
@@ -460,7 +497,12 @@ export function validateBirthInfo(birthInfo: BirthInfo): { valid: boolean; error
   }
 
   // Validate day
-  const daysInMonth = new Date(birthInfo.year, birthInfo.month, 0).getDate()
+  // `day 0 of month N` is the last day of month N-1, which is correct for a
+  // 1-based `month`. Only the year needed fixing (0-99 remap), and building in
+  // UTC also keeps it from shifting across a timezone boundary.
+  const daysInMonth = new Date(
+    utcDateFromParts(birthInfo.year, birthInfo.month, 1).getTime() - 86400000
+  ).getUTCDate()
   if (birthInfo.day < 1 || birthInfo.day > daysInMonth) {
     errors.push(`Day must be between 1 and ${daysInMonth} for month ${birthInfo.month}`)
   }
@@ -515,17 +557,13 @@ export function generateProfessionalHoroscope(
       longitude: birthInfo.longitude || -74.006,
     }
 
-    // Create birth date for solar ephemeris calculations
-    const birthDate = new Date(
-      Date.UTC(
-        enhancedBirthInfo.year,
-        enhancedBirthInfo.month - 1,
-        enhancedBirthInfo.day,
-        enhancedBirthInfo.hour,
-        enhancedBirthInfo.minute,
-        enhancedBirthInfo.second || 0
-      )
-    )
+    // Create birth date for solar ephemeris calculations.
+    //
+    // This must NOT use Date.UTC: `birthInfo.year` reaches here straight from stored
+    // agent birth data, and a year in 0-99 would be silently remapped to 1900+year.
+    // Cleopatra is stored as `0069-01-01`, so Date.UTC computed her Sun for 1969 —
+    // a 1900-year error that produced a real-looking chart with no warning.
+    const birthDate = birthMomentUTC(enhancedBirthInfo)
 
     // Calculate enhanced positions (but override Sun with accurate solar ephemeris)
     const enhancedResults = calculateAllPlanets(enhancedBirthInfo)

@@ -1,7 +1,11 @@
 from typing import Dict, Any, Optional
 import math
 from datetime import datetime
-from thermodynamics import calculate_kalchm, calculate_monica
+from thermodynamics import (
+    calculate_kalchm,
+    calculate_monica,
+    calculate_thermodynamics,
+)
 
 PLANET_ALCHM_PERIODS = {
     'Pluto': 247.94,
@@ -277,23 +281,29 @@ def alchemize(
     Air = totals["Air"]
     Earth = totals["Earth"]
     
-    # Heat
-    heat_num = Spirit ** 2 + Fire ** 2
-    heat_den = (Substance + Essence + Matter + Water + Air + Earth) ** 2
-    heat = heat_num / (heat_den or 1.0)
-    
-    # Entropy
-    entropy_num = Spirit ** 2 + Substance ** 2 + Fire ** 2 + Air ** 2
-    entropy_den = (Essence + Matter + Earth + Water) ** 2
-    entropy = entropy_num / (entropy_den or 1.0)
-    
-    # Reactivity
-    reactivity_num = Spirit ** 2 + Substance ** 2 + Essence ** 2 + Fire ** 2 + Air ** 2 + Water ** 2
-    reactivity = (reactivity_num / (Matter or 1.0)) + Earth ** 2
-    
-    # Greg's Energy
-    gregs_energy = heat - entropy * reactivity
-    
+    # Heat / Entropy / Reactivity / Greg's Energy — delegated to the canonical
+    # engine so this route cannot drift from lib/thermodynamics/kalchm.ts again.
+    # Heat and entropy were already canonical here; reactivity was not. It read
+    #     (reactivity_num / (Matter or 1.0)) + Earth ** 2
+    # which one lost paren pair had turned into three deviations at once: Earth
+    # left the denominator, Matter's square was dropped, and Earth came back as
+    # an additive term. The two forms coincide only when Earth = 0 and
+    # Matter = 1, so no chart this server generates ever sat on the coincidence.
+    thermo = calculate_thermodynamics(
+        spirit=Spirit,
+        essence=Essence,
+        matter=Matter,
+        substance=Substance,
+        fire=Fire,
+        water=Water,
+        air=Air,
+        earth=Earth,
+    )
+    heat = thermo["heat"]
+    entropy = thermo["entropy"]
+    reactivity = thermo["reactivity"]
+    gregs_energy = thermo["gregs_energy"]
+
     # Canonical thermodynamic constants
     kalchm = calculate_kalchm(Spirit, Essence, Matter, Substance)
     monica = calculate_monica(gregs_energy, reactivity, kalchm)

@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const CARL_SAGAN: CraftedAgent = {
+export const CARL_SAGAN: HistoricalCraftedAgent = {
   id: 'carl-sagan',
   name: 'Carl Sagan',
   title: 'The Cosmic Poet',
@@ -50,6 +50,7 @@ export const CARL_SAGAN: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Scorpio', degree: 17, retrograde: false, house: 9 },
         Moon: { sign: 'Aquarius', degree: 24, retrograde: false, house: 12 },
@@ -65,6 +66,7 @@ export const CARL_SAGAN: CraftedAgent = {
       houses: { ASC: 28, MC: 12 },
       aspects: [],
       ascendant: 28,
+      ascendantProvenance: 'unmeasured',
       midheaven: 12,
     },
     monicaConstant: 5.67,

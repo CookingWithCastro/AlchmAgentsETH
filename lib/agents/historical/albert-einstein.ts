@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const ALBERT_EINSTEIN: CraftedAgent = {
+export const ALBERT_EINSTEIN: HistoricalCraftedAgent = {
   id: 'albert-einstein',
   name: 'Albert Einstein',
   title: 'The Quantum Visionary',
@@ -62,6 +62,7 @@ export const ALBERT_EINSTEIN: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Pisces', degree: 23.0, retrograde: false, house: 8 },
         Moon: { sign: 'Capricorn', degree: 18.0, retrograde: false, house: 6 },
@@ -80,6 +81,7 @@ export const ALBERT_EINSTEIN: CraftedAgent = {
         { planet1: 'Moon', planet2: 'Mars', type: 'conjunction', orb: 7.0, exact: false },
       ],
       ascendant: 120,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 30,
     },
     monicaConstant: 6.15,

@@ -1,12 +1,12 @@
 import type {
-  CraftedAgent,
+  HistoricalCraftedAgent,
   Element,
   Modality,
   ConsciousnessMetrics,
   ConsciousnessLevel,
 } from '../../agent-types'
 
-export const EDGAR_ALLAN_POE: CraftedAgent = {
+export const EDGAR_ALLAN_POE: HistoricalCraftedAgent = {
   id: 'edgar-allan-poe-1809',
   name: 'Edgar Allan Poe',
   title: 'The Dark Romantic',
@@ -61,6 +61,7 @@ export const EDGAR_ALLAN_POE: CraftedAgent = {
   ],
   consciousness: {
     natalChart: {
+      provenance: 'authored',
       planets: {
         Sun: { sign: 'Capricorn', degree: 29.0, retrograde: false, house: 10 },
         Moon: { sign: 'Scorpio', degree: 15.0, retrograde: false, house: 8 },
@@ -80,6 +81,7 @@ export const EDGAR_ALLAN_POE: CraftedAgent = {
         { planet1: 'Jupiter', planet2: 'Saturn', type: 'sextile', orb: 7.0, exact: false },
       ],
       ascendant: 60,
+      ascendantProvenance: 'sign-resolution',
       midheaven: 330,
     },
     monicaConstant: 1.829,

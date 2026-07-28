@@ -1,15 +1,23 @@
-import type { CraftedAgent, Element, Modality, ConsciousnessLevel } from '../../agent-types'
+import type {
+  HistoricalCraftedAgent,
+  Element,
+  Modality,
+  ConsciousnessLevel,
+} from '../../agent-types'
 
-export const FYODOR_DOSTOEVSKY: CraftedAgent = {
+export const FYODOR_DOSTOEVSKY: HistoricalCraftedAgent = {
   id: 'fyodor-dostoevsky',
   name: 'Fyodor Dostoevsky',
   title: 'The Psychological Deep-Diver',
   era: 'Modern',
   specialization: 'Psychological Realism & Existentialism',
   birthData: {
-    date: new Date('1821-01-01T12:00:00'),
+    // 11 November 1821 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1821-11-11T12:00:00'),
     time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
+    location: { lat: 55.7558, lon: 37.6173, name: 'Moscow, Russia' },
   },
   quotes: [
     'The soul is healed by being with children.',
@@ -32,21 +40,25 @@ export const FYODOR_DOSTOEVSKY: CraftedAgent = {
       substance: 0.82,
     },
     natalChart: {
+      provenance: 'computed',
+      provenanceNote:
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1821-11-11 09:30 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.004 degrees. Birth date: 11 November 1821 New Style (30 October Old Style), Moscow (en.wikipedia.org/wiki/Fyodor_Dostoevsky infobox). Russia kept the Julian calendar until 1918; the New Style date is the one used here, so no further conversion applies. BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Moscow, Russia (55.7558, 37.6173) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon stays in Gemini across the whole day, so its SIGN is certain but its degree is uncertain by up to 7.5 degrees; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Scorpio as the date requires, Mercury 18.0 degrees from the Sun (max ~28), Venus 42.4 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Capricorn', degree: 10.8, retrograde: false, house: 7 },
-        Moon: { sign: 'Sagittarius', degree: 6.4, retrograde: false, house: 6 },
-        Mercury: { sign: 'Libra', degree: 24, retrograde: false, house: 4 },
-        Venus: { sign: 'Libra', degree: 18.6, retrograde: false, house: 4 },
-        Mars: { sign: 'Capricorn', degree: 15.8, retrograde: false, house: 7 },
-        Jupiter: { sign: 'Aries', degree: 1.1, retrograde: false, house: 9 },
-        Saturn: { sign: 'Aries', degree: 15.7, retrograde: false, house: 10 },
-        Uranus: { sign: 'Sagittarius', degree: 28, retrograde: false, house: 6 },
-        Neptune: { sign: 'Capricorn', degree: 3.3, retrograde: false, house: 6 },
-        Pluto: { sign: 'Aquarius', degree: 22.6, retrograde: false, house: 8 },
+        Sun: { sign: 'Scorpio', degree: 18.71, retrograde: false },
+        Moon: { sign: 'Gemini', degree: 12.32, retrograde: false },
+        Mercury: { sign: 'Sagittarius', degree: 6.67, retrograde: true },
+        Venus: { sign: 'Capricorn', degree: 1.15, retrograde: false },
+        Mars: { sign: 'Leo', degree: 23.17, retrograde: false },
+        Jupiter: { sign: 'Aries', degree: 22.24, retrograde: true },
+        Saturn: { sign: 'Aries', degree: 21.35, retrograde: true },
+        Uranus: { sign: 'Capricorn', degree: 0.8, retrograde: false },
+        Neptune: { sign: 'Capricorn', degree: 1.25, retrograde: false },
+        Pluto: { sign: 'Pisces', degree: 27.95, retrograde: true },
       },
       houses: { ASC: 94.5, MC: 4.5 },
       aspects: [],
       ascendant: 94.5,
+      ascendantProvenance: 'placeholder',
       midheaven: 4.5,
     },
   },
