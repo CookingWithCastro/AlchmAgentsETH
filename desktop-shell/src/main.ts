@@ -8,7 +8,6 @@ import { detectPatternsStatic } from '../../lib/astrological-pattern-recognition
 import { ChartGeometryExtractor } from '../../lib/chart-geometry-extractor'
 import { createNatalSigilRune } from '../../lib/runes/natal-sigil-runes'
 import { createSigilSvg, sigilSvgToDataUrl } from '../../lib/sigil-download'
-import { buildLocalAstrologyMetrics } from './localAstrologyMetrics'
 import type { NatalSigilRune } from '../../lib/runes/natal-sigil-runes'
 import type { PlanetPosition, Aspect } from '../../lib/astrological-pattern-recognition'
 
@@ -6247,227 +6246,10 @@ function getSignDignity(planet: string, sign: string): string {
   return 'peregrine'
 }
 
-const ZODIAC_ELEMENTS: Record<string, string> = {
-  Aries: 'Fire',
-  Leo: 'Fire',
-  Sagittarius: 'Fire',
-  Taurus: 'Earth',
-  Virgo: 'Earth',
-  Capricorn: 'Earth',
-  Gemini: 'Air',
-  Libra: 'Air',
-  Aquarius: 'Air',
-  Cancer: 'Water',
-  Scorpio: 'Water',
-  Pisces: 'Water',
-}
-
-const ZODIAC_MODALITIES: Record<string, string> = {
-  Aries: 'Cardinal',
-  Cancer: 'Cardinal',
-  Libra: 'Cardinal',
-  Capricorn: 'Cardinal',
-  Taurus: 'Fixed',
-  Leo: 'Fixed',
-  Scorpio: 'Fixed',
-  Aquarius: 'Fixed',
-  Gemini: 'Mutable',
-  Virgo: 'Mutable',
-  Sagittarius: 'Mutable',
-  Pisces: 'Mutable',
-}
-
-const ZODIAC_RULERS: Record<string, string> = {
-  Aries: 'Mars',
-  Scorpio: 'Mars',
-  Taurus: 'Venus',
-  Libra: 'Venus',
-  Gemini: 'Mercury',
-  Virgo: 'Mercury',
-  Cancer: 'Moon',
-  Leo: 'Sun',
-  Sagittarius: 'Jupiter',
-  Pisces: 'Jupiter',
-  Capricorn: 'Saturn',
-  Aquarius: 'Saturn',
-}
-
-function buildLocalAstrologySnapshot(
-  date = new Date(),
-  latitude = 40.7128,
-  longitude = -74.006
-): AstrologyConsensusSnapshot {
-  const birthInfo = {
-    year: date.getUTCFullYear(),
-    month: date.getUTCMonth() + 1,
-    day: date.getUTCDate(),
-    hour: date.getUTCHours(),
-    minute: date.getUTCMinutes(),
-    second: date.getUTCSeconds() || 0,
-    latitude,
-    longitude,
-  }
-
-  const chart = calculateAllPlanets(birthInfo)
-
-  const planets: AstrologyPlanet[] = [
-    'Sun',
-    'Moon',
-    'Mercury',
-    'Venus',
-    'Mars',
-    'Jupiter',
-    'Saturn',
-    'Uranus',
-    'Neptune',
-    'Pluto',
-  ].map(name => {
-    const p = chart.planets[name]
-    const sign = p.sign
-    const signAbbreviation = ZODIAC_ABBREVIATIONS[sign] || 'ARI'
-    const color = ZODIAC_COLORS[sign] || '#f97316'
-    const degree = p.signDegree
-    const wholeDegree = Math.floor(degree)
-    const minute = Math.floor((degree - wholeDegree) * 60)
-    const display = `${sign} ${wholeDegree}deg ${String(minute).padStart(2, '0')}'`
-    const dignity = getSignDignity(name, sign)
-    const motion = p.retrograde ? 'retrograde' : 'direct'
-
-    return {
-      planet: name,
-      sign,
-      signAbbreviation,
-      degree,
-      minute,
-      display,
-      longitude: p.longitude,
-      element: ZODIAC_ELEMENTS[sign] || 'Fire',
-      mode: ZODIAC_MODALITIES[sign] || 'Cardinal',
-      ruler: ZODIAC_RULERS[sign] || 'Unknown',
-      dignity,
-      motion,
-      speed: p.speed,
-      source: 'enhanced astronomical calculator',
-      domain: '',
-      counsel: '',
-      agent: '',
-      agentRole: '',
-      esms: '',
-      color,
-      strength: 1,
-    }
-  })
-
-  // Map aspects using detectPatternsStatic
-  const { aspects: rawAspects } = detectPatternsStatic(
-    planets.map(p => ({
-      planet: p.planet,
-      sign: p.sign,
-      degree: p.degree,
-      house: 1,
-      date,
-    }))
-  )
-
-  const aspects: AstrologyAspect[] = rawAspects.map(aspect => ({
-    id: `${aspect.planet1}-${aspect.planet2}-${aspect.type}`,
-    planetA: aspect.planet1,
-    planetB: aspect.planet2,
-    type: aspect.type,
-    angle: aspect.angle,
-    orb: aspect.orb,
-    exactness:
-      aspect.strength === 'exact'
-        ? 100
-        : aspect.strength === 'tight'
-          ? 80
-          : aspect.strength === 'moderate'
-            ? 60
-            : 40,
-    applying: aspect.applying,
-    polarity: '',
-    weight: 1,
-    summary: `${aspect.planet1} ${aspect.type} ${aspect.planet2}`,
-  }))
-
-  const fireCount = planets.filter(p => p.element === 'Fire').length
-  const waterCount = planets.filter(p => p.element === 'Water').length
-  const airCount = planets.filter(p => p.element === 'Air').length
-  const earthCount = planets.filter(p => p.element === 'Earth').length
-
-  const dominantElement = [
-    { name: 'Fire', count: fireCount },
-    { name: 'Water', count: waterCount },
-    { name: 'Air', count: airCount },
-    { name: 'Earth', count: earthCount },
-  ].sort((a, b) => b.count - a.count)[0].name
-  const fallbackMetrics = buildLocalAstrologyMetrics(
-    date,
-    dominantElement,
-    { Fire: fireCount, Water: waterCount, Air: airCount, Earth: earthCount },
-    aspects.length
-  )
-
-  const moon = planets.find(p => p.planet === 'Moon')
-  const sun = planets.find(p => p.planet === 'Sun')
-  const phaseAngle = sun && moon ? (moon.longitude - sun.longitude + 360) % 360 : 0
-  const phaseNames = [
-    { max: 22.5, name: 'New Moon' },
-    { max: 67.5, name: 'Waxing Crescent' },
-    { max: 112.5, name: 'First Quarter' },
-    { max: 157.5, name: 'Waxing Gibbous' },
-    { max: 202.5, name: 'Full Moon' },
-    { max: 247.5, name: 'Waning Gibbous' },
-    { max: 292.5, name: 'Last Quarter' },
-    { max: 337.5, name: 'Waning Crescent' },
-    { max: 360, name: 'New Moon' },
-  ]
-  const phase = phaseNames.find(item => phaseAngle <= item.max) || phaseNames[0]
-
-  return {
-    generatedAt: date.toISOString(),
-    provenance: [],
-    chart: {
-      title: 'Local High-Precision Consensus Sky',
-      source: 'local astronomical calculator',
-      sunSign: sun?.sign || 'Aries',
-      moonSign: moon?.sign || 'Aries',
-      ascendant: {
-        sign: chart.ascendant?.sign || 'Aries',
-        degree: chart.ascendant?.signDegree || 0,
-        longitude: chart.ascendant?.longitude || 0,
-      },
-      julianDay: chart.julianDay,
-      planets,
-      aspects,
-    },
-    quantities: fallbackMetrics.quantities,
-    moonPhase: {
-      name: phase.name,
-      angle: phaseAngle,
-      illumination: Math.round(((1 - Math.cos((phaseAngle * Math.PI) / 180)) / 2) * 100),
-      instruction: '',
-    },
-    planetaryHour: fallbackMetrics.planetaryHour,
-    activeAgents: [],
-    layers: [],
-    recommendations: [],
-  }
-}
-
 async function refreshAstrologyConsensus(options: { silent?: boolean } = {}) {
   if (!invokeCommand) {
-    try {
-      state.astrology.snapshot = buildLocalAstrologySnapshot(new Date(), 40.7128, -74.006)
-      state.astrology.status = 'ready'
-      state.astrology.lastError = null
-    } catch (fallbackError: any) {
-      state.astrology.status = 'error'
-      state.astrology.lastError =
-        fallbackError instanceof Error
-          ? fallbackError.message
-          : 'Local astrology calculation failed.'
-    }
+    state.astrology.status = 'error'
+    state.astrology.lastError = 'Open the packaged desktop app to load the astrology sidecar.'
     if (!options.silent) render()
     return
   }
@@ -6483,16 +6265,16 @@ async function refreshAstrologyConsensus(options: { silent?: boolean } = {}) {
     state.astrology.status = 'ready'
     state.astrology.lastError = null
   } catch (error) {
-    console.warn('Astrology consensus refresh failed, falling back to local snapshot:', error)
-    try {
-      state.astrology.snapshot = buildLocalAstrologySnapshot(new Date(), 40.7128, -74.006)
-      state.astrology.status = 'ready'
-      state.astrology.lastError = null
-    } catch (fallbackError: any) {
-      state.astrology.status = 'error'
-      state.astrology.lastError =
-        fallbackError instanceof Error ? fallbackError.message : 'Local astrology fallback failed.'
-    }
+    // No local substitute. This used to fall back to a locally-built snapshot and
+    // set status 'ready' with lastError null, so a failed consensus fetch was
+    // indistinguishable from a successful one — and the thermodynamic quantities
+    // in that snapshot came from sine waves of the calendar date and clock hour,
+    // with the planets appearing nowhere in them. A fallback must not be able to
+    // impersonate the thing it replaces. `refreshAlchmPhysics` below has always
+    // refused honestly; this now matches it.
+    state.astrology.status = 'error'
+    state.astrology.lastError =
+      error instanceof Error ? error.message : 'Astrology consensus refresh failed.'
   }
 
   render()

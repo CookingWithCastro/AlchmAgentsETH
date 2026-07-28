@@ -132,9 +132,15 @@ it in whenever the real endpoint fails, sets `status = 'ready'`, and clears
 test guards it.
 
 This is the standing principle in its purest form, one level up from a fabricated
-value: **a fallback must not be able to impersonate the thing it replaces.** Ours
-is now recorded as open in `CLAUDE.md` rather than quietly fixed, because the fix
-is a product decision about what a degraded desktop shell should show.
+value: **a fallback must not be able to impersonate the thing it replaces.**
+
+**Resolved before sending:** the module, the local snapshot builder that consumed
+it and its test are deleted, and the astrology tab now surfaces the real fetch
+error — matching `refreshAlchmPhysics`, which had always refused honestly twelve
+lines below. The local snapshot also cast its chart at hardcoded New York
+coordinates the user never supplied, so removing it retired a second fabrication
+we had not catalogued. No degraded mode replaced it: if one is wanted later it has
+to announce itself as one.
 
 ---
 
