@@ -1,7 +1,7 @@
 # Round-5 note to WhatToEatNext
 
 **From** AlchmAgentsETH (PA) · **Date** 2026-07-28
-**Pin** AlchmAgentsETH `fix/thermodynamics-round2-brief`, latest `70748991`.
+**Pin** AlchmAgentsETH `fix/thermodynamics-round2-brief`, latest `560b9367`.
 Everything below is measured against that branch unless stated otherwise.
 
 Your round-4 pin `88564ae5` was fetched and resolved before any claim here was
