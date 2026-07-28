@@ -19,7 +19,7 @@ import {
 } from '@/lib/synastry-compatibility-engine'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
-import { calculateMC } from '@/lib/monica/monica-constant-validator'
+import { calculatePhiAxisIndex } from '@/lib/monica/monica-constant-validator'
 import { sanitizeSvg } from '@/lib/utils/sanitizer'
 
 // Browser-safe wrappers around the proxy routes — replaces removed
@@ -243,9 +243,9 @@ function createSynastryChartSkeleton(user: RelationChart, relation: any): Synast
 export function TemporalClient() {
   const [lines, setLines] = useState<string[]>([])
   const [delta, setDelta] = useState<TemporalDelta | null>(null)
-  const [relations, setRelations] = useState<Array<RelationChart & { alchm?: any; mc?: number }>>(
-    []
-  )
+  const [relations, setRelations] = useState<
+    Array<RelationChart & { alchm?: any; phiAxisIndex?: number }>
+  >([])
   const [synastryHint, setSynastryHint] = useState<string>('')
   const [aggregate, setAggregate] = useState<{
     spirit: number
@@ -425,7 +425,7 @@ export function TemporalClient() {
       const matter = alchmInfo?.['Alchemy Effects']?.['Total Matter'] || 0
       const substance = alchmInfo?.['Alchemy Effects']?.['Total Substance'] || 0
 
-      const mc = calculateMC(
+      const phiAxisIndex = calculatePhiAxisIndex(
         spirit,
         essence,
         matter,
@@ -439,7 +439,7 @@ export function TemporalClient() {
       const enriched = {
         ...relation,
         alchm: alchmInfo,
-        mc,
+        phiAxisIndex,
         wheel,
         _meta: { usedBackend, confidence, validation, degraded },
       }
@@ -542,8 +542,8 @@ export function TemporalClient() {
                     {(r as any).birthTime ? ` ${(r as any).birthTime}` : ''}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                    {typeof (r as any).mc === 'number' && (
-                      <span>MC: {(r as any).mc.toFixed(3)}</span>
+                    {typeof (r as any).phiAxisIndex === 'number' && (
+                      <span>PAI: {(r as any).phiAxisIndex.toFixed(3)}</span>
                     )}
                     {(r as any)._meta && (
                       <span>
@@ -579,9 +579,12 @@ export function TemporalClient() {
                       Reactivity: (r as any).alchm['Reactivity'] || 0,
                       Energy: (r as any).alchm['Energy'] || 0,
                     }}
+                    // Prop name kept for the ConsciousnessVectorDisplay contract; the value
+                    // is the Phi Axis Index, not the thermodynamic Monica.
                     monicaConstant={
-                      typeof (r as any).mc === 'number' && Number.isFinite((r as any).mc)
-                        ? (r as any).mc
+                      typeof (r as any).phiAxisIndex === 'number' &&
+                      Number.isFinite((r as any).phiAxisIndex)
+                        ? (r as any).phiAxisIndex
                         : null
                     }
                   />

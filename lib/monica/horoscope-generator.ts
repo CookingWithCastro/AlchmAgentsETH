@@ -272,9 +272,22 @@ function calculateAscendant(birthInfo: BirthInfo): { sign: string; degree: numbe
   const tanLat = Math.tan(latRad)
   const cosObliquity = Math.cos(obliquity)
 
-  // Calculate ascendant longitude
+  // Calculate ascendant longitude.
+  //
+  // ASC = atan2( cos θ, -(sin θ cos ε + tan φ sin ε) ), θ = local sidereal time.
+  //
+  // This previously read atan2(-cos θ, +(…)). Negating BOTH arguments of atan2
+  // yields the same angle plus exactly 180 degrees, so it returned the
+  // DESCENDANT — a rising sign six signs wrong — for every chart. Measured at
+  // 180.000 degrees separation across 260 latitude/sidereal-time samples.
+  //
+  // This is the SECOND copy of that defect. The first was fixed in 7ad3b4e5 at
+  // lib/enhanced-astronomical-calculator.ts:calculateEnhancedAscendant, and this
+  // one survived because it is a separate transcription — which is exactly why
+  // the repo's rule is to delegate rather than restate. This function is the
+  // path that writes user_natal_charts, user_profiles and created_agents.
   let ascendantLongitude =
-    (Math.atan2(-Math.cos(RAMC), Math.sin(RAMC) * cosObliquity + tanLat * Math.sin(obliquity)) *
+    (Math.atan2(Math.cos(RAMC), -(Math.sin(RAMC) * cosObliquity + tanLat * Math.sin(obliquity))) *
       180) /
     Math.PI
 
@@ -350,8 +363,24 @@ const PLANETARY_CACHE_TTL = 10 * 60 * 1000 // 10 minutes
  * Generate a comprehensive horoscope with all planets
  */
 export function generateAccurateHoroscope(birthInfo: BirthInfo): GeneratedHoroscope {
-  // Create cache key for this birth info (rounded to hour for efficiency)
-  const cacheKey = `${birthInfo.year}-${birthInfo.month}-${birthInfo.day}-${birthInfo.hour}`
+  // Cache key. It MUST include latitude, longitude and minute: this function
+  // returns an ascendant and midheaven, and both depend on the observer's
+  // position and on the minute (the ascendant moves ~1 degree every 4 minutes).
+  //
+  // The key was previously `year-month-day-hour` only. Measured consequence:
+  // charts for Stockholm (59.33N 18.07E) and Sydney (33.87S 151.21E) on the same
+  // date and hour returned the byte-identical object, ascendant included. A
+  // cache key that omits an input the result depends on does not save work — it
+  // serves one caller's answer to another.
+  const cacheKey = [
+    birthInfo.year,
+    birthInfo.month,
+    birthInfo.day,
+    birthInfo.hour,
+    birthInfo.minute ?? 0,
+    birthInfo.latitude ?? 'nolat',
+    birthInfo.longitude ?? 'nolon',
+  ].join('|')
 
   // Check cache first for planetary positions
   const cached = planetaryCache.get(cacheKey)

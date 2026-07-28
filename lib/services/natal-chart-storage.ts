@@ -9,7 +9,7 @@ import { prisma } from '@/lib/db'
 import { generateAccurateHoroscope } from '../monica/horoscope-generator'
 import { signDegreeToLongitude } from '../enhanced-astronomical-calculator'
 import { alchemize } from '../alchemizer'
-import { calculateMC } from '../monica/monica-constant-validator'
+import { calculatePhiAxisIndex } from '../monica/monica-constant-validator'
 
 export interface CreateNatalChartInput {
   userId: string
@@ -140,6 +140,10 @@ export async function createNatalChart(
       houses: natalData.houses,
       aspects: natalData.aspects,
       nodes: natalData.nodes,
+      // COLUMN NAME MISMATCH: user_natal_charts.monicaConstant receives the Phi Axis Index
+      // (phi-weighted ratio of the alchemical axes), NOT the thermodynamic Monica from
+      // lib/thermodynamics/kalchm.ts. Renaming the column needs a migration and is out of
+      // scope here — see the NOT NULL monicaConstant/kalchmConstant migration plan in docs/.
       monicaConstant: alchmData.monicaConstant,
       dominantElement,
       dominantModality,
@@ -522,7 +526,9 @@ async function calculateAlchemicalQuantities(planets: any[], ascendantSign?: str
   }
 
   return {
-    monicaConstant: calculateMC(axes.spirit, axes.essence, axes.matter, axes.substance),
+    // Key name kept to match the `monicaConstant` DB column it feeds; the value is the
+    // Phi Axis Index, not the thermodynamic Monica (lib/thermodynamics/kalchm.ts).
+    monicaConstant: calculatePhiAxisIndex(axes.spirit, axes.essence, axes.matter, axes.substance),
     ...axes,
   }
 }

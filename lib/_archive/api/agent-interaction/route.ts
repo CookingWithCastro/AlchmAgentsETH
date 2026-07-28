@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { ConsciousnessClient } from '@/lib/api-client/consciousness-client'
-import { calculateMonicaConstant } from '@/lib/monica/monica-constant'
+import { analyzePhiAxisIndex } from '@/lib/monica/monica-constant'
 import { backend, getAlchemicalQuantitiesLegacy } from '@/lib/backend'
 
 const InteractionSchema = z.object({
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     const matter = currentMoment?.['Alchemy Effects']?.['Total Matter'] || 0
     const substance = currentMoment?.['Alchemy Effects']?.['Total Substance'] || 0
 
-    const monica = calculateMonicaConstant({
+    const phiAxis = analyzePhiAxisIndex({
       spirit,
       essence,
       matter,
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
         userId,
         agentId,
         interactionType: 'crafting',
-        powerGained: monica.value,
+        powerGained: phiAxis.value,
         planetaryInfluence: agent.name ?? agentId,
         elementalResonance: blueprint.consciousness.resonance,
         metadata: JSON.stringify({
@@ -68,7 +68,9 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       blueprint,
-      monicaConstant: monica,
+      // Response key kept as-is (archived route); the payload is the Phi Axis Index
+      // analysis, not the thermodynamic Monica (lib/thermodynamics/kalchm.ts).
+      monicaConstant: phiAxis,
     })
   } catch (error) {
     console.error('Agent interaction error:', error)

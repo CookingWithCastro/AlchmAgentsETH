@@ -310,8 +310,74 @@ export function birthMomentUTC(birthInfo: EnhancedBirthInfo): Date {
 }
 
 /**
- * Convert a UTC calendar date to a Julian Day number (Gregorian calendar rules,
- * exact to the millisecond of the input). No approximation is involved here.
+ * CALENDAR CONVENTION FOR THIS MODULE: PROLEPTIC GREGORIAN, EVERYWHERE.
+ * ====================================================================
+ *
+ * `dateToJulianDay` and `julianDayToDate` both apply Gregorian leap rules to every
+ * date, including dates before the Gregorian reform of 15 October 1582. Neither
+ * function has a 1582 branch. They are exact inverses over the whole supported
+ * range — that is the property to preserve if either is ever edited.
+ *
+ * WHY PROLEPTIC GREGORIAN AND NOT HISTORICAL JULIAN-THEN-GREGORIAN.
+ * The decisive reason is the type at both ends, not a preference. Both functions
+ * speak in `Date`, and a JavaScript `Date` IS a proleptic Gregorian calendar —
+ * `getUTCFullYear`/`getUTCMonth`/`getUTCDate` decompose epoch milliseconds with
+ * Gregorian leap rules at every epoch, with no reform branch available. Measured:
+ *
+ *   utcDateFromParts(1500, 2, 29) -> 1500-03-01Z
+ *
+ * 1500 IS a leap year in the Julian calendar and is NOT one in the Gregorian, so
+ * a `Date` cannot even hold 29 February 1500. It follows that a decoder returning
+ * Julian-calendar day/month/year inside a `Date` is mislabelling its output: the
+ * object then prints an ISO 8601 string, a format that means proleptic Gregorian,
+ * carrying numbers that mean something else. That is this repo's standing failure
+ * mode — a value presented in a form whose meaning is not the value's provenance.
+ *
+ * Corroborating evidence, in the order it was weighed:
+ *
+ *  1. `dateToJulianDay` was already unconditionally proleptic Gregorian. Verified
+ *     against a calendar-free oracle (`date.getTime() / 86400000 + 2440587.5`,
+ *     pure epoch arithmetic, no calendar formula) for all 1,095,729 consecutive
+ *     days from year -800 to year 2200: agreement was exact, 0 discrepancy. Only
+ *     the decoder ever disagreed, so this change moves the outlier onto the
+ *     convention the module already used, rather than picking a new one.
+ *  2. Every other time path in the repo is already proleptic Gregorian with no
+ *     1582 branch: `backend/src/services/swiss-ephemeris.ts` passes `SE_GREG_CAL`
+ *     (Swiss Ephemeris's proleptic Gregorian flag, not `SE_JUL_CAL`);
+ *     `lib/ephemeris/solar-ephemeris.ts:dateToJulianDay` is the same branch-free
+ *     formula; `lib/context-card/extended-points.ts:julianDay` uses the epoch
+ *     arithmetic above; `pa-rust-backend/src/astro/positions.rs` measures elapsed
+ *     duration with `chrono`, and the Python backend uses `datetime` — both of
+ *     which are proleptic Gregorian by their own specifications. Choosing
+ *     historical Julian here would have CREATED a cross-runtime disagreement.
+ *  3. The stored birth dates are ISO 8601 extended-format strings parsed by
+ *     `new Date(...)` — e.g. `new Date('-000469-06-20T12:00:00')` in
+ *     `lib/agents/historical/socrates.ts`. ECMAScript defines that format as
+ *     ISO 8601, and ISO 8601 specifies the proleptic Gregorian calendar. As
+ *     parsed, those values already ARE proleptic Gregorian dates.
+ *
+ * What the stored data could NOT settle, and why it is not cited as the reason:
+ * the repo's own dates are not internally consistent about Old Style vs New
+ * Style. Newton is stored `1643-01-04` (New Style; he was born 25 December 1642
+ * Old Style) while Kepler is stored `1571-12-27` (Old Style; 6 January 1572 New
+ * Style). The dates therefore record "whatever date is conventionally cited",
+ * not a calendar convention. Separately, the pre-1582 agents most affected here
+ * — michelangelo 1475, machiavelli 1469, petrarch 1304, chaucer 1343, donatello
+ * 1386, raphael 1483 — all carry `01-01T12:00` at lat 0 / lon 0 "Unknown", this
+ * repo's documented encoding for "birth date not known" (stated verbatim in
+ * `lib/agents/historical/michelangelo.ts`). Their calendar semantics are vacuous.
+ *
+ * TO REVERSE THIS DECISION: the change is confined to these two functions. Give
+ * BOTH of them the same `jd >= 2299161` / `date >= 1582-10-15` branch — never one
+ * of them, which is the asymmetry this comment exists to prevent. Reversing it
+ * would also require changing the four other sites listed in point 2 above, or
+ * the runtimes disagree.
+ */
+
+/**
+ * Convert a UTC calendar date to a Julian Day number (proleptic Gregorian rules
+ * at every epoch, exact to the millisecond of the input). No approximation is
+ * involved here. Exact inverse: `julianDayToDate`.
  */
 export function dateToJulianDay(date: Date): number {
   const year = date.getUTCFullYear()
@@ -346,40 +412,73 @@ export function dateToJulianDay(date: Date): number {
 export const toJulianDay = dateToJulianDay
 
 /**
- * Convert Julian Day Number back to calendar date
+ * Convert a Julian Day number back to a UTC calendar date.
+ *
+ * The exact inverse of `dateToJulianDay`, to the millisecond, at every epoch.
+ * See the CALENDAR CONVENTION block above `dateToJulianDay` for why this is
+ * proleptic Gregorian and has no 1582 branch.
+ *
+ * The day/month/year arithmetic below is the integer inverse of the encoder's own
+ * formula — the same constants read backwards (32044/32045, 146097 = days per
+ * Gregorian 400-year cycle, 1461 = days per 4-year cycle, 153 = the 5-month
+ * day-count cycle). It is integer-exact by construction, which is the point:
+ * exactness here is structural rather than a property that happens to hold. The
+ * previous implementation used the floating-point constants 30.6001, 365.25,
+ * 1867216.25 and 36524.25, which is where the reform branch lived.
+ *
+ * Verified as an exact inverse, not assumed: round-tripping
+ * `julianDayToDate(dateToJulianDay(d))` for all 1,095,729 consecutive days from
+ * year -800 to year 2200 returned the identical instant every time, 0 mismatches,
+ * and likewise for six times of day (including 00:00:00.000 and 23:59:59.999) at
+ * each of years -750, -469, 0, 69, 99, 100, 1582, 1879 and 2026.
+ *
+ * DOMAIN: no lower bound was found. An earlier version of this note asserted
+ * validity only for `jd >= -32044`, reasoning from where the encoder's
+ * `y = year + 4800 - a` term goes negative. That was read off the algebra rather
+ * than measured, and it is wrong: sweeping 2,107 Julian Days from -2,000,000 to
+ * +100,000 through decode-then-encode gives 0 mismatches and 0 invalid dates,
+ * and `jd = -2,000,000` decodes cleanly to year -10188. The term going negative
+ * is harmless because the surrounding integer division still floors correctly.
+ * The oldest date this repo stores is year -750 (Homer), far inside anything
+ * tested.
  */
 export function julianDayToDate(jd: number): Date {
+  // Julian Days begin at noon, so shifting by half a day puts the integer part on
+  // a civil-day boundary: `z` is the day number, `f` the fraction elapsed since
+  // midnight UTC of that day.
   const z = Math.floor(jd + 0.5)
   const f = jd + 0.5 - z
 
-  let a = z
-  if (z >= 2299161) {
-    const alpha = Math.floor((z - 1867216.25) / 36524.25)
-    a = z + 1 + alpha - Math.floor(alpha / 4)
-  }
+  const a = z + 32044
+  const b = Math.floor((4 * a + 3) / 146097)
+  const c = a - Math.floor((146097 * b) / 4)
+  const d = Math.floor((4 * c + 3) / 1461)
+  const e = c - Math.floor((1461 * d) / 4)
+  const m = Math.floor((5 * e + 2) / 153)
 
-  const b = a + 1524
-  const c = Math.floor((b - 122.1) / 365.25)
-  const d = Math.floor(365.25 * c)
-  const e = Math.floor((b - d) / 30.6001)
+  const day = e - Math.floor((153 * m + 2) / 5) + 1
+  const month = m + 3 - 12 * Math.floor(m / 10)
+  const year = 100 * b + d - 4800 + Math.floor(m / 10)
 
-  const day = b - d - Math.floor(30.6001 * e)
-  const month = e < 14 ? e - 1 : e - 13
-  const year = month > 2 ? c - 4716 : c - 4715
+  // Resolve the time of day in whole milliseconds in ONE rounding step. Splitting
+  // `f` progressively into hours, then minutes, then seconds, then milliseconds
+  // truncates four times over, and the accumulated floating-point error cost a
+  // millisecond on ordinary inputs: 03:30:00.000 decoded to 03:29:59.999. Rounding
+  // the whole fraction once is exact because the encoder built `f` from an integer
+  // number of milliseconds in the first place.
+  const msIntoDay = Math.round(f * 86400000)
+  const hour = Math.floor(msIntoDay / 3600000)
+  const minute = Math.floor((msIntoDay % 3600000) / 60000)
+  const second = Math.floor((msIntoDay % 60000) / 1000)
+  const millisecond = msIntoDay % 1000
 
-  // Convert fractional day to hours/minutes/seconds
-  const fractionalDay = f * 24
-  const hour = Math.floor(fractionalDay)
-  const minutesFrac = (fractionalDay - hour) * 60
-  const minute = Math.floor(minutesFrac)
-  const secondsFrac = (minutesFrac - minute) * 60
-  const second = Math.floor(secondsFrac)
-  const millisecond = Math.floor((secondsFrac - second) * 1000)
-
-  // `year` here is derived from the Julian Day arithmetic above (`c - 4716`), so any
-  // JD below ~1757641 produces a year in 0-99. Date.UTC would have remapped those to
-  // the 1900s, making this function the inverse of `dateToJulianDay` only for JDs
-  // after 100 CE.
+  // `f < 1` by construction, but a fraction within half a millisecond of the next
+  // midnight rounds up to a full day and makes `hour` 24. That needs no special
+  // case: `utcDateFromParts` sets the time with `setUTCHours`, which normalises
+  // hour 24 to midnight of the following day and rolls the month and year over
+  // with it. Verified at a leap day, a year end and a BCE year end
+  // (2024-02-29 -> 2024-03-01, 2026-12-31 -> 2027-01-01, -000750-12-31 ->
+  // -000749-01-01). An explicit carry here was measured to be dead code.
   return utcDateFromParts(year, month, day, hour, minute, second, millisecond)
 }
 

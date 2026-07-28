@@ -3,7 +3,7 @@ import { alchemize } from '@/lib/alchemizer'
 import { PlanetaryHourCalculator } from '@/lib/planetary-hour'
 import { getCurrentPlanetaryPositions } from '@/lib/calculate-transits'
 import { generateProfessionalHoroscope, validateBirthInfo } from './horoscope-generator'
-import { calculateAverageMonicaConstant } from './monica-constant'
+import { calculateAveragePhiAxisIndex } from './monica-constant'
 import { planetaryPositionSyncService } from '@/lib/services/planetary-position-sync'
 
 // Types for alchemical training
@@ -54,7 +54,11 @@ export interface TrainingResult {
     criticalDegrees: number[]
   }
   insights: string[]
-  monicaConstant?: {
+  /**
+   * Aggregate Phi Axis Index across the sampled moments — a phi-weighted ratio of the
+   * alchemical axes. NOT the thermodynamic Monica (see lib/thermodynamics/kalchm.ts).
+   */
+  phiAxisIndex?: {
     average: number
     min: number
     max: number
@@ -212,17 +216,17 @@ export async function trainOnAlchemicalValues(numSamples: number = 15): Promise<
   const statistics = calculateStatistics(samples)
   const patterns = identifyPatterns(samples)
 
-  // Calculate Monica Constants
-  let monicaConstantAnalysis
+  // Calculate the aggregate Phi Axis Index
+  let phiAxisIndexAnalysis
   if (samples.length > 0) {
-    monicaConstantAnalysis = calculateAverageMonicaConstant(samples.map(s => s.alchmData))
+    phiAxisIndexAnalysis = calculateAveragePhiAxisIndex(samples.map(s => s.alchmData))
   }
 
   const insights = generateInsights(samples, statistics, patterns)
 
-  // Add Monica Constant insight if available
-  if (monicaConstantAnalysis && monicaConstantAnalysis.average > 0) {
-    insights.unshift(`Monica Constant Analysis: ${monicaConstantAnalysis.interpretation}`)
+  // Add the Phi Axis Index insight if available
+  if (phiAxisIndexAnalysis && phiAxisIndexAnalysis.average > 0) {
+    insights.unshift(`Phi Axis Index Analysis: ${phiAxisIndexAnalysis.interpretation}`)
   }
 
   return {
@@ -230,7 +234,7 @@ export async function trainOnAlchemicalValues(numSamples: number = 15): Promise<
     statistics,
     patterns,
     insights,
-    monicaConstant: monicaConstantAnalysis,
+    phiAxisIndex: phiAxisIndexAnalysis,
     metadata: {
       numSamples: validatedSamples,
       dateRange:

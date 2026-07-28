@@ -11,6 +11,7 @@ import { detectPatternsStatic, type PlanetPosition } from './lib/astrological-pa
 import { createNatalSigilRune, type SigilStyle } from './lib/runes/natal-sigil-runes'
 import { ChartGeometryExtractor } from './lib/chart-geometry-extractor'
 import { createSigilSvg, sigilSvgToDataUrl } from './lib/sigil-download'
+import { calculateThermodynamics } from './lib/thermodynamics/kalchm'
 import {
   computeElementalMomentum,
   computeElementalVelocity,
@@ -717,7 +718,8 @@ function buildAstrologyConsensusSnapshot({
       {
         name: 'Alchm Quantities',
         url: 'https://alchm.kitchen/api/alchm-quantities',
-        contribution: 'Spirit, Essence, Matter, Substance, heat, entropy, reactivity, energy',
+        contribution:
+          'Product surface for Spirit, Essence, Matter, Substance and the thermodynamic quantities; the values in this snapshot are computed in this sidecar by the canonical Kalchm engine (lib/thermodynamics/kalchm.ts), not fetched from this URL',
       },
       {
         name: 'Alchm Agents',
@@ -881,6 +883,21 @@ function calculateConsensusAspects(planets: ReturnType<typeof buildPlanetSnapsho
   return aspects.sort((a, b) => b.exactness - a.exactness).slice(0, 14)
 }
 
+/*
+ * Decimals kept when the canonical thermodynamic quantities are serialised.
+ *
+ * The old local formulas produced heat around 1.45; the canonical heat is a
+ * ratio of squared sums and lands near 0.28, so the day's real variation moves
+ * roughly the fifth decimal. `buildAlchmPhysicsSeries` re-reads these ALREADY
+ * ROUNDED numbers to compute the z-scores that GET /api/alchm/physics is built
+ * around, so rounding to 3 here would flatten the series to one or two distinct
+ * values and drive `calculatePhysicsStats` toward stdDev 0 — z-scores would
+ * silently become 0 and report "at baseline" for every hour. This is a
+ * serialisation width only; the desktop shell renders with `toFixed(3)`, so
+ * nothing on screen gains fake precision.
+ */
+const THERMO_SERIALIZED_PRECISION = 6
+
 function calculateConsensusQuantities(
   planets: ReturnType<typeof buildPlanetSnapshot>[],
   aspects: ReturnType<typeof calculateConsensusAspects>
@@ -914,10 +931,34 @@ function calculateConsensusQuantities(
     [AstrologyElement, number]
   >
   const dominantElement = sortedElements[0][0]
-  const heat = spirit / Math.max(1, essence + matter * 0.5)
-  const entropy = (substance + hardPressure + 1) / Math.max(1, matter + essence)
-  const reactivity = (hardPressure + kineticPressure * 0.4 + spirit * 0.2) / Math.max(1, matter)
-  const energy = spirit + substance + harmonicFlow - entropy * reactivity
+
+  /*
+   * Thermodynamics are DELEGATED to the canonical engine — never re-derived here.
+   *
+   * All eight axes the engine requires are genuinely present at this call site:
+   * the four ESMS axes are derived immediately above, and the four elemental
+   * totals are accumulated from the resolved planets at the top of this
+   * function. Nothing is defaulted, floored, or invented to satisfy the
+   * signature.
+   *
+   * Until this call replaced them, this function defined its own heat/entropy/
+   * reactivity with plain-sum `Math.max(1, ...)` denominators and its own
+   * `energy` — the same NAMES as the canonical quantities over entirely
+   * different maths, served publicly from GET /api/astrology/consensus and
+   * GET /api/alchm/physics. `energy` is the canonical Greg's Energy
+   * (heat - entropy * reactivity); the JSON key is kept for the desktop shell,
+   * which reads `quantities.energy`.
+   */
+  const { heat, entropy, reactivity, gregsEnergy } = calculateThermodynamics({
+    spirit,
+    essence,
+    matter,
+    substance,
+    fire: elements.Fire,
+    water: elements.Water,
+    air: elements.Air,
+    earth: elements.Earth,
+  })
 
   return {
     Spirit: roundNumber(spirit, 2),
@@ -932,10 +973,10 @@ function calculateConsensusQuantities(
       Earth: roundNumber(elements.Earth, 2),
       Air: roundNumber(elements.Air, 2),
     },
-    heat: roundNumber(heat, 3),
-    entropy: roundNumber(entropy, 3),
-    reactivity: roundNumber(reactivity, 3),
-    energy: roundNumber(energy, 3),
+    heat: roundNumber(heat, THERMO_SERIALIZED_PRECISION),
+    entropy: roundNumber(entropy, THERMO_SERIALIZED_PRECISION),
+    reactivity: roundNumber(reactivity, THERMO_SERIALIZED_PRECISION),
+    energy: roundNumber(gregsEnergy, THERMO_SERIALIZED_PRECISION),
     kineticPressure: roundNumber(kineticPressure, 2),
     harmonicFlow: roundNumber(harmonicFlow, 2),
   }
@@ -1166,10 +1207,14 @@ const PHYSICS_THERMO_METRICS: Array<{
   label: string
   precision: number
 }> = [
-  { key: 'heat', label: 'Heat', precision: 3 },
-  { key: 'entropy', label: 'Entropy', precision: 3 },
-  { key: 'reactivity', label: 'Reactivity', precision: 3 },
-  { key: 'energy', label: 'Energy', precision: 3 },
+  // Same width as the quantities themselves: `stdDev` for canonical heat is
+  // around 1e-4 over a day, so at 3 decimals the served `value / mean / stdDev`
+  // triple no longer reconciles with the `zScore` beside it. The desktop shell
+  // renders these with toFixed(2)/toFixed(3), so the extra width is JSON only.
+  { key: 'heat', label: 'Heat', precision: THERMO_SERIALIZED_PRECISION },
+  { key: 'entropy', label: 'Entropy', precision: THERMO_SERIALIZED_PRECISION },
+  { key: 'reactivity', label: 'Reactivity', precision: THERMO_SERIALIZED_PRECISION },
+  { key: 'energy', label: 'Energy', precision: THERMO_SERIALIZED_PRECISION },
 ]
 
 const PHYSICS_HOUR_MS = 60 * 60 * 1000
@@ -1239,7 +1284,8 @@ function buildAlchmPhysicsSnapshot({
       {
         name: 'Kitchen Quantities API',
         url: 'https://alchm.kitchen/api/alchm-quantities',
-        contribution: 'Spirit, Essence, Matter, Substance, A-number, and thermodynamic metrics',
+        contribution:
+          'Product surface for Spirit, Essence, Matter, Substance, A-number and the thermodynamic metrics; the values in this snapshot are computed in this sidecar by the canonical Kalchm engine (lib/thermodynamics/kalchm.ts), not fetched from this URL',
       },
       {
         name: 'Kitchen Kinetics API',
@@ -1396,11 +1442,14 @@ function buildAlchmPhysicsKinetics(points: AlchmPhysicsPoint[], currentIndex: nu
       vector: roundElementVector(velocity?.v),
     },
     metricVelocity: {
+      // d/dt of the canonical quantities is an order of magnitude smaller than
+      // d/dt of the ad-hoc ones this endpoint used to serve: dHeat/dt is around
+      // 2e-5 per hour, which rounds to a flat 0.0000 at 4 decimals.
       vector: {
-        heat: roundNumber(metrics?.dvdt.Heat || 0, 4),
-        entropy: roundNumber(metrics?.dvdt.Entropy || 0, 4),
-        reactivity: roundNumber(metrics?.dvdt.Reactivity || 0, 4),
-        energy: roundNumber(metrics?.dvdt.Energy || 0, 4),
+        heat: roundNumber(metrics?.dvdt.Heat || 0, THERMO_SERIALIZED_PRECISION),
+        entropy: roundNumber(metrics?.dvdt.Entropy || 0, THERMO_SERIALIZED_PRECISION),
+        reactivity: roundNumber(metrics?.dvdt.Reactivity || 0, THERMO_SERIALIZED_PRECISION),
+        energy: roundNumber(metrics?.dvdt.Energy || 0, THERMO_SERIALIZED_PRECISION),
       },
       thermalDirection: metrics?.thermalDirection || 'stable',
     },

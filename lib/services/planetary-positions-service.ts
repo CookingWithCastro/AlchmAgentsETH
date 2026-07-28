@@ -428,7 +428,7 @@ export class PlanetaryPositionsService {
     try {
       // Import local alchemical calculation functions
       const { generateAlchmForCurrentMoment } = await import('@/lib/alchemizer')
-      const { calculateMC } = await import('@/lib/monica/monica-constant-validator')
+      const { calculatePhiAxisIndex } = await import('@/lib/monica/monica-constant-validator')
 
       // Generate alchemical data for the current moment
       const alchm = await generateAlchmForCurrentMoment()
@@ -455,7 +455,9 @@ export class PlanetaryPositionsService {
           Energy: alchm['Energy'] || 0,
         }
 
-        planetaryData.monicaConstant = calculateMC(
+        // Field name kept for the in-memory PlanetaryData contract; the value is the Phi
+        // Axis Index, not the thermodynamic Monica (lib/thermodynamics/kalchm.ts).
+        planetaryData.monicaConstant = calculatePhiAxisIndex(
           spirit,
           essence,
           matter,

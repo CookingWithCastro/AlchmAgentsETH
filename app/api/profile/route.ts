@@ -3,8 +3,9 @@ import { z } from 'zod'
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { generateAccurateHoroscope } from '@/lib/monica/horoscope-generator'
+import { utcDateFromParts } from '@/lib/enhanced-astronomical-calculator'
 import { getAlchemicalQuantitiesLegacy } from '@/lib/backend'
-import { calculateMonicaConstant } from '@/lib/monica/monica-constant'
+import { analyzePhiAxisIndex } from '@/lib/monica/monica-constant'
 
 export const revalidate = 0
 
@@ -48,8 +49,17 @@ export async function PATCH(req: Request) {
 
     const birthInfo = parsedBirth.data
 
-    const birthDate = new Date(
-      Date.UTC(birthInfo.year, birthInfo.month, birthInfo.day, birthInfo.hour, birthInfo.minute)
+    // `Date.UTC` remaps years 0-99 to 1900-1999, silently and per spec, so a
+    // birth year of 69 would be stored as 1969 on this user_profiles write path.
+    // `birthInfo.month` is 0-based here (schema above: min(0).max(11)), which is
+    // why it is incremented for utcDateFromParts and again at :58 for the
+    // horoscope generator — both of those take a 1-based month.
+    const birthDate = utcDateFromParts(
+      birthInfo.year,
+      birthInfo.month + 1,
+      birthInfo.day,
+      birthInfo.hour,
+      birthInfo.minute
     )
 
     // Generate natal chart and alchemical metrics
@@ -74,7 +84,7 @@ export async function PATCH(req: Request) {
     const matter = alchm?.['Alchemy Effects']?.['Total Matter'] || 0
     const substance = alchm?.['Alchemy Effects']?.['Total Substance'] || 0
 
-    const monica = calculateMonicaConstant({
+    const phiAxis = analyzePhiAxisIndex({
       spirit,
       essence,
       matter,
@@ -96,7 +106,12 @@ export async function PATCH(req: Request) {
           longitude: birthInfo.longitude,
         },
         natalChart: horoscope as any,
-        monicaConstant: monica.value,
+        // COLUMN NAME MISMATCH: the `monicaConstant` column on user_profiles receives the
+        // Phi Axis Index (phi-weighted ratio of the alchemical axes), NOT the thermodynamic
+        // Monica from lib/thermodynamics/kalchm.ts. The column rename needs a migration and
+        // is deliberately out of scope here — see the NOT NULL monicaConstant/kalchmConstant
+        // migration plan in docs/ and the warning in CLAUDE.md.
+        monicaConstant: phiAxis.value,
         dominantElement: (alchm as any)?.['Dominant Element'] || 'Fire',
         ...(typeof sharing?.allowPublicAgents === 'boolean'
           ? { allowPublicAgents: sharing.allowPublicAgents }
@@ -116,7 +131,9 @@ export async function PATCH(req: Request) {
           longitude: birthInfo.longitude,
         },
         natalChart: horoscope as any,
-        monicaConstant: monica.value,
+        // COLUMN NAME MISMATCH: see the note on the `update` branch above — this column
+        // stores the Phi Axis Index, not the thermodynamic Monica.
+        monicaConstant: phiAxis.value,
         dominantElement: (alchm as any)?.['Dominant Element'] || 'Fire',
         dietaryPreferences: dietaryPreferences || null,
       },
@@ -158,7 +175,9 @@ export async function PATCH(req: Request) {
     return NextResponse.json({
       profile,
       calculations: {
-        monicaConstant: monica,
+        // Response key kept for API compatibility; the payload is the Phi Axis Index
+        // analysis, not the thermodynamic Monica (lib/thermodynamics/kalchm.ts).
+        monicaConstant: phiAxis,
         alchemy: {
           spirit,
           essence,

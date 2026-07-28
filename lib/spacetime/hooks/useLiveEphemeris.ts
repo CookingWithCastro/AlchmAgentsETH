@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { AlchemicalQuantities, PlanetaryPosition } from '@/hooks/usePlanetaryPositions'
-import { calculateMC } from '@/lib/monica/monica-constant-validator'
+import { calculatePhiAxisIndex } from '@/lib/monica/monica-constant-validator'
 import { calculateThermodynamics } from '@/lib/thermodynamics/kalchm'
 import { useSpacetime } from '@/lib/spacetime/SpacetimeContext'
 import { tables } from '@/lib/spacetime/generated'
@@ -232,7 +232,9 @@ export function deriveLiveEphemeris(rows: readonly Ephemeris[]) {
   return {
     planetaryPositions,
     alchmQuantities,
-    monicaConstant: calculateMC(
+    // Field name kept for the existing consumer contract; the value is the Phi Axis Index,
+    // not the thermodynamic Monica (lib/thermodynamics/kalchm.ts).
+    monicaConstant: calculatePhiAxisIndex(
       totals.spirit,
       totals.essence,
       totals.matter,

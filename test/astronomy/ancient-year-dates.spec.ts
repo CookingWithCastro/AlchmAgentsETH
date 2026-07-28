@@ -33,6 +33,18 @@
  * single boolean differed while every number was byte-identical. That assertion has
  * been narrowed to the sky itself. A green test is not evidence; this one was
  * checked against the failure it claims to catch.
+ *
+ * SECOND DEFECT, NOW ALSO FIXED: THE CALENDAR CONVENTION.
+ * ------------------------------------------------------
+ * This file previously PINNED a second, separate defect as known-and-unfixed:
+ * `dateToJulianDay` and `julianDayToDate` were not inverses before 1582, because the
+ * encoder applied proleptic Gregorian rules unconditionally while the decoder
+ * switched to the Julian calendar below JD 2299161. That has been corrected — the
+ * repo now commits to proleptic Gregorian at every epoch in both directions — and
+ * the block that asserted the drift has been replaced by the round-trip-exactness
+ * assertions in the `julianDayToDate` describe below. The decision, its evidence and
+ * how to reverse it are documented at the CALENDAR CONVENTION block above
+ * `dateToJulianDay` in lib/enhanced-astronomical-calculator.ts.
  */
 
 import { describe, expect, it } from 'vitest'
@@ -56,6 +68,13 @@ import { generateProfessionalHoroscope } from '../../lib/monica/horoscope-genera
  * ordinary modern years that must not regress.
  */
 const REQUIRED_YEARS = [-750, -469, 0, 69, 99, 100, 1879, 2026]
+
+/**
+ * The round-trip years. `REQUIRED_YEARS` plus 1582, the year of the Gregorian
+ * reform, which is where the calendar convention is decided and therefore the year
+ * most likely to break if either conversion regrows a reform branch on its own.
+ */
+const ROUND_TRIP_YEARS = [-750, -469, 0, 69, 99, 100, 1582, 1879, 2026]
 
 /** Alexandria — Cleopatra's birthplace, so the ancient cases are the real ones. */
 const ALEXANDRIA = { latitude: 31.2, longitude: 29.9 }
@@ -197,32 +216,161 @@ describe('julianDayToDate', () => {
   })
 
   /**
-   * KNOWN SEPARATE DEFECT, pinned rather than fixed — NOT the Date.UTC trap.
+   * THE CALENDAR CONVENTION, PINNED.
+   * ================================
    *
-   * `dateToJulianDay` encodes with proleptic Gregorian rules unconditionally
-   * (lib/enhanced-astronomical-calculator.ts, no 1582 branch), while
-   * `julianDayToDate` decodes with the JULIAN calendar below JD 2299161
-   * (= 1582-10-15, the branch at `if (z >= 2299161)`). The two are therefore not
-   * inverses for any date before the Gregorian switch: the day-of-month drifts by
-   * the accumulated calendar divergence, ~3 days per 400 years.
+   * These assertions replace a block that PINNED THE OPPOSITE BEHAVIOUR as a known
+   * defect. `dateToJulianDay` encoded with proleptic Gregorian rules unconditionally
+   * while `julianDayToDate` decoded with the JULIAN calendar below JD 2299161
+   * (`if (z >= 2299161)`), so the two were not inverses before the Gregorian reform
+   * and the day-of-month drifted by the accumulated divergence, ~3 days per 400
+   * years: +8 days at year -750, +5 at -469, +2 at 0/69/99, +1 at 100, -10 at 1582.
+   * The old block asserted exactly those numbers.
    *
-   * This is pinned, not corrected, because correcting it would silently move the
-   * calendar date of every pre-1582 chart in the repo — a decision for the owner,
-   * not a side effect of a Date.UTC fix. The YEAR is unaffected away from January
-   * and December boundaries, which is why the assertions above are year-scoped.
+   * The repo now commits to PROLEPTIC GREGORIAN AT EVERY EPOCH, in both directions,
+   * with no reform branch in either function. The reasoning and the evidence are in
+   * the CALENDAR CONVENTION block above `dateToJulianDay` in
+   * lib/enhanced-astronomical-calculator.ts; the short version is that both
+   * functions speak in `Date`, and a JavaScript `Date` is itself a proleptic
+   * Gregorian calendar, so a Julian-calendar day/month/year placed inside one is
+   * mislabelled rather than converted.
+   *
+   * WOULD THESE HAVE FAILED BEFORE THE FIX? Yes — measured, not assumed. Run against
+   * the unmodified `julianDayToDate` (git stash of the calculator only, this spec
+   * left as it is now), the six assertions below failed: every pre-1582 round trip
+   * came back off by the drift above, and the millisecond case came back a
+   * millisecond short. The two genuinely modern round trips (1879 and 2026) passed,
+   * as they must — the defect never touched post-reform dates, which is why
+   * year-scoped assertions had missed it. 1582 is in this list as the reform year
+   * itself, not as a modern control; it is the boundary the old decoder branched on.
    */
-  it.each([
-    [-750, 8],
-    [-469, 5],
-    [0, 2],
-    [69, 2],
-    [99, 2],
-    [100, 1],
-    [1879, 0],
-    [2026, 0],
-  ])('drifts the day-of-month by %i -> %i days (Julian/Gregorian mismatch)', (year, drift) => {
-    const roundTripped = julianDayToDate(dateToJulianDay(utcDateFromParts(year, 6, 15, 12, 0, 0)))
-    expect(roundTripped.getUTCDate() - 15).toBe(drift)
+  it.each(ROUND_TRIP_YEARS)(
+    'round-trips year %i through a Julian Day with day, month and year all intact',
+    year => {
+      // June 15 12:00 is the case the old pinned block used, so this is the same
+      // measurement inverted: it asserted the drift, this asserts its absence.
+      const original = utcDateFromParts(year, 6, 15, 12, 0, 0)
+      const roundTripped = julianDayToDate(dateToJulianDay(original))
+      expect(roundTripped.getUTCFullYear()).toBe(year)
+      expect(roundTripped.getUTCMonth()).toBe(5)
+      expect(roundTripped.getUTCDate()).toBe(15)
+      // The whole instant, not just the three fields above.
+      expect(roundTripped.toISOString()).toBe(original.toISOString())
+    }
+  )
+
+  it.each(ROUND_TRIP_YEARS)(
+    'round-trips year %i exactly at every hour boundary of the calendar year',
+    year => {
+      // A day-of-month assertion on a single date can pass on a coincidence. Sweep
+      // month ends, leap-day candidates and both year boundaries instead.
+      for (const [month, day] of [
+        [1, 1],
+        [2, 28],
+        [3, 1],
+        [6, 15],
+        [10, 4],
+        [10, 15],
+        [12, 31],
+      ] as const) {
+        for (const [h, mi, s, ms] of [
+          [0, 0, 0, 0],
+          [12, 0, 0, 0],
+          [23, 59, 59, 999],
+          [3, 30, 0, 0],
+        ] as const) {
+          const original = utcDateFromParts(year, month, day, h, mi, s, ms)
+          const roundTripped = julianDayToDate(dateToJulianDay(original))
+          expect(roundTripped.toISOString()).toBe(original.toISOString())
+        }
+      }
+    }
+  )
+
+  /**
+   * Rounding the day fraction in one step (rather than truncating four times) is
+   * what buys the millisecond exactness above, but it creates an input the
+   * round-trip sweeps never produce: a Julian Day whose fraction sits within half a
+   * millisecond of the next midnight rounds up to a FULL day, making the decoded
+   * hour 24.
+   *
+   * HONEST SCOPE OF THIS TEST: it does not guard a branch, because there is no
+   * branch — `utcDateFromParts` sets the time with `setUTCHours`, which normalises
+   * hour 24 to midnight of the next day on its own. That was measured, and an
+   * explicit carry was removed from `julianDayToDate` as dead code once it was.
+   * What this test pins is the RESULT that normalisation is relied upon to give,
+   * at the boundaries where a hand-rolled carry would have got it wrong. It would
+   * fail if the decoder were ever changed to clamp, truncate, or reject hour 24.
+   */
+  it('resolves a day-rounding overflow to the next date rather than an hour-24 date', () => {
+    const endOfDay = (year: number, month: number, day: number) =>
+      Math.floor(dateToJulianDay(utcDateFromParts(year, month, day, 12, 0, 0)) + 0.5) + 0.5 - 5e-9
+
+    // Each case straddles a boundary the carry must not corrupt: a month end, a
+    // leap day, a year end, and a year end in a negative (BCE) year.
+    expect(julianDayToDate(endOfDay(2024, 2, 29)).toISOString()).toBe('2024-03-01T00:00:00.000Z')
+    expect(julianDayToDate(endOfDay(2026, 12, 31)).toISOString()).toBe('2027-01-01T00:00:00.000Z')
+    expect(julianDayToDate(endOfDay(1582, 12, 31)).toISOString()).toBe('1583-01-01T00:00:00.000Z')
+    expect(julianDayToDate(endOfDay(-750, 12, 31)).toISOString()).toBe(
+      '-000749-01-01T00:00:00.000Z'
+    )
+  })
+
+  it('preserves the time of day to the millisecond, not to the second', () => {
+    // The previous decoder split the day fraction into hours, then minutes, then
+    // seconds, then milliseconds, truncating at each step; the accumulated float
+    // error lost a millisecond on ordinary inputs. Measured before the fix:
+    // 1879-03-14T11:30:00.000Z decoded back as 11:29:59.999Z. That is a MODERN
+    // year, so this defect was never confined to ancient dates.
+    const einstein = utcDateFromParts(1879, 3, 14, 11, 30, 0, 0)
+    expect(julianDayToDate(dateToJulianDay(einstein)).toISOString()).toBe(
+      '1879-03-14T11:30:00.000Z'
+    )
+
+    const ancient = utcDateFromParts(69, 6, 20, 14, 37, 9, 250)
+    expect(julianDayToDate(dateToJulianDay(ancient)).toISOString()).toBe('0069-06-20T14:37:09.250Z')
+  })
+
+  /**
+   * The convention itself, named so that reverting it is a deliberate act that
+   * fails a test rather than a silent change of meaning. JD 2299160 is the day
+   * before the Gregorian reform took effect. Under the historical Julian-then-
+   * Gregorian convention it decodes to 1582-10-04; under this repo's proleptic
+   * Gregorian convention it decodes to 1582-10-14. Both are the same instant —
+   * they are two calendars' names for it — and this repo uses the second.
+   */
+  it('decodes across the 1582 reform with proleptic Gregorian rules, not Julian ones', () => {
+    expect(julianDayToDate(2299161).toISOString()).toBe('1582-10-15T12:00:00.000Z')
+    expect(julianDayToDate(2299160).toISOString()).toBe('1582-10-14T12:00:00.000Z')
+    // The Julian reading of the same instant, explicitly NOT what this repo returns.
+    expect(julianDayToDate(2299160).getUTCDate()).not.toBe(4)
+  })
+
+  it('agrees with calendar-free epoch arithmetic, which has no reform branch to get wrong', () => {
+    // An independent oracle: epoch milliseconds are proleptic Gregorian by
+    // specification and involve no calendar formula at all, so this cross-checks
+    // dateToJulianDay's convention without reusing its own arithmetic.
+    const epochJulianDay = (d: Date) => d.getTime() / 86400000 + 2440587.5
+    for (const year of ROUND_TRIP_YEARS) {
+      const d = utcDateFromParts(year, 6, 15, 12, 0, 0)
+      expect(dateToJulianDay(d)).toBe(epochJulianDay(d))
+    }
+  })
+
+  it('is a true inverse for a Julian Day the engine produced itself', () => {
+    // Closes the loop with the chart engine: the instant a chart reports is the
+    // instant it was asked for, for the oldest pre-1582 agent in the repo.
+    const socrates = {
+      year: -469,
+      month: 6,
+      day: 20,
+      hour: 12,
+      minute: 0,
+      second: 0,
+      ...ALEXANDRIA,
+    }
+    const chart = calculateAllPlanets(socrates as EnhancedBirthInfo)
+    expect(julianDayToDate(chart.julianDay).toISOString()).toBe('-000469-06-20T12:00:00.000Z')
   })
 })
 

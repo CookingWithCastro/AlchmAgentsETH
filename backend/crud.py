@@ -24,9 +24,30 @@ def create_agent(db: Session, agent: schemas.AgentCreate):
         agent_data["birthLocation"] = {"lat": 0.0, "lon": 0.0, "name": "Unknown"}
     if agent_data.get("consciousnessLevel") is None:
         agent_data["consciousnessLevel"] = "Active"
-    if agent_data.get("monicaConstant") is None:
-        agent_data["monicaConstant"] = 0.5
-    agent_data["kalchmConstant"] = agent_data["monicaConstant"]
+    # Kalchm and Monica are DIFFERENT quantities. No formula relates them, so
+    # Kalchm must never be assigned from Monica -- until this was removed, an
+    # absent Monica silently became a plausible 0.5 and that invented 0.5 was
+    # then copied into kalchmConstant: one fabrication laundered into a second,
+    # unrelated quantity, and both were then indistinguishable from measurements.
+    #
+    # Neither is computable here. schemas.AgentBase carries no spirit/essence/
+    # matter/substance, so this function cannot derive Kalchm at all, and Monica
+    # is known only when the caller supplies it. Absent means absent.
+    #
+    # We cannot yet store that absence as NULL: historical_agents.kalchmConstant
+    # and .monicaConstant are still NOT NULL in prisma/schema.prisma (lines 724
+    # and 725) -- which is precisely why the 0.5 existed. So we do the one honest
+    # thing available without a schema change and assert NOTHING, dropping the
+    # keys so the insert omits the columns, exactly as the leveling fields below
+    # do. Whatever then lands in the row is a PLACEHOLDER, never a measurement:
+    # Postgres substitutes the column DEFAULT 0 for monicaConstant, and
+    # SQLAlchemy substitutes its client-side default of 0.5 for kalchmConstant
+    # (models.py:33). Do not read either back as a measured value; see
+    # docs/MONICA_KALCHM_NULLABILITY_MIGRATION.md, after which this same code
+    # stores a real NULL with no further change here.
+    for _unmeasured_thermo_key in ("monicaConstant", "kalchmConstant"):
+        if agent_data.get(_unmeasured_thermo_key) is None:
+            agent_data.pop(_unmeasured_thermo_key, None)
     if agent_data.get("dominantElement") is None:
         agent_data["dominantElement"] = "Air"
     if agent_data.get("dominantModality") is None:
