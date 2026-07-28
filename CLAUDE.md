@@ -152,11 +152,21 @@ The actions system (`lib/agents/feed-activation-engine.ts`) also calls `buildAge
 Planetary positions flow through a fallback hierarchy:
 
 1. Railway backend API (`/api/planetary/rectify`)
-2. `lib/enhanced-astronomical-calculator.ts` (VSOP87, ±0.1° accuracy)
+2. `lib/enhanced-astronomical-calculator.ts` — a **labelled Keplerian approximation**
 3. Basic transit calculations
 4. Static fallback positions
 
 The central Next.js API endpoint is `app/api/planetary-positions/route.ts`. The React hook `hooks/useUnifiedPlanetaryPositions.ts` is the preferred frontend interface.
+
+⚠️ **`lib/enhanced-astronomical-calculator.ts` is NOT VSOP87 and NOT ±0.1°**, whatever older comments said. It is JPL's low-precision Keplerian element set (Standish Table 1, fitted 1800–2050) with no perturbation terms; its own header carries a **measured** accuracy table. Until 2026-07-27 it was far worse than that: it returned **heliocentric** longitudes as geocentric (Mercury reached 179.9° elongation against a 28° physical ceiling), never precessed J2000 to the equinox of date, had the Sun's mean anomaly 180° out of phase, and computed `atan2(−cos θ, +X)` for the ascendant — **returning the descendant for every chart it ever produced**. All fixed; `test/astronomy/chart-engine-physical-bounds.spec.ts` pins the physics, which needs no reference ephemeris.
+
+Every position and chart now carries a required `source: 'swiss-ephemeris' | 'vsop87-approximation'`, so a caller cannot mistake the approximation for a measurement, and the approximation **withholds** a body that violates its plausibility bounds rather than returning a wrong number.
+
+**The real ephemeris is on the Node backend, not the Python one.** `backend/` contains two services: the Python FastAPI app (`NEXT_PUBLIC_BACKEND_URL`), whose `/api/planetary/positions` is a circular-orbit approximation with `isRetrograde` hardcoded `False` and no `swisseph` anywhere; and a Bun/TypeScript service (`backend/package.json`, `backend/src/`) that declares `swisseph` and mounts it at `/api/planets`. `lib/swiss-ephemeris-service.ts` talks to the latter via `NEXT_PUBLIC_EPHEMERIS_BACKEND_URL` and stamps Swiss provenance only on a payload that validates — routing it through the Python backend stamped `swiss-ephemeris` on circular-orbit output.
+
+**Dates:** use `utcDateFromParts` from the calculator, never `Date.UTC(year, …)` or `new Date(year, …)` — both remap years 0–99 to 1900–1999 silently, per spec (Cleopatra, stored as `0069-01-01`, was computed as 1969). Julian-day conversion is **proleptic Gregorian at every epoch, in both directions**; the convention and how to reverse it are stated in the calculator.
+
+**Natal charts declare provenance** (`computed | authored | placeholder | unattributed`, `lib/agent-types.ts`). `HistoricalCraftedAgent` makes it a compile-time requirement, so a new historical agent cannot be added without classifying its chart. `computed` means a verified external ephemeris and a `provenanceNote` naming tool, version and UT instant; `test/agents/natal-chart-provenance.spec.ts` enforces the physical bounds on those and ratchets the placeholder count downward. Do not produce a `computed` chart from the local approximation.
 
 ### Thermodynamics & Kalchm Engine
 
@@ -176,7 +186,11 @@ Both TS and Python engines own **all four** thermodynamic quantities, not just t
 
 **Gate:** `bun run check:no-stray-kalchm` is the gate and covers **four** runtimes — TS/JS by AST, Rust (`pa-rust-backend/**/*.rs`) and notebooks (`notebooks/**/*.ipynb`) by controlled text scan, and Python by delegating to `scripts/check_no_stray_kalchm_formula.py`. CI (`.github/workflows/ci.yml`) also runs the Python half as its **own step**, so a TypeScript failure cannot stop the Python runtime from being policed. A new top-level TypeScript tree is invisible to the gate until it is added to `SOURCE_ROOTS`.
 
-⚠️ **`lib/monica/monica-constant.ts` and `lib/monica/monica-constant-validator.ts` are NOT this Monica.** They implement an unrelated φ-based quantity under the same name, so the `monicaConstant` column in `prisma/schema.prisma` is not necessarily the thermodynamic Monica — check which one a call site means before touching it. Two further non-canonical sites are known and still open (deferred, not fixed): `server.ts:calculateConsensusQuantities` defines its own unsquared-denominator heat/entropy/reactivity set and serves it from `GET /api/astrology/consensus`, and `kalchmConstant`/`monicaConstant` are `NOT NULL` in `prisma/schema.prisma`, so ABSENT is unrepresentable at the DB layer (`backend/crud.py` still defaults Monica to 0.5 and copies it into `kalchmConstant`).
+⚠️ **`lib/monica/monica-constant.ts` and `lib/monica/monica-constant-validator.ts` are NOT this Monica.** They implement an unrelated φ-based quantity under the same name, so the `monicaConstant` column in `prisma/schema.prisma` is not necessarily the thermodynamic Monica — check which one a call site means before touching it. The φ-based quantity has since been renamed **Phi Axis Index** in those two modules so the two can no longer be confused in code, but the DB column is still called `monicaConstant` — renaming it needs the migration below. `server.ts:calculateConsensusQuantities` used to define its own unsquared-denominator set and now delegates to the canonical engine.
+
+**Still open:** `kalchmConstant`/`monicaConstant` are `NOT NULL` in `prisma/schema.prisma`, so ABSENT is unrepresentable at the DB layer. `backend/crud.py` no longer copies a fabricated Monica into `kalchmConstant`, but a placeholder is still written because the column cannot be null. The migration is **planned, not executed** — see the plan in `docs/`.
+
+⚠️ **A fourth non-canonical set is live and unfixed:** `desktop-shell/src/localAstrologyMetrics.ts` computes heat/entropy/reactivity from **sine waves of the calendar date and clock hour** — the planets appear nowhere in it — and `desktop-shell/src/main.ts` silently swaps it in when `GET /api/astrology/consensus` fails, setting `status = 'ready'` and clearing `lastError`. A user cannot tell a real sky from a sine wave.
 
 ### Database
 

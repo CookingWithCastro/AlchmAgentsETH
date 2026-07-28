@@ -77,7 +77,7 @@ export const ADAM_SMITH: HistoricalCraftedAgent = {
     natalChart: {
       provenance: 'authored',
       provenanceNote:
-        'AUTHORED, and demonstrably not a measurement: Venus is 53.0 degrees from the Sun (max ~47). These positions were entered by hand, not derived from an ephemeris.',
+        "AUTHORED, and demonstrably not a measurement: Venus is 53.0 degrees from the Sun (max ~47). These positions were entered by hand, not derived from an ephemeris. WHY THIS WAS NOT REPLACED WITH A COMPUTED CHART (checked 2026-07-28, by scripts/compute-historical-natal-charts.py, which refuses to emit a chart for this subject): His birth date is not known. en.wikipedia.org/wiki/Adam_Smith: 'The date of Smith's baptism into the Church of Scotland at Kirkcaldy was 5 June 1723 and this has often been treated as if it were also his date of birth, which is unknown.' The 16 June 1723 in birthData is the Gregorian rendering of that BAPTISM date. A computed chart becomes possible only if a documented birth date turns up; a birth TIME would additionally be needed before any ascendant or house placement could be claimed.",
       planets: {
         Sun: { sign: 'Gemini', degree: 25.0, retrograde: false, house: 3 },
         Moon: { sign: 'Capricorn', degree: 12.0, retrograde: false, house: 10 },

@@ -53,7 +53,7 @@ export const LAO_TZU: HistoricalCraftedAgent = {
     natalChart: {
       provenance: 'authored',
       provenanceNote:
-        'AUTHORED, and demonstrably not a measurement: Mercury is 42.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris.',
+        "AUTHORED, and demonstrably not a measurement: Mercury is 42.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris. WHY THIS WAS NOT REPLACED WITH A COMPUTED CHART (checked 2026-07-28, by scripts/compute-historical-natal-charts.py, which refuses to emit a chart for this subject): There may be no individual to compute a chart for. en.wikipedia.org/wiki/Laozi: 'By the mid-twentieth century, consensus had emerged among Western scholars that the historicity of a person known as Laozi is doubtful,' and the infobox dates him only to a century. A computed chart becomes possible only if a documented birth date turns up; a birth TIME would additionally be needed before any ascendant or house placement could be claimed.",
       planets: {
         Sun: { sign: 'Aries', degree: 18, retrograde: false, house: 4 },
         Moon: { sign: 'Pisces', degree: 24, retrograde: false, house: 3 },

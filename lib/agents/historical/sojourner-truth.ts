@@ -56,7 +56,7 @@ export const SOJOURNER_TRUTH: HistoricalCraftedAgent = {
     natalChart: {
       provenance: 'authored',
       provenanceNote:
-        'AUTHORED, and demonstrably not a measurement: Mercury is 43.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris.',
+        "AUTHORED, and demonstrably not a measurement: Mercury is 43.0 degrees from the Sun (an inferior planet, max ~28). These positions were entered by hand, not derived from an ephemeris. WHY THIS WAS NOT REPLACED WITH A COMPUTED CHART (checked 2026-07-28, by scripts/compute-historical-natal-charts.py, which refuses to emit a chart for this subject): No birth date is known. en.wikipedia.org/wiki/Sojourner_Truth gives 'c. 1797'; she was born into slavery and 'once estimated that she was born between 1797 and 1800'. A computed chart becomes possible only if a documented birth date turns up; a birth TIME would additionally be needed before any ascendant or house placement could be claimed.",
       planets: {
         Sun: { sign: 'Capricorn', degree: 25, retrograde: false, house: 9 },
         Moon: { sign: 'Scorpio', degree: 18, retrograde: false, house: 7 },

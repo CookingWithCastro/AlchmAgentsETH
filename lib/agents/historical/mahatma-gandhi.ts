@@ -13,9 +13,12 @@ export const MAHATMA_GANDHI: HistoricalCraftedAgent = {
   era: 'Modern',
   specialization: 'Non-Violent Resistance',
   birthData: {
-    date: new Date('1869-10-02T07:30:00'),
-    time: '07:30',
-    location: { lat: 21.6417, lon: 69.6293, name: 'Porbandar, Gujarat, India' },
+    // 2 October 1869 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1869-10-02T12:00:00'),
+    time: '12:00',
+    location: { lat: 21.6417, lon: 69.6293, name: 'Porbandar, Kathiawar Agency, British Raj' },
   },
   quotes: [
     'Be the change you wish to see in the world.',
@@ -66,20 +69,20 @@ export const MAHATMA_GANDHI: HistoricalCraftedAgent = {
     dominantElement: 'Earth' as Element,
     dominantModality: 'Fixed' as Modality,
     natalChart: {
-      provenance: 'authored',
+      provenance: 'computed',
       provenanceNote:
-        'AUTHORED, and demonstrably not a measurement: Mercury is 39.0 degrees from the Sun (an inferior planet, max ~28); Venus is 48.0 degrees from the Sun (max ~47). These positions were entered by hand, not derived from an ephemeris.',
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1869-10-02 07:21 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.002 degrees. Birth date: 2 October 1869, Porbandar (en.wikipedia.org/wiki/Mahatma_Gandhi infobox). Astrology sites circulate a birth time of 07:11:44 LMT; no reference source corroborates it, so it is not used and no ascendant is claimed. BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Porbandar, Kathiawar Agency, British Raj (21.6417, 69.6293) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon crosses from Leo into Virgo during the day (14.5 degrees of motion), so even its SIGN IS NOT CERTAIN and must not be presented as one; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Libra as the date requires, Mercury 24.8 degrees from the Sun (max ~28), Venus 37.6 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Libra', degree: 9, retrograde: false, house: 10 },
-        Moon: { sign: 'Leo', degree: 14, retrograde: false, house: 8 },
-        Mercury: { sign: 'Scorpio', degree: 18, retrograde: false, house: 11 },
-        Venus: { sign: 'Scorpio', degree: 27, retrograde: false, house: 11 },
-        Mars: { sign: 'Scorpio', degree: 6, retrograde: false, house: 11 },
-        Jupiter: { sign: 'Taurus', degree: 22, retrograde: false, house: 5 },
-        Saturn: { sign: 'Sagittarius', degree: 3, retrograde: false, house: 12 },
-        Uranus: { sign: 'Cancer', degree: 15, retrograde: false, house: 7 },
-        Neptune: { sign: 'Aries', degree: 17, retrograde: false, house: 4 },
-        Pluto: { sign: 'Taurus', degree: 16, retrograde: false, house: 5 },
+        Sun: { sign: 'Libra', degree: 9.12, retrograde: false },
+        Moon: { sign: 'Leo', degree: 22.87, retrograde: false },
+        Mercury: { sign: 'Scorpio', degree: 3.89, retrograde: false },
+        Venus: { sign: 'Scorpio', degree: 16.67, retrograde: false },
+        Mars: { sign: 'Scorpio', degree: 18.54, retrograde: false },
+        Jupiter: { sign: 'Taurus', degree: 20.16, retrograde: true },
+        Saturn: { sign: 'Sagittarius', degree: 12.38, retrograde: false },
+        Uranus: { sign: 'Cancer', degree: 21.69, retrograde: false },
+        Neptune: { sign: 'Aries', degree: 18.41, retrograde: true },
+        Pluto: { sign: 'Taurus', degree: 17.65, retrograde: true },
       },
       houses: { ASC: 25, MC: 2 },
       aspects: [],

@@ -12,9 +12,12 @@ export const EMILY_DICKINSON: HistoricalCraftedAgent = {
   era: 'Modern',
   specialization: 'Poetry & Metaphysics',
   birthData: {
-    date: new Date('1830-01-01T12:00:00'),
+    // 10 December 1830 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1830-12-10T12:00:00'),
     time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
+    location: { lat: 42.3751, lon: -72.5199, name: 'Amherst, Massachusetts, USA' },
   },
   quotes: [
     'Hope is the thing with feathers that perches in the soul.',
@@ -37,20 +40,20 @@ export const EMILY_DICKINSON: HistoricalCraftedAgent = {
       substance: 0.78,
     },
     natalChart: {
-      provenance: 'placeholder',
+      provenance: 'computed',
       provenanceNote:
-        'PLACEHOLDER: these numbers cannot be the chart of this person. The stored birthData is filler - the birth date is January 1 at 12:00, this repo standing encoding for "birth date not known or never entered", and the birth location is lat 0 / lon 0 marked "Unknown", a point in the Atlantic Ocean where nobody was born, so the Ascendant, midheaven and house numbers belong to nobody. Corroborating that the positions were never measured: Venus is 142.8 degrees from the Sun (max ~47). Do not attribute these positions to this individual. Replacing this requires the real birth date, time and place plus a verified ephemeris.',
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1830-12-10 16:50 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.004 degrees. Birth date: 10 December 1830, Amherst, Massachusetts (en.wikipedia.org/wiki/Emily_Dickinson infobox) BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Amherst, Massachusetts, USA (42.3751, -72.5199) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon crosses from Libra into Scorpio during the day (11.8 degrees of motion), so even its SIGN IS NOT CERTAIN and must not be presented as one; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Sagittarius as the date requires, Mercury 3.6 degrees from the Sun (max ~28), Venus 2.5 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Capricorn', degree: 10.6, retrograde: false, house: 7 },
-        Moon: { sign: 'Aries', degree: 2.7, retrograde: false, house: 9 },
-        Mercury: { sign: 'Capricorn', degree: 27.6, retrograde: false, house: 7 },
-        Venus: { sign: 'Gemini', degree: 3.4, retrograde: false, house: 11 },
-        Mars: { sign: 'Scorpio', degree: 9.5, retrograde: false, house: 5 },
-        Jupiter: { sign: 'Capricorn', degree: 0, retrograde: false, house: 6 },
-        Saturn: { sign: 'Leo', degree: 15.9, retrograde: false, house: 2 },
-        Uranus: { sign: 'Aquarius', degree: 3.2, retrograde: false, house: 7 },
-        Neptune: { sign: 'Capricorn', degree: 23.3, retrograde: false, house: 7 },
-        Pluto: { sign: 'Pisces', degree: 1.7, retrograde: false, house: 8 },
+        Sun: { sign: 'Sagittarius', degree: 18.19, retrograde: false },
+        Moon: { sign: 'Libra', degree: 27.44, retrograde: false },
+        Mercury: { sign: 'Sagittarius', degree: 21.82, retrograde: false },
+        Venus: { sign: 'Sagittarius', degree: 15.66, retrograde: false },
+        Mars: { sign: 'Aries', degree: 5.31, retrograde: false },
+        Jupiter: { sign: 'Capricorn', degree: 20.38, retrograde: false },
+        Saturn: { sign: 'Virgo', degree: 1.76, retrograde: false },
+        Uranus: { sign: 'Aquarius', degree: 7.76, retrograde: false },
+        Neptune: { sign: 'Capricorn', degree: 21.26, retrograde: false },
+        Pluto: { sign: 'Aries', degree: 7.6, retrograde: true },
       },
       houses: { ASC: 94.4, MC: 4.4 },
       aspects: [],

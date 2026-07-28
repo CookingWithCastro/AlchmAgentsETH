@@ -231,12 +231,19 @@ describe('historical agent natal charts', () => {
   })
 
   /**
-   * A ratchet, not a target. 22 of the 72 shipped charts are known filler:
+   * A ratchet, not a target. 12 of the 72 shipped charts are known filler:
    *   - 8 pre-Common-Era agents sharing one fabricated chart;
-   *   - 12 agents whose stored birthData is the "date not known" encoding
-   *     (1 January, 12:00, and usually lat 0 / lon 0 named "Unknown");
-   *   - and every one of those 20 also breaks the inferior-planet bound.
-   * (carl-jung and frida-kahlo were the other two; both now carry real computed charts.)
+   *   - cleopatra, donatello, geoffrey-chaucer and raphael, whose stored birthData is the
+   *     "date not known" encoding (1 January, 12:00, sometimes lat 0 / lon 0 named "Unknown").
+   * Every one of the 12 also breaks the inferior-planet bound.
+   *
+   * It was 20 until `scripts/compute-historical-natal-charts.py` replaced 8 of them with charts
+   * computed from Swiss Ephemeris and cross-checked against astronomy-engine. Those four are
+   * what is left of that group because their birth date is genuinely not recoverable, and the
+   * script refuses to emit a chart for them: Cleopatra's sources give "early 69 BC or late
+   * 70 BC"; Donatello's and Chaucer's give a circa year; Raphael's give "28 March or 6 April
+   * 1483", two dates nine days — and 118 degrees of Moon — apart. Each one's `provenanceNote`
+   * now records that finding, so the research is not repeated.
    *
    * This count may only go down. It goes down either by computing a real chart from a verified
    * ephemeris, or — more honest where the birth date genuinely is not known — by removing the
@@ -253,7 +260,7 @@ describe('historical agent natal charts', () => {
         .map(a => a.id)
         .sort()
         .join(', ')}`
-    ).toBeLessThanOrEqual(20)
+    ).toBeLessThanOrEqual(12)
   })
 
   it('keeps zodiac signs and degrees well-formed', () => {

@@ -12,9 +12,12 @@ export const OSCAR_WILDE: HistoricalCraftedAgent = {
   era: 'Modern',
   specialization: 'Aestheticism & Wit',
   birthData: {
-    date: new Date('1854-01-01T12:00:00'),
+    // 16 October 1854 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1854-10-16T12:00:00'),
     time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
+    location: { lat: 53.3498, lon: -6.2603, name: 'Dublin, Ireland' },
   },
   quotes: [
     'Be yourself; everyone else is already taken.',
@@ -34,20 +37,20 @@ export const OSCAR_WILDE: HistoricalCraftedAgent = {
       substance: 0.7,
     },
     natalChart: {
-      provenance: 'placeholder',
+      provenance: 'computed',
       provenanceNote:
-        'PLACEHOLDER: these numbers cannot be the chart of this person. The stored birthData is filler - the birth date is January 1 at 12:00, this repo standing encoding for "birth date not known or never entered", and the birth location is lat 0 / lon 0 marked "Unknown", a point in the Atlantic Ocean where nobody was born, so the Ascendant, midheaven and house numbers belong to nobody. Corroborating that the positions were never measured: Mercury is 72.8 degrees from the Sun (an inferior planet, max ~28); Venus is 146.9 degrees from the Sun (max ~47). Do not attribute these positions to this individual. Replacing this requires the real birth date, time and place plus a verified ephemeris.',
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1854-10-16 12:25 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.003 degrees. Birth date: 16 October 1854, Dublin (en.wikipedia.org/wiki/Oscar_Wilde infobox) BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Dublin, Ireland (53.3498, -6.2603) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon stays in Leo across the whole day, so its SIGN is certain but its degree is uncertain by up to 6.0 degrees; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Libra as the date requires, Mercury 21.0 degrees from the Sun (max ~28), Venus 14.4 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Capricorn', degree: 10.8, retrograde: false, house: 7 },
-        Moon: { sign: 'Aquarius', degree: 12.2, retrograde: false, house: 8 },
-        Mercury: { sign: 'Libra', degree: 28, retrograde: false, house: 4 },
-        Venus: { sign: 'Gemini', degree: 7.7, retrograde: false, house: 12 },
-        Mars: { sign: 'Leo', degree: 22.1, retrograde: false, house: 2 },
-        Jupiter: { sign: 'Capricorn', degree: 8.2, retrograde: false, house: 7 },
-        Saturn: { sign: 'Gemini', degree: 2, retrograde: false, house: 11 },
-        Uranus: { sign: 'Taurus', degree: 14.4, retrograde: false, house: 11 },
-        Neptune: { sign: 'Pisces', degree: 16.4, retrograde: false, house: 9 },
-        Pluto: { sign: 'Pisces', degree: 29.1, retrograde: false, house: 9 },
+        Sun: { sign: 'Libra', degree: 22.82, retrograde: false },
+        Moon: { sign: 'Leo', degree: 19.56, retrograde: false },
+        Mercury: { sign: 'Scorpio', degree: 13.84, retrograde: false },
+        Venus: { sign: 'Libra', degree: 8.43, retrograde: false },
+        Mars: { sign: 'Sagittarius', degree: 4.11, retrograde: false },
+        Jupiter: { sign: 'Capricorn', degree: 19.35, retrograde: false },
+        Saturn: { sign: 'Gemini', degree: 15.58, retrograde: true },
+        Uranus: { sign: 'Taurus', degree: 15.54, retrograde: true },
+        Neptune: { sign: 'Pisces', degree: 13.58, retrograde: true },
+        Pluto: { sign: 'Taurus', degree: 2.92, retrograde: true },
       },
       houses: { ASC: 94.6, MC: 4.6 },
       aspects: [],

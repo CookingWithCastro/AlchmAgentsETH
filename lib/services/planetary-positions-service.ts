@@ -21,6 +21,124 @@ export interface PlanetaryPosition {
   speed?: number // degrees per day
 }
 
+/**
+ * The twelve tropical signs. A label outside this set is not a measurement.
+ */
+const ZODIAC_SIGNS = [
+  'Aries',
+  'Taurus',
+  'Gemini',
+  'Cancer',
+  'Leo',
+  'Virgo',
+  'Libra',
+  'Scorpio',
+  'Sagittarius',
+  'Capricorn',
+  'Aquarius',
+  'Pisces',
+] as const
+
+/**
+ * The canonical spelling of `raw`, or null when it names no sign.
+ *
+ * Matching is case-insensitive and returns the canonical capitalisation, because
+ * downstream lookups are case-sensitive object indexes that default to Aries's
+ * slot on a miss (`SIGN_STARTS[position.sign] ?? 0` in
+ * lib/agents/planetary-degree-feed.ts) — passing a lowercase label through would
+ * re-create the very fabrication this parse boundary exists to stop.
+ */
+function canonicalSign(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  const needle = raw.trim().toLowerCase()
+  return ZODIAC_SIGNS.find(sign => sign.toLowerCase() === needle) ?? null
+}
+
+/**
+ * One upstream body parsed into a position, or null when it is not measured.
+ *
+ * ABSENCE IS PROPAGATED, NOT DEFAULTED. These three parse boundaries used to read
+ * `sign: pos.sign || 'Aries'`, which turns a body the upstream did not place into
+ * a body placed at 0° Aries. That is not a neutral filler: Aries is a Fire sign,
+ * so every unplaced body silently added Fire weight, and 0° is a real degree that
+ * a consumer cannot distinguish from a measurement. A body we cannot place is left
+ * out of the array entirely — the same choice made for the Ascendant in
+ * app/api/elemental-info/route.ts and for absent bodies in
+ * lib/swiss-ephemeris-service.ts. Every consumer already tolerates a short array:
+ * `alchemize` guards each body with `if (planet && sign && signInfo[sign])`
+ * (lib/alchemizer.ts:510), the degree feed looks bodies up by name and skips
+ * misses (`if (!current) continue`), and `validatePositions` only walks what it
+ * is given.
+ */
+function toPlanetaryPosition(input: {
+  planet: string
+  sign: unknown
+  degree: unknown
+  longitude?: unknown
+  retrograde: unknown
+  speed?: unknown
+}): PlanetaryPosition | null {
+  const sign = canonicalSign(input.sign)
+  if (sign === null) return null
+
+  // A degree is kept only when it is a real number. `|| 0` used to turn a missing
+  // or unparseable degree into 0°, which reads downstream as the first degree of
+  // the sign rather than as "not measured".
+  const raw = typeof input.degree === 'string' ? Number.parseFloat(input.degree) : input.degree
+  if (typeof raw !== 'number' || !Number.isFinite(raw)) return null
+
+  const position: PlanetaryPosition = {
+    planet: input.planet,
+    sign,
+    degree: Math.max(0, Math.min(29.9999, raw)),
+    retrograde: Boolean(input.retrograde),
+  }
+
+  // Optional fields are carried only when they are real numbers; a NaN longitude
+  // is absent, not zero.
+  if (typeof input.longitude === 'number' && Number.isFinite(input.longitude)) {
+    position.longitude = input.longitude
+  }
+  if (typeof input.speed === 'number' && Number.isFinite(input.speed)) {
+    position.speed = input.speed
+  }
+
+  return position
+}
+
+/**
+ * Every body that parsed. Throws when a non-empty upstream payload yields nothing,
+ * so the caller's fallback chain advances instead of presenting an empty array as
+ * a successful high-accuracy measurement.
+ */
+function collectPositions(
+  source: string,
+  rawCount: number,
+  parsed: Array<PlanetaryPosition | null>
+): PlanetaryPosition[] {
+  const positions = parsed.filter((p): p is PlanetaryPosition => p !== null)
+
+  if (positions.length < rawCount) {
+    console.warn(
+      `[${source}] ${rawCount - positions.length} of ${rawCount} bodies omitted: no usable sign/degree`
+    )
+  }
+  // Zero placeable bodies is a failure however it arose — whether the source
+  // returned bodies that were all unusable, or returned none at all. The
+  // rawCount > 0 form let the second case through silently, and it is reachable:
+  // the enhanced calculator builds `planets` only from bodies that pass its
+  // plausibility gate, so a wholesale gate failure legitimately yields `{}`.
+  // Returning an empty array stamped `accuracy: 'high'` presents absence as a
+  // successful measurement; throwing advances the fallback chain instead.
+  if (positions.length === 0) {
+    throw new Error(
+      `${source} produced no placeable bodies (${rawCount} received, none with a usable sign and degree)`
+    )
+  }
+
+  return positions
+}
+
 export interface AlchemicalQuantities {
   spirit: number
   essence: number
@@ -155,16 +273,21 @@ export class PlanetaryPositionsService {
       }
 
       const swissPositions = result.result as Record<string, any>
+      const swissEntries = Object.entries(swissPositions)
 
-      const planetaryPositions: PlanetaryPosition[] = Object.entries(swissPositions).map(
-        ([planet, pos]: [string, any]) => ({
-          planet,
-          sign: pos.sign || 'Aries',
-          degree: Math.max(0, Math.min(29.9999, pos.degree || 0)),
-          longitude: pos.longitude,
-          retrograde: Boolean(pos.retrograde),
-          speed: pos.speed,
-        })
+      const planetaryPositions = collectPositions(
+        'Swiss Ephemeris',
+        swissEntries.length,
+        swissEntries.map(([planet, pos]: [string, any]) =>
+          toPlanetaryPosition({
+            planet,
+            sign: pos?.sign,
+            degree: pos?.degree,
+            longitude: pos?.longitude,
+            retrograde: pos?.retrograde,
+            speed: pos?.speed,
+          })
+        )
       )
 
       console.log(`[Swiss Ephemeris] Calculated ${planetaryPositions.length} planetary positions`)
@@ -214,16 +337,32 @@ export class PlanetaryPositionsService {
         throw new Error('Enhanced calculator returned no result')
       }
 
-      const planetaryPositions: PlanetaryPosition[] = Object.entries(
-        (result.result as any).planets
-      ).map(([planet, pos]: [string, any]) => ({
-        planet,
-        sign: pos.sign || 'Aries',
-        degree: Math.max(0, Math.min(29.9999, pos.signDegree || 0)),
-        longitude: pos.longitude,
-        retrograde: Boolean(pos.retrograde),
-        speed: pos.speed,
-      }))
+      // NOT `?? {}`. A result with no `planets` key is a failed calculation, and
+      // defaulting it to an empty object turns that failure into a SUCCESSFUL
+      // response carrying zero bodies, stamped `accuracy: 'high'` — which is
+      // then cached for five minutes because it is truthy. That is the exact
+      // shape `collectPositions` exists to prevent, one level up. Throwing lets
+      // the fallback chain advance, which is what the previous code did.
+      const enhancedPlanets = (result.result as any).planets
+      if (!enhancedPlanets || typeof enhancedPlanets !== 'object') {
+        throw new Error('Enhanced calculator returned a result with no planets')
+      }
+      const enhancedEntries = Object.entries(enhancedPlanets)
+
+      const planetaryPositions = collectPositions(
+        'Enhanced calculator',
+        enhancedEntries.length,
+        enhancedEntries.map(([planet, pos]: [string, any]) =>
+          toPlanetaryPosition({
+            planet,
+            sign: pos?.sign,
+            degree: pos?.signDegree,
+            longitude: pos?.longitude,
+            retrograde: pos?.retrograde,
+            speed: pos?.speed,
+          })
+        )
+      )
 
       return {
         timestamp: date.toISOString(),
@@ -259,13 +398,19 @@ export class PlanetaryPositionsService {
         throw new Error('Basic transits returned no result')
       }
 
-      const planetaryPositions: PlanetaryPosition[] = Object.entries(result.result).map(
-        ([planet, pos]: [string, any]) => ({
-          planet,
-          sign: pos.sign || 'Aries',
-          degree: Math.max(0, Math.min(29.9999, parseFloat(pos.degree) || 0)),
-          retrograde: Boolean(pos.retrograde),
-        })
+      const transitEntries = Object.entries(result.result)
+
+      const planetaryPositions = collectPositions(
+        'Basic transits',
+        transitEntries.length,
+        transitEntries.map(([planet, pos]: [string, any]) =>
+          toPlanetaryPosition({
+            planet,
+            sign: pos?.sign,
+            degree: pos?.degree,
+            retrograde: pos?.retrograde,
+          })
+        )
       )
 
       return {

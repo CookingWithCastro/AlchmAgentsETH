@@ -12,9 +12,12 @@ export const JANE_AUSTEN: HistoricalCraftedAgent = {
   era: 'Modern',
   specialization: 'Social Commentary & Satire',
   birthData: {
-    date: new Date('1775-01-01T12:00:00'),
+    // 16 December 1775 (proleptic Gregorian), from the source named in the
+    // chart provenanceNote below. The TIME is NOT recorded: 12:00 is the assumed
+    // midpoint of the birth day, which is why no ascendant or houses are claimed.
+    date: new Date('1775-12-16T12:00:00'),
     time: '12:00',
-    location: { lat: 0, lon: 0, name: 'Unknown' },
+    location: { lat: 51.234, lon: -1.253, name: 'Steventon, Hampshire, England' },
   },
   quotes: [
     'The person, be it gentleman or lady, who has not pleasure in a good novel, must be intolerably stupid.',
@@ -37,20 +40,20 @@ export const JANE_AUSTEN: HistoricalCraftedAgent = {
       substance: 0.85,
     },
     natalChart: {
-      provenance: 'placeholder',
+      provenance: 'computed',
       provenanceNote:
-        'PLACEHOLDER: these numbers cannot be the chart of this person. The stored birthData is filler - the birth date is January 1 at 12:00, this repo standing encoding for "birth date not known or never entered", and the birth location is lat 0 / lon 0 marked "Unknown", a point in the Atlantic Ocean where nobody was born, so the Ascendant, midheaven and house numbers belong to nobody. Corroborating that the positions were never measured: Mercury is 73.2 degrees from the Sun (an inferior planet, max ~28). Do not attribute these positions to this individual. Replacing this requires the real birth date, time and place plus a verified ephemeris.',
+        "COMPUTED with Swiss Ephemeris (pyswisseph 2.10.03, Moshier SEFLG_MOSEPH) for 1775-12-16 12:05 UT. Independently cross-checked against astronomy-engine 2.1.19, a separate implementation: every body agrees to within 0.009 degrees. Birth date: 16 December 1775, Steventon, Hampshire (en.wikipedia.org/wiki/Jane_Austen infobox). Britain adopted the Gregorian calendar in 1752, so this date needs no conversion. BIRTH TIME IS NOT RECORDED, so the bodies are evaluated at 12:00 local mean time at Steventon, Hampshire, England (51.2340, -1.2530) - the midpoint of the birth day, which bounds the error at half a day of motion. Consequence, measured over the birth day: the Moon stays in Libra across the whole day, so its SIGN is certain but its degree is uncertain by up to 6.1 degrees; every other body moves less than a degree. The ASCENDANT, MIDHEAVEN and HOUSE placements are therefore NOT computed and NOT claimed - the ascendant moves about 1 degree every 4 minutes, the planet 'house' field is omitted rather than filled, and the ascendant/midheaven numbers left in this chart are the pre-existing unmeasured ones. Sanity checks pass: Sun in Sagittarius as the date requires, Mercury 18.9 degrees from the Sun (max ~28), Venus 45.4 (max ~47). Reproduce with scripts/compute-historical-natal-charts.py.",
       planets: {
-        Sun: { sign: 'Capricorn', degree: 10.9, retrograde: false, house: 7 },
-        Moon: { sign: 'Capricorn', degree: 3.7, retrograde: false, house: 6 },
-        Mercury: { sign: 'Libra', degree: 27.7, retrograde: false, house: 4 },
-        Venus: { sign: 'Capricorn', degree: 10.9, retrograde: false, house: 7 },
-        Mars: { sign: 'Leo', degree: 21.6, retrograde: false, house: 2 },
-        Jupiter: { sign: 'Taurus', degree: 19.5, retrograde: false, house: 11 },
-        Saturn: { sign: 'Libra', degree: 5.7, retrograde: false, house: 4 },
-        Uranus: { sign: 'Gemini', degree: 7.5, retrograde: false, house: 12 },
-        Neptune: { sign: 'Virgo', degree: 21.7, retrograde: false, house: 3 },
-        Pluto: { sign: 'Capricorn', degree: 10.3, retrograde: false, house: 7 },
+        Sun: { sign: 'Sagittarius', degree: 24.46, retrograde: false },
+        Moon: { sign: 'Libra', degree: 8.91, retrograde: false },
+        Mercury: { sign: 'Sagittarius', degree: 5.52, retrograde: false },
+        Venus: { sign: 'Scorpio', degree: 9.09, retrograde: false },
+        Mars: { sign: 'Capricorn', degree: 19.18, retrograde: false },
+        Jupiter: { sign: 'Gemini', degree: 15.58, retrograde: true },
+        Saturn: { sign: 'Libra', degree: 19.57, retrograde: false },
+        Uranus: { sign: 'Gemini', degree: 3.86, retrograde: true },
+        Neptune: { sign: 'Virgo', degree: 24.89, retrograde: false },
+        Pluto: { sign: 'Capricorn', degree: 25.35, retrograde: false },
       },
       houses: { ASC: 94.7, MC: 4.7 },
       aspects: [],

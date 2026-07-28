@@ -306,16 +306,48 @@ describe('historical agent ascendants', () => {
       expect(withAscBody).toEqual([])
     })
 
-    it('breaks down as 2 measured, 24 sign-resolution, 26 unmeasured, 20 placeholder', () => {
+    it('breaks down as 2 measured, 23 sign-resolution, 27 unmeasured, 20 placeholder', () => {
+      // Only carl-jung and frida-kahlo have a documented birth TIME, so only they
+      // can have a measured ascendant. The ten charts computed later are
+      // bodies-only: an unknown birth time barely moves a planet but moves the
+      // ascendant ~1 degree every 4 minutes, so their ascendants stay unmeasured.
       expect(
         withProv('measured')
           .map(a => a.id)
           .sort()
       ).toEqual(['carl-jung', 'frida-kahlo'])
-      expect(withProv('sign-resolution').length).toBe(24)
-      expect(withProv('unmeasured').length).toBe(26)
+      // 23, not 24: claude-monet was moved to 'unmeasured' because its own note
+      // records that no birth time is documented, and 'sign-resolution' is a
+      // positive claim that the value encodes the correct SIGN.
+      expect(withProv('sign-resolution').length).toBe(23)
+      expect(withProv('unmeasured').length).toBe(27)
       expect(withProv('placeholder').length).toBe(20)
       expect(withProv('unattributed').length).toBe(0)
     })
+  })
+
+  it('never lets a computed chart imply a measured ascendant it does not have', () => {
+    // The converse of the assertions above, and the gap that let 8 charts go to
+    // provenance:'computed' while keeping a filler ascendant. A computed chart is
+    // ALLOWED to have an unmeasured ascendant — bodies are robust to an unknown
+    // birth time, the ascendant is not — but it must SAY so, and its note must
+    // disclose it, because "computed" is the strongest warrant in the vocabulary.
+    const computed = agents.filter(a => a.consciousness.natalChart.provenance === 'computed')
+    expect(computed.length, 'no computed charts — assertion would be vacuous').toBeGreaterThan(0)
+
+    const undisclosed = computed
+      .filter(a => {
+        const asc = a.consciousness.natalChart.ascendantProvenance
+        if (asc === 'measured') return false
+        const note = (a.consciousness.natalChart.provenanceNote ?? '').toLowerCase()
+        return !note.includes('ascendant')
+      })
+      .map(a => a.id)
+
+    expect(
+      undisclosed,
+      'a computed chart whose ascendant is not measured must name the ascendant in its ' +
+        'provenanceNote, so a reader is never left inferring it was computed too'
+    ).toEqual([])
   })
 })
