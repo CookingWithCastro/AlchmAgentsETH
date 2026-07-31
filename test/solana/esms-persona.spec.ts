@@ -20,7 +20,7 @@ import {
   SystemProgram,
   Transaction,
 } from '@solana/web3.js'
-import { beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import {
   AAE_SOLANA_SEEDS,
@@ -152,6 +152,17 @@ describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         systemProgram: SystemProgram.programId,
       })
+      .rpc()
+  }, 120_000)
+
+  afterAll(async () => {
+    await program.methods
+      .setPauseState(false, false)
+      .accounts({ programConfig, authority: admin })
+      .rpc()
+    await program.methods
+      .setServiceAuthorities(admin, admin)
+      .accounts({ programConfig, authority: admin })
       .rpc()
   }, 120_000)
 
