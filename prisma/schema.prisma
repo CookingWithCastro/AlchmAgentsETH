@@ -1756,3 +1756,19 @@ model SolanaBridgeTransfer {
   @@index([status, updatedAt])
   @@map("bridge_transfer")
 }
+
+/// Process heartbeat used by operator health checks to distinguish an idle
+/// but live worker from a stopped sync/bridge process.
+model SolanaServiceHeartbeat {
+  service           String   @id
+  connectionStatus  String   @map("connection_status")
+  activeRpc         String?  @map("active_rpc")
+  reconnectAttempts Int      @default(0) @map("reconnect_attempts")
+  queueDepth        Int      @default(0) @map("queue_depth")
+  lastProcessedSlot BigInt?  @map("last_processed_slot")
+  lastError         String?  @map("last_error")
+  heartbeatAt       DateTime @updatedAt @map("heartbeat_at") @db.Timestamptz
+
+  @@index([heartbeatAt])
+  @@map("solana_service_heartbeat")
+}

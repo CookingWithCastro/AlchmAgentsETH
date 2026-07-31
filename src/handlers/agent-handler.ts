@@ -5,10 +5,10 @@
  * Runtime: Bun Native | Stream: Zero-leak TransformStream with AbortSignal cleanup
  */
 
-import { LatentPRMPredictor } from '../../lib/jepa/latent-prm'
-import { EMAMemoryMatrix } from '../../lib/jepa/ema-memory'
-import { AsyncCosmicContextEncoder } from '../../lib/jepa/cosmic-context-encoder'
-import type { AgentRequestPayload, PRMValidationResult } from '../../lib/jepa/types'
+import { AsyncCosmicContextEncoder } from '@/lib/jepa/cosmic-context-encoder'
+import { EMAMemoryMatrix } from '@/lib/jepa/ema-memory'
+import { LatentPRMPredictor } from '@/lib/jepa/latent-prm'
+import type { AgentRequestPayload, PRMValidationResult } from '@/lib/jepa/types'
 
 declare const Bun: any
 
@@ -119,6 +119,7 @@ export class AgentExecutionHandler {
             if (fullTextBuffer.length > 0 && !signal.aborted) {
               const interactionVector = AgentExecutionHandler.extractContextVector(fullTextBuffer)
               EMAMemoryMatrix.updatePersona(agentId, interactionVector)
+              AsyncCosmicContextEncoder.requestPersonaAnchor(agentId)
             }
           } catch (err: any) {
             if (!signal.aborted) {

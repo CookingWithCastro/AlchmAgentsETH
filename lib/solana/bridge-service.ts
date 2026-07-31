@@ -15,7 +15,13 @@ import { baseSepolia } from 'viem/chains'
 import { Connection, PublicKey, Transaction } from '@solana/web3.js'
 
 import { AaeSolanaClient, type EsmsAmounts } from '@/lib/solana/aae-solana-client'
+import { AAE_BASE_SEPOLIA_ESMS_ADDRESS } from '@/lib/solana/base-sepolia-esms'
 import { AAE_SOLANA_PROGRAM_ID } from '@/lib/solana/esms'
+import {
+  resolveSolanaRpcUrls,
+  withSolanaRpcFailover,
+  type SolanaServiceHealth,
+} from '@/lib/solana/rpc-failover'
 import {
   decodeAaeTransactionEvents,
   solanaSlotToBigInt,
@@ -24,9 +30,7 @@ import {
   type SolanaSyncSubscription,
 } from '@/lib/solana/solana-sync-service'
 
-export const AAE_BASE_SEPOLIA_ESMS_ADDRESS = getAddress(
-  '0x124ECa1bb1E106D3614A22A256f9A412FfeEAd8F'
-)
+export { AAE_BASE_SEPOLIA_ESMS_ADDRESS } from '@/lib/solana/base-sepolia-esms'
 export const EVM_ATOMS_PER_SOLANA_ATOM = 100_000_000_000_000n
 const MAX_U64 = (1n << 64n) - 1n
 const EVM_HASH = /^0x[0-9a-f]{64}$/i
@@ -513,47 +517,69 @@ async function isExactSolanaDestinationMint(args: {
   )
 }
 
-export function createSolanaDestinationMinter(args: { client: AaeSolanaClient }) {
-  return async (transfer: PendingBridgeTransfer): Promise<string> => {
-    const claimId = claimBytes(transfer)
-    const receipt = args.client.getClaimReceiptAddress(claimId)
-    if (await args.client.connection.getAccountInfo(receipt, 'finalized')) {
-      const signatures = await args.client.connection.getSignaturesForAddress(receipt, {
-        limit: 10,
-      })
-      for (const existing of signatures) {
-        if (
-          await isExactSolanaDestinationMint({
-            client: args.client,
-            transfer,
-            signature: existing.signature,
-          })
-        ) {
-          return existing.signature
-        }
-      }
-      throw new Error('existing Solana bridge mint could not be reconciled')
-    }
-    const instruction = await args.client.buildClaimMintEsmsInstruction({
-      claimId,
-      ledgerReferenceHash: bridgeLedgerReference(transfer),
-      recipient: new PublicKey(transfer.targetAddress),
-      amounts: destinationAmounts(transfer),
+async function mintSolanaDestinationOnce(
+  client: AaeSolanaClient,
+  transfer: PendingBridgeTransfer
+): Promise<string> {
+  const claimId = claimBytes(transfer)
+  const receipt = client.getClaimReceiptAddress(claimId)
+  if (await client.connection.getAccountInfo(receipt, 'finalized')) {
+    const signatures = await client.connection.getSignaturesForAddress(receipt, {
+      limit: 10,
     })
-    const latest = await args.client.connection.getLatestBlockhash('finalized')
-    const transaction = new Transaction({
-      feePayer: args.client.wallet.publicKey,
-      blockhash: latest.blockhash,
-      lastValidBlockHeight: latest.lastValidBlockHeight,
-    }).add(instruction)
-    const signed = await args.client.wallet.signTransaction(transaction)
-    const signature = await args.client.connection.sendRawTransaction(signed.serialize())
-    await args.client.connection.confirmTransaction({ signature, ...latest }, 'finalized')
-    if (!(await isExactSolanaDestinationMint({ client: args.client, transfer, signature }))) {
-      throw new Error('Solana receipt did not contain the exact bridge mint')
+    for (const existing of signatures) {
+      if (
+        await isExactSolanaDestinationMint({
+          client,
+          transfer,
+          signature: existing.signature,
+        })
+      ) {
+        return existing.signature
+      }
     }
-    return signature
+    throw new Error('existing Solana bridge mint could not be reconciled')
   }
+  const instruction = await client.buildClaimMintEsmsInstruction({
+    claimId,
+    ledgerReferenceHash: bridgeLedgerReference(transfer),
+    recipient: new PublicKey(transfer.targetAddress),
+    amounts: destinationAmounts(transfer),
+  })
+  const latest = await client.connection.getLatestBlockhash('finalized')
+  const transaction = new Transaction({
+    feePayer: client.wallet.publicKey,
+    blockhash: latest.blockhash,
+    lastValidBlockHeight: latest.lastValidBlockHeight,
+  }).add(instruction)
+  const signed = await client.wallet.signTransaction(transaction)
+  const signature = await client.connection.sendRawTransaction(signed.serialize())
+  await client.connection.confirmTransaction({ signature, ...latest }, 'finalized')
+  if (!(await isExactSolanaDestinationMint({ client, transfer, signature }))) {
+    throw new Error('Solana receipt did not contain the exact bridge mint')
+  }
+  return signature
+}
+
+export function createSolanaDestinationMinter(args: {
+  client: AaeSolanaClient
+  rpcUrls?: readonly string[]
+  connectionFactory?: (rpcUrl: string) => Connection
+}) {
+  const rpcUrls = [
+    args.client.connection.rpcEndpoint,
+    ...(args.rpcUrls ?? resolveSolanaRpcUrls()),
+  ].filter((value, index, values) => values.indexOf(value) === index)
+  return (transfer: PendingBridgeTransfer): Promise<string> =>
+    withSolanaRpcFailover({
+      rpcUrls,
+      connectionFactory: args.connectionFactory,
+      operation: connection =>
+        mintSolanaDestinationOnce(
+          new AaeSolanaClient({ connection, wallet: args.client.wallet }),
+          transfer
+        ),
+    })
 }
 
 export function createAaeBridgeProcessor(args: {
@@ -562,7 +588,13 @@ export function createAaeBridgeProcessor(args: {
   evmPublicClient: PublicClient
   evmWalletClient: WalletClient
   evmConfirmations?: number
+  solanaRpcUrls?: readonly string[]
+  solanaConnectionFactory?: (rpcUrl: string) => Connection
 }) {
+  const rpcUrls = [
+    args.solanaClient.connection.rpcEndpoint,
+    ...(args.solanaRpcUrls ?? resolveSolanaRpcUrls()),
+  ].filter((value, index, values) => values.indexOf(value) === index)
   return createBridgeProcessor({
     store: args.store,
     verifyEvmSource: transfer =>
@@ -572,13 +604,21 @@ export function createAaeBridgeProcessor(args: {
         confirmations: args.evmConfirmations,
       }),
     verifySolanaSource: transfer =>
-      verifySolanaBridgeSource({ transfer, connection: args.solanaClient.connection }),
+      withSolanaRpcFailover({
+        rpcUrls,
+        connectionFactory: args.solanaConnectionFactory,
+        operation: connection => verifySolanaBridgeSource({ transfer, connection }),
+      }),
     mintEvmDestination: createEvmDestinationMinter({
       publicClient: args.evmPublicClient,
       walletClient: args.evmWalletClient,
       confirmations: args.evmConfirmations,
     }),
-    mintSolanaDestination: createSolanaDestinationMinter({ client: args.solanaClient }),
+    mintSolanaDestination: createSolanaDestinationMinter({
+      client: args.solanaClient,
+      rpcUrls,
+      connectionFactory: args.solanaConnectionFactory,
+    }),
   })
 }
 
@@ -589,7 +629,14 @@ interface PrismaBridgeQueueClient {
       orderBy: { updatedAt: 'asc' }
       take: number
     }): Promise<unknown[]>
+    count(args: { where: { status: string } }): Promise<number>
   }
+}
+
+export interface BridgeRelayPolling {
+  tick(): Promise<void>
+  stop(): void
+  getHealth(): Promise<SolanaServiceHealth>
 }
 
 export function startBridgeRelayPolling(args: {
@@ -598,9 +645,11 @@ export function startBridgeRelayPolling(args: {
   intervalMs?: number
   batchSize?: number
   onError?: (error: unknown, row?: Record<string, unknown>) => void
-}): { tick(): Promise<void>; stop(): void } {
+}): BridgeRelayPolling {
   let active = false
   let stopped = false
+  let lastProcessedSlot: bigint | null = null
+  let lastError: string | null = null
   const tick = async () => {
     if (active || stopped) return
     active = true
@@ -613,12 +662,17 @@ export function startBridgeRelayPolling(args: {
       for (const value of rows) {
         const row = value as Record<string, unknown>
         try {
-          await args.processTransfer(row)
+          const processed = await args.processTransfer(row)
+          if (processed && row.sourceSlot != null)
+            lastProcessedSlot = BigInt(String(row.sourceSlot))
+          lastError = null
         } catch (error) {
+          lastError = error instanceof Error ? error.message : String(error)
           args.onError?.(error, row)
         }
       }
     } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error)
       args.onError?.(error)
     } finally {
       active = false
@@ -628,6 +682,16 @@ export function startBridgeRelayPolling(args: {
   void tick()
   return {
     tick,
+    getHealth: async () => ({
+      connectionStatus: stopped ? 'stopped' : lastError ? 'degraded' : 'connected',
+      activeRpc: null,
+      reconnectAttempts: 0,
+      queueDepth: await args.client.solanaBridgeTransfer.count({
+        where: { status: 'PendingMint' },
+      }),
+      lastProcessedSlot,
+      lastError,
+    }),
     stop: () => {
       stopped = true
       clearInterval(timer)
@@ -651,6 +715,7 @@ export function createBaseSepoliaClients(privateKey: Hex) {
 }
 
 export interface BridgeSourceListeners {
+  getHealth(): Promise<SolanaServiceHealth>
   stop(): Promise<void>
 }
 
@@ -663,6 +728,7 @@ export function listenToBridgeSourceEvents(args: {
   onEvmEvent: (event: unknown) => Promise<void>
   onSolanaEvent: (event: AaeSolanaSyncEvent) => Promise<void>
   publicClient?: PublicClient
+  rpcUrls?: readonly string[]
 }): BridgeSourceListeners {
   const publicClient =
     args.publicClient ??
@@ -690,8 +756,10 @@ export function listenToBridgeSourceEvents(args: {
     },
     onEvent: args.onSolanaEvent,
     programId: AAE_SOLANA_PROGRAM_ID,
+    rpcUrls: args.rpcUrls,
   })
   return {
+    getHealth: () => solanaSubscription!.getHealth(),
     stop: async () => {
       unwatchClaim()
       unwatchRedeem()

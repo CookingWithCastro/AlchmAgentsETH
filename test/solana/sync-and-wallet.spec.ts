@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   Connection,
   Ed25519Program,
@@ -37,6 +37,25 @@ import {
 } from '@/lib/web3/multi-chain-wallet'
 
 describe('AAE Solana sync worker', () => {
+  it('reports durable queue depth and the latest processed slot', async () => {
+    const health = {
+      connectionStatus: 'connected' as const,
+      activeRpc: 'api.devnet.solana.com',
+      reconnectAttempts: 0,
+      queueDepth: 3,
+      lastProcessedSlot: 480_000_010n,
+      lastError: null,
+    }
+    const subscription = {
+      connection: new Connection('http://127.0.0.1:8899'),
+      subscriptionId: 7,
+      stop: vi.fn(),
+      getHealth: vi.fn().mockResolvedValue(health),
+    }
+
+    await expect(subscription.getHealth()).resolves.toEqual(health)
+  })
+
   it('serializes u64 slots and ESMS amounts as unquoted JSON integers without precision loss', () => {
     const body = encodeSolanaSyncBody({
       signature:

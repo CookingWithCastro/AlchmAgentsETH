@@ -2460,9 +2460,13 @@ async def admin_mcp_summary(
 
 
 # ── A2A (Agent2Agent) server — expose agents over A2A, x402-paid (USDC) ──────
+def _canonical_a2a_agent_id(agent_id: str) -> str:
+    return "greg-castro-1991" if agent_id == "gregory-castro" else agent_id
+
+
 async def _a2a_run_chat(agent_id: str, message: str) -> str:
     """In-process chat call for the A2A executor (reuses the full orchestration)."""
-    req = schemas.ChatRequest(agentId=agent_id, message=message)
+    req = schemas.ChatRequest(agentId=_canonical_a2a_agent_id(agent_id), message=message)
     gen = database.get_db()
     db = next(gen)
     try:
@@ -2480,8 +2484,9 @@ async def _a2a_run_chat_stream(agent_id: str, message: str):
     """
     gen = database.get_db()
     db = next(gen)
+    canonical_agent_id = _canonical_a2a_agent_id(agent_id)
     try:
-        db_agent = crud.get_agent(db, agent_id)
+        db_agent = crud.get_agent(db, canonical_agent_id)
         if not db_agent:
             yield f"(agent {agent_id} not found)"
             return
@@ -2494,7 +2499,7 @@ async def _a2a_run_chat_stream(agent_id: str, message: str):
             persona_block=persona_block,
             rag_block="",
             user_message=message,
-            agent_id=agent_id,
+            agent_id=canonical_agent_id,
             tier=tier,
         ):
             yield delta
@@ -2505,7 +2510,15 @@ async def _a2a_run_chat_stream(agent_id: str, message: str):
 def _a2a_agent_list() -> List[Dict[str, Any]]:
     """Agents to expose over A2A. Default = a flagship set; override via A2A_AGENT_IDS."""
     ids_env = os.getenv("A2A_AGENT_IDS")
-    flagship = ["plato", "aristotle", "socrates", "homer", "marie-curie", "leonardo-da-vinci"]
+    flagship = [
+        "gregory-castro",
+        "plato",
+        "aristotle",
+        "socrates",
+        "homer",
+        "marie-curie",
+        "leonardo-da-vinci",
+    ]
     ids = [s.strip() for s in ids_env.split(",") if s.strip()] if ids_env else flagship
     agents: List[Dict[str, Any]] = []
     gen = database.get_db()
@@ -2513,13 +2526,20 @@ def _a2a_agent_list() -> List[Dict[str, Any]]:
     try:
         for aid in ids:
             try:
-                row = crud.get_agent(db, aid)
+                row = crud.get_agent(db, _canonical_a2a_agent_id(aid))
             except Exception:
                 row = None
             name = getattr(row, "name", None) or aid.replace("-", " ").title()
             title = getattr(row, "title", None) if row is not None else None
             description = f"{name} — {title}" if title else f"{name}, an Alchm planetary/historical agent."
-            agents.append({"id": aid, "name": name, "description": description})
+            agents.append(
+                {
+                    "id": aid,
+                    "canonical_id": _canonical_a2a_agent_id(aid),
+                    "name": name,
+                    "description": description,
+                }
+            )
     finally:
         gen.close()
     return agents

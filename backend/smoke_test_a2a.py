@@ -29,7 +29,14 @@ app = FastAPI()
 n = a2a_server.register_a2a_routes(
     app,
     fake_run_chat,
-    [{"id": "plato", "name": "Plato", "description": "Test agent"}],
+    [
+        {
+            "id": "gregory-castro",
+            "canonical_id": "greg-castro-1991",
+            "name": "Gregory Castro",
+            "description": "Test agent",
+        }
+    ],
     run_chat_stream=fake_stream,
 )
 print(f"registered agents: {n}")
@@ -37,7 +44,7 @@ print(f"registered agents: {n}")
 client = TestClient(app)
 
 print("\n=== GET agent card ===")
-r = client.get("/a2a/plato/.well-known/agent-card.json")
+r = client.get("/a2a/gregory-castro/.well-known/agent-card.json")
 print("status:", r.status_code)
 if r.status_code == 200:
     card = r.json()
@@ -46,6 +53,8 @@ if r.status_code == 200:
     print("  streaming:", card.get("capabilities", {}).get("streaming"))
     print("  extensions:", [e.get("uri") for e in card.get("capabilities", {}).get("extensions", [])])
     print("  interfaces:", card.get("supportedInterfaces") or card.get("supported_interfaces"))
+    print("  solana:", card.get("solana"))
+    assert card["solana"] == a2a_server.build_solana_agent_metadata("greg-castro-1991")
 else:
     print("  body:", r.text[:400])
 
@@ -63,7 +72,7 @@ body = {
         }
     },
 }
-r2 = client.post("/a2a/plato/", json=body)
+r2 = client.post("/a2a/gregory-castro/", json=body)
 print("status:", r2.status_code)
 print("  body:", str(r2.json())[:500])
 
@@ -71,7 +80,7 @@ print("\n=== POST message/stream (SSE — true incremental streaming) ===")
 stream_body = {**body, "id": 2, "method": "message/stream"}
 events = 0
 artifact_events = 0
-with client.stream("POST", "/a2a/plato/", json=stream_body) as r3:
+with client.stream("POST", "/a2a/gregory-castro/", json=stream_body) as r3:
     print("status:", r3.status_code, "content-type:", r3.headers.get("content-type"))
     for line in r3.iter_lines():
         s = line if isinstance(line, str) else (line.decode() if line else "")

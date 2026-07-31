@@ -422,3 +422,23 @@
 .nav-mobile-signout:hover {
   background: rgba(239, 68, 68, 0.15);
 }
+.aae-solana-wallet-button.wallet-adapter-button {
+  height: 36px;
+  border: 1px solid rgb(167 139 250 / 0.35);
+  border-radius: 9999px;
+  background: rgb(46 16 101 / 0.45);
+  padding: 0 12px;
+  font-family: var(--font-ibm-plex-mono), monospace;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.aae-solana-wallet-button.wallet-adapter-button:hover {
+  background: rgb(76 29 149 / 0.6);
+}
+
+.aae-solana-wallet-button-compact.wallet-adapter-button {
+  height: 30px;
+  padding: 0 9px;
+  font-size: 10px;
+}

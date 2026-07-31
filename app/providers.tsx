@@ -9,6 +9,7 @@ import { SpacetimeProvider } from '@/lib/spacetime/SpacetimeContext'
 import { useLiveEphemeris } from '@/lib/spacetime/hooks/useLiveEphemeris'
 import { DynamicCircleProvider } from '@/components/auth/DynamicCircleProvider'
 import { DynamicCircleHUD } from '@/components/auth/DynamicCircleHUD'
+import { SolanaWalletProvider } from '@/components/providers/SolanaWalletProvider'
 
 function MonicaWrapper() {
   const pathname = usePathname()
@@ -46,15 +47,17 @@ function EconomyWalletHUD() {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <DynamicCircleProvider>
-      <SessionProvider>
-        <SpacetimeProvider>
-          {children}
-          <Toaster />
-          <DesktopAwareAdminPanel />
-          <MonicaWrapper />
-          <EconomyWalletHUD />
-        </SpacetimeProvider>
-      </SessionProvider>
+      <SolanaWalletProvider>
+        <SessionProvider>
+          <SpacetimeProvider>
+            {children}
+            <Toaster />
+            <DesktopAwareAdminPanel />
+            <MonicaWrapper />
+            <EconomyWalletHUD />
+          </SpacetimeProvider>
+        </SessionProvider>
+      </SolanaWalletProvider>
     </DynamicCircleProvider>
   )
 }

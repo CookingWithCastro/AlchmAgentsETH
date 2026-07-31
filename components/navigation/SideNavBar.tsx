@@ -1,19 +1,22 @@
 'use client'
 
-import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 
-import { useOccultStore, type EsmsBalances } from '@/lib/store/occult-store'
 import { PILLARS, isPillarActive } from './pillars'
+import {
+  DualChainNetworkBadge,
+  SolanaWalletConnectButton,
+  useSolanaWalletState,
+} from '@/components/providers/SolanaWalletProvider'
 
-const ESMS_ROWS: Array<{ key: keyof EsmsBalances; label: string; className: string }> = [
+const ESMS_ROWS = [
   { key: 'spirit', label: 'Spirit', className: 'text-alchemical-spirit' },
   { key: 'essence', label: 'Essence', className: 'text-alchemical-essence' },
   { key: 'matter', label: 'Matter', className: 'text-alchemical-matter' },
   { key: 'substance', label: 'Substance', className: 'text-alchemical-substance' },
-]
+] as const
 
 const PILLAR_ICON_OVERRIDES: Record<string, string> = {
   '/forge': 'auto_fix_high',
@@ -36,14 +39,8 @@ const TIER_RANKS: Record<string, string> = {
  */
 export function SideNavBar() {
   const pathname = usePathname()
-  const { data: session, status } = useSession()
-  const balances = useOccultStore(state => state.balances)
-  const fetchBalances = useOccultStore(state => state.fetchBalances)
-
-  useEffect(() => {
-    if (status !== 'authenticated') return
-    void fetchBalances()
-  }, [status, fetchBalances])
+  const { data: session } = useSession()
+  const { balances: solanaBalances, evmBalances } = useSolanaWalletState()
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 z-40 bg-surface-dim/80 backdrop-blur-2xl border-r border-white/5 shadow-2xl shadow-obsidian-deep flex-col py-8 pt-24">
@@ -118,20 +115,32 @@ export function SideNavBar() {
 
       {/* ESMS balances */}
       <div className="px-6 mt-8">
-        <h3 className="font-label-mono text-label-mono text-outline uppercase mb-3">
-          ESMS Reserves
-        </h3>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h3 className="font-label-mono text-label-mono text-outline uppercase">ESMS Reserves</h3>
+          <DualChainNetworkBadge />
+        </div>
         <div className="glass-panel rounded-lg p-4 flex flex-col gap-2">
+          <div className="grid grid-cols-[1fr_auto_auto] gap-2 font-label-mono text-[9px] uppercase text-outline">
+            <span>Coin</span>
+            <span title="Base Sepolia">EVM</span>
+            <span title="Solana Devnet">SOL</span>
+          </div>
           {ESMS_ROWS.map(row => (
-            <div key={row.key} className="flex justify-between items-center">
+            <div key={row.key} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
               <span className={`font-label-mono text-label-mono ${row.className}`}>
                 {row.label}
               </span>
               <span className="font-label-mono text-label-mono text-on-surface tabular-nums">
-                {balances ? Math.floor(balances[row.key]).toLocaleString() : '—'}
+                {evmBalances?.[row.key] ?? '—'}
+              </span>
+              <span className="font-label-mono text-label-mono text-violet-200 tabular-nums">
+                {solanaBalances?.[row.key] ?? '—'}
               </span>
             </div>
           ))}
+          <div className="mt-2 border-t border-white/10 pt-2">
+            <SolanaWalletConnectButton compact />
+          </div>
         </div>
       </div>
 

@@ -33,6 +33,9 @@ export const AGENT_MEMORY_KEY = 'agent-memory'
 /** Custom record: operator is a World ID-verified unique human (nullifier or "true"). */
 export const AGENT_HUMAN_VERIFIED_KEY = 'human-verified'
 
+/** AAE PersonaCommitment PDA on Solana Devnet. */
+export const AGENT_SOLANA_PERSONA_KEY = 'agent-persona[solana:devnet]'
+
 /** Minimal big-endian hex (even length) of a non-negative integer. */
 function minimalBytesHex(n: number): string {
   if (n < 0) throw new Error('chainId must be non-negative')
@@ -82,6 +85,8 @@ export interface AgentEnsRecordsInput {
   memoryUrl?: string
   /** Operator's World ID nullifier (or "true") → `human-verified` record. */
   humanVerified?: string
+  /** Solana Devnet PersonaCommitment PDA for cross-chain agent discovery. */
+  solanaPersonaPda?: string
   /** If the agent is registered on-chain, add the ENSIP-25 verification record. */
   registration?: RegistrationRef
 }
@@ -96,6 +101,7 @@ export function buildAgentTextRecords(input: AgentEnsRecordsInput): Record<strin
   if (input.paymentChain) rec[AGENT_PAYMENT_KEYS.chain] = input.paymentChain
   if (input.memoryUrl) rec[AGENT_MEMORY_KEY] = input.memoryUrl
   if (input.humanVerified) rec[AGENT_HUMAN_VERIFIED_KEY] = input.humanVerified
+  if (input.solanaPersonaPda) rec[AGENT_SOLANA_PERSONA_KEY] = input.solanaPersonaPda
   if (input.registration) rec[agentRegistrationKey(input.registration)] = '1'
   return rec
 }

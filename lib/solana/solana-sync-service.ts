@@ -9,6 +9,14 @@ import {
 
 import { AAE_SOLANA_PROGRAM_ID } from '@/lib/solana/esms'
 import AAE_SOLANA_IDL from '@/lib/solana/idl/aae_solana.json'
+import {
+  createResilientSolanaLogSubscription,
+  resolveSolanaRpcUrls,
+  solanaSlotToBigInt,
+  type SolanaServiceHealth,
+} from '@/lib/solana/rpc-failover'
+
+export { solanaSlotToBigInt } from '@/lib/solana/rpc-failover'
 
 const MAX_U64 = (1n << 64n) - 1n
 
@@ -170,6 +178,8 @@ export interface SolanaSyncStore {
   enqueueEvents?(events: readonly AaeSolanaSyncEvent[]): Promise<void>
   recordProcessed(marker: { signature: string; slot: bigint; eventType: string }): Promise<void>
   runInTransaction?<T>(work: (store: SolanaSyncStore) => Promise<T>): Promise<T>
+  getQueueDepth?(): Promise<number>
+  getLastProcessedSlot?(): Promise<bigint | null>
 }
 
 export function createSolanaSyncBatchProcessor(args: {
@@ -212,6 +222,10 @@ interface PrismaSyncClient {
       select: { signature: true }
     }): Promise<{ signature: string } | null>
     create(args: { data: { signature: string; slot: bigint; eventType: string } }): Promise<unknown>
+    findFirst(args: {
+      orderBy: { slot: 'desc' }
+      select: { slot: true }
+    }): Promise<{ slot: bigint } | null>
   }
   solanaSyncOutbox: {
     createMany(args: {
@@ -223,6 +237,7 @@ interface PrismaSyncClient {
         payload: string
       }>
     }): Promise<unknown>
+    count(args: { where: { deliveredAt: null } }): Promise<number>
   }
   $transaction<T>(work: (client: PrismaSyncClient) => Promise<T>): Promise<T>
 }
@@ -259,6 +274,14 @@ export function createPrismaSolanaSyncStore(client: PrismaSyncClient): SolanaSyn
         })),
       })
     },
+    getQueueDepth: () => scopedClient.solanaSyncOutbox.count({ where: { deliveredAt: null } }),
+    getLastProcessedSlot: async () =>
+      (
+        await scopedClient.solanaProcessedTx.findFirst({
+          orderBy: { slot: 'desc' },
+          select: { slot: true },
+        })
+      )?.slot ?? null,
     ...(!transactional
       ? {
           runInTransaction: <T>(work: (store: SolanaSyncStore) => Promise<T>) =>
@@ -269,13 +292,6 @@ export function createPrismaSolanaSyncStore(client: PrismaSyncClient): SolanaSyn
       : {}),
   })
   return createStore(client, false)
-}
-
-export function solanaSlotToBigInt(slot: number): bigint {
-  if (!Number.isSafeInteger(slot) || slot < 0) {
-    throw new RangeError('Solana SDK slot must be a non-negative safe integer')
-  }
-  return BigInt(slot)
 }
 
 function keyAtTransactionIndex(
@@ -336,6 +352,39 @@ async function getFinalizedTransaction(
     await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)))
   }
   throw new Error(`Finalized Solana transaction is unavailable: ${signature}`)
+}
+
+export async function backfillSolanaSignatures(args: {
+  connection: Connection
+  programId: PublicKey
+  cursorSlot: bigint
+  processSignature: (signature: string, slot: bigint) => Promise<void>
+  pageSize?: number
+}): Promise<number> {
+  const pageSize = args.pageSize ?? 1_000
+  let before: string | undefined
+  const candidates: Array<{ signature: string; slot: number }> = []
+  for (;;) {
+    const page = await args.connection.getSignaturesForAddress(
+      args.programId,
+      { before, limit: pageSize },
+      'finalized'
+    )
+    candidates.push(
+      ...page
+        .filter(entry => !entry.err && solanaSlotToBigInt(entry.slot) >= args.cursorSlot)
+        .map(entry => ({ signature: entry.signature, slot: entry.slot }))
+    )
+    const oldest = page.at(-1)
+    if (page.length < pageSize || !oldest || solanaSlotToBigInt(oldest.slot) < args.cursorSlot) {
+      break
+    }
+    before = oldest.signature
+  }
+  for (const entry of candidates.reverse()) {
+    await args.processSignature(entry.signature, solanaSlotToBigInt(entry.slot))
+  }
+  return candidates.length
 }
 
 const AAE_INSTRUCTION_LOGS = [
@@ -446,31 +495,72 @@ export function startSolanaSyncService(args: {
   onEvent?: (event: AaeSolanaSyncEvent) => Promise<void>
   connection?: Connection
   programId?: PublicKey
+  rpcUrls?: readonly string[]
 }): SolanaSyncSubscription {
-  const connection =
-    args.connection ??
-    new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com', 'finalized')
   const onEvent =
     args.onEvent ?? (async event => console.log('[SolanaSync]', encodeSolanaSyncBody(event)))
   const processBatch = createSolanaSyncBatchProcessor({ store: args.store, onEvent })
-  return listenToSolanaEvents(
+  let lastProcessedSlot: bigint | null = null
+  let observedCursorSlot: bigint | null = null
+  let processingTail = Promise.resolve()
+  const processSignatureNow = async (connection: Connection, signature: string, slot: bigint) => {
+    const transaction = await getFinalizedTransaction(connection, signature)
+    const events = decodeAaeTransactionEvents({ signature, slot, transaction })
+    if (await processBatch(events)) lastProcessedSlot = slot
+  }
+  const processSignature = (connection: Connection, signature: string, slot: bigint) => {
+    const work = processingTail.then(() => processSignatureNow(connection, signature, slot))
+    processingTail = work.catch(() => undefined)
+    return work
+  }
+  const subscription = listenToSolanaEvents(
     async (logs, slot) => {
       if (!logs.logs.some(log => AAE_INSTRUCTION_LOGS.some(marker => log.includes(marker)))) return
-      const transaction = await getFinalizedTransaction(connection, logs.signature)
-      const events = decodeAaeTransactionEvents({
-        signature: logs.signature,
-        slot,
-        transaction,
-      })
-      await processBatch(events)
+      await processSignature(subscription.connection, logs.signature, slot)
     },
-    { connection, programId: args.programId }
+    {
+      connection: args.connection,
+      programId: args.programId,
+      rpcUrls: args.rpcUrls,
+      onConnectionReady: async connection => {
+        const durableCursor = (await args.store.getLastProcessedSlot?.()) ?? null
+        const cursor = durableCursor ?? observedCursorSlot
+        if (cursor !== null) {
+          await backfillSolanaSignatures({
+            connection,
+            programId: args.programId ?? AAE_SOLANA_PROGRAM_ID,
+            cursorSlot: cursor,
+            processSignature: (signature, slot) => processSignature(connection, signature, slot),
+          })
+        }
+        observedCursorSlot = solanaSlotToBigInt(await connection.getSlot('finalized'))
+      },
+    }
   )
+  return {
+    get connection() {
+      return subscription.connection
+    },
+    get subscriptionId() {
+      return subscription.subscriptionId
+    },
+    stop: () => subscription.stop(),
+    getHealth: async () => {
+      const base = await subscription.getHealth()
+      const persistedSlot = (await args.store.getLastProcessedSlot?.()) ?? null
+      return {
+        ...base,
+        queueDepth: (await args.store.getQueueDepth?.()) ?? 0,
+        lastProcessedSlot: lastProcessedSlot ?? persistedSlot,
+      }
+    },
+  }
 }
 
 export interface SolanaSyncSubscription {
-  connection: Connection
-  subscriptionId: number
+  readonly connection: Connection
+  readonly subscriptionId: number
+  getHealth(): Promise<SolanaServiceHealth>
   stop(): Promise<void>
 }
 
@@ -480,25 +570,29 @@ export interface SolanaSyncSubscription {
  */
 export function listenToSolanaEvents(
   onLogs: (logs: Logs, slot: bigint) => Promise<void>,
-  options: { connection?: Connection; programId?: PublicKey } = {}
+  options: {
+    connection?: Connection
+    programId?: PublicKey
+    rpcUrls?: readonly string[]
+    onConnectionReady?: (connection: Connection, reconnected: boolean) => Promise<void>
+  } = {}
 ): SolanaSyncSubscription {
-  const connection =
-    options.connection ??
-    new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com', 'finalized')
   const programId = options.programId ?? AAE_SOLANA_PROGRAM_ID
-  const subscriptionId = connection.onLogs(
+  const subscription = createResilientSolanaLogSubscription({
     programId,
-    async (logs, context) => {
-      if (logs.err) return
-      await onLogs(logs, solanaSlotToBigInt(context.slot))
-    },
-    'finalized'
-  )
+    onLogs: (logs, slot) => onLogs(logs, solanaSlotToBigInt(slot)),
+    connection: options.connection,
+    rpcUrls: options.rpcUrls ?? resolveSolanaRpcUrls(),
+    onConnectionReady: options.onConnectionReady,
+  })
   return {
-    connection,
-    subscriptionId,
-    stop: async () => {
-      await connection.removeOnLogsListener(subscriptionId)
+    get connection() {
+      return subscription.connection
     },
+    get subscriptionId() {
+      return subscription.subscriptionId
+    },
+    getHealth: async () => subscription.getHealth(),
+    stop: () => subscription.stop(),
   }
 }

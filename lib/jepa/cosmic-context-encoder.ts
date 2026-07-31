@@ -7,13 +7,16 @@
  */
 
 import { Pool, type PoolClient } from 'pg'
-import type { AstrologicalTransit, CosmicContextSnapshot, DignityLevel } from './types'
+import type { AstrologicalTransit, CosmicContextSnapshot, DignityLevel } from '@/lib/jepa/types'
 import { createHash } from 'crypto'
 
 export class AsyncCosmicContextEncoder {
   private static pool: Pool | null = null
   private static cachedSnapshot: CosmicContextSnapshot | null = null
   private static cronJobHandle: ReturnType<typeof setInterval> | null = null
+  private static trackedAgentIds = new Set<string>()
+  private static lastAnchorAt = new Map<string, number>()
+  private static anchorInFlight = new Map<string, Promise<void>>()
 
   /**
    * Initialize native node-postgres connection pool with aggressive low-overhead settings.
@@ -123,7 +126,7 @@ export class AsyncCosmicContextEncoder {
       // High-density JSON compression string
       const payload = { transits, domicileMap, exaltationMap, activeAspects }
       const compressedJSON = JSON.stringify(payload)
-      const epochHash = createHash('sha256').update(compressedJSON).digest('hex').substring(0, 16)
+      const epochHash = createHash('sha256').update(compressedJSON).digest('hex')
 
       const snapshot: CosmicContextSnapshot = {
         timestamp: Date.now(),
@@ -141,7 +144,9 @@ export class AsyncCosmicContextEncoder {
     } catch (err: any) {
       console.warn('[CosmicContextEncoder] Raw PG query fallback triggered:', err.message)
       // Fallback static high-density context snapshot if DB is offline/migrating
-      return this.getFallbackSnapshot()
+      const fallback = this.getFallbackSnapshot()
+      this.cachedSnapshot = fallback
+      return fallback
     } finally {
       // Explicit connection cleanup semantics to eliminate memory leaks and socket locks
       if (client) {
@@ -167,14 +172,16 @@ export class AsyncCosmicContextEncoder {
     if (this.cronJobHandle) return
     console.log(`[CosmicContextEncoder] Starting Async Background Encoder Job (${intervalMs}ms)...`)
 
+    for (const agentId of (process.env.JEPA_ANCHOR_AGENT_IDS ?? '').split(',')) {
+      this.trackAgentForAnchoring(agentId)
+    }
+
     // Initial run
-    this.encodeCosmicContext().catch(err => console.error(err))
+    void this.refreshAndAnchor()
 
     // Scheduled Bun interval
     this.cronJobHandle = setInterval(() => {
-      this.encodeCosmicContext().catch(err => {
-        console.error('[CosmicContextEncoder] Background refresh failed:', err.message)
-      })
+      void this.refreshAndAnchor()
     }, intervalMs)
   }
 
@@ -189,6 +196,88 @@ export class AsyncCosmicContextEncoder {
     if (this.pool) {
       await this.pool.end()
       this.pool = null
+    }
+  }
+
+  public static trackAgentForAnchoring(agentId: string): void {
+    const normalized = agentId.trim()
+    if (normalized) this.trackedAgentIds.add(normalized)
+  }
+
+  /**
+   * Debounced publisher for EMA lifecycle hooks. Epoch changes pass `force` and
+   * fan out immediately; ordinary persona updates publish at a bounded cadence.
+   */
+  public static requestPersonaAnchor(
+    agentId: string,
+    options: { force?: boolean; now?: number } = {}
+  ): boolean {
+    this.trackAgentForAnchoring(agentId)
+    const now = options.now ?? Date.now()
+    const intervalMs = Number(process.env.JEPA_PERSONA_ANCHOR_INTERVAL_MS ?? 300_000)
+    const last = this.lastAnchorAt.get(agentId) ?? 0
+    if (!options.force && now - last < intervalMs) return false
+    if (this.anchorInFlight.has(agentId)) return false
+    this.lastAnchorAt.set(agentId, now)
+    const work = import('@/lib/jepa/onchain-sync')
+      .then(({ anchorPersonaState }) => anchorPersonaState(agentId))
+      .then(() => undefined)
+      .catch(error => {
+        console.error(
+          `[CosmicContextEncoder] Persona anchor failed for ${agentId}:`,
+          error instanceof Error ? error.message : error
+        )
+      })
+      .finally(() => this.anchorInFlight.delete(agentId))
+    this.anchorInFlight.set(agentId, work)
+    return true
+  }
+
+  private static async refreshAndAnchor(): Promise<void> {
+    try {
+      const previousEpoch = this.cachedSnapshot?.epochHash
+      const snapshot = await this.encodeCosmicContext()
+      const epochChanged = previousEpoch !== snapshot.epochHash
+      if (epochChanged) {
+        for (const agentId of await this.discoverActiveAnchorAgents()) {
+          this.trackAgentForAnchoring(agentId)
+        }
+      }
+      for (const agentId of this.trackedAgentIds) {
+        this.requestPersonaAnchor(agentId, { force: epochChanged })
+      }
+    } catch (error) {
+      console.error(
+        '[CosmicContextEncoder] Background refresh failed:',
+        error instanceof Error ? error.message : error
+      )
+    }
+  }
+
+  private static async discoverActiveAnchorAgents(): Promise<string[]> {
+    const configured = (process.env.JEPA_ANCHOR_AGENT_IDS ?? '')
+      .split(',')
+      .map(agentId => agentId.trim())
+      .filter(Boolean)
+    try {
+      const activeWindowHours = Number(process.env.JEPA_ANCHOR_ACTIVE_WINDOW_HOURS ?? 24)
+      const result = await this.getPool().query<{ agentId: string }>(
+        `
+          SELECT "agentId"
+          FROM historical_agents
+          WHERE "isActive" = true
+            AND "lastActive" >= NOW() - ($1::double precision * INTERVAL '1 hour')
+          ORDER BY "lastActive" DESC
+        `,
+        [activeWindowHours]
+      )
+      return [...new Set([...configured, ...result.rows.map(row => row.agentId)])]
+    } catch (error) {
+      console.warn(
+        '[CosmicContextEncoder] Active-agent discovery fell back to configured IDs:',
+        error instanceof Error ? error.message : error
+      )
+      return configured
     }
   }
 
@@ -230,7 +319,7 @@ export class AsyncCosmicContextEncoder {
     }
     return {
       timestamp: Date.now(),
-      epochHash: 'static-fallback-01',
+      epochHash: createHash('sha256').update(JSON.stringify(payload)).digest('hex'),
       transits: defaultTransits,
       domicileMap: payload.domicileMap,
       exaltationMap: payload.exaltationMap,

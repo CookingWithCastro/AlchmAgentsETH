@@ -45,7 +45,16 @@ async function getRawTokenBalance(connection: Connection, account: PublicKey): P
   throw new Error(`Token account was not visible at confirmed commitment: ${account.toBase58()}`)
 }
 
-describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
+const hasDevnetProvider = Boolean(process.env.ANCHOR_PROVIDER_URL && process.env.ANCHOR_WALLET)
+
+const describeDevnet = hasDevnetProvider
+  ? describe
+  : (name: string, _suite: () => void) =>
+      describe.skip(name, () => {
+        it('requires ANCHOR_PROVIDER_URL and ANCHOR_WALLET', () => undefined)
+      })
+
+describeDevnet('AAE Solana ESMS and persona program on Devnet', () => {
   const environmentProvider = anchor.AnchorProvider.env()
   let nextRequestAt = 0
   const connection = new Connection(environmentProvider.connection.rpcEndpoint, {

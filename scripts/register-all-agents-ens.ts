@@ -24,6 +24,7 @@
 import { HISTORICAL_AGENTS } from '@/lib/agents/historical'
 import { ensLabel, buildAgentTextRecords } from '@/lib/erc8004/ensip'
 import { bulkSetSubnames, type NameStoneSubname } from '@/lib/namestone'
+import { buildSolanaAgentMetadata } from '@/lib/solana/agent-metadata'
 
 const PLANETS = [
   'sun',
@@ -112,6 +113,7 @@ function toSubname(seed: AgentSeed): NameStoneSubname {
       webUrl: site ? `${site}/agents/${seed.label}` : undefined,
       paymentAddress: address,
       paymentChain: 'eip155:84532', // Base Sepolia CAIP-2 chain ID
+      solanaPersonaPda: buildSolanaAgentMetadata(seed.label).persona_pda,
     }),
   }
 }

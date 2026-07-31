@@ -9,6 +9,12 @@ import { Button } from '@/components/ui/button'
 import { Menu, X, Rocket, User, LogOut, Sparkles, Monitor } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { ALCHM_DESKTOP_DOWNLOAD_LABEL, DESKTOP_APP_DOWNLOAD_URL } from '@/lib/desktop-download'
+import { DynamicWidget } from '@dynamic-labs/sdk-react-core'
+import {
+  DualChainNetworkBadge,
+  SolanaWalletConnectButton,
+  useSolanaWalletState,
+} from '@/components/providers/SolanaWalletProvider'
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -165,6 +171,13 @@ const navigationGroups = [
   },
 ]
 
+const ESMS_COMPACT = [
+  { key: 'spirit', label: 'Sp' },
+  { key: 'essence', label: 'Es' },
+  { key: 'matter', label: 'Ma' },
+  { key: 'substance', label: 'Su' },
+] as const
+
 const ListItem = React.forwardRef<React.ElementRef<'a'>, React.ComponentPropsWithoutRef<'a'>>(
   ({ className, title, children, ...props }, ref) => {
     return (
@@ -192,6 +205,7 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const pathname = usePathname()
   const { data: session, status } = useSession()
+  const { balances: solanaBalances, evmBalances } = useSolanaWalletState()
 
   const isGroupActive = (links: { href: string }[]) => {
     return links.some(link => pathname === link.href || pathname?.startsWith(`${link.href}/`))
@@ -254,6 +268,20 @@ export function Navigation() {
 
           {/* Desktop Right */}
           <div className="nav-right">
+            <div className="hidden 2xl:grid grid-cols-4 gap-1 rounded-lg border border-white/10 bg-black/20 px-2 py-1">
+              {ESMS_COMPACT.map(({ key, label }) => (
+                <span key={key} className="font-mono text-[9px] text-zinc-400" title={key}>
+                  {label} <b className="text-zinc-200">{evmBalances?.[key] ?? '—'}</b>
+                  <span className="text-violet-400">/</span>
+                  <b className="text-violet-200">{solanaBalances?.[key] ?? '—'}</b>
+                </span>
+              ))}
+            </div>
+            <DualChainNetworkBadge />
+            <div className="hidden xl:block" title="EVM / Dynamic wallet">
+              <DynamicWidget />
+            </div>
+            <SolanaWalletConnectButton compact />
             <a
               href={DESKTOP_APP_DOWNLOAD_URL}
               target="_blank"
@@ -337,6 +365,11 @@ export function Navigation() {
             ))}
 
             <div className="nav-mobile-footer">
+              <div className="flex flex-col gap-2 border-b border-white/10 pb-3">
+                <DualChainNetworkBadge />
+                <DynamicWidget />
+                <SolanaWalletConnectButton />
+              </div>
               <a
                 href={DESKTOP_APP_DOWNLOAD_URL}
                 target="_blank"

@@ -1,20 +1,22 @@
-import { AnchorProvider, BN, Program, type Wallet } from '@coral-xyz/anchor'
+import { AnchorProvider, BN, Program } from '@coral-xyz/anchor'
 import { getAssociatedTokenAddressSync } from '@solana/spl-token'
 import {
   Connection,
   Ed25519Program,
   PublicKey,
   SYSVAR_INSTRUCTIONS_PUBKEY,
+  Transaction,
+  VersionedTransaction,
   type ConfirmOptions,
   type TransactionInstruction,
 } from '@solana/web3.js'
 
 import {
   AAE_SOLANA_PROGRAM_ID,
-  AAE_SOLANA_SEEDS,
   TOKEN_2022_PROGRAM_ID,
   buildRedeemAuthorizationMessage,
   getEsmsMintAddresses,
+  getPersonaCommitmentAddress,
   getProgramConfigAddress,
   getReceiptAddress,
 } from '@/lib/solana/esms'
@@ -39,9 +41,30 @@ function amountsToBn(amounts: EsmsAmounts): [BN, BN, BN, BN] {
 }
 
 export interface AaeSolanaClientOptions {
-  wallet: Wallet
+  wallet: AaeSolanaWallet
   connection?: Connection
   confirmOptions?: ConfirmOptions
+  onTransactionConfirmed?: (transaction: AaeSolanaTransaction) => void | Promise<void>
+}
+
+export interface AaeSolanaWallet {
+  publicKey: PublicKey
+  signTransaction<T extends Transaction | VersionedTransaction>(transaction: T): Promise<T>
+  signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]>
+}
+
+export type AaeSolanaTransactionType = 'claim' | 'redeem' | 'redeemFor' | 'persona'
+
+export interface AaeSolanaTransaction {
+  type: AaeSolanaTransactionType
+  signature: string
+  explorerUrl: string
+}
+
+export const AAE_SOLANA_TRANSACTION_CONFIRMED_EVENT = 'aae:solana-transaction-confirmed'
+
+export function solanaExplorerTransactionUrl(signature: string): string {
+  return `https://explorer.solana.com/tx/${encodeURIComponent(signature)}?cluster=devnet`
 }
 
 /**
@@ -50,17 +73,22 @@ export interface AaeSolanaClientOptions {
  */
 export class AaeSolanaClient {
   readonly connection: Connection
-  readonly wallet: Wallet
+  readonly wallet: AaeSolanaWallet
   readonly program: Program<AaeSolana>
   readonly programId: PublicKey
   readonly programConfig: PublicKey
   readonly mints: readonly PublicKey[]
+  private readonly onTransactionConfirmed?: AaeSolanaClientOptions['onTransactionConfirmed']
 
   constructor(options: AaeSolanaClientOptions) {
     this.connection =
       options.connection ??
-      new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? DEFAULT_RPC, 'confirmed')
+      new Connection(
+        process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? DEFAULT_RPC,
+        'confirmed'
+      )
     this.wallet = options.wallet
+    this.onTransactionConfirmed = options.onTransactionConfirmed
     const provider = new AnchorProvider(
       this.connection,
       options.wallet,
@@ -81,11 +109,7 @@ export class AaeSolanaClient {
   }
 
   getPersonaCommitmentAddress(agentId: Uint8Array): PublicKey {
-    if (agentId.length !== 32) throw new Error('agentId must be exactly 32 bytes')
-    return PublicKey.findProgramAddressSync(
-      [AAE_SOLANA_SEEDS.personaCommitment, Buffer.from(agentId)],
-      this.programId
-    )[0]
+    return getPersonaCommitmentAddress(agentId, this.programId)
   }
 
   getTokenAccounts(owner: PublicKey): readonly PublicKey[] {
@@ -212,6 +236,70 @@ export class AaeSolanaClient {
         writer: args.writer ?? this.wallet.publicKey,
       })
       .instruction()
+  }
+
+  private async sendInstructions(
+    type: AaeSolanaTransactionType,
+    instructions: readonly TransactionInstruction[]
+  ): Promise<string> {
+    const latest = await this.connection.getLatestBlockhash('confirmed')
+    const transaction = new Transaction({
+      feePayer: this.wallet.publicKey,
+      blockhash: latest.blockhash,
+      lastValidBlockHeight: latest.lastValidBlockHeight,
+    }).add(...instructions)
+    const signed = await this.wallet.signTransaction(transaction)
+    const signature = await this.connection.sendRawTransaction(signed.serialize())
+    await this.connection.confirmTransaction({ signature, ...latest }, 'confirmed')
+    await this.onTransactionConfirmed?.({
+      type,
+      signature,
+      explorerUrl: solanaExplorerTransactionUrl(signature),
+    })
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent<AaeSolanaTransaction>(AAE_SOLANA_TRANSACTION_CONFIRMED_EVENT, {
+          detail: { type, signature, explorerUrl: solanaExplorerTransactionUrl(signature) },
+        })
+      )
+    }
+    return signature
+  }
+
+  async claimMintEsms(
+    args: Parameters<AaeSolanaClient['buildClaimMintEsmsInstruction']>[0]
+  ): Promise<string> {
+    return this.sendInstructions('claim', [await this.buildClaimMintEsmsInstruction(args)])
+  }
+
+  async redeemEsms(
+    args: Parameters<AaeSolanaClient['buildRedeemEsmsInstruction']>[0]
+  ): Promise<string> {
+    return this.sendInstructions('redeem', [await this.buildRedeemEsmsInstruction(args)])
+  }
+
+  async redeemForEsms(
+    args: Parameters<AaeSolanaClient['buildRedeemForEsmsInstructions']>[0]
+  ): Promise<string> {
+    return this.sendInstructions('redeemFor', await this.buildRedeemForEsmsInstructions(args))
+  }
+
+  async nextPersonaSequence(agentId: Uint8Array): Promise<bigint> {
+    const address = this.getPersonaCommitmentAddress(agentId)
+    const account = await this.program.account.personaCommitment.fetchNullable(address)
+    return account ? BigInt(account.sequence.toString()) + 1n : 1n
+  }
+
+  async recordPersonaCommitment(args: {
+    agentId: Uint8Array
+    targetPersonaHash: Uint8Array
+    epochHash: Uint8Array
+    sequence?: bigint
+    writer?: PublicKey
+  }): Promise<string> {
+    const sequence = args.sequence ?? (await this.nextPersonaSequence(args.agentId))
+    const instruction = await this.buildRecordPersonaCommitmentInstruction({ ...args, sequence })
+    return this.sendInstructions('persona', [instruction])
   }
 
   async readEsmsBalances(owner: PublicKey | string): Promise<EsmsAmounts> {

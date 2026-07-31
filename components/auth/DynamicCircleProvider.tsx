@@ -2,6 +2,7 @@
 
 import { DynamicContextProvider } from '@dynamic-labs/sdk-react-core'
 import { EthereumWalletConnectors } from '@dynamic-labs/ethereum'
+import { SolanaWalletConnectors } from '@dynamic-labs/solana'
 import { ReactNode } from 'react'
 
 const DYNAMIC_ENVIRONMENT_ID =
@@ -12,7 +13,7 @@ export function DynamicCircleProvider({ children }: { children: ReactNode }) {
     <DynamicContextProvider
       settings={{
         environmentId: DYNAMIC_ENVIRONMENT_ID,
-        walletConnectors: [EthereumWalletConnectors],
+        walletConnectors: [EthereumWalletConnectors, SolanaWalletConnectors],
       }}
     >
       {children}
