@@ -1677,3 +1677,49 @@ model world_id_verifications {
   @@index([agentId])
   @@map("world_id_verifications")
 }
+
+/// Authenticated Ed25519 ownership binding. Solana public keys remain in a
+/// chain-specific table and are never written into users.walletAddress.
+model VerifiedSolanaWallet {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+  solanaPubKey String   @unique @map("solana_pub_key")
+  signature    String
+  verifiedAt   DateTime @default(now()) @map("verified_at") @db.Timestamptz
+
+  @@map("verified_solana_wallet")
+}
+
+/// Durable indexer/relay replay guard. `slot` is BigInt so a Solana u64 never
+/// passes through JavaScript's lossy Number representation.
+model SolanaProcessedTx {
+  signature   String   @id
+  slot        BigInt
+  eventType   String   @map("event_type")
+  processedAt DateTime @default(now()) @map("processed_at") @db.Timestamptz
+
+  @@index([eventType, processedAt(sort: Desc)])
+  @@map("processed_tx")
+}
+
+/// Explicit bridge jobs only. Ordinary WTEN claims remain locked to one target
+/// chain and do not create these rows. Raw token amounts are decimal strings.
+model SolanaBridgeTransfer {
+  claimId           String   @id @map("claim_id")
+  sourceChain       String   @map("source_chain")
+  targetChain       String   @map("target_chain")
+  status            String
+  amount            String
+  sourceTxHash      String?  @unique @map("source_tx_hash")
+  sourceAddress     String?  @map("source_address")
+  targetAddress     String?  @map("target_address")
+  sourceReceiptId   String?  @map("source_receipt_id")
+  sourceSlot        BigInt?  @map("source_slot")
+  elementId         Int?     @map("element_id")
+  destinationTxHash String?  @map("destination_tx_hash")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([status, updatedAt])
+  @@map("bridge_transfer")
+}
