@@ -87,6 +87,9 @@ AGENTS.md
 backend/node_modules/
 .env*.local
 src-tauri/target/
+/target/
+.anchor/
+test-ledger/
 *.DS_Store
 .DS_Store
 src-tauri/bin/llama-server*

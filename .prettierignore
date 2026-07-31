@@ -5,5 +5,7 @@ backend/.venv/**
 .next/**
 node_modules/**
 contracts/**
+**/target/**
+probe*-readonly-tmp.mjs
 design/**
 public/mockServiceWorker.js

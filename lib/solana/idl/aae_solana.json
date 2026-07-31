@@ -1,0 +1,989 @@
+{
+  "address": "5QheuqaicKvPPRFEoEXwaE5xaFp7gauvJCfsjpQv8WzD",
+  "metadata": {
+    "name": "aae_solana",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "AlchmAgentsEth ESMS and persona core for Solana"
+  },
+  "instructions": [
+    {
+      "name": "claim_mint_esms",
+      "discriminator": [194, 59, 120, 134, 151, 157, 193, 239],
+      "accounts": [
+        {
+          "name": "program_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 114, 111, 103, 114, 97, 109, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "claim_receipt",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [99, 108, 97, 105, 109, 95, 114, 101, 99, 101, 105, 112, 116]
+              },
+              {
+                "kind": "arg",
+                "path": "claim_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "recipient"
+        },
+        {
+          "name": "spirit_mint",
+          "writable": true
+        },
+        {
+          "name": "essence_mint",
+          "writable": true
+        },
+        {
+          "name": "matter_mint",
+          "writable": true
+        },
+        {
+          "name": "substance_mint",
+          "writable": true
+        },
+        {
+          "name": "spirit_account",
+          "writable": true
+        },
+        {
+          "name": "essence_account",
+          "writable": true
+        },
+        {
+          "name": "matter_account",
+          "writable": true
+        },
+        {
+          "name": "substance_account",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "associated_token_program",
+          "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "claim_id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "ledger_reference_hash",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "amounts",
+          "type": {
+            "array": ["u64", 4]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_config",
+      "discriminator": [208, 127, 21, 1, 194, 190, 196, 70],
+      "accounts": [
+        {
+          "name": "program_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 114, 111, 103, 114, 97, 109, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "attestor",
+          "type": "pubkey"
+        },
+        {
+          "name": "pauser",
+          "type": "pubkey"
+        },
+        {
+          "name": "cluster_domain",
+          "type": {
+            "array": ["u8", 32]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_esms_mints",
+      "discriminator": [195, 95, 238, 168, 120, 136, 203, 4],
+      "accounts": [
+        {
+          "name": "program_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 114, 111, 103, 114, 97, 109, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "spirit_mint",
+          "writable": true
+        },
+        {
+          "name": "essence_mint",
+          "writable": true
+        },
+        {
+          "name": "matter_mint",
+          "writable": true
+        },
+        {
+          "name": "substance_mint",
+          "writable": true
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "record_persona_commitment",
+      "discriminator": [228, 40, 100, 106, 125, 164, 118, 37],
+      "accounts": [
+        {
+          "name": "program_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 114, 111, 103, 114, 97, 109, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "persona_commitment",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 101, 114, 115, 111, 110, 97, 95, 99, 111, 109, 109, 105, 116, 109, 101, 110,
+                  116
+                ]
+              },
+              {
+                "kind": "arg",
+                "path": "agent_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "writer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agent_id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "target_persona_hash",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "epoch_hash",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "sequence",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "redeem_esms",
+      "discriminator": [182, 20, 159, 192, 104, 83, 177, 113],
+      "accounts": [
+        {
+          "name": "program_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 114, 111, 103, 114, 97, 109, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "order_receipt",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [111, 114, 100, 101, 114, 95, 114, 101, 99, 101, 105, 112, 116]
+              },
+              {
+                "kind": "arg",
+                "path": "order_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "holder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "spirit_mint",
+          "writable": true
+        },
+        {
+          "name": "essence_mint",
+          "writable": true
+        },
+        {
+          "name": "matter_mint",
+          "writable": true
+        },
+        {
+          "name": "substance_mint",
+          "writable": true
+        },
+        {
+          "name": "spirit_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "spirit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "essence_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "essence_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "matter_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "matter_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "substance_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "substance_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "order_id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "amounts",
+          "type": {
+            "array": ["u64", 4]
+          }
+        }
+      ]
+    },
+    {
+      "name": "redeem_for_esms",
+      "discriminator": [86, 175, 194, 240, 164, 243, 199, 163],
+      "accounts": [
+        {
+          "name": "program_config",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 114, 111, 103, 114, 97, 109, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "order_receipt",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [111, 114, 100, 101, 114, 95, 114, 101, 99, 101, 105, 112, 116]
+              },
+              {
+                "kind": "arg",
+                "path": "order_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "sponsor",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "holder"
+        },
+        {
+          "name": "spirit_mint",
+          "writable": true
+        },
+        {
+          "name": "essence_mint",
+          "writable": true
+        },
+        {
+          "name": "matter_mint",
+          "writable": true
+        },
+        {
+          "name": "substance_mint",
+          "writable": true
+        },
+        {
+          "name": "spirit_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "spirit_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "essence_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "essence_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "matter_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "matter_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "substance_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "account",
+                "path": "holder"
+              },
+              {
+                "kind": "account",
+                "path": "token_program"
+              },
+              {
+                "kind": "account",
+                "path": "substance_mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19,
+                153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89
+              ]
+            }
+          }
+        },
+        {
+          "name": "instructions"
+        },
+        {
+          "name": "token_program",
+          "address": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "order_id",
+          "type": {
+            "array": ["u8", 32]
+          }
+        },
+        {
+          "name": "amounts",
+          "type": {
+            "array": ["u64", 4]
+          }
+        },
+        {
+          "name": "deadline",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "set_pause_state",
+      "discriminator": [130, 225, 63, 203, 229, 214, 138, 17],
+      "accounts": [
+        {
+          "name": "program_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  112, 114, 111, 103, 114, 97, 109, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "authority",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "pause_claims",
+          "type": "bool"
+        },
+        {
+          "name": "pause_redemptions",
+          "type": "bool"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "ClaimReceipt",
+      "discriminator": [223, 233, 11, 229, 124, 165, 207, 28]
+    },
+    {
+      "name": "OrderReceipt",
+      "discriminator": [133, 4, 37, 85, 200, 201, 93, 70]
+    },
+    {
+      "name": "PersonaCommitment",
+      "discriminator": [230, 97, 191, 242, 27, 177, 16, 63]
+    },
+    {
+      "name": "ProgramConfig",
+      "discriminator": [196, 210, 90, 231, 144, 149, 140, 63]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "Unauthorized authority"
+    },
+    {
+      "code": 6001,
+      "name": "ClaimsPaused",
+      "msg": "Claims are paused"
+    },
+    {
+      "code": 6002,
+      "name": "RedemptionsPaused",
+      "msg": "Redemptions are paused"
+    },
+    {
+      "code": 6003,
+      "name": "DefaultAuthority",
+      "msg": "A required public key cannot be the default key"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidClusterDomain",
+      "msg": "The cluster domain must be non-zero"
+    },
+    {
+      "code": 6005,
+      "name": "ZeroCommitment",
+      "msg": "Persona commitments and agent IDs must be non-zero"
+    },
+    {
+      "code": 6006,
+      "name": "InvalidSequence",
+      "msg": "Persona sequence must begin at one and increment exactly once"
+    },
+    {
+      "code": 6007,
+      "name": "ArithmeticOverflow",
+      "msg": "Arithmetic overflow"
+    },
+    {
+      "code": 6008,
+      "name": "EmptyAmounts",
+      "msg": "At least one ESMS amount must be non-zero"
+    },
+    {
+      "code": 6009,
+      "name": "AmountOutOfRange",
+      "msg": "An ESMS amount exceeds the Decimal(12,4) ledger domain"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidTokenProgram",
+      "msg": "The Token-2022 program is invalid"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidMint",
+      "msg": "The ESMS mint account is invalid"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidMintExtensions",
+      "msg": "The ESMS mint extensions or authorities do not match protocol configuration"
+    },
+    {
+      "code": 6013,
+      "name": "AuthorizationExpired",
+      "msg": "The holder authorization has expired"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidEd25519Authorization",
+      "msg": "The Ed25519 holder authorization is missing or invalid"
+    },
+    {
+      "code": 6015,
+      "name": "ZeroReceiptIdentifier",
+      "msg": "The receipt identifier or ledger reference must be non-zero"
+    },
+    {
+      "code": 6016,
+      "name": "InvalidTokenAccount",
+      "msg": "The source token account does not belong to the expected holder and mint"
+    },
+    {
+      "code": 6017,
+      "name": "InvalidInstructionsSysvar",
+      "msg": "The instruction sysvar account is invalid"
+    }
+  ],
+  "types": [
+    {
+      "name": "ClaimReceipt",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "claim_id",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "ledger_reference_hash",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "amounts",
+            "type": {
+              "array": ["u64", 4]
+            }
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "settled_slot",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrderReceipt",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "order_id",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "holder",
+            "type": "pubkey"
+          },
+          {
+            "name": "amounts",
+            "type": {
+              "array": ["u64", 4]
+            }
+          },
+          {
+            "name": "submitter",
+            "type": "pubkey"
+          },
+          {
+            "name": "mode",
+            "type": "u8"
+          },
+          {
+            "name": "settled_slot",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PersonaCommitment",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "agent_id",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "target_persona_hash",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "epoch_hash",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "sequence",
+            "type": "u64"
+          },
+          {
+            "name": "writer",
+            "type": "pubkey"
+          },
+          {
+            "name": "updated_slot",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProgramConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "version",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "attestor",
+            "type": "pubkey"
+          },
+          {
+            "name": "pauser",
+            "type": "pubkey"
+          },
+          {
+            "name": "cluster_domain",
+            "type": {
+              "array": ["u8", 32]
+            }
+          },
+          {
+            "name": "pause_claims",
+            "type": "bool"
+          },
+          {
+            "name": "pause_redemptions",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}
