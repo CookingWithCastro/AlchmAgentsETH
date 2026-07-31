@@ -190,7 +190,7 @@ Both TS and Python engines own **all four** thermodynamic quantities, not just t
 
 **Still open:** `kalchmConstant`/`monicaConstant` are `NOT NULL` in `prisma/schema.prisma`, so ABSENT is unrepresentable at the DB layer. `backend/crud.py` no longer copies a fabricated Monica into `kalchmConstant`, but a placeholder is still written because the column cannot be null. The migration is **planned, not executed** — see the plan in `docs/`.
 
-⚠️ **A fourth non-canonical set is live and unfixed:** `desktop-shell/src/localAstrologyMetrics.ts` computes heat/entropy/reactivity from **sine waves of the calendar date and clock hour** — the planets appear nowhere in it — and `desktop-shell/src/main.ts` silently swaps it in when `GET /api/astrology/consensus` fails, setting `status = 'ready'` and clearing `lastError`. A user cannot tell a real sky from a sine wave.
+**Removed 2026-07-28:** `desktop-shell/src/localAstrologyMetrics.ts` computed heat/entropy/reactivity from **sine waves of the calendar date and clock hour** — the planets appeared nowhere in it — and the shell swapped it in when `GET /api/astrology/consensus` failed, setting `status = 'ready'` and clearing `lastError`, so a failed fetch was indistinguishable from a successful one. The module, its local snapshot builder and its test are deleted; the astrology tab now surfaces the real error, matching `refreshAlchmPhysics`. **A fallback must not be able to impersonate the thing it replaces** — if the desktop shell needs a degraded mode, it has to announce itself as one.
 
 ### Database
 

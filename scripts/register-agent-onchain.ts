@@ -26,6 +26,7 @@ import {
   ERC8004_ADDRESSES,
   type Erc8004Network,
 } from '@/lib/erc8004'
+import { buildSolanaAgentMetadata } from '@/lib/solana/agent-metadata'
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`)
@@ -92,6 +93,7 @@ async function main() {
         context: file.description,
         a2aUrl,
         webUrl,
+        solanaPersonaPda: buildSolanaAgentMetadata(agent?.id ?? slug).persona_pda,
         registration: {
           agentId: result.agentId,
           chainId: result.chainId,

@@ -3,12 +3,14 @@ import { HISTORICAL_AGENTS, getHistoricalAgent } from '@/lib/agents/historical'
 import { STAR_AGENTS, getStarAgent } from '@/lib/agents/star-agents'
 import type { CraftedAgent } from '@/lib/agent-types'
 import { formatPersonaBlock } from './format-persona-block'
+import { buildSolanaAgentMetadata, type SolanaAgentMetadata } from '@/lib/solana/agent-metadata'
 
 export interface AgentContext {
   agent: CraftedAgent
   personaBlock: string
   /** Stable hash of the persona content — use as a prompt-cache breakpoint key. */
   cacheKey: string
+  metadata: { solana: SolanaAgentMetadata }
 }
 
 const cache = new Map<string, AgentContext>()
@@ -46,7 +48,12 @@ export function buildAgentContext(agentId: string): AgentContext | null {
   const personaBlock = formatPersonaBlock(agent)
   const cacheKey = createHash('sha256').update(personaBlock).digest('hex').slice(0, 16)
 
-  const ctx: AgentContext = { agent, personaBlock, cacheKey }
+  const ctx: AgentContext = {
+    agent,
+    personaBlock,
+    cacheKey,
+    metadata: { solana: buildSolanaAgentMetadata(agent.id) },
+  }
   cache.set(agentId, ctx)
   return ctx
 }

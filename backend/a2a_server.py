@@ -25,12 +25,15 @@ from a2a.server.events import EventQueue
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.tasks import InMemoryTaskStore, TaskUpdater
 from a2a.server.routes import (
-    create_agent_card_routes,
     create_jsonrpc_routes,
     add_a2a_routes_to_fastapi,
 )
 from a2a.helpers import new_text_message, new_text_part, new_task_from_user_message
 from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH, TransportProtocol
+from a2a.server.request_handlers.response_helpers import agent_card_to_dict
+from solana_metadata import build_solana_agent_metadata
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 
 try:  # AgentExtension may not exist on every a2a-sdk build
     from a2a.types import AgentExtension
@@ -116,6 +119,19 @@ def _build_card(agent_id: str, name: str, description: str) -> AgentCard:
     )
 
 
+def _create_alchm_agent_card_routes(
+    metadata_agent_id: str, card: AgentCard, card_url: str
+):
+    """Serve the canonical protobuf card plus AAE cross-chain discovery data."""
+
+    async def _get_agent_card(_request):
+        payload = agent_card_to_dict(card)
+        payload["solana"] = build_solana_agent_metadata(metadata_agent_id)
+        return JSONResponse(payload)
+
+    return [Route(path=card_url, endpoint=_get_agent_card, methods=["GET"])]
+
+
 
 class _ChatExecutor(AgentExecutor):
     """Wraps the in-process chat orchestration for a single agent."""
@@ -187,6 +203,7 @@ def register_a2a_routes(
     mounted = 0
     for agent in agents:
         agent_id = agent["id"]
+        metadata_agent_id = agent.get("canonical_id") or agent_id
         name = agent.get("name") or agent_id
         description = agent.get("description") or f"{name}, an Alchm agent."
         card = _build_card(agent_id, name, description)
@@ -198,8 +215,8 @@ def register_a2a_routes(
         prefix = f"/a2a/{agent_id}"
         add_a2a_routes_to_fastapi(
             app,
-            agent_card_routes=create_agent_card_routes(
-                card, card_url=f"{prefix}{AGENT_CARD_WELL_KNOWN_PATH}"
+            agent_card_routes=_create_alchm_agent_card_routes(
+                metadata_agent_id, card, card_url=f"{prefix}{AGENT_CARD_WELL_KNOWN_PATH}"
             ),
             jsonrpc_routes=create_jsonrpc_routes(
                 handler, rpc_url=f"{prefix}/", enable_v0_3_compat=True

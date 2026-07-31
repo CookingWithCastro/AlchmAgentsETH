@@ -22,6 +22,7 @@
  */
 
 import { buildAgentTextRecords, ensLabel } from '@/lib/erc8004/ensip'
+import { buildSolanaAgentMetadata } from '@/lib/solana/agent-metadata'
 
 const NAMESTONE_BASE = process.env.NAMESTONE_API_URL ?? 'https://namestone.com/api/public_v1'
 
@@ -234,6 +235,7 @@ export async function registerAgentSubnameOnCreate(
     walletAddress?: string
     slug?: string
     id?: string
+    agentId?: string
     /** Per-agent x402 payment wallet — published as agent-wallet[x402]. */
     paymentAddress?: string
     paymentChain?: string
@@ -242,6 +244,8 @@ export async function registerAgentSubnameOnCreate(
   if (!process.env.NAMESTONE_API_KEY || !process.env.NAMESTONE_DOMAIN) return
   const slug = agent?.slug ?? agent?.agentId ?? agent?.id ?? params?.slug ?? params?.id
   if (!slug) return
+  const canonicalAgentId =
+    agent?.agentId ?? agent?.id ?? params?.agentId ?? params?.id ?? params?.slug ?? slug
   const address =
     params?.walletAddress ?? agent?.walletAddress ?? process.env.NAMESTONE_DEFAULT_ADDRESS
   if (!address) return
@@ -261,6 +265,7 @@ export async function registerAgentSubnameOnCreate(
       webUrl: site ? `${site}/agents/${label}` : undefined,
       paymentAddress: params?.paymentAddress,
       paymentChain: params?.paymentChain ?? (params?.paymentAddress ? 'base' : undefined),
+      solanaPersonaPda: buildSolanaAgentMetadata(String(canonicalAgentId)).persona_pda,
     }),
   })
 }
