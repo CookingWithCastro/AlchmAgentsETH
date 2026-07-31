@@ -41,7 +41,6 @@ function amountsToBn(amounts: EsmsAmounts): [BN, BN, BN, BN] {
 export interface AaeSolanaClientOptions {
   wallet: Wallet
   connection?: Connection
-  programId?: PublicKey
   confirmOptions?: ConfirmOptions
 }
 
@@ -68,10 +67,7 @@ export class AaeSolanaClient {
       options.confirmOptions ?? { commitment: 'confirmed', preflightCommitment: 'confirmed' }
     )
     this.program = new Program<AaeSolana>(AAE_SOLANA_IDL as unknown as AaeSolana, provider)
-    this.programId = options.programId ?? AAE_SOLANA_PROGRAM_ID
-    if (!this.program.programId.equals(this.programId)) {
-      throw new Error(`IDL program address does not match ${this.programId.toBase58()}`)
-    }
+    this.programId = AAE_SOLANA_PROGRAM_ID
     this.programConfig = getProgramConfigAddress(this.programId)
     this.mints = getEsmsMintAddresses(this.programId)
   }

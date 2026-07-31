@@ -18,6 +18,7 @@ import { AaeSolanaClient, type EsmsAmounts } from '@/lib/solana/aae-solana-clien
 import { AAE_SOLANA_PROGRAM_ID } from '@/lib/solana/esms'
 import {
   decodeAaeTransactionEvents,
+  solanaSlotToBigInt,
   startSolanaSyncService,
   type AaeSolanaSyncEvent,
   type SolanaSyncSubscription,
@@ -447,7 +448,7 @@ export async function verifySolanaBridgeSource(args: {
   }
   const events = decodeAaeTransactionEvents({
     signature: transfer.sourceTxHash,
-    slot: BigInt(transaction.slot),
+    slot: solanaSlotToBigInt(transaction.slot),
     transaction,
   })
   const exact = events.some(event => {
@@ -465,7 +466,7 @@ export async function verifySolanaBridgeSource(args: {
 async function getSolanaTransaction(connection: Connection, signature: string) {
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const transaction = await connection.getTransaction(signature, {
-      commitment: 'confirmed',
+      commitment: 'finalized',
       maxSupportedTransactionVersion: 0,
     })
     if (transaction) return transaction
@@ -499,7 +500,7 @@ async function isExactSolanaDestinationMint(args: {
   if (!transaction || transaction.meta?.err) return false
   const events = decodeAaeTransactionEvents({
     signature: args.signature,
-    slot: BigInt(transaction.slot),
+    slot: solanaSlotToBigInt(transaction.slot),
     transaction,
   })
   const expectedAmounts = destinationAmounts(args.transfer)
@@ -516,7 +517,7 @@ export function createSolanaDestinationMinter(args: { client: AaeSolanaClient })
   return async (transfer: PendingBridgeTransfer): Promise<string> => {
     const claimId = claimBytes(transfer)
     const receipt = args.client.getClaimReceiptAddress(claimId)
-    if (await args.client.connection.getAccountInfo(receipt, 'confirmed')) {
+    if (await args.client.connection.getAccountInfo(receipt, 'finalized')) {
       const signatures = await args.client.connection.getSignaturesForAddress(receipt, {
         limit: 10,
       })
@@ -539,7 +540,7 @@ export function createSolanaDestinationMinter(args: { client: AaeSolanaClient })
       recipient: new PublicKey(transfer.targetAddress),
       amounts: destinationAmounts(transfer),
     })
-    const latest = await args.client.connection.getLatestBlockhash('confirmed')
+    const latest = await args.client.connection.getLatestBlockhash('finalized')
     const transaction = new Transaction({
       feePayer: args.client.wallet.publicKey,
       blockhash: latest.blockhash,
@@ -547,7 +548,7 @@ export function createSolanaDestinationMinter(args: { client: AaeSolanaClient })
     }).add(instruction)
     const signed = await args.client.wallet.signTransaction(transaction)
     const signature = await args.client.connection.sendRawTransaction(signed.serialize())
-    await args.client.connection.confirmTransaction({ signature, ...latest }, 'confirmed')
+    await args.client.connection.confirmTransaction({ signature, ...latest }, 'finalized')
     if (!(await isExactSolanaDestinationMint({ client: args.client, transfer, signature }))) {
       throw new Error('Solana receipt did not contain the exact bridge mint')
     }

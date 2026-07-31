@@ -1690,6 +1690,21 @@ model VerifiedSolanaWallet {
   @@map("verified_solana_wallet")
 }
 
+/// Short-lived server-issued nonce consumed exactly once when a Solana wallet
+/// binding signature is accepted.
+model SolanaWalletChallenge {
+  nonce      String    @id
+  userId     String    @map("user_id")
+  wallet     String
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz
+  consumedAt DateTime? @map("consumed_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([expiresAt])
+  @@map("solana_wallet_challenge")
+}
+
 /// Durable indexer/relay replay guard. `slot` is BigInt so a Solana u64 never
 /// passes through JavaScript's lossy Number representation.
 model SolanaProcessedTx {

@@ -99,12 +99,6 @@ function browserWallets(): {
   }
 }
 
-function randomNonce(): string {
-  const bytes = new Uint8Array(24)
-  globalThis.crypto.getRandomValues(bytes)
-  return bs58.encode(bytes)
-}
-
 function localStorageOrNull(): Storage | null {
   return typeof window === 'undefined' ? null : window.localStorage
 }
@@ -125,6 +119,10 @@ export class MultiChainWalletManager {
   private listeners = new Set<WalletListener>()
   private wiredEvmProvider: Eip1193Provider | null = null
   private wiredSolanaProvider: SolanaBrowserProvider | null = null
+
+  get onBaseSepolia(): boolean {
+    return this.evmChainId === baseSepolia.id
+  }
 
   snapshot(): MultiChainWalletSnapshot {
     return {
@@ -179,6 +177,34 @@ export class MultiChainWalletManager {
       this.evmChainId = typeof chainId === 'string' ? Number.parseInt(chainId, 16) : Number(chainId)
       this.emit()
     })
+  }
+
+  async switchToBaseSepolia(): Promise<void> {
+    if (!this.evmProvider) throw new Error('No EVM wallet is connected')
+    const chainId = `0x${baseSepolia.id.toString(16)}`
+    try {
+      await this.evmProvider.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId }],
+      })
+    } catch (error) {
+      const code = (error as { code?: number }).code
+      if (code !== 4902 && code !== -32603) throw error
+      await this.evmProvider.request({
+        method: 'wallet_addEthereumChain',
+        params: [
+          {
+            chainId,
+            chainName: baseSepolia.name,
+            nativeCurrency: baseSepolia.nativeCurrency,
+            rpcUrls: baseSepolia.rpcUrls.default.http,
+            blockExplorerUrls: [baseSepolia.blockExplorers.default.url],
+          },
+        ],
+      })
+    }
+    this.evmChainId = baseSepolia.id
+    this.emit()
   }
 
   async connectSolana(
@@ -282,6 +308,9 @@ export class MultiChainWalletManager {
 
   evmWalletClient() {
     if (!this.evmProvider || !this.evmAddress) return null
+    if (!this.onBaseSepolia) {
+      throw new Error('Switch the connected EVM wallet to Base Sepolia first')
+    }
     return createWalletClient({
       account: this.evmAddress,
       chain: baseSepolia,
@@ -289,20 +318,35 @@ export class MultiChainWalletManager {
     })
   }
 
-  async bindSolanaWallet(args: {
-    userId: string
-    nonce?: string
-    deadline?: bigint
-    fetchImpl?: typeof fetch
-  }): Promise<void> {
+  async bindSolanaWallet(args: { userId: string; fetchImpl?: typeof fetch }): Promise<void> {
     if (!this.solanaAddress || !this.solanaProvider) {
       throw new Error('No signable Solana wallet is connected')
     }
+    const fetchImpl = args.fetchImpl ?? fetch
+    const challengeResponse = await fetchImpl('/api/web3/verify-wallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'challenge',
+        chain: 'solana',
+        wallet: this.solanaAddress,
+      }),
+    })
+    const challengeBody = (await challengeResponse.json().catch(() => ({}))) as {
+      challenge?: Omit<SolanaWalletBindingChallenge, 'deadline'> & { deadline: string }
+      error?: string
+    }
+    if (!challengeResponse.ok || !challengeBody.challenge) {
+      throw new Error(
+        challengeBody.error ?? `Solana wallet challenge failed (${challengeResponse.status})`
+      )
+    }
     const challenge: SolanaWalletBindingChallenge = {
-      userId: args.userId,
-      wallet: this.solanaAddress,
-      nonce: args.nonce ?? randomNonce(),
-      deadline: args.deadline ?? BigInt(Math.floor(Date.now() / 1000) + 600),
+      ...challengeBody.challenge,
+      deadline: BigInt(challengeBody.challenge.deadline),
+    }
+    if (challenge.userId !== args.userId || challenge.wallet !== this.solanaAddress) {
+      throw new Error('Solana wallet challenge does not match the active account')
     }
     const signed = await this.solanaProvider.signMessage(
       buildSolanaWalletBindingMessage(challenge),
@@ -310,7 +354,7 @@ export class MultiChainWalletManager {
     )
     const rawSignature = signed instanceof Uint8Array ? signed : signed.signature
     const signature = typeof rawSignature === 'string' ? rawSignature : bs58.encode(rawSignature)
-    const response = await (args.fetchImpl ?? fetch)('/api/web3/verify-wallet', {
+    const response = await fetchImpl('/api/web3/verify-wallet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

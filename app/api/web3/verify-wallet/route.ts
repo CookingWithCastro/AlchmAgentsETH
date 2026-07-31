@@ -1,4 +1,6 @@
+import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
+import { PublicKey } from '@solana/web3.js'
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
@@ -7,8 +9,9 @@ import { verifySolanaWalletBindingSignature } from '@/lib/web3/multi-chain-walle
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const SOLANA_NONCE = /^[1-9A-HJ-NP-Za-km-z]{16,64}$/
+const SOLANA_NONCE = /^[A-Za-z0-9_-]{16,64}$/
 const MAX_CHALLENGE_SECONDS = 15 * 60
+const DEFAULT_CHALLENGE_SECONDS = 10 * 60
 
 export async function GET() {
   const session = await auth()
@@ -32,8 +35,29 @@ export async function POST(request: Request) {
         { status: 400 }
       )
     }
+    const wallet = new PublicKey(String(body.wallet ?? '')).toBase58()
+    if (body.action === 'challenge') {
+      const nowSeconds = Math.floor(Date.now() / 1000)
+      const deadline = BigInt(nowSeconds + DEFAULT_CHALLENGE_SECONDS)
+      const nonce = randomBytes(24).toString('base64url')
+      await prisma.solanaWalletChallenge.create({
+        data: {
+          nonce,
+          userId: session.user.id,
+          wallet,
+          expiresAt: new Date(Number(deadline) * 1000),
+        },
+      })
+      return NextResponse.json({
+        challenge: {
+          userId: session.user.id,
+          wallet,
+          nonce,
+          deadline: deadline.toString(),
+        },
+      })
+    }
     const userId = String(body.userId ?? '')
-    const wallet = String(body.wallet ?? '')
     const nonce = String(body.nonce ?? '')
     const signature = String(body.signature ?? '')
     const deadline = BigInt(String(body.deadline ?? ''))
@@ -57,6 +81,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid Ed25519 wallet signature' }, { status: 401 })
     }
 
+    const challenge = await prisma.solanaWalletChallenge.findUnique({ where: { nonce } })
+    if (
+      !challenge ||
+      challenge.userId !== userId ||
+      challenge.wallet !== wallet ||
+      challenge.consumedAt ||
+      challenge.expiresAt.getTime() !== Number(deadline) * 1000
+    ) {
+      return NextResponse.json(
+        { error: 'Wallet challenge is invalid or already used' },
+        { status: 409 }
+      )
+    }
+
     const existingOwner = await prisma.verifiedSolanaWallet.findUnique({
       where: { solanaPubKey: wallet },
       select: { userId: true },
@@ -67,11 +105,18 @@ export async function POST(request: Request) {
         { status: 409 }
       )
     }
-    const binding = await prisma.verifiedSolanaWallet.upsert({
-      where: { userId },
-      create: { userId, solanaPubKey: wallet, signature },
-      update: { solanaPubKey: wallet, signature, verifiedAt: new Date() },
-      select: { solanaPubKey: true, verifiedAt: true },
+    const binding = await prisma.$transaction(async transaction => {
+      const consumed = await transaction.solanaWalletChallenge.updateMany({
+        where: { nonce, consumedAt: null, expiresAt: { gte: new Date() } },
+        data: { consumedAt: new Date() },
+      })
+      if (consumed.count !== 1) throw new Error('Wallet challenge was already consumed')
+      return transaction.verifiedSolanaWallet.upsert({
+        where: { userId },
+        create: { userId, solanaPubKey: wallet, signature },
+        update: { solanaPubKey: wallet, signature, verifiedAt: new Date() },
+        select: { solanaPubKey: true, verifiedAt: true },
+      })
     })
     return NextResponse.json({ verified: true, binding })
   } catch (error) {

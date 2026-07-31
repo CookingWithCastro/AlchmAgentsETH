@@ -167,19 +167,40 @@ export function encodeSolanaSyncBody(event: AaeSolanaSyncEvent): string {
 
 export interface SolanaSyncStore {
   hasProcessed(signature: string): Promise<boolean>
-  recordProcessed(event: AaeSolanaSyncEvent): Promise<void>
+  recordProcessed(marker: { signature: string; slot: bigint; eventType: string }): Promise<void>
+  runInTransaction?<T>(work: (store: SolanaSyncStore) => Promise<T>): Promise<T>
+}
+
+export function createSolanaSyncBatchProcessor(args: {
+  store: SolanaSyncStore
+  onEvent: (event: AaeSolanaSyncEvent, store: SolanaSyncStore) => Promise<void>
+}) {
+  return async (events: readonly AaeSolanaSyncEvent[]): Promise<boolean> => {
+    if (!events.length) return false
+    const [first] = events
+    if (events.some(event => event.signature !== first.signature || event.slot !== first.slot)) {
+      throw new Error('A Solana sync batch must contain one finalized transaction')
+    }
+    const work = async (store: SolanaSyncStore): Promise<boolean> => {
+      if (await store.hasProcessed(first.signature)) return false
+      for (const event of events) await args.onEvent(event, store)
+      await store.recordProcessed({
+        signature: first.signature,
+        slot: first.slot,
+        eventType: events.map(event => event.eventType).join(','),
+      })
+      return true
+    }
+    return args.store.runInTransaction ? args.store.runInTransaction(work) : work(args.store)
+  }
 }
 
 export function createSolanaSyncProcessor(args: {
   store: SolanaSyncStore
-  onEvent: (event: AaeSolanaSyncEvent) => Promise<void>
+  onEvent: (event: AaeSolanaSyncEvent, store: SolanaSyncStore) => Promise<void>
 }) {
-  return async (event: AaeSolanaSyncEvent): Promise<boolean> => {
-    if (await args.store.hasProcessed(event.signature)) return false
-    await args.onEvent(event)
-    await args.store.recordProcessed(event)
-    return true
-  }
+  const processBatch = createSolanaSyncBatchProcessor(args)
+  return (event: AaeSolanaSyncEvent) => processBatch([event])
 }
 
 interface PrismaSyncClient {
@@ -190,27 +211,47 @@ interface PrismaSyncClient {
     }): Promise<{ signature: string } | null>
     create(args: { data: { signature: string; slot: bigint; eventType: string } }): Promise<unknown>
   }
+  $transaction<T>(work: (client: PrismaSyncClient) => Promise<T>): Promise<T>
 }
 
 export function createPrismaSolanaSyncStore(client: PrismaSyncClient): SolanaSyncStore {
-  return {
+  const createStore = (
+    scopedClient: PrismaSyncClient,
+    transactional: boolean
+  ): SolanaSyncStore => ({
     hasProcessed: async signature =>
       Boolean(
-        await client.solanaProcessedTx.findUnique({
+        await scopedClient.solanaProcessedTx.findUnique({
           where: { signature },
           select: { signature: true },
         })
       ),
-    recordProcessed: async event => {
-      await client.solanaProcessedTx.create({
+    recordProcessed: async marker => {
+      await scopedClient.solanaProcessedTx.create({
         data: {
-          signature: event.signature,
-          slot: event.slot,
-          eventType: event.eventType,
+          signature: marker.signature,
+          slot: marker.slot,
+          eventType: marker.eventType,
         },
       })
     },
+    ...(!transactional
+      ? {
+          runInTransaction: <T>(work: (store: SolanaSyncStore) => Promise<T>) =>
+            scopedClient.$transaction(transactionClient =>
+              work(createStore(transactionClient, true))
+            ),
+        }
+      : {}),
+  })
+  return createStore(client, false)
+}
+
+export function solanaSlotToBigInt(slot: number): bigint {
+  if (!Number.isSafeInteger(slot) || slot < 0) {
+    throw new RangeError('Solana SDK slot must be a non-negative safe integer')
   }
+  return BigInt(slot)
 }
 
 function keyAtTransactionIndex(
@@ -258,19 +299,19 @@ export function decodeAaeTransactionEvents(args: {
   })
 }
 
-async function getConfirmedTransaction(
+async function getFinalizedTransaction(
   connection: Connection,
   signature: string
 ): Promise<VersionedTransactionResponse> {
   for (let attempt = 0; attempt < 6; attempt += 1) {
     const transaction = await connection.getTransaction(signature, {
-      commitment: 'confirmed',
+      commitment: 'finalized',
       maxSupportedTransactionVersion: 0,
     })
     if (transaction) return transaction
     await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)))
   }
-  throw new Error(`Confirmed Solana transaction is unavailable: ${signature}`)
+  throw new Error(`Finalized Solana transaction is unavailable: ${signature}`)
 }
 
 const AAE_INSTRUCTION_LOGS = [
@@ -309,20 +350,20 @@ export function startSolanaSyncService(args: {
 }): SolanaSyncSubscription {
   const connection =
     args.connection ??
-    new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com', 'confirmed')
+    new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com', 'finalized')
   const onEvent =
     args.onEvent ?? (async event => console.log('[SolanaSync]', encodeSolanaSyncBody(event)))
-  const processEvent = createSolanaSyncProcessor({ store: args.store, onEvent })
+  const processBatch = createSolanaSyncBatchProcessor({ store: args.store, onEvent })
   return listenToSolanaEvents(
     async (logs, slot) => {
       if (!logs.logs.some(log => AAE_INSTRUCTION_LOGS.some(marker => log.includes(marker)))) return
-      const transaction = await getConfirmedTransaction(connection, logs.signature)
+      const transaction = await getFinalizedTransaction(connection, logs.signature)
       const events = decodeAaeTransactionEvents({
         signature: logs.signature,
         slot,
         transaction,
       })
-      for (const event of events) await processEvent(event)
+      await processBatch(events)
     },
     { connection, programId: args.programId }
   )
@@ -344,15 +385,15 @@ export function listenToSolanaEvents(
 ): SolanaSyncSubscription {
   const connection =
     options.connection ??
-    new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com', 'confirmed')
+    new Connection(process.env.SOLANA_RPC_URL ?? 'https://api.devnet.solana.com', 'finalized')
   const programId = options.programId ?? AAE_SOLANA_PROGRAM_ID
   const subscriptionId = connection.onLogs(
     programId,
     async (logs, context) => {
       if (logs.err) return
-      await onLogs(logs, BigInt(context.slot))
+      await onLogs(logs, solanaSlotToBigInt(context.slot))
     },
-    'confirmed'
+    'finalized'
   )
   return {
     connection,
