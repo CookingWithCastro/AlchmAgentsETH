@@ -1717,6 +1717,24 @@ model SolanaProcessedTx {
   @@map("processed_tx")
 }
 
+/// Transactional outbox for at-least-once delivery of normalized Solana
+/// events. `payload` retains the lossless JSON representation verbatim.
+model SolanaSyncOutbox {
+  id          String    @id
+  signature   String
+  eventIndex  Int       @map("event_index")
+  eventType   String    @map("event_type")
+  payload     String
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([signature, eventIndex])
+  @@index([deliveredAt, createdAt])
+  @@map("solana_sync_outbox")
+}
+
 /// Explicit bridge jobs only. Ordinary WTEN claims remain locked to one target
 /// chain and do not create these rows. Raw token amounts are decimal strings.
 model SolanaBridgeTransfer {

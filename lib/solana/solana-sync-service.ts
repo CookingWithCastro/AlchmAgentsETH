@@ -167,6 +167,7 @@ export function encodeSolanaSyncBody(event: AaeSolanaSyncEvent): string {
 
 export interface SolanaSyncStore {
   hasProcessed(signature: string): Promise<boolean>
+  enqueueEvents?(events: readonly AaeSolanaSyncEvent[]): Promise<void>
   recordProcessed(marker: { signature: string; slot: bigint; eventType: string }): Promise<void>
   runInTransaction?<T>(work: (store: SolanaSyncStore) => Promise<T>): Promise<T>
 }
@@ -184,6 +185,7 @@ export function createSolanaSyncBatchProcessor(args: {
     const work = async (store: SolanaSyncStore): Promise<boolean> => {
       if (await store.hasProcessed(first.signature)) return false
       for (const event of events) await args.onEvent(event, store)
+      await store.enqueueEvents?.(events)
       await store.recordProcessed({
         signature: first.signature,
         slot: first.slot,
@@ -211,6 +213,17 @@ interface PrismaSyncClient {
     }): Promise<{ signature: string } | null>
     create(args: { data: { signature: string; slot: bigint; eventType: string } }): Promise<unknown>
   }
+  solanaSyncOutbox: {
+    createMany(args: {
+      data: Array<{
+        id: string
+        signature: string
+        eventIndex: number
+        eventType: string
+        payload: string
+      }>
+    }): Promise<unknown>
+  }
   $transaction<T>(work: (client: PrismaSyncClient) => Promise<T>): Promise<T>
 }
 
@@ -233,6 +246,17 @@ export function createPrismaSolanaSyncStore(client: PrismaSyncClient): SolanaSyn
           slot: marker.slot,
           eventType: marker.eventType,
         },
+      })
+    },
+    enqueueEvents: async events => {
+      await scopedClient.solanaSyncOutbox.createMany({
+        data: events.map((event, eventIndex) => ({
+          id: `${event.signature}:${eventIndex}`,
+          signature: event.signature,
+          eventIndex,
+          eventType: event.eventType,
+          payload: encodeSolanaSyncBody(event),
+        })),
       })
     },
     ...(!transactional
@@ -326,19 +350,94 @@ export function createSolanaSyncWebhookDispatcher(args: {
   bearerToken?: string
   fetchImpl?: typeof fetch
 }) {
+  const dispatchBody = createSolanaSyncWebhookBodyDispatcher(args)
+  return (event: AaeSolanaSyncEvent): Promise<void> => dispatchBody(encodeSolanaSyncBody(event))
+}
+
+export function createSolanaSyncWebhookBodyDispatcher(args: {
+  url: string
+  bearerToken?: string
+  fetchImpl?: typeof fetch
+}) {
   const fetchImpl = args.fetchImpl ?? fetch
-  return async (event: AaeSolanaSyncEvent): Promise<void> => {
+  return async (body: string): Promise<void> => {
     const response = await fetchImpl(args.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(args.bearerToken ? { Authorization: `Bearer ${args.bearerToken}` } : {}),
       },
-      body: encodeSolanaSyncBody(event),
+      body,
     })
     if (!response.ok) {
       throw new Error(`Solana sync webhook failed (${response.status}): ${await response.text()}`)
     }
+  }
+}
+
+interface PrismaSyncOutboxClient {
+  solanaSyncOutbox: {
+    findMany(args: {
+      where: { deliveredAt: null }
+      orderBy: { createdAt: 'asc' }
+      take: number
+    }): Promise<Array<{ id: string; payload: string }>>
+    update(args: {
+      where: { id: string }
+      data:
+        | { deliveredAt: Date; attempts: { increment: number }; lastError: null }
+        | { attempts: { increment: number }; lastError: string }
+    }): Promise<unknown>
+  }
+}
+
+export function startSolanaSyncOutboxPolling(args: {
+  client: PrismaSyncOutboxClient
+  deliver: (payload: string) => Promise<void>
+  intervalMs?: number
+  batchSize?: number
+}): { tick(): Promise<void>; stop(): void } {
+  let active = false
+  let stopped = false
+  const tick = async () => {
+    if (active || stopped) return
+    active = true
+    try {
+      const rows = await args.client.solanaSyncOutbox.findMany({
+        where: { deliveredAt: null },
+        orderBy: { createdAt: 'asc' },
+        take: args.batchSize ?? 100,
+      })
+      for (const row of rows) {
+        try {
+          await args.deliver(row.payload)
+          await args.client.solanaSyncOutbox.update({
+            where: { id: row.id },
+            data: { deliveredAt: new Date(), attempts: { increment: 1 }, lastError: null },
+          })
+        } catch (error) {
+          await args.client.solanaSyncOutbox.update({
+            where: { id: row.id },
+            data: {
+              attempts: { increment: 1 },
+              lastError: error instanceof Error ? error.message : String(error),
+            },
+          })
+          break
+        }
+      }
+    } finally {
+      active = false
+    }
+  }
+  const timer = setInterval(() => void tick(), args.intervalMs ?? 2_000)
+  void tick()
+  return {
+    tick,
+    stop: () => {
+      stopped = true
+      clearInterval(timer)
+    },
   }
 }
 

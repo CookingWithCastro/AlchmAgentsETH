@@ -138,6 +138,7 @@ describe('AAE Solana sync worker', () => {
   it('projects every instruction in one transaction before recording one processed marker', async () => {
     const markers = new Set<string>()
     const projected: string[] = []
+    const enqueued: string[] = []
     const base = {
       signature: 'batched-signature',
       slot: 480_000_002n,
@@ -168,6 +169,9 @@ describe('AAE Solana sync worker', () => {
           markers.add(marker.signature)
           expect(marker.eventType).toBe('ClaimMintReceipt,OrderReceipt')
         },
+        enqueueEvents: async values => {
+          enqueued.push(...values.map(value => value.eventType))
+        },
       },
       onEvent: async event => projected.push(event.eventType),
     })
@@ -175,6 +179,7 @@ describe('AAE Solana sync worker', () => {
     expect(await processBatch(events)).toBe(true)
     expect(await processBatch(events)).toBe(false)
     expect(projected).toEqual(['ClaimMintReceipt', 'OrderReceipt'])
+    expect(enqueued).toEqual(['ClaimMintReceipt', 'OrderReceipt'])
     expect(solanaSlotToBigInt(Number.MAX_SAFE_INTEGER)).toBe(BigInt(Number.MAX_SAFE_INTEGER))
     expect(() => solanaSlotToBigInt(Number.MAX_SAFE_INTEGER + 1)).toThrow(/safe integer/)
   })

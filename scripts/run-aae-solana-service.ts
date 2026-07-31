@@ -15,9 +15,10 @@ import {
 } from '@/lib/solana/bridge-service'
 import {
   createPrismaSolanaSyncStore,
-  createSolanaSyncWebhookDispatcher,
+  createSolanaSyncWebhookBodyDispatcher,
   encodeSolanaSyncBody,
   startSolanaSyncService,
+  startSolanaSyncOutboxPolling,
 } from '@/lib/solana/solana-sync-service'
 
 function databaseClient(): PrismaClient {
@@ -47,17 +48,21 @@ function solanaMinter(): Keypair {
 
 async function runSync(client: PrismaClient) {
   const store = createPrismaSolanaSyncStore(client)
-  const dispatcher = process.env.SOLANA_SYNC_WEBHOOK_URL
-    ? createSolanaSyncWebhookDispatcher({
+  const deliver = process.env.SOLANA_SYNC_WEBHOOK_URL
+    ? createSolanaSyncWebhookBodyDispatcher({
         url: process.env.SOLANA_SYNC_WEBHOOK_URL,
         bearerToken: process.env.SOLANA_SYNC_WEBHOOK_TOKEN,
       })
-    : async (event: Parameters<typeof encodeSolanaSyncBody>[0]) => {
-        console.log('[SolanaSync]', encodeSolanaSyncBody(event))
+    : async (payload: string) => {
+        console.log('[SolanaSync]', payload)
       }
-  const subscription = startSolanaSyncService({ store, onEvent: dispatcher })
+  const subscription = startSolanaSyncService({ store, onEvent: async () => undefined })
+  const outbox = startSolanaSyncOutboxPolling({ client, deliver })
   console.log(`[SolanaSync] listening on ${subscription.connection.rpcEndpoint}`)
-  return () => subscription.stop()
+  return async () => {
+    outbox.stop()
+    await subscription.stop()
+  }
 }
 
 async function runBridge(client: PrismaClient) {

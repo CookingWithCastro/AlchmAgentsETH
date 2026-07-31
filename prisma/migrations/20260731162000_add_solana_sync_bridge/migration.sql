@@ -43,6 +43,19 @@ CREATE TABLE "bridge_transfer" (
     CONSTRAINT "bridge_transfer_pkey" PRIMARY KEY ("claim_id")
 );
 
+CREATE TABLE "solana_sync_outbox" (
+    "id" TEXT NOT NULL,
+    "signature" TEXT NOT NULL,
+    "event_index" INTEGER NOT NULL,
+    "event_type" TEXT NOT NULL,
+    "payload" TEXT NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "last_error" TEXT,
+    "delivered_at" TIMESTAMPTZ,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "solana_sync_outbox_pkey" PRIMARY KEY ("id")
+);
+
 CREATE UNIQUE INDEX "verified_solana_wallet_user_id_key"
     ON "verified_solana_wallet"("user_id");
 CREATE UNIQUE INDEX "verified_solana_wallet_solana_pub_key_key"
@@ -57,3 +70,7 @@ CREATE UNIQUE INDEX "bridge_transfer_source_tx_hash_key"
     ON "bridge_transfer"("source_tx_hash");
 CREATE INDEX "bridge_transfer_status_updated_at_idx"
     ON "bridge_transfer"("status", "updated_at");
+CREATE UNIQUE INDEX "solana_sync_outbox_signature_event_index_key"
+    ON "solana_sync_outbox"("signature", "event_index");
+CREATE INDEX "solana_sync_outbox_delivered_at_created_at_idx"
+    ON "solana_sync_outbox"("delivered_at", "created_at");
