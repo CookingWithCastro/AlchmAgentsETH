@@ -3,6 +3,7 @@ use anchor_lang::prelude::*;
 use crate::{
     constants::{PROGRAM_AUTHORITY_SEED, STATE_VERSION},
     errors::AaeError,
+    program::AaeSolana,
     state::ProgramConfig,
 };
 
@@ -45,6 +46,21 @@ pub fn set_pause_state(
     Ok(())
 }
 
+pub fn set_service_authorities(
+    ctx: Context<SetServiceAuthorities>,
+    attestor: Pubkey,
+    pauser: Pubkey,
+) -> Result<()> {
+    require_keys_eq!(
+        ctx.accounts.authority.key(),
+        ctx.accounts.program_config.admin,
+        AaeError::Unauthorized
+    );
+    ctx.accounts.program_config.attestor = attestor;
+    ctx.accounts.program_config.pauser = pauser;
+    Ok(())
+}
+
 #[derive(Accounts)]
 pub struct InitializeConfig<'info> {
     #[account(
@@ -57,11 +73,26 @@ pub struct InitializeConfig<'info> {
     pub program_config: Account<'info, ProgramConfig>,
     #[account(mut)]
     pub admin: Signer<'info>,
+    #[account(constraint = program.programdata_address()? == Some(program_data.key()))]
+    pub program: Program<'info, AaeSolana>,
+    #[account(constraint = program_data.upgrade_authority_address == Some(admin.key()))]
+    pub program_data: Account<'info, ProgramData>,
     pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
 pub struct SetPauseState<'info> {
+    #[account(
+        mut,
+        seeds = [PROGRAM_AUTHORITY_SEED],
+        bump = program_config.bump
+    )]
+    pub program_config: Account<'info, ProgramConfig>,
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct SetServiceAuthorities<'info> {
     #[account(
         mut,
         seeds = [PROGRAM_AUTHORITY_SEED],

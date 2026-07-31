@@ -176,6 +176,13 @@ export type AaeSolana = {
           signer: true
         },
         {
+          name: 'program'
+          address: '5QheuqaicKvPPRFEoEXwaE5xaFp7gauvJCfsjpQv8WzD'
+        },
+        {
+          name: 'programData'
+        },
+        {
           name: 'systemProgram'
           address: '11111111111111111111111111111111'
         },
@@ -1066,6 +1073,56 @@ export type AaeSolana = {
         {
           name: 'pauseRedemptions'
           type: 'bool'
+        },
+      ]
+    },
+    {
+      name: 'setServiceAuthorities'
+      discriminator: [42, 156, 68, 130, 225, 158, 43, 33]
+      accounts: [
+        {
+          name: 'programConfig'
+          writable: true
+          pda: {
+            seeds: [
+              {
+                kind: 'const'
+                value: [
+                  112,
+                  114,
+                  111,
+                  103,
+                  114,
+                  97,
+                  109,
+                  95,
+                  97,
+                  117,
+                  116,
+                  104,
+                  111,
+                  114,
+                  105,
+                  116,
+                  121,
+                ]
+              },
+            ]
+          }
+        },
+        {
+          name: 'authority'
+          signer: true
+        },
+      ]
+      args: [
+        {
+          name: 'attestor'
+          type: 'pubkey'
+        },
+        {
+          name: 'pauser'
+          type: 'pubkey'
         },
       ]
     },

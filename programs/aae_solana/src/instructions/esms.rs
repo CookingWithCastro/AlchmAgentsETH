@@ -9,6 +9,7 @@ use anchor_lang::{
         sysvar::instructions::{load_current_index_checked, load_instruction_at_checked},
     },
 };
+use anchor_spl::token_2022_extensions::spl_token_metadata_interface::borsh::BorshDeserialize;
 use anchor_spl::{
     associated_token::{self, AssociatedToken, Create as CreateAssociatedToken},
     token_2022::{self, spl_token_2022, InitializeMint2, MintTo, Token2022},
@@ -16,6 +17,7 @@ use anchor_spl::{
         metadata_pointer::{metadata_pointer_initialize, MetadataPointerInitialize},
         non_transferable::{non_transferable_mint_initialize, NonTransferableMintInitialize},
         permanent_delegate::{permanent_delegate_initialize, PermanentDelegateInitialize},
+        spl_token_metadata_interface,
         token_metadata::{token_metadata_initialize, TokenMetadataInitialize},
     },
     token_interface::{Mint, TokenAccount},
@@ -63,7 +65,6 @@ pub fn initialize_mints(ctx: Context<InitializeEsmsMints>) -> Result<()> {
             &ctx.accounts.program_config.to_account_info(),
             &mints[mint_id],
             &ctx.accounts.token_program.to_account_info(),
-            &ctx.accounts.system_program.to_account_info(),
             mint_id as u8,
             bumps[mint_id],
             ctx.accounts.program_config.bump,
@@ -169,8 +170,8 @@ pub fn redeem(
     require!(order_id != [0; 32], AaeError::ZeroReceiptIdentifier);
     validate_amounts(&amounts)?;
 
-    let sources = redemption_sources(&ctx.accounts);
-    let mints = redemption_mints(&ctx.accounts);
+    let sources = redemption_sources(ctx.accounts);
+    let mints = redemption_mints(ctx.accounts);
     burn_all(
         &ctx.accounts.program_config,
         &ctx.accounts.holder.to_account_info(),
@@ -227,8 +228,8 @@ pub fn redeem_for(
         &expected_message,
     )?;
 
-    let sources = sponsored_sources(&ctx.accounts);
-    let mints = sponsored_mints(&ctx.accounts);
+    let sources = sponsored_sources(ctx.accounts);
+    let mints = sponsored_mints(ctx.accounts);
     let delegate = ctx.accounts.program_config.to_account_info();
     burn_all(
         &ctx.accounts.program_config,
@@ -255,7 +256,6 @@ fn initialize_or_validate_mint<'info>(
     config: &AccountInfo<'info>,
     mint: &AccountInfo<'info>,
     token_program: &AccountInfo<'info>,
-    system_program: &AccountInfo<'info>,
     mint_id: u8,
     mint_bump: u8,
     config_bump: u8,
@@ -267,7 +267,7 @@ fn initialize_or_validate_mint<'info>(
     );
 
     if mint.owner == token_program.key && !mint.data_is_empty() {
-        return validate_existing_mint(mint, config.key);
+        return validate_existing_mint(mint, config.key, mint_id as usize);
     }
     require!(mint.data_is_empty(), AaeError::InvalidMint);
 
@@ -280,17 +280,43 @@ fn initialize_or_validate_mint<'info>(
         mint_id_seed.as_ref(),
         mint_bump_seed.as_ref(),
     ];
-    invoke_signed(
-        &system_instruction::create_account(
-            payer.key,
-            mint.key,
-            lamports,
-            space as u64,
-            token_program.key,
-        ),
-        &[payer.clone(), mint.clone(), system_program.clone()],
-        &[&mint_signer],
-    )?;
+    if mint.lamports() == 0 {
+        invoke_signed(
+            &system_instruction::create_account(
+                payer.key,
+                mint.key,
+                lamports,
+                space as u64,
+                token_program.key,
+            ),
+            &[payer.clone(), mint.clone()],
+            &[&mint_signer],
+        )?;
+    } else {
+        require_keys_eq!(
+            *mint.owner,
+            anchor_lang::system_program::ID,
+            AaeError::InvalidMint
+        );
+        let rent_top_up = lamports.saturating_sub(mint.lamports());
+        if rent_top_up > 0 {
+            invoke_signed(
+                &system_instruction::transfer(payer.key, mint.key, rent_top_up),
+                &[payer.clone(), mint.clone()],
+                &[],
+            )?;
+        }
+        invoke_signed(
+            &system_instruction::allocate(mint.key, space as u64),
+            &[mint.clone()],
+            &[&mint_signer],
+        )?;
+        invoke_signed(
+            &system_instruction::assign(mint.key, token_program.key),
+            &[mint.clone()],
+            &[&mint_signer],
+        )?;
+    }
 
     non_transferable_mint_initialize(CpiContext::new(
         token_program.clone(),
@@ -350,7 +376,7 @@ fn initialize_or_validate_mint<'info>(
         ESMS_METADATA_URIS[mint_id as usize].to_owned(),
     )?;
 
-    validate_existing_mint(mint, config.key)
+    validate_existing_mint(mint, config.key, mint_id as usize)
 }
 
 fn esms_mint_account_len(mint_id: usize) -> Result<usize> {
@@ -394,7 +420,7 @@ fn initialize_permissioned_burn<'info>(
     invoke_signed(&instruction, &[mint.clone()], &[]).map_err(Into::into)
 }
 
-fn validate_existing_mint(mint: &AccountInfo, authority: &Pubkey) -> Result<()> {
+fn validate_existing_mint(mint: &AccountInfo, authority: &Pubkey, mint_id: usize) -> Result<()> {
     require_keys_eq!(*mint.owner, spl_token_2022::ID, AaeError::InvalidMint);
     let data = mint.try_borrow_data()?;
     let state =
@@ -429,20 +455,40 @@ fn validate_existing_mint(mint: &AccountInfo, authority: &Pubkey) -> Result<()> 
         require!(value_end <= data.len(), AaeError::InvalidMintExtensions);
         let value = &data[value_start..value_end];
         match extension_type {
-            9 => has_non_transferable = extension_len == 0,
+            9 => {
+                require!(!has_non_transferable, AaeError::InvalidMintExtensions);
+                has_non_transferable = extension_len == 0;
+            }
             12 => {
+                require!(!has_permanent_delegate, AaeError::InvalidMintExtensions);
                 has_permanent_delegate = extension_len == 32 && value == authority.as_ref();
             }
             18 => {
+                require!(!has_metadata_pointer, AaeError::InvalidMintExtensions);
                 has_metadata_pointer = extension_len == 64
                     && &value[..32] == authority.as_ref()
                     && &value[32..] == mint.key.as_ref();
             }
-            19 => has_metadata = extension_len > 0,
+            19 => {
+                require!(!has_metadata, AaeError::InvalidMintExtensions);
+                let mut metadata_bytes = value;
+                let metadata = spl_token_metadata_interface::state::TokenMetadata::deserialize(
+                    &mut metadata_bytes,
+                )
+                .map_err(|_| error!(AaeError::InvalidMintExtensions))?;
+                has_metadata = metadata.update_authority.0 == *authority
+                    && metadata.mint == *mint.key
+                    && metadata.name == ESMS_NAMES[mint_id]
+                    && metadata.symbol == ESMS_SYMBOLS[mint_id]
+                    && metadata.uri == ESMS_METADATA_URIS[mint_id]
+                    && metadata.additional_metadata.is_empty()
+                    && metadata_bytes.is_empty();
+            }
             PERMISSIONED_BURN_EXTENSION_TYPE => {
+                require!(!has_permissioned_burn, AaeError::InvalidMintExtensions);
                 has_permissioned_burn = extension_len == 32 && value == authority.as_ref();
             }
-            _ => {}
+            _ => return err!(AaeError::InvalidMintExtensions),
         }
         cursor = value_end;
     }

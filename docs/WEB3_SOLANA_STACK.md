@@ -249,30 +249,28 @@ Use one `aae_solana` program on Devnet so a swap or stake claim can atomically u
 
 The program upgrade authority is separate from `GlobalConfig.admin`. Both should move to a multisig/governance authority before mainnet. Solana's verified-build documentation also recommends multisig/governance for deployment authority and explains source/deployment hash verification: [Verifying Programs](https://solana.com/docs/programs/verified-builds).
 
-### 3. PDA topology
+### 3. Target PDA topology through later phases
 
 All integer seeds use fixed-width little-endian bytes; all externally supplied identifiers are first reduced to a 32-byte canonical hash. Every account includes a schema version and bump.
 
-| PDA/state               | Seeds                                             | Core fields / purpose                                                                       |
-| ----------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `GlobalConfig`          | `["global-config"]`                               | version, admin/pending admin, USDC mint, star root, yield cap, pause mask, role-set version |
-| `ProgramAuthority`      | `["program-authority"]`                           | signer-only PDA; no data account required                                                   |
-| `RoleGrant`             | `["role", role_id, member]`                       | active/expiry for admin-delegated claim minters, attestors, registrars or operators         |
-| `EsmsMintAuthority`     | `["esms-authority", element_id]`                  | signer PDA for one ESMS mint's mint, burn, delegate, metadata and close authorities         |
-| `EsmsMint`              | `["esms-mint", element_id]`                       | deterministic Token-2022 mint, element `0..3`                                               |
-| `ClaimReceipt`          | `["claim", claim_id_32]`                          | recipient, `[u64;4]` atoms, ledger hash, role-set version, slot/time; never closed          |
-| `RedeemReceipt`         | `["redeem", order_id_32]`                         | holder, `[u64;4]` atoms, mode, slot/time; never closed                                      |
-| `PersonaCommitment`     | `["persona", agent_key_32]`                       | authority, target hash, epoch hash, sequence, updated slot/time                             |
-| `StarVaultState`        | `["star-vault"]`                                  | USDC mint/vault, total logical principal, configuration link                                |
-| `StarPool`              | `["star-pool", star_id_u32]`                      | activated flag, total principal, total shares                                               |
-| `StakePosition`         | `["stake", star_id_u32, staker]`                  | shares, accrued-cap accumulator, last checkpoint, claim nonce                               |
-| `ConstellationPool`     | `["constellation", id_u16]`                       | pair, fee, virtual reserves, total shares, visibility nonce version, bootstrapped flag      |
-| `PoolTraderNonce`       | `["pool-nonce", id_u16, trader]`                  | next visibility-attestation nonce                                                           |
-| `DeedMint`              | `["deed-mint", id_u16, sequence_u64]`             | deterministic Token-2022 NFT mint                                                           |
-| `DeedPosition`          | `["deed", deed_mint]`                             | pool, shares, created slot, active/closed state                                             |
-| `RightsAnchor` (later)  | `["rights", anchor_id_32]`                        | holder, immutable hashes, mutable license, operator epoch                                   |
-| `OperatorGrant` (later) | `["operator", anchor_id_32, epoch_u64, operator]` | current-epoch recipe authorization                                                          |
-| `RecipeRecord` (later)  | `["recipe", content_hash_32]`                     | provenance, lineage, creator, recipe NFT mint                                               |
+| PDA/state               | Seeds                                             | Core fields / purpose                                                                  |
+| ----------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `ProgramConfig`         | `["program_authority"]`                           | Phase 2 admin, rotatable attestor/pauser, cluster domain, granular pause state         |
+| `RoleGrant` (later)     | `["role", role_id, member]`                       | future active/expiry grants for scaled service/operator delegation                     |
+| `EsmsMint`              | `["esms_mint", mint_id_u8]`                       | deterministic Token-2022 mint, mint ID `0..3`                                          |
+| `ClaimReceipt`          | `["claim_receipt", claim_id_32]`                  | recipient, `[u64;4]` atoms, ledger hash, signer and slot; never closed                 |
+| `OrderReceipt`          | `["order_receipt", order_id_32]`                  | holder, `[u64;4]` atoms, mode, submitter and slot; never closed                        |
+| `PersonaCommitment`     | `["persona_commitment", agent_key_32]`            | writer, target hash, epoch hash, sequence and updated slot                             |
+| `StarVaultState`        | `["star-vault"]`                                  | USDC mint/vault, total logical principal, configuration link                           |
+| `StarPool`              | `["star-pool", star_id_u32]`                      | activated flag, total principal, total shares                                          |
+| `StakePosition`         | `["stake", star_id_u32, staker]`                  | shares, accrued-cap accumulator, last checkpoint, claim nonce                          |
+| `ConstellationPool`     | `["constellation", id_u16]`                       | pair, fee, virtual reserves, total shares, visibility nonce version, bootstrapped flag |
+| `PoolTraderNonce`       | `["pool-nonce", id_u16, trader]`                  | next visibility-attestation nonce                                                      |
+| `DeedMint`              | `["deed-mint", id_u16, sequence_u64]`             | deterministic Token-2022 NFT mint                                                      |
+| `DeedPosition`          | `["deed", deed_mint]`                             | pool, shares, created slot, active/closed state                                        |
+| `RightsAnchor` (later)  | `["rights", anchor_id_32]`                        | holder, immutable hashes, mutable license, operator epoch                              |
+| `OperatorGrant` (later) | `["operator", anchor_id_32, epoch_u64, operator]` | current-epoch recipe authorization                                                     |
+| `RecipeRecord` (later)  | `["recipe", content_hash_32]`                     | provenance, lineage, creator, recipe NFT mint                                          |
 
 Anchor account constraints such as `seeds`, `bump`, `has_one`, `owner`, token program selection, and Token-2022 extension constraints should be used wherever available; see [Anchor account constraints](https://www.anchor-lang.com/docs/references/account-constraints). Permissioned Burn is newer than several Anchor wrapper surfaces, so the implementation phase must prove the exact `anchor-spl`/`spl-token-2022-interface` CPI versions in a small local test before program work expands.
 
@@ -307,16 +305,15 @@ Anchor account constraints such as `seeds`, `bump`, `has_one`, `owner`, token pr
 
 #### Required extensions
 
-| Extension            | Authority                       | Reason                                                                    |
-| -------------------- | ------------------------------- | ------------------------------------------------------------------------- |
-| Non-Transferable     | immutable at mint setup         | Soulbound wallet balances                                                 |
-| Permissioned Burn    | element `EsmsMintAuthority` PDA | Every burn requires issuer/program approval in addition to owner/delegate |
-| Permanent Delegate   | element `EsmsMintAuthority` PDA | Lets the program perform a sponsored, holder-authorized burn              |
-| Metadata Pointer     | points to the mint itself       | Canonical metadata discovery                                              |
-| Token Metadata       | program/PDA update authority    | Name, symbol, URI and element ID                                          |
-| Mint Close Authority | element `EsmsMintAuthority` PDA | Controlled decommission only; no v1 close path                            |
+| Extension          | Authority                       | Reason                                                                    |
+| ------------------ | ------------------------------- | ------------------------------------------------------------------------- |
+| Non-Transferable   | immutable at mint setup         | Soulbound wallet balances                                                 |
+| Permissioned Burn  | element `EsmsMintAuthority` PDA | Every burn requires issuer/program approval in addition to owner/delegate |
+| Permanent Delegate | element `EsmsMintAuthority` PDA | Lets the program perform a sponsored, holder-authorized burn              |
+| Metadata Pointer   | points to the mint itself       | Canonical metadata discovery                                              |
+| Token Metadata     | program/PDA update authority    | Name, symbol, URI and element ID                                          |
 
-Token-2022 metadata can live in the mint itself, with the Metadata Pointer pointing back to that mint; clients must validate the mutual relationship. See [Metadata Pointer and Metadata](https://www.solana-program.com/docs/token-2022/extensions#metadata-pointer). A mint may be closed only at zero supply, and the official guide warns that closing/reinitializing a mint while token accounts remain can create extension inconsistencies. That is why the close authority is constrained but unused in v1: [Mint Close Authority](https://www.solana-program.com/docs/token-2022/extensions#mint-close-authority).
+Token-2022 metadata lives in the mint itself, with the Metadata Pointer pointing back to that mint; clients and idempotent initialization validate the mutual relationship and the full metadata fields. See [Metadata Pointer and Metadata](https://www.solana-program.com/docs/token-2022/extensions#metadata-pointer). Gate 0 deliberately fixes the v1 mint to this extension set. `MintCloseAuthority` is omitted because there is no v1 close path and a close/reinitialize lifecycle would weaken the deterministic mint invariant.
 
 Do **not** use Token-2022's whole-mint Pausable extension for the normal AAE pause switch: it pauses mint, burn and transfer together, while the current protocol intentionally preserves some mint/burn paths and every exit. Program-level pause bits provide the required granularity.
 
@@ -340,7 +337,7 @@ Cross-chain reconciliation must divide an EVM raw value by `10^14` and reject an
 
 #### Claim and redeem authorization
 
-`claim_mint_esms` creates one receipt for all four amounts so a multi-element ledger debit settles atomically. It requires a transaction signer with an active, unexpired `CLAIM_MINTER` RoleGrant and validates the exact claim ID, recipient, element mint/ATA addresses, amount bounds, Solana target chain, and ledger reference hash before minting. The hash is an auditable commitment, not an oracle: the program trusts the role-gated signer to attest that WTEN committed the debit. The minting service owns only a revocable RoleGrant; the Token-2022 mint authority remains the program PDA.
+`claim_mint_esms` creates one receipt for all four amounts so a multi-element ledger debit settles atomically. In the Phase 2 core it requires the admin (`MINTER_ROLE`) or the configured attestor transaction signer and validates the exact claim ID, recipient, element mint/ATA addresses, amount bounds, and nonzero ledger reference hash before minting. The service attestor is admin-rotatable/revocable; the Token-2022 mint authority remains the program PDA. The hash is an auditable commitment, not an oracle: the program trusts that signer to attest that WTEN committed the debit to the configured Solana cluster. The authoritative target-chain lock is enforced in WTEN because neither settlement chain can observe the other's receipts.
 
 `redeem_for_esms` should verify a detached Ed25519 authorization whose canonical message includes:
 
@@ -759,9 +756,9 @@ The remaining bullets are gates for Phase 3+ and do not block the implemented ES
 
 ### Phase 2: ESMS and persona core
 
-- Implement config/roles, four mints, claim/redeem receipts and granular pause.
+- Implement upgrade-authority bootstrap, rotatable service authorities, four mints, claim/redeem receipts and granular pause.
 - Implement canonical persona commitment with authorized monotonic updates.
-- Add invariant/fuzz tests and IDL client wrappers.
+- Add invariant and negative-path tests plus IDL client wrappers.
 
 **Exit:** Devnet demonstrates debit claim payload → one atomic four-mint claim → self/sponsored redeem, plus protected persona updates. The repository-pinned Solana 1.18 local validator bundles an older Token-2022 binary that predates Permissioned Burn, so the extension-combination test intentionally targets Devnet.
 

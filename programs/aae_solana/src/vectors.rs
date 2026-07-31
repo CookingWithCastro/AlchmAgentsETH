@@ -111,6 +111,14 @@ mod tests {
     }
 
     fn hex(bytes: &[u8]) -> String {
-        bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+        use std::fmt::Write;
+
+        bytes.iter().fold(
+            String::with_capacity(bytes.len() * 2),
+            |mut output, byte| {
+                write!(&mut output, "{byte:02x}").expect("writing to String cannot fail");
+                output
+            },
+        )
     }
 }

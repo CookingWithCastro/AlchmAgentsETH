@@ -34,6 +34,7 @@ import type { AaeSolana } from '@/lib/solana/idl/aae_solana'
 const toBytes = (value: Uint8Array): number[] => [...value]
 const toAmounts = (values: readonly bigint[]): anchor.BN[] =>
   values.map(value => new anchor.BN(value.toString()))
+const BPF_UPGRADEABLE_LOADER_ID = new PublicKey('BPFLoaderUpgradeab1e11111111111111111111111')
 
 async function getRawTokenBalance(connection: Connection, account: PublicKey): Promise<bigint> {
   for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -68,12 +69,17 @@ describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
   const pauser = Keypair.generate()
   const outsider = Keypair.generate()
   const holder = Keypair.generate()
+  const attestorRecipient = Keypair.generate()
   const clusterDomain = Uint8Array.from(randomBytes(32))
   const [programConfig] = PublicKey.findProgramAddressSync(
     [AAE_SOLANA_SEEDS.programAuthority],
     program.programId
   )
   const mints = getEsmsMintAddresses(program.programId)
+  const [programData] = PublicKey.findProgramAddressSync(
+    [program.programId.toBuffer()],
+    BPF_UPGRADEABLE_LOADER_ID
+  )
   const holderAccounts = mints.map(mint =>
     getAssociatedTokenAddressSync(mint, holder.publicKey, false, TOKEN_2022_PROGRAM_ID)
   )
@@ -89,6 +95,9 @@ describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
     matterMint: mints[2],
     substanceMint: mints[3],
   }
+  const attestorRecipientAccounts = mints.map(mint =>
+    getAssociatedTokenAddressSync(mint, attestorRecipient.publicKey, false, TOKEN_2022_PROGRAM_ID)
+  )
 
   let configuredDomain: Uint8Array
 
@@ -98,7 +107,13 @@ describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
     if (!existing) {
       await program.methods
         .initializeConfig(attestor.publicKey, pauser.publicKey, toBytes(clusterDomain))
-        .accounts({ programConfig, admin, systemProgram: SystemProgram.programId })
+        .accounts({
+          programConfig,
+          admin,
+          program: program.programId,
+          programData,
+          systemProgram: SystemProgram.programId,
+        })
         .rpc()
     }
     const config = await program.account.programConfig.fetch(programConfig)
@@ -110,17 +125,112 @@ describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
         SystemProgram.transfer({
           fromPubkey: admin,
           toPubkey: outsider.publicKey,
-          lamports: 20_000_000,
+          lamports: 10_000_000,
         })
       )
       .add(
         SystemProgram.transfer({
           fromPubkey: admin,
           toPubkey: holder.publicKey,
-          lamports: 100_000_000,
+          lamports: 30_000_000,
+        })
+      )
+      .add(
+        SystemProgram.transfer({
+          fromPubkey: admin,
+          toPubkey: attestor.publicKey,
+          lamports: 30_000_000,
         })
       )
     await provider.sendAndConfirm(funding)
+    await program.methods
+      .initializeEsmsMints()
+      .accounts({
+        programConfig,
+        admin,
+        ...mintAccounts,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc()
+  }, 120_000)
+
+  it('allows only the admin to rotate or revoke service authorities', async () => {
+    await expect(
+      program.methods
+        .setServiceAuthorities(outsider.publicKey, outsider.publicKey)
+        .accounts({ programConfig, authority: outsider.publicKey })
+        .signers([outsider])
+        .rpc()
+    ).rejects.toThrow(/Unauthorized/)
+
+    await program.methods
+      .setServiceAuthorities(PublicKey.default, PublicKey.default)
+      .accounts({ programConfig, authority: admin })
+      .rpc()
+    const revoked = await program.account.programConfig.fetch(programConfig)
+    expect(revoked.attestor.equals(PublicKey.default)).toBe(true)
+    expect(revoked.pauser.equals(PublicKey.default)).toBe(true)
+
+    await program.methods
+      .setServiceAuthorities(attestor.publicKey, pauser.publicKey)
+      .accounts({ programConfig, authority: admin })
+      .rpc()
+
+    const config = await program.account.programConfig.fetch(programConfig)
+    expect(config.attestor.equals(attestor.publicKey)).toBe(true)
+    expect(config.pauser.equals(pauser.publicKey)).toBe(true)
+  }, 120_000)
+
+  it('rejects unauthorized claims and accepts the configured attestor', async () => {
+    const amounts = [1n, 2n, 3n, 4n] as const
+    const accounts = {
+      programConfig,
+      recipient: attestorRecipient.publicKey,
+      ...mintAccounts,
+      spiritAccount: attestorRecipientAccounts[0],
+      essenceAccount: attestorRecipientAccounts[1],
+      matterAccount: attestorRecipientAccounts[2],
+      substanceAccount: attestorRecipientAccounts[3],
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+      systemProgram: SystemProgram.programId,
+    }
+    const unauthorizedClaimId = Uint8Array.from(randomBytes(32))
+    await expect(
+      program.methods
+        .claimMintEsms(
+          toBytes(unauthorizedClaimId),
+          toBytes(Uint8Array.from(randomBytes(32))),
+          toAmounts(amounts)
+        )
+        .accounts({
+          ...accounts,
+          claimReceipt: getReceiptAddress('claim', unauthorizedClaimId, program.programId),
+          authority: outsider.publicKey,
+        })
+        .signers([outsider])
+        .rpc()
+    ).rejects.toThrow(/Unauthorized/)
+
+    const attestedClaimId = Uint8Array.from(randomBytes(32))
+    const attestedReceipt = getReceiptAddress('claim', attestedClaimId, program.programId)
+    await program.methods
+      .claimMintEsms(
+        toBytes(attestedClaimId),
+        toBytes(Uint8Array.from(randomBytes(32))),
+        toAmounts(amounts)
+      )
+      .accounts({
+        ...accounts,
+        claimReceipt: attestedReceipt,
+        authority: attestor.publicKey,
+      })
+      .signers([attestor])
+      .rpc()
+
+    const receipt = await program.account.claimReceipt.fetch(attestedReceipt)
+    expect(receipt.authority.equals(attestor.publicKey)).toBe(true)
   }, 120_000)
 
   it('creates all four Token-2022 ESMS mints idempotently', async () => {
@@ -309,7 +419,7 @@ describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
     ).rejects.toThrow(/Ed25519 holder authorization/)
   }, 120_000)
 
-  it('enforces granular pause authority and restores the live state', async () => {
+  it('enforces granular pauses on claims and both redemption modes', async () => {
     await expect(
       program.methods
         .setPauseState(true, true)
@@ -320,11 +430,129 @@ describe.sequential('AAE Solana ESMS and persona program on Devnet', () => {
 
     await program.methods
       .setPauseState(true, false)
-      .accounts({ programConfig, authority: admin })
+      .accounts({ programConfig, authority: pauser.publicKey })
+      .signers([pauser])
       .rpc()
     const paused = await program.account.programConfig.fetch(programConfig)
     expect(paused.pauseClaims).toBe(true)
     expect(paused.pauseRedemptions).toBe(false)
+
+    const pausedClaimId = Uint8Array.from(randomBytes(32))
+    await expect(
+      program.methods
+        .claimMintEsms(
+          toBytes(pausedClaimId),
+          toBytes(Uint8Array.from(randomBytes(32))),
+          toAmounts([1n, 1n, 1n, 1n])
+        )
+        .accounts({
+          programConfig,
+          claimReceipt: getReceiptAddress('claim', pausedClaimId, program.programId),
+          authority: admin,
+          recipient: holder.publicKey,
+          ...mintAccounts,
+          ...tokenAccounts,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc()
+    ).rejects.toThrow(/Claims are paused/)
+
+    const liveOrderId = Uint8Array.from(randomBytes(32))
+    await program.methods
+      .redeemEsms(toBytes(liveOrderId), toAmounts([1n, 1n, 1n, 1n]))
+      .accounts({
+        programConfig,
+        orderReceipt: getReceiptAddress('order', liveOrderId, program.programId),
+        holder: holder.publicKey,
+        ...mintAccounts,
+        ...tokenAccounts,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .signers([holder])
+      .rpc()
+
+    await program.methods
+      .setPauseState(false, true)
+      .accounts({ programConfig, authority: pauser.publicKey })
+      .signers([pauser])
+      .rpc()
+
+    const pausedOrderId = Uint8Array.from(randomBytes(32))
+    await expect(
+      program.methods
+        .redeemEsms(toBytes(pausedOrderId), toAmounts([1n, 1n, 1n, 1n]))
+        .accounts({
+          programConfig,
+          orderReceipt: getReceiptAddress('order', pausedOrderId, program.programId),
+          holder: holder.publicKey,
+          ...mintAccounts,
+          ...tokenAccounts,
+          tokenProgram: TOKEN_2022_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([holder])
+        .rpc()
+    ).rejects.toThrow(/Redemptions are paused/)
+
+    const sponsoredOrderId = Uint8Array.from(randomBytes(32))
+    const sponsoredAmounts = [1n, 1n, 1n, 1n] as const
+    const sponsoredDeadline = BigInt(Math.floor(Date.now() / 1000) + 300)
+    const sponsoredMessage = buildRedeemAuthorizationMessage({
+      programId: program.programId,
+      clusterDomain: configuredDomain,
+      holder: holder.publicKey,
+      orderId: sponsoredOrderId,
+      amounts: sponsoredAmounts,
+      deadline: sponsoredDeadline,
+    })
+    const sponsoredSignature = Ed25519Program.createInstructionWithPrivateKey({
+      privateKey: holder.secretKey,
+      message: sponsoredMessage,
+    })
+    const sponsoredRedeem = await program.methods
+      .redeemForEsms(
+        toBytes(sponsoredOrderId),
+        toAmounts(sponsoredAmounts),
+        new anchor.BN(sponsoredDeadline.toString())
+      )
+      .accounts({
+        programConfig,
+        orderReceipt: getReceiptAddress('order', sponsoredOrderId, program.programId),
+        sponsor: admin,
+        holder: holder.publicKey,
+        ...mintAccounts,
+        ...tokenAccounts,
+        instructions: anchor.web3.SYSVAR_INSTRUCTIONS_PUBKEY,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .instruction()
+    await expect(
+      provider.sendAndConfirm(new Transaction().add(sponsoredSignature, sponsoredRedeem))
+    ).rejects.toThrow(/Redemptions are paused/)
+
+    const liveClaimId = Uint8Array.from(randomBytes(32))
+    await program.methods
+      .claimMintEsms(
+        toBytes(liveClaimId),
+        toBytes(Uint8Array.from(randomBytes(32))),
+        toAmounts([1n, 1n, 1n, 1n])
+      )
+      .accounts({
+        programConfig,
+        claimReceipt: getReceiptAddress('claim', liveClaimId, program.programId),
+        authority: admin,
+        recipient: holder.publicKey,
+        ...mintAccounts,
+        ...tokenAccounts,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+        associatedTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
+        systemProgram: SystemProgram.programId,
+      })
+      .rpc()
 
     await program.methods
       .setPauseState(false, false)

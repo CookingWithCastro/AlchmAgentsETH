@@ -33,6 +33,14 @@ pub mod aae_solana {
         config::set_pause_state(ctx, pause_claims, pause_redemptions)
     }
 
+    pub fn set_service_authorities(
+        ctx: Context<SetServiceAuthorities>,
+        attestor: Pubkey,
+        pauser: Pubkey,
+    ) -> Result<()> {
+        config::set_service_authorities(ctx, attestor, pauser)
+    }
+
     pub fn initialize_esms_mints(ctx: Context<InitializeEsmsMints>) -> Result<()> {
         esms::initialize_mints(ctx)
     }
