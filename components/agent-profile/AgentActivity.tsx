@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { AiGeneratedPill } from '@/components/ui/ai-generated-pill'
+import { AiDisclaimer } from '@/components/ui/ai-disclaimer'
 
 // Shapes mirror lib/agents/activity-surfaces.ts (kept local so this client
 // component never imports the server-only module).
@@ -153,6 +155,9 @@ function RecipeCard({ artifact, agentName }: { artifact: ActivityArtifact; agent
           {error && <div className="text-amber-300/80">{error}</div>}
           {recipe && (
             <div className="space-y-2">
+              <div className="mb-2">
+                <AiGeneratedPill />
+              </div>
               {recipe.name && <div className="font-semibold text-white/90">{recipe.name}</div>}
               {recipe.description && <p className="text-white/60">{recipe.description}</p>}
               {Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0 && (
@@ -167,10 +172,7 @@ function RecipeCard({ artifact, agentName }: { artifact: ActivityArtifact; agent
                   </ul>
                 </div>
               )}
-              {/* External "open on alchm.kitchen" link intentionally omitted:
-                  the inline expand above already shows the full recipe via the
-                  /api/recipes/[id] proxy, and alchm.kitchen's /recipes/[id] page
-                  currently 500s. Re-add once that page is fixed. */}
+              <AiDisclaimer compact className="mt-3 pt-2 border-t border-white/10" />
             </div>
           )}
         </div>

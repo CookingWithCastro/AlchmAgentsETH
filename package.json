@@ -14,6 +14,7 @@
     "dev:tauri": "bunx tauri dev",
     "build": "next build",
     "start": "next start",
+    "purge:guest-chats": "python3 backend/purge_guest_chats.py",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "format": "prettier --write .",

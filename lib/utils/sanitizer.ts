@@ -122,11 +122,42 @@ export function sanitizeLlmOutput(output: string): string {
 }
 
 /**
- * Escapes XML/Markdown prompt delimiter tags in user input to prevent prompt injection breakout (LLM01).
+ * Scrubs or anonymizes PII (emails, exact birth coordinates) before sending prompts to external LLMs.
+ * NY SHIELD Act & GDPR Compliance.
+ */
+export function scrubPiiFromPrompt(prompt: string): string {
+  if (!prompt || typeof prompt !== 'string') return ''
+
+  return (
+    prompt
+      // 1. Redact email addresses
+      .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED_EMAIL]')
+      // 2. Round high-precision GPS coordinates (e.g., lat: 40.71284, lon: -74.00597) to 1 decimal place
+      .replace(
+        /("?(?:lat|latitude|lon|longitude)"?\s*:\s*)(-?\d+\.\d{2,})/gi,
+        (_match, prefix, numStr) => {
+          const val = parseFloat(numStr)
+          return `${prefix}${val.toFixed(1)}`
+        }
+      )
+      .replace(
+        /(\b(?:Lat|Latitude|Lon|Longitude)\s*[:=]\s*)(-?\d+\.\d{2,})/gi,
+        (_match, prefix, numStr) => {
+          const val = parseFloat(numStr)
+          return `${prefix}${val.toFixed(1)}`
+        }
+      )
+  )
+}
+
+/**
+ * Escapes XML/Markdown prompt delimiter tags in user input to prevent prompt injection breakout (LLM01)
+ * and scrubs PII before external LLM forwarding.
  */
 export function sanitizePromptInput(input: string): string {
   if (!input || typeof input !== 'string') return ''
-  return input
+  const scrubbed = scrubPiiFromPrompt(input)
+  return scrubbed
     .replace(/<\/?user_message>/gi, '[user_message]')
     .replace(/<\/?reference_material>/gi, '[reference_material]')
     .replace(/<\/?system>/gi, '[system]')

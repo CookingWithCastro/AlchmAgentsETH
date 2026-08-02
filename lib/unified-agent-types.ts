@@ -239,6 +239,8 @@ export interface GroupChatResponse {
   emergentWisdom?: string
   recommendedActions?: string[]
   nextOptimalTiming?: Date
+  ai_generated?: boolean
+  disclaimer?: string
   sessionUpdate: {
     consciousnessEvolution: number
     newSynergies: string[]

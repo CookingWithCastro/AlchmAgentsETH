@@ -225,9 +225,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
           }
         }
 
+        const disclaimer =
+          'Planetary Agent responses and cosmic recipes are synthesized using Large Language Models (LLMs) and real-time astrological transit algorithms. They are provided for culinary inspiration and entertainment only, and do not constitute human medical, nutritional, or professional advice.'
+
         return NextResponse.json({
           success: true,
           data: chatData,
+          ai_generated: true,
+          disclaimer,
           balances,
           free: freeThisWeek,
           timestamp,

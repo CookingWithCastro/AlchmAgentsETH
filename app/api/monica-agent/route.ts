@@ -102,12 +102,19 @@ Please weave these recommendations naturally into your response to guide the use
       learningStage: conversationStage === 'greeting' ? 'beginner' : 'intermediate',
     })
 
+    const disclaimer =
+      'Planetary Agent responses and cosmic recipes are synthesized using Large Language Models (LLMs) and real-time astrological transit algorithms. They are provided for culinary inspiration and entertainment only, and do not constitute human medical, nutritional, or professional advice.'
+
     const response = {
       text: result.text,
       agentId: 'monica-001',
       sessionId: sessionId || `session-${Date.now()}`,
+      ai_generated: true,
+      disclaimer,
       metadata: {
         timestamp: new Date().toISOString(),
+        ai_generated: true,
+        disclaimer,
         envelope: {
           ...envelope,
           routing: {

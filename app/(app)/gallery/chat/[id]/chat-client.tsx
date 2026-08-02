@@ -12,6 +12,8 @@ import { RAGToggle, SourceCitations, RAGFeedbackWidget, type RAGSource } from '@
 import { ragAnalytics } from '@/lib/rag/rag-analytics'
 import { detectAmbiguousQuery } from '@/lib/rag/rag-quality'
 import WeeklyMenuPlanner from '@/components/misc/weekly-menu-planner'
+import { AiGeneratedPill } from '@/components/ui/ai-generated-pill'
+import { AiDisclaimer } from '@/components/ui/ai-disclaimer'
 
 type Message = {
   role: 'user' | 'agent'
@@ -582,6 +584,11 @@ export default function HistoricalAgentChatPage() {
                             </div>
                           ) : (
                             <>
+                              {message.role === 'agent' && (
+                                <div className="mb-2">
+                                  <AiGeneratedPill />
+                                </div>
+                              )}
                               <p className="text-sm leading-relaxed">{message.content}</p>
                               <p className="text-xs text-muted-foreground mt-2">
                                 {message.timestamp.toLocaleTimeString()}
@@ -619,6 +626,8 @@ export default function HistoricalAgentChatPage() {
               </div>
             )}
           </div>
+
+          <AiDisclaimer compact className="mb-3" />
 
           <form onSubmit={handleSubmit} className="flex gap-2">
             <Input

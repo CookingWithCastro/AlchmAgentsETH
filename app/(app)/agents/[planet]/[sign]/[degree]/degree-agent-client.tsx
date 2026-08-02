@@ -12,6 +12,8 @@ import {
   getPlanetaryElement,
   calculateElementalAffinity,
 } from '@/lib/astrological-data'
+import { AiGeneratedPill } from '@/components/ui/ai-generated-pill'
+import { AiDisclaimer } from '@/components/ui/ai-disclaimer'
 import {
   ArrowLeft,
   Calendar,
@@ -243,6 +245,11 @@ export default function DegreeAgentClient({
                               {message.role === 'user' ? 'You' : `${planet}`}
                             </div>
                             <div className="flex-1">
+                              {message.role === 'agent' && (
+                                <div className="mb-2">
+                                  <AiGeneratedPill />
+                                </div>
+                              )}
                               <p className="text-sm leading-relaxed text-white/90">
                                 {message.content}
                               </p>
@@ -256,6 +263,8 @@ export default function DegreeAgentClient({
                     </div>
                   )}
                 </div>
+
+                <AiDisclaimer compact className="mb-3" />
 
                 <form onSubmit={handleSubmit} className="flex gap-2">
                   <Input

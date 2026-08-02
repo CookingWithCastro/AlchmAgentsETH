@@ -10,6 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { MessageCircle, Send, Heart, Sparkles, Brain, X, Minimize2, Eye, Info } from 'lucide-react'
 import { useLiveOracleChat } from '@/lib/spacetime/hooks/useLiveOracleChat'
+import { AiGeneratedPill } from '@/components/ui/ai-generated-pill'
+import { AiDisclaimer } from '@/components/ui/ai-disclaimer'
 
 interface MonicaChatMessage {
   id: string
@@ -422,6 +424,12 @@ export function MonicaChatBubble({
                             </div>
                           )}
 
+                          {message.type === 'monica' && (
+                            <div className="mb-2">
+                              <AiGeneratedPill />
+                            </div>
+                          )}
+
                           <p
                             className={`text-sm leading-relaxed whitespace-pre-wrap ${message.type === 'monica' ? 'text-emerald-900 dark:text-emerald-100' : 'text-white'}`}
                           >
@@ -543,6 +551,7 @@ export function MonicaChatBubble({
 
                 {/* Input */}
                 <div className="p-4 border-t border-emerald-200 dark:border-emerald-800 shrink-0 bg-white/50 dark:bg-gray-900/50">
+                  <AiDisclaimer compact className="mb-2.5" />
                   <div className="flex gap-2">
                     <Input
                       value={currentMessage}

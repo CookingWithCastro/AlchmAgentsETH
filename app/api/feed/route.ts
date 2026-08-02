@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { feedStreamBus } from '@/lib/agents/feed-stream-bus'
 import { normalizeDbActionToFeedEvent } from '@/lib/agents/feed-helpers'
+import { hasInternalApiSecret } from '@/lib/security/internal-auth'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -192,17 +193,8 @@ export async function GET(req: Request) {
  */
 export async function POST(req: Request) {
   try {
-    // Fail closed: this writes to agent_action_events and broadcasts to every
-    // SSE subscriber, so in production a missing INTERNAL_API_SECRET means the
-    // endpoint is unavailable — not open to the world.
-    const expected = process.env.INTERNAL_API_SECRET
-    const authHeader = req.headers.get('authorization') || ''
-    const token = authHeader.replace(/^Bearer\s+/i, '').trim()
-    if (process.env.NODE_ENV === 'production') {
-      if (!expected || token !== expected) {
-        return new Response('Unauthorized', { status: 401 })
-      }
-    } else if (expected && token !== expected) {
+    // Fail closed: strictly enforce INTERNAL_API_SECRET or ALCHM_KITCHEN_SYNC_SECRET in all environments (NY SHIELD Act compliance)
+    if (!hasInternalApiSecret(req)) {
       return new Response('Unauthorized', { status: 401 })
     }
 

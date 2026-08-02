@@ -12,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Checkbox } from '@/components/ui/checkbox'
 import { X, Send, Sparkles, Users, Activity, Settings, Filter, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
+import { AiGeneratedPill } from '@/components/ui/ai-generated-pill'
+import { AiDisclaimer } from '@/components/ui/ai-disclaimer'
 
 import type {
   UnifiedAgent,
@@ -751,6 +753,11 @@ export function UnifiedMultiAgentChat({
                       : 'bg-black/40 border-white/10 text-purple-50'
                   }`}
                 >
+                  {message.role !== 'user' && (
+                    <div className="mb-2">
+                      <AiGeneratedPill />
+                    </div>
+                  )}
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
 
                   {message.metadata?.synthesizedInsights &&
@@ -820,6 +827,7 @@ export function UnifiedMultiAgentChat({
   // Render input area
   const renderInput = () => (
     <div className="border-t border-white/10 p-4 bg-black/20">
+      <AiDisclaimer compact className="mb-2.5" />
       <div className="flex gap-2">
         <Input
           value={inputMessage}

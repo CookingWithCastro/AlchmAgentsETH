@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { ArrowLeft, Send, Sparkles, Users, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 import { buildTransitUnifiedAgents, type TransitAgentDetail } from '@/lib/agents/degree-agent'
+import { AiGeneratedPill } from '@/components/ui/ai-generated-pill'
+import { AiDisclaimer } from '@/components/ui/ai-disclaimer'
 
 interface TransitInfo {
   aspect?: string | null
@@ -399,6 +401,11 @@ export default function TransitGroupChatClient({ sessionId, agents, transit }: P
                           : 'border-white/10 bg-black/40 text-purple-50'
                       }`}
                     >
+                      {message.role === 'agent' && (
+                        <div className="mb-2">
+                          <AiGeneratedPill />
+                        </div>
+                      )}
                       <p className="whitespace-pre-wrap text-sm leading-relaxed">
                         {message.content || <span className="text-purple-300/50">…</span>}
                       </p>
@@ -419,6 +426,10 @@ export default function TransitGroupChatClient({ sessionId, agents, transit }: P
             )}
 
             <div ref={messagesEndRef} />
+          </div>
+
+          <div className="px-4 pt-2 bg-black/20">
+            <AiDisclaimer compact />
           </div>
 
           {/* Input */}

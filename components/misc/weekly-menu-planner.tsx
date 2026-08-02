@@ -421,6 +421,10 @@ export default function WeeklyMenuPlanner({ agentId, agentName, onClose }: Weekl
               </button>
             </CardHeader>
             <CardContent className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="flex flex-col gap-2">
+                <AiGeneratedPill />
+                <AiDisclaimer compact />
+              </div>
               {selectedMeal.recipe?.cuisine && (
                 <div>
                   <h5 className="text-xs uppercase tracking-wider text-white/40 font-bold mb-1">

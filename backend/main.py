@@ -25,7 +25,14 @@ import ingest
 import recipe_generation
 import tilt_skillet_generation
 import alchm_mcp
+import pii_scrubber
 from feed_emitter import emit_feed_event
+
+AI_DISCLAIMER_TEXT = (
+    "Planetary Agent responses and cosmic recipes are synthesized using Large Language Models (LLMs) "
+    "and real-time astrological transit algorithms. They are provided for culinary inspiration and "
+    "entertainment only, and do not constitute human medical, nutritional, or professional advice."
+)
 
 class SlidingWindowRateLimiter:
     def __init__(self, limit: int = 60, window: float = 60.0):
@@ -1277,11 +1284,15 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
 
     # 6. Walk the chain. First successful provider wins; failures cascade with
     # a `fallback_event` log line (grep "fallback_event" in Railway logs).
+    # Scrub PII (emails, exact coordinates) prior to sending context to external LLM providers (NY SHIELD Act)
+    scrubbed_user_message = pii_scrubber.scrub_pii_from_prompt(request.message)
+    scrubbed_persona_block = pii_scrubber.scrub_pii_from_prompt(persona_block)
+
     result = await providers.run_chain(
         chain=chain,
-        persona_block=persona_block,
+        persona_block=scrubbed_persona_block,
         rag_block=rag_block,
-        user_message=request.message,
+        user_message=scrubbed_user_message,
         agent_id=request.agentId,
         tier=tier,
         persona_cache_key=request.personaCacheKey,
@@ -1348,6 +1359,7 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
         "text": text,
         "agentId": request.agentId,
         "sessionId": session_id,
+        "ai_generated": True,
         "metadata": {
             "timestamp": datetime.utcnow().isoformat(),
             "rag_used": bool(rag_block),
@@ -1359,6 +1371,8 @@ async def chat(request: schemas.ChatRequest, db: Session = Depends(database.get_
             "persona_cache_key": request.personaCacheKey,
             "cache": cache_hit,
             "mcp": mcp_metadata,
+            "ai_generated": True,
+            "disclaimer": AI_DISCLAIMER_TEXT,
         },
     }
 
@@ -1964,6 +1978,63 @@ async def agent_sync(
         "agentId": payload.agentId,
         "action": action
     }
+
+@app.post("/api/cron/purge-guest-chats")
+async def cron_purge_guest_chats(
+    x_cron_secret: Optional[str] = Header(None, alias="X-Cron-Secret"),
+    x_internal_secret: Optional[str] = Header(None, alias="X-Internal-Secret"),
+    authorization: Optional[str] = Header(None),
+):
+    expected = os.getenv("PA_CRON_SECRET") or os.getenv("CRON_SECRET") or os.getenv("INTERNAL_API_SECRET") or os.getenv("ALCHM_KITCHEN_SYNC_SECRET")
+    bearer_token = (authorization or "").replace("Bearer ", "").strip()
+    provided = x_cron_secret or x_internal_secret or bearer_token
+    if not expected or provided != expected:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    import purge_guest_chats
+    result = purge_guest_chats.purge_guest_chat_history(retention_days=30)
+    return result
+
+@app.post("/api/agent/delete-chat-history", response_model=schemas.DeleteChatHistoryResponse)
+async def delete_user_chat_history(
+    request: schemas.DeleteChatHistoryRequest,
+    db: Session = Depends(database.get_db),
+):
+    user_id = (request.userId or "").strip()
+    if not user_id:
+        raise HTTPException(status_code=400, detail="userId is required")
+
+    try:
+        chats = db.query(models.AgentConversation).filter(models.AgentConversation.userId == user_id).all()
+        purged_count = len(chats)
+        session_ids = [c.sessionId for c in chats if c.sessionId]
+
+        db.query(models.AgentConversation).filter(models.AgentConversation.userId == user_id).delete(synchronize_session=False)
+        db.commit()
+
+        try:
+            collection = rag.vector_store.get_or_create_collection("historical-agents")
+            try:
+                collection.delete(where={"userId": user_id})
+            except Exception:
+                pass
+            for s_id in set(session_ids):
+                try:
+                    collection.delete(where={"sessionId": s_id})
+                except Exception:
+                    pass
+        except Exception as chroma_err:
+            print(f"ChromaDB user delete warning for {user_id}: {chroma_err}", flush=True)
+
+        return schemas.DeleteChatHistoryResponse(
+            success=True,
+            purgedCount=purged_count,
+            userId=user_id,
+            message=f"Successfully purged {purged_count} chat records and vector embeddings for user under GDPR Art. 17."
+        )
+    except Exception as exc:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete chat history: {exc}")
 
 @app.post("/api/cron/synthetic-mcp-probe")
 async def synthetic_mcp_probe(

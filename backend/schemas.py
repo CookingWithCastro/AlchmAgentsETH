@@ -127,6 +127,7 @@ class ChatResponse(BaseModel):
     text: str
     agentId: str
     sessionId: str
+    ai_generated: bool = Field(default=True)
     metadata: Optional[Dict[str, Any]] = None
 
 class MultiAgentChatRequest(BaseModel):
@@ -147,6 +148,7 @@ class MultiAgentTurn(BaseModel):
 class MultiAgentChatResponse(BaseModel):
     responses: List[MultiAgentTurn]
     sessionId: str
+    ai_generated: bool = Field(default=True)
     metadata: Optional[Dict[str, Any]] = None
 
 
@@ -293,6 +295,7 @@ class CosmicRecipeResponse(BaseModel):
     finishing_and_serving: FinishingAndServing
     leftovers_and_storage: LeftoversAndStorage
     astro_explanation: AstroExplanation
+    ai_generated: bool = Field(default=True)
 
     model_config = ConfigDict(extra="ignore")
 
@@ -426,3 +429,12 @@ class AgentSyncResponse(BaseModel):
     success: bool
     agentId: str
     action: str
+
+class DeleteChatHistoryRequest(BaseModel):
+    userId: Optional[str] = None
+
+class DeleteChatHistoryResponse(BaseModel):
+    success: bool
+    purgedCount: int
+    userId: Optional[str] = None
+    message: str
