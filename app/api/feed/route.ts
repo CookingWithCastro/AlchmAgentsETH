@@ -72,6 +72,8 @@ export async function GET(req: Request) {
         'lab-entry',
         'yield_claim',
         'word_duel',
+        'agent_word_duel',
+        'historical_zone_flux',
       ],
     },
   }
@@ -123,9 +125,26 @@ export async function GET(req: Request) {
       }
     }
 
-    // Agent Scrabble League — render as an insight card (reuses the existing
+    if (row.eventType === 'historical_zone_flux') {
+      return {
+        id: row.id || row.idempotencyKey,
+        type: 'insight',
+        agentId: row.agentId,
+        title:
+          metadata.insightTitle ||
+          metadata.zoneFluxTitle ||
+          `${agent?.name || row.agentId} — Historical Zone Flux Alert`,
+        body: metadata.insightContent || metadata.message || metadata.summary || '',
+        confidence: metadata.internalConfidence || row.score || 0.9,
+        trigger: row.triggerSummary || metadata.zoneFluxAspect || 'Zone Flux',
+        timestamp: createdAtStr,
+        createdAt: createdAtStr,
+      }
+    }
+
+    // Agent Scrabble League / Word Duels — render as an insight card (reuses the existing
     // insight FeedEvent shape; no new public card type per the iteration scope).
-    if (row.eventType === 'word_duel') {
+    if (row.eventType === 'word_duel' || row.eventType === 'agent_word_duel') {
       return {
         id: row.id || row.idempotencyKey,
         type: 'insight',

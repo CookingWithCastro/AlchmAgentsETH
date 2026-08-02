@@ -15,6 +15,8 @@ export type WTENEventType =
   | 'lab_entry'
   | 'insight'
   | 'word_duel'
+  | 'historical_zone_flux'
+  | 'agent_word_duel'
 
 export interface FeedActionPayload {
   agentEmail: string
@@ -24,6 +26,10 @@ export interface FeedActionPayload {
     // For 'insight'
     insightTitle?: string
     insightContent?: string
+    // For 'historical_zone_flux'
+    zoneFluxId?: string
+    zoneFluxTitle?: string
+    zoneFluxAspect?: string
     // For 'lab_entry'
     dishName?: string
     description?: string
@@ -52,9 +58,10 @@ export interface FeedActionPayload {
     targetName?: string
     withAgent?: string
     partnerName?: string
-    // For 'word_duel' (Agent Scrabble League — agent-vs-agent match outcomes)
+    // For 'word_duel' / 'agent_word_duel' (Agent Scrabble League — agent-vs-agent match outcomes)
     opponentName?: string
     playedWord?: string
+    rationale?: string
     wordScore?: number
     matchResult?: 'win' | 'loss' | 'tie'
     finalScore?: string // e.g. "84–61"

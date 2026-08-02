@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { AiGeneratedPill } from '@/components/ui/ai-generated-pill'
+import { AiDisclaimer } from '@/components/ui/ai-disclaimer'
 import {
   Sparkles,
   Calendar,

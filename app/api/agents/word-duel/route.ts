@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { isPlanet, type Planet } from '@/lib/agents/planetary-traits'
 import { chooseWordMove, type Candidate, type DuelContext } from '@/lib/agents/duel/word-duel'
+import { resolveAnyAgent } from '@/lib/agents/resolve-any-agent'
+import { deriveAgentPlayStyle } from '@/lib/agents/duel/agent-word-strategy'
 
 // fs-free, but does network LLM + Prisma work → Node runtime, never cached.
 export const runtime = 'nodejs'
@@ -22,24 +24,48 @@ export async function OPTIONS() {
  * POST /api/agents/word-duel
  *
  * The in-character "brain" for Pentacles' Word Duels of the Spheres. Given a
- * planet, a rack, and the legal candidate words (the caller owns the
- * dictionary — see lib/agents/duel/word-duel.ts), returns the word that planet
- * would play with a one-line rationale in its voice.
+ * planet or agentKey/agentId, a rack, and legal candidate words (the caller
+ * owns the dictionary — see lib/agents/duel/word-duel.ts), returns the word
+ * that agent/planet would play with a one-line rationale in its voice.
  *
  * API-only: this is not surfaced in any web UI. It exists so a desktop caller
  * or a future Pentacles companion worker can reach the agent brain.
  *
- * Request: { planet, rack, candidates: [{word,score}] | string[], context?, sessionId?, userId?, source? }
- * Response: { success, planet, move: { word, rationale, score, source, ... }, timestamp }
+ * Request: { planet?, agentKey?, agentId?, rack, candidates: [{word,score}] | string[], context?, sessionId?, userId?, source? }
+ * Response: { success, agentKey, planet, move: { word, rationale, score, source, ... }, timestamp }
  */
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>
     const { planet, rack, candidates, context } = body
 
-    if (!isPlanet(planet)) {
+    const rawAgentKey =
+      typeof body.agentKey === 'string' && body.agentKey.trim()
+        ? body.agentKey.trim()
+        : typeof body.agentId === 'string' && body.agentId.trim()
+          ? body.agentId.trim()
+          : typeof context === 'object' &&
+              context &&
+              'agentId' in context &&
+              typeof (context as any).agentId === 'string' &&
+              (context as any).agentId.trim()
+            ? (context as any).agentId.trim()
+            : undefined
+
+    let resolvedAgent = rawAgentKey ? await resolveAnyAgent(rawAgentKey) : null
+    let effectivePlanet: Planet | null = isPlanet(planet) ? (planet as Planet) : null
+
+    if (!effectivePlanet && resolvedAgent) {
+      effectivePlanet = deriveAgentPlayStyle(resolvedAgent).dominantPlanet
+    }
+
+    if (!effectivePlanet) {
       return NextResponse.json(
-        { success: false, error: 'Invalid or missing planet. Must be one of the ten spheres.' },
+        {
+          success: false,
+          error:
+            'Invalid or missing planet/agentKey. Must specify a valid planet sphere or registered agentKey.',
+        },
         { status: 400, headers: CORS_HEADERS }
       )
     }
@@ -68,30 +94,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const agentId =
-      typeof body.agentId === 'string'
-        ? body.agentId
-        : typeof context === 'object' &&
-            context &&
-            'agentId' in context &&
-            typeof (context as any).agentId === 'string'
-          ? (context as any).agentId
-          : undefined
-
     const move = await chooseWordMove({
-      planet: planet as Planet,
+      planet: effectivePlanet,
       rack: rack as string | Record<string, number>,
       candidates: candidates as Array<Candidate | string>,
       context: (context as DuelContext) || undefined,
-      agentId,
+      agentId: resolvedAgent?.id || rawAgentKey,
     })
 
     // Fire-and-forget telemetry — layered onto the agent duel family. Never let
     // a persistence problem (incl. a not-yet-migrated table) break the move.
-    void persistWordDuel(body, planet as Planet, move)
+    void persistWordDuel(body, effectivePlanet, move)
 
     return NextResponse.json(
-      { success: true, planet, move, timestamp: new Date().toISOString() },
+      {
+        success: true,
+        agentKey: rawAgentKey || effectivePlanet,
+        planet: effectivePlanet,
+        move,
+        timestamp: new Date().toISOString(),
+      },
       { headers: CORS_HEADERS }
     )
   } catch (error) {

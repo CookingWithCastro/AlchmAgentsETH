@@ -34,6 +34,7 @@ import {
   type Rack,
 } from './word-scoring'
 import { planetStrategy, rankCandidates, type PlanetStrategy } from './planet-strategy'
+import { rankCandidatesForAgent } from './agent-word-strategy'
 
 export type { Planet } from '../planetary-traits'
 export type { Rack, Candidate } from './word-scoring'
@@ -109,7 +110,7 @@ const MoveSchema = z.object({
 })
 
 /**
- * Choose a Word of Power for a planetary agent. Always resolves to a valid
+ * Choose a Word of Power for a planetary or historical agent. Always resolves to a valid
  * move (or a yield when no legal word exists) — it never throws.
  */
 export async function chooseWordMove(
@@ -122,20 +123,24 @@ export async function chooseWordMove(
   const rackCounts = normalizeRack(input.rack)
   const rackString = rackToString(input.rack)
 
+  const agentCtx = input.agentId ? buildAgentContext(input.agentId) : null
+  const agent = agentCtx?.agent || undefined
+
   // Trust but verify: re-validate every candidate is spellable from the rack
   // and re-score it with our shared scorer (so `score` agrees with Pentacles).
   const legal = normalizeCandidates(input.candidates, rackCounts)
   if (legal.length === 0) {
+    const yieldName = agent?.name || planet
     return {
       word: '',
-      rationale: `${planet} finds no Word of Power in this rack, and yields the turn.`,
+      rationale: `${yieldName} finds no Word of Power in this rack, and yields the turn.`,
       score: 0,
       source: 'yield',
       latencyMs: Date.now() - start,
     }
   }
 
-  const ranked = rankCandidates(planet, legal)
+  const ranked = agent ? rankCandidatesForAgent(agent, legal) : rankCandidates(planet, legal)
   const top = ranked[0]
   const menu = ranked.slice(0, MENU_SIZE)
   const legalWords = new Set(legal.map(c => c.word))
@@ -143,9 +148,6 @@ export async function chooseWordMove(
   const generate = deps.generateMove ?? groqGenerateMove
   const timeoutMs =
     deps.timeoutMs ?? (Number(process.env.WORD_DUEL_TIMEOUT_MS) || DEFAULT_TIMEOUT_MS)
-
-  const agentCtx = input.agentId ? buildAgentContext(input.agentId) : null
-  const agent = agentCtx?.agent || undefined
 
   try {
     const result = await withTimeout(
@@ -179,9 +181,13 @@ export async function chooseWordMove(
     // Timeout or provider error — fall through to the persona-greedy fallback.
   }
 
+  const fallbackRationale = agent
+    ? `${agent.name} selects ${top.word} in accordance with their nature.`
+    : `${planet} trusts the instinct of the spheres and plays ${top.word}.`
+
   return {
     word: top.word,
-    rationale: `${planet} trusts the instinct of the spheres and plays ${top.word}.`,
+    rationale: fallbackRationale,
     score: top.score,
     source: 'fallback',
     provider: 'groq',

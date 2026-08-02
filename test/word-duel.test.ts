@@ -174,4 +174,28 @@ describe('Word Duel — chooseWordMove orchestration', () => {
     expect(move.score).toBe(0)
     expect(move.source).toBe('yield')
   })
+
+  it('ranks candidates and provides persona fallback for historical agents (e.g. Isaac Newton)', async () => {
+    const move = await chooseWordMove(
+      { planet: 'Saturn', rack: RICH_RACK, candidates: CANDIDATES, agentId: 'isaac-newton' },
+      {
+        generateMove: async () => {
+          throw new Error('provider down')
+        },
+      }
+    )
+    expect(move.source).toBe('fallback')
+    expect(move.word).toBeTruthy()
+    expect(move.rationale).toContain('Isaac Newton')
+  })
+
+  it('ranks candidates and returns model pick for historical agents (e.g. Emily Dickinson)', async () => {
+    const move = await chooseWordMove(
+      { planet: 'Mercury', rack: RICH_RACK, candidates: CANDIDATES, agentId: 'emily-dickinson' },
+      { generateMove: picks('MELLOW', 'A quiet, verse-filled selection.') }
+    )
+    expect(move.source).toBe('model')
+    expect(move.word).toBe('MELLOW')
+    expect(move.rationale).toBe('A quiet, verse-filled selection.')
+  })
 })
