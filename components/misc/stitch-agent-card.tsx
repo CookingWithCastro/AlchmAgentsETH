@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Check } from 'lucide-react'
 import type { CraftedAgent } from '@/lib/agent-types'
 import { ELEMENT_METADATA } from '@/lib/element-metadata'
+import { useFreeAgents } from '@/hooks/use-free-agents'
 
 interface StitchAgentCardProps {
   agent: CraftedAgent
@@ -21,6 +22,9 @@ export function StitchAgentCard({
 }: StitchAgentCardProps) {
   const element = agent.consciousness?.dominantElement || 'Air'
   const meta = ELEMENT_METADATA[element as keyof typeof ELEMENT_METADATA] || ELEMENT_METADATA.Air
+
+  const { isFree } = useFreeAgents()
+  const agentIsFree = isFree(agent.id)
 
   const handleSelect = (e: React.MouseEvent) => {
     if (onToggleSelection) {
@@ -133,6 +137,12 @@ export function StitchAgentCard({
         >
           {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
         </button>
+      )}
+
+      {agentIsFree && (
+        <span className="absolute top-4 right-4 z-20 font-mono-label text-[10px] text-[#34d399] bg-[#34d399]/15 px-2 py-0.5 rounded border border-[#34d399]/40 backdrop-blur-sm">
+          🎁 Free this week
+        </span>
       )}
 
       {/* Main Link Wrapper */}

@@ -17,13 +17,6 @@ export async function POST(request: NextRequest) {
     const session = await auth()
     const userId = session?.user?.id
 
-    if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'Authentication required.' },
-        { status: 401 }
-      )
-    }
-
     const body: LangChainAgentRequest = await request.json()
     const { query, agentId = 'orchestrator', sessionId, model = 'openai', temperature = 0.7 } = body
 
@@ -42,10 +35,17 @@ export async function POST(request: NextRequest) {
     const freeThisWeek =
       agentId !== 'orchestrator' ? await isAgentFreeThisWeek(agentId).catch(() => false) : false
 
+    if (!userId && !freeThisWeek) {
+      return NextResponse.json(
+        { success: false, error: 'Authentication or ESMS tokens required.' },
+        { status: 401 }
+      )
+    }
+
     let balances
     if (freeThisWeek) {
-      balances = await EconomyService.getBalances(userId)
-    } else {
+      balances = userId ? await EconomyService.getBalances(userId) : EconomyService.ZERO_BALANCES
+    } else if (userId) {
       const debitResult = await EconomyService.debitOperation(userId, 'unified_chat')
       if (!debitResult.ok) {
         return NextResponse.json(

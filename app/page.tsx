@@ -36,6 +36,8 @@ import { usePlanetaryPositions } from '@/hooks/usePlanetaryPositions'
 import { LivePlanetaryCouncilThread } from '@/components/landing/live-planetary-council-thread'
 import { QuickChartAttachmentGenerator } from '@/components/landing/quick-chart-attachment-generator'
 import { BarbaultBasketPromotionalThread } from '@/components/landing/barbault-basket-promotional-thread'
+import FreeAgentsOfTheWeek from '@/components/landing/free-agents-of-the-week'
+import { useFreeAgents } from '@/hooks/use-free-agents'
 import {
   deriveStatsFromChart,
   enhanceWithAlchemy,
@@ -250,6 +252,7 @@ export default function LandingPage() {
   const router = useRouter()
   const { status } = useSession()
   const { primaryWallet, setShowAuthFlow } = useDynamicContext()
+  const { isFree } = useFreeAgents()
 
   const [balances, setBalances] = useState<Balances | null>(null)
   const [claiming, setClaiming] = useState(false)
@@ -907,6 +910,9 @@ export default function LandingPage() {
           />
         </section>
 
+        {/* ======================= FREE AGENTS OF THE WEEK ======================= */}
+        <FreeAgentsOfTheWeek />
+
         {/* ======================= HISTORICAL MINDS ======================= */}
         <section id="historical" className="space-y-6">
           <SectionHead
@@ -916,28 +922,36 @@ export default function LandingPage() {
             accent="#b8fc4b"
           />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {HISTORICAL.map(a => (
-              <button
-                key={a.id}
-                onClick={() => router.push(`/gallery/chat/${a.id}`)}
-                className="glass-panel rounded-xl border-[#23262B] p-5 text-left hover:border-[#b8fc4b]/40 transition-all active:scale-95 flex flex-col gap-3 group"
-              >
-                <div className="w-12 h-12 rounded-full bg-[#b8fc4b]/10 border border-[#b8fc4b]/20 flex items-center justify-center font-headline-md text-lg text-[#b8fc4b]">
-                  {a.name.charAt(0)}
-                </div>
-                <div>
-                  <div className="font-headline-sm text-base text-[#e0e4d2] leading-tight">
-                    {a.name}
+            {HISTORICAL.map(a => {
+              const free = isFree(a.id)
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => router.push(`/gallery/chat/${a.id}`)}
+                  className="glass-panel rounded-xl border-[#23262B] p-5 text-left hover:border-[#b8fc4b]/40 transition-all active:scale-95 flex flex-col gap-3 group relative"
+                >
+                  {free && (
+                    <span className="self-start font-mono-label text-[10px] text-[#34d399] bg-[#34d399]/10 px-2 py-0.5 rounded border border-[#34d399]/30 flex items-center gap-1">
+                      🎁 Free this week
+                    </span>
+                  )}
+                  <div className="w-12 h-12 rounded-full bg-[#b8fc4b]/10 border border-[#b8fc4b]/20 flex items-center justify-center font-headline-md text-lg text-[#b8fc4b]">
+                    {a.name.charAt(0)}
                   </div>
-                  <div className="font-mono-label text-[10px] text-[#8c947c] uppercase mt-1">
-                    {a.domain}
+                  <div>
+                    <div className="font-headline-sm text-base text-[#e0e4d2] leading-tight">
+                      {a.name}
+                    </div>
+                    <div className="font-mono-label text-[10px] text-[#8c947c] uppercase mt-1">
+                      {a.domain}
+                    </div>
                   </div>
-                </div>
-                <span className="mt-auto inline-flex items-center gap-1 font-mono-label text-[10px] text-[#c2cab0] group-hover:text-[#b8fc4b]">
-                  Chat now <ArrowRight className="w-3 h-3" />
-                </span>
-              </button>
-            ))}
+                  <span className="mt-auto inline-flex items-center gap-1 font-mono-label text-[10px] text-[#c2cab0] group-hover:text-[#b8fc4b]">
+                    {free ? 'Chat free' : 'Chat now'} <ArrowRight className="w-3 h-3" />
+                  </span>
+                </button>
+              )
+            })}
           </div>
           <SectionCta label="Browse all 70+ agents" onClick={() => router.push('/gallery')} />
         </section>

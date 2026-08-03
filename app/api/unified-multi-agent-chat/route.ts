@@ -202,7 +202,19 @@ export async function POST(request: NextRequest) {
       /* fall through to normal billing if the rotation can't be computed */
     }
 
-    if (userId && !allAgentsFreeThisWeek) {
+    if (!allAgentsFreeThisWeek) {
+      if (!userId) {
+        return NextResponse.json(
+          {
+            error:
+              "Authentication or ESMS tokens required to consult non-free agents. Try this week's free historical agents!",
+            isPaymentRequired: true,
+            requiredTokens: { Spirit: 2, Essence: 1, Matter: 1, Substance: 1 },
+          },
+          { status: 402 }
+        )
+      }
+
       const currentAlchemy = await getAlchemicalQuantitiesLegacy()
       const alchemyEffects = currentAlchemy['Alchemy Effects'] || {}
 

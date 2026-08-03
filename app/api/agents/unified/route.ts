@@ -55,7 +55,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
         const session = await auth()
         const userId = session?.user?.id
 
-        if (!userId) {
+        // ESMS Token Economy: Spend resources for agent operation —
+        // UNLESS this agent is in the current week's free rotation (waive cost).
+        const { EconomyService } = await import('@/lib/services/economyService')
+        const { AGENT_OPERATION_COSTS } = await import('@/lib/economy-config')
+        const { isAgentFreeThisWeek } = await import('@/lib/agents/weekly-feature-rotation')
+
+        const freeThisWeek = parameters.agentId
+          ? await isAgentFreeThisWeek(parameters.agentId).catch(() => false)
+          : false
+
+        if (!userId && !freeThisWeek) {
           const { logSecurityEvent } = await import('@/lib/security-audit-logger')
           logSecurityEvent({
             eventType: 'AUTH_FAILURE',
@@ -63,19 +73,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
             details: { action },
           })
           return NextResponse.json(
-            { success: false, error: 'Authentication required for agent interaction.', timestamp },
+            {
+              success: false,
+              error:
+                "Authentication required for agent interaction. Try this week's free historical agents!",
+              timestamp,
+            },
             { status: 401 }
           )
         }
 
         // Rate limiting check (OWASP LLM10 / API4)
         const { checkRateLimit } = await import('@/lib/rate-limiter')
-        const rateCheck = checkRateLimit(`chat:${userId}`, { windowMs: 60 * 1000, maxRequests: 30 })
+        const rateCheck = checkRateLimit(userId ? `chat:${userId}` : 'chat:anon', {
+          windowMs: 60 * 1000,
+          maxRequests: 30,
+        })
         if (!rateCheck.allowed) {
           const { logSecurityEvent } = await import('@/lib/security-audit-logger')
           logSecurityEvent({
             eventType: 'RATE_LIMIT_EXCEEDED',
-            userId,
+            userId: userId || 'anonymous',
             resource: '/api/agents/unified (chat)',
           })
           return NextResponse.json(
@@ -88,20 +106,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
           )
         }
 
-        // ESMS Token Economy: Spend resources for agent operation —
-        // UNLESS this agent is in the current week's free rotation (waive cost).
-        const { EconomyService } = await import('@/lib/services/economyService')
-        const { AGENT_OPERATION_COSTS } = await import('@/lib/economy-config')
-        const { isAgentFreeThisWeek } = await import('@/lib/agents/weekly-feature-rotation')
-
-        const freeThisWeek = parameters.agentId
-          ? await isAgentFreeThisWeek(parameters.agentId).catch(() => false)
-          : false
-
         let balances
         if (freeThisWeek) {
-          balances = await EconomyService.getBalances(userId)
-        } else {
+          balances = userId
+            ? await EconomyService.getBalances(userId)
+            : EconomyService.ZERO_BALANCES
+        } else if (userId) {
           const debitResult = await EconomyService.debitOperation(userId, 'unified_chat')
           if (!debitResult.ok) {
             return NextResponse.json(
@@ -141,9 +151,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
         const { capModelTier } = await import('@/lib/premium/tiers')
         // kitchenPremium unifies the role: an alchm.kitchen subscription grants
         // premium here too (surfaced by the session bridge).
-        const entitlements = await getEntitlements(userId, {
-          kitchenPremium: session?.user?.kitchenPremium,
-        })
+        const entitlements = userId
+          ? await getEntitlements(userId, { kitchenPremium: session?.user?.kitchenPremium })
+          : { tier: 'free' as const, isSubscribed: false, byokProviders: [] }
         const effectiveTier = capModelTier(
           parameters.modelTier,
           entitlements.tier,
@@ -152,7 +162,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UnifiedAg
 
         // BYOK: forward the user's own provider keys so premium calls bill them.
         let userProviderKeys: { anthropic?: string; openai?: string } | undefined
-        if (entitlements.byokProviders.length > 0) {
+        if (userId && entitlements.byokProviders.length > 0) {
           const { getDecryptedKey } = await import('@/lib/byok/store')
           const keys: { anthropic?: string; openai?: string } = {}
           for (const provider of entitlements.byokProviders) {

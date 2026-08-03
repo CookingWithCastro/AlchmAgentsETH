@@ -738,6 +738,12 @@ export function UnifiedMultiAgentChat({
                       Claim Cosmic Yield
                     </Button>
                     <a
+                      href="/#free-agents"
+                      className="w-full text-center px-4 py-2 border border-emerald-500/30 rounded-md bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 hover:text-white transition-colors text-xs font-semibold"
+                    >
+                      🎁 Try Free Agents of the Week
+                    </a>
+                    <a
                       href="/dashboard"
                       className="w-full text-center px-4 py-2 border border-purple-500/30 rounded-md bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 hover:text-white transition-colors text-xs font-semibold"
                     >
